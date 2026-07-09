@@ -21,6 +21,11 @@ rev = "f6eed55facfb6c95a40775da301a1c9e3447e4bf"
 
 [[lean_lib]]
 name = "ALT"
+# Explicit root: doc-gen4 documents a library's ROOT modules; a globs-only
+# library has none ("0 root modules" — the empty-docs failure of v1.0's CI).
+# The root ALT.lean covers the Mathlib-side modules; the Foundation-side
+# opt-ins are still BUILT via the glob below (see the note there).
+roots = ["ALT"]
 # Build every ALT/* module by default, so `lake build` and CI verify the opt-in
 # Foundation-side capstones (GodelChecker, GodelComplete, GodelCheckerComplete) and
 # RepFintype — not only the modules transitively imported by the root `ALT.lean`.

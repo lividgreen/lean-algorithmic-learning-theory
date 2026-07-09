@@ -18,6 +18,14 @@ authors:
     affiliation: Independent researcher
 repository-code: https://github.com/lividgreen/lean-algorithmic-learning-theory
 license: Apache-2.0
+doi: 10.5281/zenodo.21284775
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.21284775
+    description: Concept DOI (all versions)
+  - type: doi
+    value: 10.5281/zenodo.21284776
+    description: Version DOI (v1.0, 2026-07-09)
 keywords:
   - Lean 4
   - Mathlib
