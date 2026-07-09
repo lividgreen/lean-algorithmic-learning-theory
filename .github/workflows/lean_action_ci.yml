@@ -1,0 +1,28 @@
+name: CI
+
+# Snapshot-release repo: build + docs on pushes to main (rare, curated) and
+# manual dispatch. lean-action auto-detects Mathlib and runs `lake exe cache
+# get`; docgen-action builds doc-gen4 API docs and deploys them to GitHub
+# Pages (requires Settings > Pages > Source = "GitHub Actions").
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read # read repository contents
+  pages: write # deploy API docs to GitHub Pages
+  id-token: write # OIDC token for the Pages deployment
+
+# Never run two Pages deployments concurrently.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: leanprover/lean-action@v1
+      - uses: leanprover-community/docgen-action@v1

@@ -1,0 +1,15 @@
+lean-algorithmic-learning-theory
+Copyright (c) 2026 Mykola Palamarchuk
+
+Licensed under the Apache License 2.0 (see LICENSE).
+
+This repository includes code derived from third-party Apache-2.0 work:
+
+  ALT/Birkhoff/PointwiseBirkhoff.lean
+    Ported from https://github.com/lua-vr/pointwise-birkhoff
+    Copyright (c) 2025 Oliver Butterley (and contributors).
+    See ALT/Birkhoff/LICENSE and the file header for details.
+
+It builds against and pins:
+  - Mathlib (Apache-2.0), via lake-manifest.json
+  - FormalizedFormalLogic/Foundation (pinned revision; see lake-manifest.json)

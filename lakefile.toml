@@ -1,0 +1,29 @@
+name = "alt"
+version = "1.0.0"
+keywords = ["math", "learning-theory", "probability", "computability", "realizability"]
+defaultTargets = ["ALT"]
+
+[leanOptions]
+pp.unicode.fun = true # pretty-prints `fun a ↦ b`
+relaxedAutoImplicit = false
+weak.linter.mathlibStandardSet = true
+maxSynthPendingDepth = 3
+
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
+rev = "v4.31.0"
+
+[[require]]
+name = "Foundation"
+git = "https://github.com/FormalizedFormalLogic/Foundation"
+rev = "f6eed55facfb6c95a40775da301a1c9e3447e4bf"
+
+[[lean_lib]]
+name = "ALT"
+# Build every ALT/* module by default, so `lake build` and CI verify the opt-in
+# Foundation-side capstones (GodelChecker, GodelComplete, GodelCheckerComplete) and
+# RepFintype — not only the modules transitively imported by the root `ALT.lean`.
+# Each file imports either umbrella-Mathlib OR Foundation, never both, so compiling them
+# independently avoids the `Matrix.map` clash that forbids co-importing them in one file.
+globs = ["ALT.+"]
