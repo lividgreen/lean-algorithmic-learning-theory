@@ -1,32 +1,62 @@
+-- Root umbrella: imports every Mathlib-side module, so `lake build ALT` (and doc-gen4,
+-- whose library facet documents the ROOT modules' closure) covers them all.
+-- The four Foundation-side modules (AxiomAuditFoundation, GodelChecker,
+-- GodelCheckerComplete, GodelComplete) cannot be co-imported here (Matrix.map clash);
+-- they are extra `roots` in lakefile.toml so docs and the build cover them too.
 import ALT.AdditiveComplexity
+import ALT.AxiomAuditMathlib
+import ALT.BayesRedundancy
 import ALT.BinaryConstant
+import ALT.Birkhoff.AxiomAudit
+import ALT.Birkhoff.PointwiseBirkhoff
+import ALT.BirkhoffTool
+import ALT.CapacityLayer
 import ALT.CapacityThreshold
 import ALT.CartesianClosed
+import ALT.CategoricalThreshold
+import ALT.ChengCCC
+import ALT.Collector
+import ALT.CountableDiscovery
 import ALT.CounterLearner
+import ALT.DecisionListData
+import ALT.DecisionListSolver
 import ALT.Decoupling
+import ALT.DeterministicDiscovery
 import ALT.EpsilonZeroBound
 import ALT.ExactBreakeven
+import ALT.ExtensionalDiscovery
+import ALT.FiniteInfoTheory
+import ALT.GodelCore
 import ALT.GodelInternalization
 import ALT.GodelThreshold
+import ALT.GrunwaldMehtaDiscovery
 import ALT.HellingerBridge
+import ALT.KReconnection
 import ALT.KolmogorovBitlen
 import ALT.KolmogorovComplexity
 import ALT.KolmogorovTimeBounded
-import ALT.KReconnection
+import ALT.MDLCoding
 import ALT.MDLDominance
 import ALT.ParameterizedNNO
 import ALT.ParityCounterexample
+import ALT.PolyTime
 import ALT.PolyTimeAccounting
 import ALT.PrefixComplexity
 import ALT.PrefixInvariance
 import ALT.PressureWindow
-import ALT.StructureFunction
 import ALT.PriorNormalization
 import ALT.ProofChainSkeleton
+import ALT.Realizability
+import ALT.RealizabilityCCC
+import ALT.RealizabilityCoproduct
+import ALT.RealizabilityRecursor
 import ALT.RealizerLength
+import ALT.RecursorAlgebra
 import ALT.Reflective
 import ALT.RegimeConsistency
+import ALT.RepFintype
 import ALT.RetentionOverhead
+import ALT.RetentionUpperBound
 import ALT.SQAlgorithm
 import ALT.SQEnvelope
 import ALT.SQMixtureSupermartingale
@@ -38,6 +68,6 @@ import ALT.SQSearchPhaseMass
 import ALT.SQVersionSpace
 import ALT.SampleComplexity
 import ALT.SmokeTest
+import ALT.StructureFunction
 import ALT.TimeCost
-import ALT.PolyTime
 import ALT.Ville
