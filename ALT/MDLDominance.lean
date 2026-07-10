@@ -1,13 +1,18 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 import ALT.CapacityThreshold
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style header linter.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
 
 /-!
 # Static MDL dominance (Paper II, Theorem 2.1 / Sub-problem A)
 
-Provenance: `02_mdl_dominance_and_discovery.md`, §1.2 (regime constants C1–C3), §2.1 (the
+Provenance: Paper II, §1.2 (regime constants C1–C3), §2.1 (the
 theorem), §2.2 (its proof: eq. (1) rule cost, eq. (2) table cost, Step 3 subtraction),
 §2.3 (structure-function connection). Reuses `CapacityThreshold.Kmin` (the §2.2 model cost
 `r + 2 log r + c₃`) from the Cor 2.2 warm-up.

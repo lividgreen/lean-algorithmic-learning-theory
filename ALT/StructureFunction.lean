@@ -1,14 +1,19 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 import ALT.PrefixInvariance
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style linters.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-!
 # Kolmogorov structure function — the 45° / geometric lower bound (Paper II §2.3, FV-14)
 
-Provenance: `02_mdl_dominance_and_discovery.md` §2.3 (the structure-function backdrop of Theorem 2.1)
+Provenance: Paper II §2.3 (the structure-function backdrop of Theorem 2.1)
 and Vereshchagin–Vitányi (2004) / Shen–Uspensky–Vereshchagin. This file makes §2.3's load-bearing
 inequality genuine on the **additive carrier** (`AdditiveComplexity.KE`, `ALT/AdditiveComplexity.lean`).
 Extends `ALT/BinaryConstant.lean` (`bconst`, `eval_bconst`, `elen_bconst_le`, `dbl`) and reuses
@@ -50,8 +55,8 @@ singleton `{x}` gives nonemptiness for `α ≥ KE x + c₀`.
 
 ## Boundaries (docstring; reported to the wiring session)
 * Full V&V identity / minimal sufficient statistic — needs conditional `KE(·|·)` + Symmetry of
-  Information (no prover has either); the contribution-grade follow-on (item 3 remaining scope).
-* Evaln-budgeted version — the F20 wall applies identically (eval-level only, like `prop_2_2_eval`).
+  Information (no prover has either); a contribution-grade follow-on.
+* Evaln-budgeted version — the `evaln`-budget wall applies identically (eval-level only, like `prop_2_2_eval`).
 * Paper II §2.3's use stays backdrop; this slice makes its load-bearing inequality genuine.
 -/
 

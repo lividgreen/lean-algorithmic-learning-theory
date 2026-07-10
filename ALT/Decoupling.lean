@@ -1,14 +1,19 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style header linter.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
 
 /-!
-# The Decoupling Lemma: structural core + necessity (Paper I §3 Lemma 3.1, target F2)
+# The Decoupling Lemma: structural core + necessity (Paper I §3 Lemma 3.1)
 
-Provenance: `01_decoupling_and_categorical_threshold.md`, §3 (Lemma 3.1, the Decoupling Lemma: D1
+Provenance: Paper I, §3 (Lemma 3.1, the Decoupling Lemma: D1
 persistence — a faithfully-encoded model survives multi-step iteration iff its code region is
-read-only under the update). Tier-2 lynchpin, first increment.
+read-only under the update).
 
 Modeling. A subsystem is ONE shared memory `Mem ι V := ι → V` with ONE update `U : Mem → Mem`.
 "Code vs work" is EARNED, not assumed: which cells `U` writes is what distinguishes them. A model is

@@ -1,13 +1,18 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import ALT.ParityCounterexample
 import Mathlib
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style header linter.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
 
 /-!
 # Positive arithmetic core of SQ version-space pruning (Paper III §3.4 / §4(b) / Appendix A)
 
-Provenance: `03_polynomial_convergence_under_SQ.md`, §3.4 (statistical dimension `d_SQ` +
+Provenance: Paper III, §3.4 (statistical dimension `d_SQ` +
 Assumption A), §4 step (b) (SQ-based enumeration of `M_T`), and Appendix A (the BFJKMR →
 prequential adaptation: "the version-space bound", "the SQ handle", "the truth survives").
 

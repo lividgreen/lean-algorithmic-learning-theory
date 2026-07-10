@@ -1,8 +1,13 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import ALT.SQObjects
 import ALT.SQVersionSpace
 import Mathlib
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style linters (long lines/defs).
+-- Formal-check file, not Mathlib-destined: opt out of the house-style linters (long lines/defs).
 set_option linter.style.header false
 set_option linter.style.longLine false
 -- `SepFam` is an undecidable predicate over abstract types, so the powerset `filter` in `sqDim`
@@ -13,13 +18,13 @@ set_option linter.style.openClassical false
 /-!
 # The SQ version-space envelope via Szörényi's maximality + packing (Paper III App A, FV-L)
 
-Provenance: `03_polynomial_convergence_under_SQ.md`, §3.4 (statistical dimension `d_SQ` +
+Provenance: Paper III, §3.4 (statistical dimension `d_SQ` +
 Assumption A), §4 step (b) (SQ-based enumeration of the version space `M_T`), and Appendix A ("the
 version-space bound", "the SQ handle", "the truth survives"). Mathematical route: Szörényi,
 "Characterizing Statistical Query Learning: Simplified Notions and Proofs" (ALT 2009) — the
 elementary maximality/packing argument (Def 2, §3, Prop 1), NOT the Fourier route.
 
-FV-L is the final substantive P-III target: it builds the BFJKMR-style version-space envelope
+FV-L builds the BFJKMR-style version-space envelope
 directly over FV-J's GENUINE statistical dimension (`SQObjects.sqDim`), discharging the MODELED
 envelope premise `candidates r ≤ A · (d_SQ r)^m` that FV-A4 (`SQVersionSpace.candidates_polyBounded`)
 left as a hypothesis. Two pieces of added content over FV-J's `survivors_card_le_sqDim` (which

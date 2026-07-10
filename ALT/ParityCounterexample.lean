@@ -1,12 +1,17 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style header linter.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
 
 /-!
 # Parity counterexample to Assumption A (Paper III, §5)
 
-Provenance: `03_polynomial_convergence_under_SQ.md`, §3.4 (statistical dimension + Assumption A),
+Provenance: Paper III, §3.4 (statistical dimension + Assumption A),
 §4 (Theorem 4.1, which assumes `d_SQ = poly(r)`), and §5 ("What about Parity?"). The mathematical
 content is the elementary "exponential beats every polynomial".
 

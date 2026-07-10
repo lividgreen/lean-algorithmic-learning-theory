@@ -1,15 +1,20 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 import ALT.RealizabilityCCC
 import ALT.RealizabilityRecursor
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style linters.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-!
 # Rep(S) "up to capacity": the finite full subcategory and the honest non-closure (FV-14)
 
-Provenance: `01_decoupling_and_categorical_threshold.md` §4.2–§4.3 — Rep(S) is "a full subcategory of
+Provenance: Paper I §4.2–§4.3 — Rep(S) is "a full subcategory of
 finite sets, **Cartesian closed up to capacity**", presented as the capacity filtration
 `Rep(S) = colim_d Rep(S)_{≤d}`; global closure *fails* because the exponential `[T₁ ⇒ T₂]` has
 `|T₂|^{|T₁|}` elements, overflowing `2^{|s_work|}`.

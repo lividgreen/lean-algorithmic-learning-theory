@@ -1,14 +1,19 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 import ALT.GodelCore
 import ALT.ParameterizedNNO
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style header linter.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
 
 /-!
 # Gödel threshold skeleton (Paper I §5.3 + §6)
 
-Provenance: `01_decoupling_and_categorical_threshold.md`, §5.3 (Proposition 5.3, the Gödel depth
+Provenance: Paper I, §5.3 (Proposition 5.3, the Gödel depth
 condition) and §6 (Definition 6.1 representational reflection, Theorem 6.2 categorical threshold).
 Pure propositional/predicate logic, in the spirit of B4 (`ALT/ProofChainSkeleton.lean`).
 

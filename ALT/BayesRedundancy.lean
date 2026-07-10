@@ -1,6 +1,11 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style linters.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
 set_option linter.style.longLine false
 set_option linter.unusedSectionVars false
@@ -10,7 +15,7 @@ set_option linter.unusedFintypeInType false
 /-!
 # Bayes-mixture redundancy — Paper II §3, Sub-problem B (toward an unconditional Theorem 3.1)
 
-Provenance: `02_mdl_dominance_and_discovery.md` §3. Theorem 3.1's rate (3) is the classical
+Provenance: Paper II §3. Theorem 3.1's rate (3) is the classical
 Bayes-mixture redundancy bound (Hutter 2003, 2005; in the discrete-class concentration form,
 Lattimore–Hutter–Sunehag 2013), here *proved* directly in the **realizable-deterministic** case —
 no Grünwald–Mehta import. (Grünwald–Mehta 2020 Thm 7.4 enters only in

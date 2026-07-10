@@ -1,14 +1,19 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 import ALT.Realizability
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style linters.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-!
 # The realizability category is Cartesian closed (Paper I §4.3, the genuine CCC)
 
-Provenance: `01_decoupling_and_categorical_threshold.md` §4.1–§4.3 — Rep(S) is "Cartesian closed
+Provenance: Paper I §4.1–§4.3 — Rep(S) is "Cartesian closed
 (up to capacity)", with the exponential `[A ⇒ B]` the set of realizer-codes implementing morphisms
 "under extensional equality". `ALT/Realizability.lean` (FV-11) established the realizability
 *category* and *products* on a single-encoding assembly, but found the exponential needs the

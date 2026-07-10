@@ -1,14 +1,19 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 import ALT.KolmogorovComplexity
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style header linter.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
 
 /-!
-# Additive AST program-length complexity `KE` (Stage ① of two-machine invariance)
+# Additive AST program-length complexity `KE` (two-machine invariance, part one)
 
-Provenance: `03_polynomial_convergence_under_SQ.md` §2 (description/time-bounded complexity) and
-`02_mdl_dominance_and_discovery.md` §1.1 (`K(R) = r`, program length in bits). Extends
+Provenance: Paper III §2 (description/time-bounded complexity) and
+Paper II §1.1 (`K(R) = r`, program length in bits). Extends
 `ALT/KolmogorovComplexity.lean` (`Computes`, `const_computes`) with an **additive**
 program-length measure that the index/bit-length measures (`codelen`, `codelen'`) cannot provide.
 
@@ -24,7 +29,7 @@ docstring flags exactly this blowup as the obstruction to the two-machine additi
 
 `E` fixes this by serializing the AST in prefix (Polish) form with a fixed 3-bit opcode per node, so
 program length is additive **by construction**: `|E (comp cf cg)| = 3 + |E cf| + |E cg|`
-(`E_len_comp`). This is Stage ① of the invariance target: the compositional length algebra.
+(`E_len_comp`). This is the first half of the invariance target: the compositional length algebra.
 
 ## What this establishes
 * `E`, `elen`, `KE`: self-delimiting AST encoding, its bit-length, and the induced complexity.
@@ -36,7 +41,7 @@ program length is additive **by construction**: `|E (comp cf cg)| = 3 + |E cf| +
   a one-symbol swap of the corpus `K_t` construction (`elen` for the index `codelen`).
 
 ## What this does NOT establish (flagged / later stages)
-* Two-machine additive invariance itself (Stage ②): needs a length-efficient *binary* constant
+* Two-machine additive invariance itself (the second half): needs a length-efficient *binary* constant
   `bconst : ℕ → Code` with `|E (bconst n)| = O(Nat.size n)` — Mathlib's `Code.const` is a *unary*
   tower (`const (n+1) = comp succ (const n)`), so `|E (Code.const n)| = Θ(n)`, exponential in
   bit-length. Deferred to a separate sub-project (the `bconst` gate).

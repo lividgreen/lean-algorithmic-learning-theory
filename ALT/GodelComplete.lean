@@ -1,7 +1,12 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Foundation.FirstOrder.Incompleteness.Examples
 import ALT.GodelCore
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style linters.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
 set_option linter.style.longLine false
 
@@ -37,9 +42,9 @@ and `ℕ`-soundness (which covers §5.3's IΔ₀ abstractly). It is the sole `th
 so the file — and, with the `𝗣𝗔⁻` capstones of `ALT/GodelChecker.lean` /
 `ALT/GodelCheckerComplete.lean`, the whole Foundation side — is axiom-clean.
 
-## The retired `𝗜𝚺₁` witnesses (Paper I item 1: zero-named-axiom core)
+## The retired `𝗜𝚺₁` witnesses (the zero-named-axiom hardening)
 This file formerly also shipped a concrete `𝗜𝚺₁` witness (`isigma1_represents_underivable_truth`,
-and a Tier-2 bounded-decision witness `isigma1_decides_bounded_nonprovability`). Both instantiated
+and a bounded-decision witness `isigma1_decides_bounded_nonprovability`). Both instantiated
 `exists_true_but_unprovable_sentence 𝗜𝚺₁`, so both carried the single named axiom
 `LO.FirstOrder.Arithmetic.ISigma1_delta1Definable` — Foundation's declared `axiom` for `𝗜𝚺₁.Δ₁` (its
 explicit TODO "Prove `𝗜𝚺₁` and `𝗣𝗔` are Δ₁-definable"). They are **retired** so that the entire
@@ -78,14 +83,14 @@ theorem incompleteness_of_arith (T : ArithmeticTheory) [T.Δ₁] [𝗥₀ ⪯ T]
   obtain ⟨δ, htrue, hunprov⟩ := exists_true_but_unprovable_sentence T
   exact ⟨Encodable.encode δ, δ, rfl, htrue, hunprov⟩
 
-/-! ## Retired: the concrete `𝗜𝚺₁` witnesses (Paper I item 1)
+/-! ## Retired: the concrete `𝗜𝚺₁` witnesses
 
 Two `𝗜𝚺₁` witnesses were retired here to keep the built development free of named axioms:
 
 * `isigma1_represents_underivable_truth` — a Gödel sentence of `𝗜𝚺₁`, true in `ℕ` but unprovable in
   `𝗜𝚺₁`, represented at depth `gTS + 1` (discharging `GodelThreshold.Incompleteness` with no
   remaining hypothesis);
-* `isigma1_decides_bounded_nonprovability` — the Tier-2 §6.3 L2b bounded-decision witness for the
+* `isigma1_decides_bounded_nonprovability` — the §6.3 L2b bounded-decision witness for the
   actual `𝗜𝚺₁` Gödel sentence (for any sound checker `Prf`, `Decide(G_{𝗜𝚺₁}) = true`).
 
 Both went through `exists_true_but_unprovable_sentence 𝗜𝚺₁`, hence carried Foundation's single named

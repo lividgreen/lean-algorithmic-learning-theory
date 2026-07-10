@@ -1,15 +1,20 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 import ALT.GodelCore
 import ALT.ParameterizedNNO
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style linters.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-!
 # Internalizing the bounded proof relation (Paper I §6.3, Theorem 6.3, Levels L2a/L2b)
 
-Provenance: `01_decoupling_and_categorical_threshold.md`, §4.6 (Proposition 4.5, minimality —
+Provenance: Paper I, §4.6 (Proposition 4.5, minimality —
 finite products + bounded recursor, no exponential), §5.4 (Proposition 5.4, the necessity
 counterpart), §6.1–6.3 (Definition 6.1, Theorem 6.2, Theorem 6.3 the internalization).
 
@@ -33,7 +38,7 @@ reasoning, and tie the necessity direction to the sharp pigeonhole `depth_succ_l
 The bounded search ranges over `ProofCode M_chk := {p // p ≤ M_chk}` (a `Fintype`) and is the finite
 fold along the orbit of the bounded recursor `cyclicParamNNO M_chk` of D1 — no exponential.
 
-## What this DOES establish (Tier 1, abstract conditional — axiom-clean)
+## What this DOES establish (the abstract conditional — axiom-clean)
 * `BoundedChecker`: the abstract §6.3 interface — a `Formula` type, a decidable bounded proof
   relation `Prf : Formula → ℕ → Bool`, the size map `gnum`, a recursion budget `Mchk`, and the
   **soundness** field `Prf φ p = true → Derivable φ` (accepts ⇒ derivable — one direction).
@@ -55,11 +60,11 @@ fold along the orbit of the bounded recursor `cyclicParamNNO M_chk` of D1 — no
   `ALT/GodelComplete.lean`. NOT the exponential / Cartesian closure (Proposition 4.5: unused).
 * `Formula` is kept abstract (the L2a *carving* of `Formula := {c ≤ M_chk ∧ Wff c}` as a subobject
   of `S_work` is a modeling choice deferred to the concrete witness); `gnum`/`Derivable` abstract.
-* The concrete discharge of the `BoundedChecker` interface (Tier 2) lives on the Foundation side
+* The concrete discharge of the `BoundedChecker` interface lives on the Foundation side
   (`ALT/GodelChecker.lean`, `paMinus_decides_bounded_nonprovability` — the axiom-clean `𝗣𝗔⁻`
-  capstone; the earlier `𝗜𝚺₁` witnesses are retired, Paper I item 1): it cannot share this file
+  capstone; the earlier `𝗜𝚺₁` witnesses are retired): it cannot share this file
   because Foundation's root `Matrix.map` collides with umbrella-Mathlib's (the same Mathlib/Foundation
-  import divide that keeps the Tier-2 Foundation-side files separate).
+  import divide that keeps the Foundation-side files separate).
 
 ## Hypotheses: paper-stated vs added
 * Paper-stated / faithful: the §6.3 `Prf`/`Decide` construction; Proposition 5.4; the two budgets;

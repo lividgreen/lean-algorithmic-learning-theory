@@ -1,8 +1,13 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 import ALT.SQObjects
 import ALT.SQVersionSpace
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style header linter.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
 -- `hδ1 : δ ≤ 1` is kept in the signatures for faithfulness to Paper III §3, though the proof only
 -- needs it via the trivial `1 - δ ≤ 0` branch; long doc-comment lines are intentional.
@@ -12,7 +17,7 @@ set_option linter.unusedVariables false
 /-!
 # The i.i.d.-ensemble SQ oracle: Hoeffding concentration + sample complexity (Paper III §3)
 
-Provenance: `03_polynomial_convergence_under_SQ.md`, §3 "Tool (ii)" (the statistical-query oracle
+Provenance: Paper III, §3 "Tool (ii)" (the statistical-query oracle
 realised on the i.i.d. ensemble of trajectories) and the `O(1/√n)` query estimate that §4(b) /
 Appendix A consume.  This file supplies the *probabilistic core* that `ALT/SQVersionSpace.lean`
 (FV-A4) takes as the bare hypothesis `hemp : |emp − predR| ≤ τ`: it DERIVES, by Hoeffding, that the

@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 -- Targeted (non-umbrella) import: gives ℕ order + `omega` without pulling
 -- `Mathlib.LinearAlgebra.Matrix.Defs`, so this file stays co-importable with Foundation.
 import Mathlib.Order.Basic

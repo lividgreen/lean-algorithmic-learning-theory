@@ -1,14 +1,19 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 import ALT.EpsilonZeroBound
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style linters.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-!
 # Finite-time discovery — Paper II §3, Theorem 3.1 (prequential MDL)
 
-Provenance: `02_mdl_dominance_and_discovery.md` §3.2 (central/Bernstein condition) and §3.3
+Provenance: Paper II §3.2 (central/Bernstein condition) and §3.3
 (concentration + separation ⇒ discovery). The deep engine — **Grünwald–Mehta (2020) Theorem 7.4**
 (the central condition implies an `O(1/n)` fast rate) — is a published black box: Mathlib has no
 PAC-Bayes / fast-rate machinery, so for the **general stochastic** case we **import it as a

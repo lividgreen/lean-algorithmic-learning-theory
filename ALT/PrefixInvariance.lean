@@ -1,21 +1,26 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 import ALT.BinaryConstant
 import ALT.PrefixComplexity
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style linters.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-!
 # Two-machine invariance of the Paper II prior complexity (P-II item 2; FV-AC ported)
 
-Provenance: `02_mdl_dominance_and_discovery.md` §1.1 — `K(R) = r` "relative to a fixed universal
+Provenance: Paper II §1.1 — `K(R) = r` "relative to a fixed universal
 reference machine `U_ref`", with the explicit caveat *"Invariance-constant caveats apply; we assume
 `r` is large enough that the reference-machine dependence is a lower-order correction."* This file
 formalizes that caveat as the **two-machine (interpreter) invariance** of the additive program-length
 complexity underlying the `w(R') ∝ 2^{−K(R')}` prior.
 
-## Carrier verdict (probe-first, P-II item 2): the ADDITIVE measure `KE`, not the index measure `KP`
+## Carrier verdict (probe-first): the ADDITIVE measure `KE`, not the index measure `KP`
 
 Two candidate carriers were probed:
 * **(a) the existing prefix measure `KP`** (`PrefixComplexity.KP x = 2·Nat.size (K x + 1)`, the
@@ -23,7 +28,7 @@ Two candidate carriers were probed:
   Mathlib's `encodeCode (comp cf cg) = 2·(2·Nat.pair (encode cf) (encode cg) + 1) + 4` pairs children
   with the quadratic `Nat.pair`, so `Nat.size (encode (comp cf cg)) = 2·max (size cf) (size cg) + O(1)`
   and hence `KP` is *multiplicative* (factor 2) **even at `comp`**: no additive
-  `KP (I⟦x⟧) ≤ KP x + O(1)` exists. The additive-compose target of P-II item 2 is provably
+  `KP (I⟦x⟧) ≤ KP x + O(1)` exists. The additive-compose target is provably
   unreachable on `KP`.
 * **(b) the additive serialization measure `KE`** (`AdditiveComplexity.KE`, over the 3-bit Polish
   length `elen`, additive by construction: `elen (comp cf cg) = 3 + elen cf + elen cg`). Here the
@@ -36,7 +41,7 @@ remains the semimeasure. **Full unification** — a `KE`-based prior semimeasure
 shipped: `kraft_plen`'s Elias telescoping is specific to `plen`; `∑_c 2^{−elen c} ≤ 1` needs the
 *deferred* unique-decodability of the Polish `E` code (a separate mini-development); and `elen` vs
 `plen ∘ encode` live on incomparable scales (`elen` is ≈ the log of the index bit-length). Left as a
-documented follow-on rather than forced. See the P-II item-2 report.
+documented follow-on rather than forced.
 
 ## What this establishes
 * `computes_comp`: the compose eval law in `Computes` form (interpreter `I` run on a program `c`).
@@ -54,7 +59,7 @@ a binary constant of additive length `O(Nat.size p)`. This is the honest FV-AC d
 for a program composed as *code*, multiplicative-in-size for data read as a *number*. The additive
 form for arbitrary methods is barred by the same run-on-`0` / AST-data model feature documented there.
 
-## Boundary (index-measure wall, recorded per P-II item 2)
+## Boundary (the index-measure wall)
 Additive two-machine invariance of the **index** measure `KP` remains barred by `encodeCode`'s
 quadratic pairing (above) — the reason this item is carried by `KE`. `kraft_KP_E` and the
 `KP_E ↔ KP` comparison are not shipped (not a clean transfer; see the carrier verdict).

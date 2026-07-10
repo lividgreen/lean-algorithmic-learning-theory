@@ -1,13 +1,18 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 import ALT.CapacityThreshold
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style header linter.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
 
 /-!
 # Retention capacity overhead (Paper II, §4.4 eq. (4))
 
-Provenance: `02_mdl_dominance_and_discovery.md`, §4.3 (conditional-regeneration architecture,
+Provenance: Paper II, §4.3 (conditional-regeneration architecture,
 Def 4.1 / Prop 4.2) and §4.4 (capacity overhead, eq. (4)), with the persistent-code cost
 `|s_code| = r + 2 log r` reused from `CapacityThreshold.Kmin` (the §2.2 model cost at `c₃ = 0`).
 

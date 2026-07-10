@@ -1,13 +1,18 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 import ALT.Ville
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style header linter.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
 
 /-!
 # Search-phase pruned mass: the log-Bayes potential (Paper III Appendix A, Claim 2, search half)
 
-Provenance: `03_polynomial_convergence_under_SQ.md`, Appendix A "Soundness of SQ pruning", Claim 2,
+Provenance: Paper III, Appendix A "Soundness of SQ pruning", Claim 2,
 the **search-phase** (`t < T_discover`) residual gap. Companion to
 `ALT/SQPrunedMass.lean` (FV-F), which handles only the post-discovery half.
 

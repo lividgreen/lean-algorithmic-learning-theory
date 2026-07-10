@@ -1,7 +1,12 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 import ALT.BayesRedundancy
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style linters.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
 set_option linter.style.longLine false
 set_option linter.unusedSectionVars false
@@ -11,7 +16,7 @@ set_option linter.unusedDecidableInType false
 /-!
 # Unconditional posterior concentration — Paper II Theorem 3.1 (realizable-deterministic)
 
-Provenance: `02_mdl_dominance_and_discovery.md` §3. This gives a **direct, fully unconditional** proof
+Provenance: Paper II §3. This gives a **direct, fully unconditional** proof
 of Theorem 3.1 (the prequential posterior concentrates on the true rule) in the
 realizable-deterministic case — **no Grünwald–Mehta import, no Markov inequality, no
 posterior-of-close hypothesis**. It replaces the whole `GrunwaldMehtaDiscovery` chain by an

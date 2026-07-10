@@ -1,7 +1,12 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 import ALT.FiniteInfoTheory
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style linters.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
 set_option linter.style.longLine false
 
@@ -9,7 +14,7 @@ set_option linter.style.longLine false
 # Cheng (2026) Theorem 4: a NECESSITY (lower) bound — not a sufficiency result (ChengCCC)
 
 Provenance: re-checking `Cheng, R. (2026), Context Channel Capacity` (arXiv:2603.07415), the import
-behind Paper II (`02_mdl_dominance_and_discovery.md`) §4 retention (Proposition 4.2).
+behind Paper II (Paper II) §4 retention (Proposition 4.2).
 
 Cheng's Theorem 4 is the LOWER bound
   `Fgt̄ ≥ max(0, 1 − C_ctx / H(T)) · Fgt̄_max`,

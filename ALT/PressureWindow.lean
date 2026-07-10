@@ -1,6 +1,11 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style header linter.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
 
 /-!
@@ -69,8 +74,7 @@ scissors under two POSITED monotonicities, S2).
   POSITED, NOT derived. Deriving `AccessDegrading` (local `S_T`/`L_struct` ↓ under expansion) from
   conservation + expansion is the EXPRESSIVITY WALL: no existing theorem links local
   bounded-observer epiplexity dynamics to global conservation/expansion (the entropy-density,
-  `E[K]=H`, DPI, and ergodic-mixing routes all require building the missing bridge). Recorded as
-  Graveyard G8. `t` is an abstract time parameter; "expansion" is modeled ONLY as these two
+  `E[K]=H`, DPI, and ergodic-mixing routes all require building the missing bridge). `t` is an abstract time parameter; "expansion" is modeled ONLY as these two
   monotonicities.
 * (S2) This proves the scissors logic only — monotone inputs ⟹ `Π` antitone ⟹ the window is a time
   interval. It makes NO claim that any physical system's `L_struct`/`K_avail` are actually monotone
@@ -85,7 +89,7 @@ scissors under two POSITED monotonicities, S2).
   are abstract reals; B1a needs only `0 < v`, B1b only `0 < K_avail`.
 * POSITED (S2, the wall): `AccessDegrading L_struct` (`L_struct` antitone + nonneg) and
   `CapacityConcentrating K_avail` (`K_avail` monotone + positive) — assumptions about the time
-  dynamics, not derived (see the does-NOT block / Graveyard G8).
+  dynamics, not derived (see the does-NOT block).
 
 `Real.log` is the natural logarithm; `Real.log 2 = ln 2` is the Landauer constant.
 -/
@@ -108,7 +112,7 @@ noncomputable def netBenefit (L r v p_err scode kT : ℝ) : ℝ :=
 /-- The break-even observation length: `r` plus the upkeep in per-prediction-value units. -/
 noncomputable def L_be (r v p_err scode kT : ℝ) : ℝ := r + upkeep p_err scode kT / v
 
-/-- BREAK-EVEN (the Tier-1 core, §1.3): with positive per-prediction value `v`, retaining the rule
+/-- BREAK-EVEN (the core inequality): with positive per-prediction value `v`, retaining the rule
 pays (`upkeep < payoff`) iff the observation length exceeds the explicit threshold
 `L_be = r + upkeep / v`. -/
 theorem breakeven (L r v p_err scode kT : ℝ) (hv : 0 < v) :
@@ -154,8 +158,8 @@ theorem Pi_mono_left {L₁ L₂ K_avail : ℝ} (hK : 0 < K_avail) (h : L₁ ≤ 
   rw [Pi, Pi]; gcongr
 
 /-! ## S2 — access degradation and the dynamical window (conjectural framing).
-The two monotonicities below are POSITED (the S2 operator + the Jeans/L3 input), NOT derived —
-deriving `L_struct`↓ from conservation + expansion is the expressivity wall (Graveyard G8). -/
+The two monotonicities below are POSITED (the access-degradation operator and its cosmological input), NOT derived —
+deriving `L_struct`↓ from conservation + expansion is the expressivity wall. -/
 
 /-- The access-degradation operator's defining property: structured local flux is non-increasing in
 time and non-negative. (POSITED; the conjectural epiplexity `L_struct`.) -/

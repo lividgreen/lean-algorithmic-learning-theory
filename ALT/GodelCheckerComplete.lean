@@ -1,15 +1,20 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Foundation.FirstOrder.Incompleteness.Examples
 import Foundation.FirstOrder.Bootstrapping.DerivabilityCondition.D1
 import ALT.GodelCore
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style linters.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-!
 # A SOUND-AND-COMPLETE bounded proof relation over Foundation (Paper I §6.3)
 
-Provenance: `01_decoupling_and_categorical_threshold.md` §6.3 (Theorem 6.3, Level L2b) — the
+Provenance: Paper I §6.3 (Theorem 6.3, Level L2b) — the
 strengthening flagged there as the "research-grade, non-load-bearing refinement": a
 decision morphism that decides bounded `T`-non-provability for *arbitrary* `φ`, not merely the
 soundness-only verdict on `G` of `ALT/GodelChecker.lean`.
@@ -43,7 +48,7 @@ not a gap: `Theory.proof` is a `𝚫₁.Semisentence 2` (`Proof/Basic.lean`), i.
 `#eval`. The morphism's EXISTENCE as a total Boolean function — all Rep(S) needs (§4.1) — is what is
 certified.
 
-## F17 (Paper I item 2) — the computable-AND-complete decider: a documented WALL
+## The computable-AND-complete decider: a documented WALL
 Merging FV-8's *computable* checker (`GodelChecker.Prf`, which `#eval`s but is incomplete) with this
 file's *complete* decision (`Decide`, over `Bootstrapping.Proof`, but `noncomputable`) into ONE
 computable-and-complete bounded decider is **walled** against the pinned Foundation (rev `f6eed55`,
@@ -66,7 +71,7 @@ Lean 4.31). The two probe routes and their precise gaps:
   Hilbert calculus + the bridge to `𝐋𝐊¹`) untouched.
 
 Precise missing decidability: `Decidable (Bootstrapping.Proof 𝗣𝗔⁻ p (⌜φ⌝))` over `V = ℕ` (an
-executable evaluator for the `DerivationOf` fixpoint). F17 is **non-load-bearing** — the §6.3 verdict
+executable evaluator for the `DerivationOf` fixpoint). This wall is **non-load-bearing** — the §6.3 verdict
 `Decide(G) = true` needs only FV-8's soundness + the imported Gödel unprovability
 (`GodelChecker.paMinus_decides_bounded_nonprovability`) — so it closes as a **documented wall +
 registered upstream follow-on** (a `Decidable`/`Primrec (Bootstrapping.Proof …)` instance, or an
@@ -75,7 +80,7 @@ executable complete derivation checker, in Foundation; upstream-PR targets).
 ## Witness theory and axioms
 `paMinus_complete_decides` at `T★ = 𝗣𝗔⁻` (`PeanoMinus`) — **fully axiom-clean** (`#print axioms` =
 `propext, Classical.choice, Quot.sound`); `Δ₁` via `Theory.Δ₁.ofFinite`. An `𝗜𝚺₁` variant
-(`isigma1_complete_decides`, same statement at `𝗜𝚺₁`) was **retired** (Paper I item 1): it carried
+(`isigma1_complete_decides`, same statement at `𝗜𝚺₁`) was **retired**: it carried
 Foundation's single named axiom `ISigma1_delta1Definable`, and the development is now zero-named-axiom.
 `𝗣𝗔⁻ ⊊ 𝗜𝚺₁`, so the `𝗣𝗔⁻` capstone is the weaker, more faithful (§5.3-class) statement; restore the
 `𝗜𝚺₁` form from git history if upstream proves `ISigma1_delta1Definable` (an upstream-PR target).
@@ -185,7 +190,7 @@ theorem paMinus_complete_decides (M : ℕ) :
   intro p _ hpf
   exact hunprov (Prf_sound 𝗣𝗔⁻ hpf)
 
-/-! ### Retired: `isigma1_complete_decides` (Paper I item 1)
+/-! ### Retired: `isigma1_complete_decides`
 
 `isigma1_complete_decides`, the `𝗜𝚺₁` counterpart of `paMinus_complete_decides`, went through
 `exists_true_but_unprovable_sentence 𝗜𝚺₁`, hence carried Foundation's single named axiom

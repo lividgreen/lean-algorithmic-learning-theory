@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 
 -- Scratch smoke-test file (not Mathlib-destined), so we opt out of Mathlib's

@@ -1,13 +1,18 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style linters.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-!
-# A genuine, discriminating initial algebra for the bounded recursor ("sharper F19", Paper I §5)
+# A genuine, discriminating initial algebra for the bounded recursor (Paper I §5)
 
-Provenance: `01_decoupling_and_categorical_threshold.md` §5 (bounded recursor).
+Provenance: Paper I §5 (bounded recursor).
 Companion / upgrade to the FV-17 material in `ALT/RepFintype.lean`
 (`ParameterizedNNO.ParamNNO.recursorCone_isInitial`).
 
@@ -231,7 +236,7 @@ lemma hom_f_eq_rec (M : ℕ) (alg : Endofunctor.Algebra succEndo) (g : boundedAl
 
 /-! ### The discriminating initiality -/
 
-/-- **Sharper F19 headline.** `boundedInitialAlgebra M` is a *genuine* `IsInitial` object of the
+/-- **Headline.** `boundedInitialAlgebra M` is a *genuine* `IsInitial` object of the
 saturating full subcategory `SatAlg M` of `Endofunctor.Algebra succEndo`. Discharged via
 `IsInitial.ofUniqueHom`: existence is the recursor hom `toSatHom`, uniqueness is the orbit induction
 `hom_f_eq_rec`.

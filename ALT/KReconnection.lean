@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 import ALT.KolmogorovComplexity
 import ALT.KolmogorovTimeBounded
@@ -7,13 +12,13 @@ import ALT.RegimeConsistency
 import ALT.RetentionOverhead
 import ALT.PolyTimeAccounting
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style header linter.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
 
 /-!
 # Cross-file `K`-reconnection: the abstract `r` is the real Kolmogorov complexity
 
-Provenance: `02_mdl_dominance_and_discovery.md`, §1.1 (`r = K(R)`, "program length in bits"). Ties
+Provenance: Paper II, §1.1 (`r = K(R)`, "program length in bits"). Ties
 the abstract `r : ℝ` of the MDL-corpus theorems to the genuine bit-length Kolmogorov complexity
 (`ALT/KolmogorovTimeBounded.lean`, `K_bitlen`/`K_bitlen_eq`) of a concrete rule `R`.
 

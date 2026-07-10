@@ -1,12 +1,17 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style header linter.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
 
 /-!
 # Poly-time accounting (Paper III, §4 Theorem 4.1) — thin bookkeeping
 
-Provenance: `03_polynomial_convergence_under_SQ.md`, §4 (Theorem 4.1, parts (i)–(iv) and proof
+Provenance: Paper III, §4 (Theorem 4.1, parts (i)–(iv) and proof
 step (c)).
 
 Status: PROVED as a pure real-arithmetic product bound. **This is deliberately THIN bookkeeping —

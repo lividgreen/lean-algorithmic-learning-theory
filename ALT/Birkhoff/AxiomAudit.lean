@@ -1,5 +1,10 @@
 /-
-# Axiom audit for the pointwise Birkhoff integration (P-III stage 7, F18)
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
+/-
+# Axiom audit for the pointwise Birkhoff integration
 
 CI guard: every `#guard_msgs in #print axioms …` below **fails `lake build`** if the theorem's
 axiom set ever drifts from the standard `[propext, Classical.choice, Quot.sound]` triple.  This

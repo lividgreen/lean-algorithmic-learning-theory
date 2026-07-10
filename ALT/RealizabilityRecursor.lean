@@ -1,17 +1,22 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 import ALT.Realizability
 import ALT.RealizabilityCCC
 import ALT.ParameterizedNNO
 import ALT.GodelThreshold
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style linters.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-!
 # Rep(S) unified on ONE carrier: the bounded recursor as an object of the realizability CCC (FV-13)
 
-Provenance: `01_decoupling_and_categorical_threshold.md` §4 + §6.1 (Definition 6.1 — ONE `Rep(S)`
+Provenance: Paper I §4 + §6.1 (Definition 6.1 — ONE `Rep(S)`
 that is Cartesian closed AND contains the bounded recursor). This file closes the "stand-in
 mismatch" the earlier formalizations recorded:
 

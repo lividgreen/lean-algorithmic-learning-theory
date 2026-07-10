@@ -1,7 +1,12 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 import ALT.DeterministicDiscovery
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style linters.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
 set_option linter.style.longLine false
 set_option linter.unusedSectionVars false
@@ -11,7 +16,7 @@ set_option linter.unusedDecidableInType false
 /-!
 # Genuine ε₀-Hellinger + the ε₀→query-separation bridge — Paper II §3.3 (FV-15)
 
-Provenance: `02_mdl_dominance_and_discovery.md` §3.3 (ε₀ as the squared-Hellinger separation, the
+Provenance: Paper II §3.3 (ε₀ as the squared-Hellinger separation, the
 inherited `1/ε₀` factor) and Paper III §3 / Appendix A Claim 1 (the SQ mean-gap `> 2τ` separation
 rule). Two micro-targets, both routed in-house on `BayesRedundancy.sqHellinger`:
 
@@ -49,7 +54,7 @@ The chain `squared-Hellinger ≥ ε₀  ⟹  a [−1,1] query with mean gap ≥ 
   `SQObjects.Separates (2τ) meanAns φ p q` (`2τ < |meanAns φ p − meanAns φ q|`), stated in FV-J/FV-L's
   answer-functional vocabulary via the local `meanAns φ p = E_p[φ] = ∑ₓ p x·φ x`.
 
-## FIDELITY BOUNDARY — the √ε₀ ("mean-level") reading vs. the certified ε₀ (item 7)
+## FIDELITY BOUNDARY — the √ε₀ ("mean-level") reading vs. the certified ε₀
 Paper III's Remark on ε₀ (§4) and Appendix A Claim 1 match the SQ tolerance as `τ ≲ √ε₀`
 ("mean-level"), and read the resulting sample factor as `1/τ² ≈ 1/ε₀`. **This bridge certifies
 identifiability only at `τ < ε₀`** — the guaranteed mean gap is `2·ε₀`, not `2·√ε₀` — because the

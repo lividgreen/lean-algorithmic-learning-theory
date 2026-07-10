@@ -1,14 +1,19 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 import ALT.MDLDominance
 import ALT.PressureWindow
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style header linter.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
 
 /-!
 # Exact-gap retention break-even (unifying FV-4 dominance and B1a retention)
 
-Provenance: `02_mdl_dominance_and_discovery.md`, §2.1 / Theorem 2.1 (FV-4, the static MDL dominance
+Provenance: Paper II, §2.1 / Theorem 2.1 (FV-4, the static MDL dominance
 gap `Ltable − Lrule`) and the conjectural retention break-even framing (B1a). B1a
 (`ALT/PressureWindow.lean`) proved the break-even using the LEADING gap `(L − r)` and flagged the
 exact gap as an optional refinement; this file delivers that refinement by instantiating B1a's

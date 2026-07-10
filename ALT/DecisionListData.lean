@@ -1,19 +1,24 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 import ALT.PolyTime
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style linters.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-!
-# Data layer for the 1-DL consistency solver (F20 Stage C2a)
+# Data layer for the 1-DL consistency solver
 
-Provenance: the native-cost-model workstream, stage C2a (parts 1 & 2). Builds on `ALT/PolyTime.lean` (`PolyTime`,
+Provenance: the native-cost-model workstream. Builds on `ALT/PolyTime.lean` (`PolyTime`,
 `PolyBounded`, the base/`comp` closures, `polyTime_loop`, `tc_prec_le'`, `exists_two_pow_gt_poly`).
-Downstream: the greedy 1-decision-list consistency solver (Stage C2b), whose scan/peel loops iterate
+Downstream: the greedy 1-decision-list consistency solver (`DecisionListSolver.lean`), whose scan/peel loops iterate
 over the `m` examples and `k` features.
 
-## The decode-cost verdict, and the flag-cons PIVOT (Stage C2a-part-2, step 0)
+## The decode-cost verdict, and the flag-cons PIVOT
 An offset-cons encoding `cons e r = Nat.pair e r + 1` would need a predecessor to decode. There is no
 primitive predecessor in the rfind'-free fragment; the smallest `cPred` (`prec`, recursing on the
 value) iterates VALUE-many times, so `n ≤ tc cPred n` (`cpred_tc_ge`) and hence `tc cPred` is NOT
@@ -32,7 +37,7 @@ Part 1: encoding + `WF`, the flat accessors `cReadK`/`cReadM` (`PolyTime`, `tc =
 bound `readM/readK inst ≤ Nat.size inst` under `WF` (I2). Part 2: the decode-cost verdict + pivot; the
 `peel` loop (`cPeel`, `O(1)`-`tc` step) and the indexed accessors `getExample`/`getLabel`/`getFeature`,
 each `PolyTime` GIVEN a poly-bit index (`polyTime_peel`); and List-model correctness
-(`getExample_encode`). See the report on the one residual — `polyTime_peel` needs the index's
+(`getExample_encode`). One residual — `polyTime_peel` needs the index's
 `PolyBounded` as a HYPOTHESIS, since the natural index (`readM`) is only poly-bit under `WF`; that is
 what C2b must thread.
 -/

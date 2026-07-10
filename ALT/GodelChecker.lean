@@ -1,26 +1,31 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Foundation.FirstOrder.Incompleteness.Examples
 import ALT.GodelCore
 import ALT.GodelComplete
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style linters.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-!
-# A concrete sound bounded proof-checker over Foundation (Paper I §6.3, Tier 2 — closes F13)
+# A concrete sound bounded proof-checker over Foundation (Paper I §6.3, the Level-2 witness)
 
-Provenance: `01_decoupling_and_categorical_threshold.md` §6.3 (Theorem 6.3, Levels L2a/L2b). This
-discharges the abstract `BoundedChecker` interface of `ALT/GodelInternalization.lean` (FV-8,
-Tier 1) with a **concrete decidable sound checker** over Foundation's `Sentence ℒₒᵣ`, so the L2b
-decision `Decide(G) = true` holds for a **real** Gödel sentence — closing a long-registered target.
+Provenance: Paper I §6.3 (Theorem 6.3, Levels L2a/L2b). This
+discharges the abstract `BoundedChecker` interface of `ALT/GodelInternalization.lean` (FV-8)
+with a **concrete decidable sound checker** over Foundation's `Sentence ℒₒᵣ`, so the L2b
+decision `Decide(G) = true` holds for a **real** Gödel sentence.
 
 **Opt-in / NOT wired into root `ALT.lean`** (like `ALT/GodelComplete.lean`): build with
 `lake build ALT.GodelChecker`.
 
 ## Why this lives on the Foundation side (the import divide, again)
-The Tier-1 `BoundedChecker`/`Decide`/`decide_godel` live behind the `import Mathlib` umbrella, whose
+The Mathlib-side `BoundedChecker`/`Decide`/`decide_godel` live behind the `import Mathlib` umbrella, whose
 `Matrix.map` collides with `Foundation.Vorspiel.Matrix`'s root `Matrix.map`. So a concrete checker
-over Foundation's `Sentence ℒₒᵣ` cannot literally instantiate the Tier-1 structure in one file; we
+over Foundation's `Sentence ℒₒᵣ` cannot literally instantiate that structure in one file; we
 re-prove the (tiny) L2b decision step here directly — exactly the architecture `GodelComplete.lean`
 already uses for the incompleteness import. The checker below provides, concretely, every field of
 `BoundedChecker`: `Formula := Sentence ℒₒᵣ`, `gnum := Encodable.encode`, `Derivable := (T ⊢ ·)`,
@@ -42,25 +47,25 @@ The checker + soundness are **generic** over any `T : ArithmeticTheory` (axiom-c
 instantiates it at `T★ = 𝗣𝗔⁻` (`PeanoMinus`) — `paMinus_decides_bounded_nonprovability`, **fully
 axiom-clean** (`#print axioms` = `propext, Classical.choice, Quot.sound`). `𝗣𝗔⁻` is a *finite*
 theory, so its `Δ₁`-definability is constructed from `Theory.Δ₁.ofFinite PeanoMinus.finite` with no
-named axiom. This is the recommended witness (closes F16). The earlier obstruction (no `Δ₁` instance
+named axiom. This is the recommended witness. The earlier obstruction (no `Δ₁` instance
 for `𝗥₀`/`𝗤`, both infinite via the `𝗘𝗤` schema) is sidestepped because `𝗣𝗔⁻` — though it extends
 `𝗥₀` — is itself finite.
 
 An earlier `𝗜𝚺₁` variant (`isigma1_decides_bounded_nonprovability'`, same statement at `T = 𝗜𝚺₁`)
-was **retired** (Paper I item 1): it carried Foundation's single named axiom `ISigma1_delta1Definable`
+was **retired**: it carried Foundation's single named axiom `ISigma1_delta1Definable`
 (its own Δ₁ TODO), whereas the whole development is now zero-named-axiom. `𝗣𝗔⁻ ⊊ 𝗜𝚺₁`, so the `𝗣𝗔⁻`
 capstone is the weaker, more faithful (§5.3-class) statement; restore the `𝗜𝚺₁` form from git history
 if upstream proves `ISigma1_delta1Definable` (an upstream-PR target).
 
-## F17 (Paper I item 2) — computable but INCOMPLETE (the other half of the wall)
+## Computable but INCOMPLETE (the other half of the wall)
 This checker is **computable** (`Prf` `#eval`s — see `prf_nondegenerate`/`prf_accepts_mp`) but
 **incomplete**: it is a Hilbert (ax+MP) script checker over a *fixed finite* axiom list, whereas
 Foundation's classical first-order `⊢` is the one-sided sequent calculus `𝐋𝐊¹`, with no exposed
 Hilbert-vs-`𝐋𝐊¹` completeness bridge. `ALT/GodelCheckerComplete.lean` (FV-9) supplies the dual —
 sound AND complete, but `noncomputable`. Merging the two into a single computable-and-complete bounded
-decider (F17, Paper I item 2) is a **documented WALL**; the precise missing object is a runnable
+decider is a **documented WALL**; the precise missing object is a runnable
 `Decidable`/`Bool` form of Foundation's `noncomputable` Δ₁-fixpoint proof predicate
-`Bootstrapping.Proof` — see the F17 section of `GodelCheckerComplete.lean` for the full statement.
+`Bootstrapping.Proof` — see the wall section of `GodelCheckerComplete.lean` for the full statement.
 Non-load-bearing: the §6.3 verdict needs only this checker's soundness.
 -/
 
@@ -199,13 +204,12 @@ theorem Prf_accepts (Ax : List S) (steps : List Step) (φ : S) (proven : List S)
   simp only [Prf, Encodable.encodek, hrun]
   simpa using hmem
 
-/-! ### Capstone — L2b for the real `𝗣𝗔⁻` Gödel sentence (closes F13, F16) -/
+/-! ### Capstone — L2b for the real `𝗣𝗔⁻` Gödel sentence -/
 
 /-- **§6.3 Theorem 6.3, L2b — concrete, FULLY axiom-clean.** With witness theory `T★ = 𝗣𝗔⁻`
 (`PeanoMinus`). Because `𝗣𝗔⁻` is a *finite* theory (`PeanoMinus.finite`), its `Δ₁`-definability
 is obtained constructively from `Theory.Δ₁.ofFinite` — with **no** appeal to Foundation's named
-`ISigma1_delta1Definable` axiom (the `𝗜𝚺₁` variant that once accompanied this capstone is retired,
-Paper I item 1). So the **actual** Gödel sentence `G` of `𝗣𝗔⁻` (true in `ℕ`,
+`ISigma1_delta1Definable` axiom (the `𝗜𝚺₁` variant that once accompanied this capstone is retired). So the **actual** Gödel sentence `G` of `𝗣𝗔⁻` (true in `ℕ`,
 unprovable in `𝗣𝗔⁻`) is decided as bounded-non-provable for the concrete sound checker over any
 provable axiom `Ax`, and `#print axioms` shows only `propext, Classical.choice, Quot.sound`.
 

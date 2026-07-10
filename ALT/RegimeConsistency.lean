@@ -1,12 +1,17 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style header linter.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
 
 /-!
 # Regime consistency (Paper II, §1.2)
 
-Provenance: `02_mdl_dominance_and_discovery.md`, §1.2 (the regime constants C1–C3). The regime
+Provenance: Paper II, §1.2 (the regime constants C1–C3). The regime
 `r ≪ K ≪ L` is load-bearing in Papers II–IV; this file certifies it is internally consistent in
 the ordering sense.
 

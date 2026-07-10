@@ -1,14 +1,19 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 import ALT.Decoupling
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style linters.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-!
 # Retention upper bound — Paper II §4, Proposition 4.2 (the architectural side)
 
-Provenance: `02_mdl_dominance_and_discovery.md` §4.1–§4.4. Cheng's Theorem 4 (the *necessity* /
+Provenance: Paper II §4.1–§4.4. Cheng's Theorem 4 (the *necessity* /
 lower-bound side: context capacity is needed to avoid catastrophic forgetting) is machine-checked in
 `ALT/ChengCCC.lean`. Its lower bound is **vacuous** once `C_ctx ≥ H(T)`
 (`ChengCCC.cccLower_vacuous`), so it cannot supply the *upper* bound — that the discovered rule

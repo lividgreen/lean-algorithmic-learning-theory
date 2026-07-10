@@ -1,5 +1,10 @@
 /-
-# Birkhoff Tool: single-orbit SQ oracle from the pointwise ergodic theorem (P-III stage 7, F18)
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
+/-
+# Birkhoff Tool: single-orbit SQ oracle from the pointwise ergodic theorem
 
 This module restates the vendored pointwise Birkhoff ergodic theorem
 (`ALT/Birkhoff/PointwiseBirkhoff.lean`) in the trajectory-space vocabulary of the

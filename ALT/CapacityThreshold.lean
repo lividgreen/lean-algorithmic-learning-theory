@@ -1,13 +1,18 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style linters.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-!
 # Capacity threshold for rule-based encodings (Paper II, Corollary 2.2)
 
-Provenance: `02_mdl_dominance_and_discovery.md`, §1.2 (regime constants C1–C3) and
+Provenance: Paper II, §1.2 (regime constants C1–C3) and
 §2.4 (Corollary 2.2), with the model-cost form `r + 2 log r + O(1)` from §2.2 eq. (1).
 
 Status: PROVED as a pure real-arithmetic statement. This is the *arithmetic core* of

@@ -1,13 +1,18 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 import ALT.AdditiveComplexity
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style header linter.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
 
 /-!
-# Length-efficient binary constant `bconst` (Stage ② gate for Prop 2.2 / A2b)
+# Length-efficient binary constant `bconst` (the gate for Prop 2.2)
 
-Provenance: `03_polynomial_convergence_under_SQ.md` §2.2 (Prop 2.2, the `S_T ≤ r + O(log)` bound)
+Provenance: Paper III §2.2 (Prop 2.2, the `S_T ≤ r + O(log)` bound)
 and the two-machine-invariance / A2b model-bridge. Extends `ALT/AdditiveComplexity.lean`
 (`E`, `elen`, `KE`).
 
@@ -43,7 +48,7 @@ theorem size_succ_div_two (n : ℕ) : Nat.size (n + 1) = Nat.size ((n + 1) / 2) 
   conv_lhs => rw [← Nat.bit_bodd_div2 (n + 1)]
   rw [Nat.size_bit hne, Nat.div2_val]
 
-/-- `x ↦ 2x` is partial recursive. Bridge chain (report item 1): `Primrec.nat_mul` →
+/-- `x ↦ 2x` is partial recursive. Bridge chain: `Primrec.nat_mul` →
 `Primrec (2 * ·)` → `Primrec.to_comp` → `Computable` → `Computable.partrec` → `_root_.Partrec` →
 `Partrec.nat_iff.mp` → `Nat.Partrec`. -/
 theorem partrec_dbl : Nat.Partrec (fun x : ℕ => (2 * x : ℕ)) := by

@@ -1,12 +1,17 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style header linter.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
 
 /-!
 # Post-discovery pruned mass: competitor-decay + Kraft (Paper III Appendix A, Claim 2)
 
-Provenance: `03_polynomial_convergence_under_SQ.md`, Appendix A "Soundness of SQ pruning", Claim 2
+Provenance: Paper III, Appendix A "Soundness of SQ pruning", Claim 2
 (the accumulated pruned mass is `≤ δ/2`).  This file supplies the **post-discovery half** of that
 claim: once the search has run past `T_discover`, the total posterior mass ever assigned to pruned
 competitors is `≤ δ/2`, established by competitor decay + the Kraft inequality **alone** — with *no*

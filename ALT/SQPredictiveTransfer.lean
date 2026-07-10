@@ -1,12 +1,17 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style header linter.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
 
 /-!
 # Predictive transfer: the Bayes-mixture perturbation bound (Paper III Appendix A)
 
-Provenance: `03_polynomial_convergence_under_SQ.md`, Appendix A "Soundness of SQ pruning":
+Provenance: Paper III, Appendix A "Soundness of SQ pruning":
 * "Removing this mass perturbs the one-step predictive distribution by `≤ δ/2` in total." (≈l.294)
 * "the predictive guarantee is preserved up to the `o(δ)` pruned mass." (≈l.296)
 * the still-prose item "the predictive-transfer step that turns an `O(r)` pruned mass into the

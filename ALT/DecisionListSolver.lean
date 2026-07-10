@@ -1,15 +1,20 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 import ALT.PolyTime
 import ALT.DecisionListData
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style linters.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-!
-# Inner scan primitives of the greedy 1-DL consistency solver (F20 Stage C2b)
+# Inner scan primitives of the greedy 1-DL consistency solver
 
-Provenance: the native-cost-model workstream, stage C2b. Builds on `ALT/DecisionListData.lean` (the C2a data layer:
+Provenance: the native-cost-model workstream. Builds on `ALT/DecisionListData.lean` (the data layer:
 `readM`/`readK`, `peel`/`cPeel`, `headL`/`tailL`, `WF`, `readM_le_size`/`readK_le_size`,
 `encodeList`, `peel_encode`) and `ALT/PolyTime.lean` (`PolyTime`, `PolyBounded`, `polyTime_loop`,
 `tc_prec_le'`, the closure toolkit).
@@ -3016,7 +3021,7 @@ theorem progress (inst mask : ℕ) (hk : 0 < readK inst)
 The round invariant, tracking the forward emitted DL `D` and the working mask `M`: every removed
 example is classified by `D` to its own label (via a firing rule), every remaining example fires NO
 rule of `D`. The firing-step is factored as `corrInvD_fire` with the literal `(j,p,l)` ABSTRACT — so no
-tactic ever `whnf`-descends the symbolic `findLitVal` (see [[f20-whnf-opaque-verdict]]). -/
+tactic ever `whnf`-descends the symbolic `findLitVal` (the opaque-verdict convention: folded verdicts stay symbolic behind an opaque literal). -/
 
 /-- The per-round correctness invariant on `(forward DL D, working mask M)`. -/
 def CorrInvD (inst : ℕ) (D : List ℕ) (M : ℕ) : Prop :=
@@ -3145,7 +3150,6 @@ theorem corrInv (n : ℕ) (hw : WFBits (svInst n))
       -- Freeze the found literal as an OPAQUE `lit` (revert the facts, generalize, re-intro) so no
       -- downstream tactic can `whnf`-descend into the symbolic `findLitVal` iterate. `svUpdated` and
       -- its bridge lemmas take `lit` as an opaque argument, so the whole firing step stays symbolic.
-      -- (See f20-whnf-opaque-verdict.)
       revert hj hcov hlbl
       generalize findLitVal (Nat.pair (svInst n) (svMask (svAcc n t))) = lit
       intro hj hcov hlbl
@@ -3276,7 +3280,7 @@ theorem activeCount_fire_lt (n t : ℕ) (hw : WFBits (svInst n))
     · exact absurd hf hfire
     · rw [svMask_svUpdated]
   rw [hsucc]
-  -- freeze the literal as an OPAQUE `lit` (see f20-whnf-opaque-verdict)
+  -- freeze the literal as an OPAQUE `lit` (the opaque-verdict convention)
   revert hcov
   generalize findLitVal (Nat.pair (svInst n) (svMask (svAcc n t))) = lit
   intro hcov

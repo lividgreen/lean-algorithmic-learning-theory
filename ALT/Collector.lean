@@ -1,15 +1,20 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 import ALT.BinaryConstant
 import ALT.TimeCost
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style linters.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-!
-# The orbit collector `collector cR` — discharging Prop 2.2's modeled premise (P-III stage 5c-ii)
+# The orbit collector `collector cR` — discharging Prop 2.2's modeled premise
 
-Provenance: `03_polynomial_convergence_under_SQ.md` §2.2 / Prop 2.2 (~lines 107–119), the FV-AC row.
+Provenance: Paper III §2.2 / Prop 2.2 (~lines 107–119), the FV-AC row.
 Extends `ALT/AdditiveComplexity.lean` (`E`, `elen`, `KE`, `KE_t`, `E_len_comp`) and
 `ALT/BinaryConstant.lean` (`bconst`, `eval_bconst`, `elen_bconst_le`, `prop_2_2_core`).
 
@@ -246,7 +251,7 @@ theorem prop_2_2_t_exists {cR : Code} {rs : ℕ → ℕ} (hcR : ∀ x, eval cR x
   exact_mod_cast (by omega : elen cR + elen (bconst n) + 69
     ≤ elen cR + (15 + elen dbl) * Nat.size n + (84 + elen dbl))
 
-/-! ## Target B, discharged for the collector — the native-cost LINEAR bound (F20 Stage A)
+/-! ## The native-cost LINEAR bound, discharged for the collector
 
 `prop_2_2_t_exists` above ships an EXISTENTIAL `evaln` budget because `evaln`'s fuel caps intermediate
 VALUES (`evaln_bound`), so no explicit polynomial budget exists for this value-growing iterator. The
@@ -278,7 +283,7 @@ theorem tc_stepWrap (cR : Code) (x : ℕ) :
   simp only [tc_pair, tc_comp, tc_projState, tc_projEnc]
   omega
 
-/-- **Prop 2.2 `|P|`-component, native-time LINEAR bound (F20 Stage A) — Target B DISCHARGED for the
+/-- **Prop 2.2 `|P|`-component, native-time LINEAR bound — DISCHARGED for the
 collector.** For a rule `cR` whose per-call native cost is `≤ K` uniformly (`hK`), the collector's
 native sequential-time cost on `Nat.pair a n` is `≤ (K + 19)·n + 19` — LINEAR in the number of orbit
 steps `n`, with the explicit fixed constant `C = 19` (the `stepWrap` proj/pair/comp overhead). The

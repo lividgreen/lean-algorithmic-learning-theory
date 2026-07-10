@@ -1,15 +1,20 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 import ALT.ParameterizedNNO
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style header linter.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
 
 /-!
-# A second concrete `learner → CCC/NNO` instance: the modular counter (target F6)
+# A second concrete `learner → CCC/NNO` instance: the modular counter
 
-Provenance: `01_decoupling_and_categorical_threshold.md`, §4 (Rep(S) as a CCC), §4.4 (the Rule-30
+Provenance: Paper I, §4 (Rep(S) as a CCC), §4.4 (the Rule-30
 cellular-automaton worked example), §4.5 / Conjecture 4.4 (the general functor
-`DecoupledLearner → CCC_NNO` is OPEN). F6 is a supporting win toward it: a SECOND concrete
+`DecoupledLearner → CCC_NNO` is OPEN). This file is a supporting win toward it: a SECOND concrete
 decoupled-learner instance beyond Rule-30 — the modular counter (state `ZMod (n+1)`, update =
 successor) — exhibiting its rules-as-data object, its iteration, its finiteness, and the fact that
 its iterated-successor dynamics realize the cyclic parameterized NNO already built in D1

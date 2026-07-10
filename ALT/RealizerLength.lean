@@ -1,10 +1,15 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 import ALT.Realizability
 set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-!
-# Realizer-length non-closure (Paper I §4.3, F4 — categorical Kolmogorov / Shannon counting bound)
+# Realizer-length non-closure (Paper I §4.3 — categorical Kolmogorov / Shannon counting bound)
 
 FV-14 (`exp_card_overflow`) shows the exponential overflows capacity in *element count*
 (`|α→α| = |α|^|α| > 2^s`). This is the **realizer-length** half: by a counting bound, since
@@ -36,7 +41,7 @@ theorem realizes_unique {A B : Assembly} {r : Code} {f g : A.carrier → B.carri
   funext x
   exact B.enc_inj (Part.some_inj.mp ((hf x).symm.trans (hg x)))
 
-/-- **Shannon counting bound (F4 core).** More functions than short codes ⇒ some function needs a
+/-- **Shannon counting bound.** More functions than short codes ⇒ some function needs a
 realizer of bit-length `> b`. -/
 theorem realizer_length_overflow {A B : Assembly} (b : ℕ)
     (hcard : 2 ^ b < Fintype.card (A.carrier → B.carrier)) :
@@ -65,7 +70,7 @@ def fatAsm (s : ℕ) : Assembly where
 
 theorem fatAsm_fitsIn (s : ℕ) : (fatAsm s).FitsIn s := fun x => x.isLt
 
-/-- **F4, capacity form** (sibling of `exp_card_overflow`): a fitting object whose exponential has a
+/-- **Capacity form** (sibling of `exp_card_overflow`): a fitting object whose exponential has a
 genuine morphism (`Realizes f`) every realizer of which exceeds capacity `s` bits. -/
 theorem exp_realizer_overflow (s : ℕ) (hs : 1 ≤ s) :
     ∃ A : Assembly, A.FitsIn s ∧

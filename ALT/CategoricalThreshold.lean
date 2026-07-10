@@ -1,17 +1,22 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 import ALT.RealizabilityRecursor
 import ALT.CapacityLayer
 import ALT.GodelInternalization
 import ALT.GodelThreshold
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style linters.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-!
 # Theorem 6.2 as ONE machine-checked theorem on the genuine carrier (FV-15)
 
-Provenance: `01_decoupling_and_categorical_threshold.md` §6.1 (Definition 6.1, Theorem 6.2) and
+Provenance: Paper I §6.1 (Definition 6.1, Theorem 6.2) and
 §6.3 (the represent-but-cannot-derive consequence). This file closes the seam recorded at
 Theorem 6.2 ("Theorem 6.2's *statement* … is assembled at paper level; no single Lean theorem
 asserts it"): it bundles the three previously-separate machine-checked constituents into ONE

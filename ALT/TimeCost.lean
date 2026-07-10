@@ -1,11 +1,16 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style linters.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-!
-# A native sequential-time cost on the rfind'-free fragment of `Nat.Partrec.Code` (F20 Stage A)
+# A native sequential-time cost on the rfind'-free fragment of `Nat.Partrec.Code`
 
 Provenance: the native-cost-model workstream. Companion to `ALT/Collector.lean`, whose
 `prop_2_2_t_exists` is the honest ∃-budget fallback forced by the `evaln` value-cap wall; this file
@@ -25,7 +30,7 @@ unfolding. It is a TOTAL structural recursion on `Code` (the `prec` numeric recu
 a recursive `evalT` call), so the step laws hold UNCONDITIONALLY — no `Part.Dom` side goals. The value
 it computes carries no cap: `eval c n = Part.some (val c n)` for rfind'-free `c`.
 
-## Scope (Stage A)
+## Scope
 Only the rfind'-free fragment (`zero succ left right pair comp prec`), on which `eval` is total.
 `rfind'` is a Stage-A placeholder `(0, 0)` — OUT of the fragment; value-agreement is stated only for
 `RfindFree c`, and later stages add the search-cost account. The collector payoff (`tc_prec_le`) needs

@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import ALT.Decoupling
 import ALT.ParameterizedNNO
 import ALT.GodelInternalization
@@ -62,7 +67,7 @@ import ALT.KolmogorovComplexity
 import ALT.KolmogorovBitlen
 import ALT.ProofChainSkeleton
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style linters.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
 set_option linter.style.longLine false
 
@@ -96,7 +101,7 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms ParameterizedNNO.no_true_nno
 
--- §6.3 internalization Tier-1 (FV-8) + §5.4 Prop 5.4
+-- §6.3 internalization (FV-8) + §5.4 Prop 5.4
 /-- info: 'GodelInternalization.decide_godel' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms GodelInternalization.decide_godel
@@ -126,7 +131,7 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms RepFintype.exp_finite
 
--- §5 F19: the bounded recursor upgraded to a categorical UNIVERSAL PROPERTY, reusing
+-- §5: the bounded recursor upgraded to a categorical UNIVERSAL PROPERTY, reusing
 -- Mathlib's `CategoryTheory.Limits.IsInitial`. `recursorCone_isInitial` — the paper recursor is the
 -- INITIAL object of the (thin) category of depth-≤M recursion cones (relativized, since `no_true_nno`
 -- forbids a true NNO on finite `W`); `recursorCone_canonical` — any other initial cone agrees with it
@@ -140,7 +145,7 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms ParameterizedNNO.ParamNNO.recursorCone_canonical
 
--- §5 F19 sharpened: a GENUINE, discriminating initial algebra reusing Mathlib's
+-- §5 sharpened: a GENUINE, discriminating initial algebra reusing Mathlib's
 -- `CategoryTheory.Endofunctor.Algebra`. Unlike the thin/chaotic FV-17 cone category (where every cone
 -- is initial by `Subsingleton`), `boundedInitialAlgebra_isInitial` is initial with honest algebra-hom
 -- morphisms — uniqueness is a real orbit induction. It is initial only in the SATURATING subcategory
@@ -191,7 +196,7 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms CategoricalThreshold.categorical_threshold
 
--- §4 FINITE COPRODUCTS in the realizability category `Asm` (Paper I item 3; upstreamable):
+-- §4 FINITE COPRODUCTS in the realizability category `Asm` (upstreamable):
 -- the initial object (`initialAsm_isInitial`) and the binary coproduct's copairing universal property
 -- (`coprod_universal` — existence AND uniqueness of the mediating realized morphism), plus the
 -- finite-domain trackability lemma (`trackable_of_finDom`) that makes maps out of a finite assembly
@@ -239,7 +244,7 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms CapacityLayer.exp_card_overflow
 
--- §4.3 F4 realizer-length non-closure (Shannon counting bound) — the realizer-length sibling of
+-- §4.3 realizer-length non-closure (Shannon counting bound) — the realizer-length sibling of
 -- FV-14: the SAME `2^s` capacity threshold that overflows the exponential in cardinality forces a
 -- genuine morphism to need a realizer of bit-length `> s`. `Classical.choice` is genuine (via
 -- `choose` on the short-realizer selector and `realizes_of_finite`).
@@ -251,7 +256,7 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms Realizability.exp_realizer_overflow
 
--- §4.3 F4 explicit exponential magnitude: the literal `≈ 2^{|s_work|}`-bit figure (Paper I §4.3)
+-- §4.3 explicit exponential magnitude: the literal `≈ 2^{|s_work|}`-bit figure (Paper I §4.3)
 -- — the SAME fitting object needs a realizer of bit-length `≥ s·2^s`, sharpening the
 -- linear `> s` figure of `exp_realizer_overflow` (Shannon counting bound at `b = s·2^s − 1`).
 /-- info: 'Realizability.exp_realizer_overflow_exponential' depends on axioms: [propext, Classical.choice, Quot.sound] -/
@@ -711,7 +716,7 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms Ville.ville_potential_budget
 
--- FV-G CHAINED (P-III stage 1): `search_phase_mass_ville_chain` wires the two cores together — the
+-- FV-G CHAINED: `search_phase_mass_ville_chain` wires the two cores together — the
 -- accumulated pruned mass exceeds `C + ln(1/δ)` only on the Ville excursion event, so
 -- `μ{mass > C + ln(1/δ)} ≤ δ` (the paper's `O(r + log(1/δ))` w.h.p.). The `ln(1/δ)` term is DERIVED
 -- from `ville_potential_budget` via `pruned_mass_le_budget`, not assumed; what stays modeled is the
@@ -720,7 +725,7 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms SQSearchPhaseMass.search_phase_mass_ville_chain
 
--- FV-I (P-III stage 3): the FV-G supermartingale premise DISCHARGED. On the trajectory space
+-- FV-I: the FV-G supermartingale premise DISCHARGED. On the trajectory space
 -- `ℕ → X` with Mathlib's coordinate filtration `Filtration.piLE`, `Z_t = ∑ w(R')·L_t(R')` (abstract
 -- `[0,1]`-valued, `ℱ_{s+1}`-measurable per-step factors) is pointwise antitone + bounded + adapted,
 -- hence a genuine `Supermartingale` for ANY probability truth law (`Z_supermartingale`, via
@@ -758,7 +763,7 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms SQMixtureSupermartingale.Z_det_supermartingale
 
--- FV-J (P-III stage 4): the SQ objects made GENUINE (`ALT/SQObjects.lean`). The statistical
+-- FV-J: the SQ objects made GENUINE (`ALT/SQObjects.lean`). The statistical
 -- dimension `sqDim = (M.powerset.filter (SepFam …)).sup card` (§3.4) with its DEFINITIONAL
 -- characterization `sepFam_card_le_sqDim` (every τ-separated subfamily has card ≤ sqDim) and survivor
 -- pigeonhole `survivors_card_le_sqDim`; BQ1 distribution-specificity `sqDim_mono_queries` (fewer
@@ -795,7 +800,7 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms SQObjects.parity_dSQ_ge_exp
 
--- FV-K (P-III stage 5b): the prequential-MDL-with-SQ-pruning ALGORITHM as a Finset object
+-- FV-K: the prequential-MDL-with-SQ-pruning ALGORITHM as a Finset object
 -- (`ALT/SQAlgorithm.lean`), with the identification theorems tying the standing FV artifacts to it.
 -- `alive_mass_eq_Z_det` — the unpruned Bayes-consistent mass IS FV-I's mixture `Z cands w (detFactor
 -- pred)` (the "identify g with the algorithm" item). `truth_survives` — App-A Claim 1 for the object
@@ -825,7 +830,7 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms SQAlgorithm.posterior_concentration_transfer
 
--- FV-K hardening (P-III stage 5c-i): Theorem 4.1(i) assembled for the PRUNED algorithm via posterior
+-- FV-K hardening: Theorem 4.1(i) assembled for the PRUNED algorithm via posterior
 -- MONOTONICITY (not concentration∘damage). `posterior_mono_of_subset` — restricting a nonneg-weighted
 -- posterior's normalizer to a subset containing the (positive-weight) truth dominates the full
 -- quotient. `Lik_qDirac_eq_L_det` — the Dirac-pmf `Lik` IS FV-I's `L (detFactor pred)` (definitional).
@@ -843,7 +848,7 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms SQAlgorithm.algorithm_discovery
 
--- FV-L (P-III stage 6, final substantive target): the BFJKMR version-space envelope over FV-J's
+-- FV-L: the BFJKMR version-space envelope over FV-J's
 -- GENUINE `sqDim`, via Szörényi's elementary maximality + packing (`ALT/SQEnvelope.lean`).
 -- `close_on_of_prune` (App-A Prop-1 analogue) — survivors of the `2τ`-pruning rule are pairwise
 -- `4τ`-close on the schedule (triangle inequality; the version space need NOT be pairwise separated).
@@ -948,7 +953,7 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms PrefixInvariance.prior_weight_machine_indep_compose
 
--- FV-AC hardening (P-III stage 5c-ii): the collector CONSTRUCTED (`ALT/Collector.lean`), so Prop
+-- FV-AC hardening: the collector CONSTRUCTED (`ALT/Collector.lean`), so Prop
 -- 2.2's "modeled premise" (an arbitrary `coll` assumed to halt) is DISCHARGED at the eval level.
 -- `collector cR := prec zero (stepWrap cR)` is a fixed iterator template with the rule plugged in
 -- (a rule-independent first-order collector cannot re-run `cR`); `orbitAcc_fst` certifies the
@@ -986,7 +991,7 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms AdditiveComplexity.prop_2_2_t_exists
 
--- F20 Stage A — the native sequential-time cost (`ALT/TimeCost.lean`) and its collector payoff.
+-- The native sequential-time cost (`ALT/TimeCost.lean`) and its collector payoff.
 -- `eval_eq_val`: value-agreement — on the rfind'-free fragment the cost's value component IS `eval`,
 -- so the cost carries NO value cap (the contrast with `evaln`). `tc_prec_le`: the generic engine — a
 -- uniform per-step bound `B` gives `prec` a LINEAR, magnitude-independent step count. `prop_2_2_t_poly`
@@ -1005,7 +1010,7 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms AdditiveComplexity.prop_2_2_t_poly
 
--- F20 Stage C1 — the `PolyTime` predicate and its closure toolkit (`ALT/PolyTime.lean`), downstream
+-- The `PolyTime` predicate and its closure toolkit (`ALT/PolyTime.lean`), downstream
 -- infra for bounding a concrete algorithm's native `tc`. `PolyTime` bundles an rfind'-free witness,
 -- a poly-in-input-bit-length step count, and a poly output bit-length (the last clause is required for
 -- composition to close). `polyTime_comp` — closure under composition (its proof genuinely consumes the
@@ -1024,7 +1029,7 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms TimeCost.polyTime_prec
 
--- F20 Stage C1-validation — the `polyTime_prec` `hiter` blocker, the repaired loop closure, and a
+-- `PolyTime` validation — the `polyTime_prec` `hiter` blocker, the repaired loop closure, and a
 -- fully-discharged worked example (`ALT/PolyTime.lean`). `unpair_snd_not_polyBounded` — a raw
 -- second-projection slot is NOT poly-bounded in the input bit-length (exponential family
 -- `⟨0, 2^j⟩`), so `polyTime_prec`'s `hiter` cannot be discharged for a genuine loop. `polyTime_loop`
@@ -1045,7 +1050,7 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms TimeCost.polyTime_loop_worked_example
 
--- F20 Stage C2a — the data layer for the 1-DL consistency solver (`ALT/DecisionListData.lean`).
+-- The data layer for the 1-DL consistency solver (`ALT/DecisionListData.lean`).
 -- `polyTime_readK`/`polyTime_readM` — the flat `#features`/`#examples` accessors (`left`,
 -- `comp left right`) are `PolyTime` with `tc = O(1)`. `readM_le_size`/`readK_le_size` — THE
 -- load-bearing size bound (I2): on a well-formed instance (`WF`: the stored counts are backed by
@@ -1069,7 +1074,7 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms OneDL.readK_le_size
 
--- F20 Stage C2a-part-2 — the decode-cost verdict, the flag-cons pivot, and the indexed accessors.
+-- The decode-cost verdict, the flag-cons pivot, and the indexed accessors.
 -- `cPred_tc_not_polyBounded` — the smallest rfind'-free predecessor is value-linear (`n ≤ tc cPred n`),
 -- NOT poly-bounded, so an offset-cons (predecessor-based) decode fails; hence the flag-cons pivot
 -- (`cons e r = Nat.pair 1 (Nat.pair e r)`, decoded by pure `unpair`, `tc = O(1)`). `polyTime_peel` —
@@ -1093,7 +1098,7 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms OneDL.getExample_encode
 
--- F20 Stage C2b — the inner scan primitives of the greedy 1-DL consistency solver
+-- The inner scan primitives of the greedy 1-DL consistency solver
 -- (`ALT/DecisionListSolver.lean`). THE FINDING: the native `tc` makes value-arithmetic (general `=`,
 -- `isZero`, `add`) value-linear, so the scan must use a BIT-LOGIC gate library (binary features/labels)
 -- and avoid label equality (track `sawZero`/`sawOne` bits instead). `val_cAnd`/`val_cEqBit` — the gate
@@ -1131,7 +1136,7 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms OneDL.polyTime_cScan
 
--- F20 Stage C2b-part-1b — the per-step cost bound is discharged, so purity is a self-contained
+-- The per-step cost bound is discharged, so purity is a self-contained
 -- `PolyTime` on an honest well-formed domain. `WFBits inst` — the binary well-formedness (WF plus every
 -- feature bit and label `≤ 1`); `MaskValid mask m` — the working set is a length-`m` flag-cons list of
 -- bits. `visited_bits` — over the visited states `i < readM inst`, the three operands the step reads
@@ -1144,7 +1149,7 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms OneDL.polyTime_purity
 
--- F20 Stage C2b-outer — the greedy outer loop `solve` (`readM inst` rounds of covering-pure-literal
+-- The greedy outer loop `solve` (`readM inst` rounds of covering-pure-literal
 -- selection + mask refinement, output built by prepend then one final `cReverse`). `polyTime_solve` —
 -- packaged as `PolyTimeOn SolveWF solveVal`: `O(m²·k²)` native cost (`k` rounds × one `findLit` `O(m·k²)`
 -- + one `maskUpdate` `O(m·k)`), and — the crux — the exponential flag-cons OUTPUT stays poly-bit because

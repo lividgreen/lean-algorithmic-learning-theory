@@ -1,12 +1,17 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style header linter.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
 
 /-!
 # Universal-prior sub-normalization (Paper II, §1.1)
 
-Provenance: `02_mdl_dominance_and_discovery.md`, §1.1 (the prequential-MDL Bayesian mixture
+Provenance: Paper II, §1.1 (the prequential-MDL Bayesian mixture
 `P̄(o_t | o_{<t}) = Σ_{R' ∈ M} w(R' | o_{<t}) P_{R'}(o_t | o_{<t})` over a countable hypothesis
 class `M`, with prior `w(R') ∝ 2^{−K(R')}`). For the proportionality `∝` to define a
 (sub-)probability — and hence the mixture to be well-defined — the unnormalized weights must have

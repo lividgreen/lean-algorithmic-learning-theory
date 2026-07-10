@@ -1,7 +1,12 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import ALT.SQVersionSpace
 import Mathlib
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style header linter.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
 -- `SepFam` is an undecidable predicate over abstract types, so the `filter` in `sqDim` needs a
 -- classical instance; scope-level `open scoped Classical` (Framework §) is deliberate here.
@@ -10,7 +15,7 @@ set_option linter.style.openClassical false
 /-!
 # Genuine SQ objects: concept class, statistical dimension, oracle (Paper III §3, FV-J)
 
-Provenance: `03_polynomial_convergence_under_SQ.md`, §3.1 (the SQ oracle answers a query
+Provenance: Paper III, §3.1 (the SQ oracle answers a query
 `φ : Input → [−1,1]` with an estimate of `E_D[φ]` within tolerance `τ`), §3.4 (the statistical
 dimension: "every `τ`-separated subfamily of `M` has size at most `d_SQ(M, μ)`" — distribution-
 SPECIFIC, the BQ1 point of §3), §5 (parity has `d_SQ = 2^Ω(n)`), and Appendix A ("a query separates
@@ -34,7 +39,7 @@ orthogonality), bridging FV-A3's previously-MODELED exponential premise (`parity
   survivor set `V ⊆ M` has `V.card ≤ sqDim M τ ans`.
 * `survivors_polyBounded_of_separated` — reusing `ParityCounterexample.PolyBounded` verbatim:
   Assumption A on the GENUINE `sqDim` (as a family) plus pairwise separation ⇒ survivor count is
-  `poly`. (The full BFJKMR envelope WITHOUT the separation hypothesis is stage 6.)
+  `poly`. (For the envelope under `2τ`-identifiability see `SQEnvelope.lean`; the unconditional version is not formalized.)
 * `sqDim_mono_queries` (BQ1) — fewer separating queries ⇒ smaller-or-equal dimension: the
   distribution-specificity of `d_SQ(M, μ)` (a distribution-specific `ans` never exceeds a
   distribution-free `ans'` that can realize all its separations).
@@ -43,11 +48,11 @@ orthogonality), bridging FV-A3's previously-MODELED exponential premise (`parity
   `sqDim_parity_ge : 2^n ≤ sqDim univ τ ansPar` for `τ < 1`, bridged to FV-A3 by
   `parity_dSQ_ge_exp` (`dSQ (log 2) n ≤ sqDim`, since `exp(n·log 2) = 2^n`).
 
-## What this does NOT establish (out of scope / later stages; no overclaiming)
+## What this does NOT establish (out of scope here; no overclaiming)
 * Not the BFJKMR envelope theorem proper (the version-space bound WITHOUT the pairwise-separation
-  hypothesis) — that is the statistical-dimension machinery, stage 6.
-* Not the query-schedule construction (stage 5/6), nor connecting `ansPar` to actual dynamics/rules
-  (the algorithm layer, stage 5).
+  hypothesis) — that is the statistical-dimension machinery beyond this file.
+* Not the query-schedule construction, nor connecting `ansPar` to actual dynamics/rules
+  (the algorithm layer — `SQAlgorithm.lean`).
 * Not Raz's `Ω(r²)` memory lower bound (context citation), nor the FV-E union-bound glue
   (`sq_oracle_concentration`) — de-scoped; the oracle predicate `IsSQOracle` is supplied, but the
   finite-query union bound is left as residue.

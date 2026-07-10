@@ -1,13 +1,18 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style linters.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-!
 # The realizability layer of Rep(S): finite assemblies over a universal machine (Paper I §4.1)
 
-Provenance: `01_decoupling_and_categorical_threshold.md` §4.1 (Definition 4.1) — the realizability
+Provenance: Paper I §4.1 (Definition 4.1) — the realizability
 content of Rep(S): objects are finite sets encoded into work memory, and **every morphism carries a
 code that is itself a value** ("functions as data"). FV-10 (`RepFintype.lean`) certified the
 finite-set categorical *shape*; this file adds the **realizability layer** FV-10 explicitly left

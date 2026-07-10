@@ -1,14 +1,19 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 import ALT.KolmogorovComplexity
 import ALT.KolmogorovTimeBounded
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style header linter.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
 
 /-!
 # Bit-length Kolmogorov complexity: uncomputability (D3 Slice 3)
 
-Provenance: `02_mdl_dominance_and_discovery.md`, §1.1 (`r = K(R)`, "program length in bits", and the
+Provenance: Paper II, §1.1 (`r = K(R)`, "program length in bits", and the
 invariance-constant caveat). Extends `ALT/KolmogorovComplexity.lean` (Slice 1: `codelen`,
 `Computes`, `K`, `K_le`, `K_unbounded`, `K_not_computable` via `fixed_point₂`) and
 `ALT/KolmogorovTimeBounded.lean` (Slice 2: `codelen' = Nat.size ∘ encode`, `K_bitlen`,

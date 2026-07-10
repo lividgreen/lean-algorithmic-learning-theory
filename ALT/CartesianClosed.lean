@@ -1,12 +1,17 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style header linter.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
 
 /-!
 # Cartesian-closedness of a stand-in for Rep(S) (Paper I §4)
 
-Provenance: `01_decoupling_and_categorical_threshold.md`, §4.1 (objects/morphisms of `Rep(S)`),
+Provenance: Paper I, §4.1 (objects/morphisms of `Rep(S)`),
 §4.2 (products), §4.3 (exponentials — "this is where functions become data", the heart), §4.4
 (the Rule-30 example), §4.5 (what is / isn't constructed). Built on Mathlib's `MonoidalClosed`
 (cartesian-closed = monoidal-closed over the cartesian monoidal structure).

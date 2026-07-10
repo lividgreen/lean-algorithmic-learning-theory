@@ -1,12 +1,17 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style header linter.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
 
 /-!
 # Kolmogorov complexity on Mathlib's universal machine (Paper II §1.1, Paper III §2)
 
-Provenance: `02_mdl_dominance_and_discovery.md`, §1.1 (`K(R) = r` relative to a fixed universal
+Provenance: Paper II, §1.1 (`K(R) = r` relative to a fixed universal
 reference machine `U_ref`, with the invariance-constant caveat). Built directly on Mathlib's
 `Nat.Partrec.Code` (the universal partial-recursive machine `Code.eval`) and Kleene's recursion
 theorem `Nat.Partrec.Code.fixed_point₂`.

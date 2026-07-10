@@ -1,15 +1,20 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 import ALT.CartesianClosed
 import ALT.ParameterizedNNO
 import ALT.GodelThreshold
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style header linter.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
 
 /-!
 # Full representational reflection assembly (Paper I §6, capstone of D1 ∧ D2 ∧ D4)
 
-Provenance: `01_decoupling_and_categorical_threshold.md`, §6 (Definition 6.1 representational
+Provenance: Paper I, §6 (Definition 6.1 representational
 reflection, Theorem 6.2, and the closing "Consequence"). Ties together the three skeleton
 components:
 D2 (`ALT/CartesianClosed.lean`, CCC), D1 (`ALT/ParameterizedNNO.lean`, the parameterized NNO

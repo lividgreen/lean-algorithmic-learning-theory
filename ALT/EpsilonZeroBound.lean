@@ -1,12 +1,17 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style header linter.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
 
 /-!
-# The explicit ε₀ lower bound (Paper II §3.3 / Theorem 3.1, target F5)
+# The explicit ε₀ lower bound (Paper II §3.3 / Theorem 3.1)
 
-Provenance: `02_mdl_dominance_and_discovery.md`, §3.3 / Theorem 3.1. `ε₀` is the minimum
+Provenance: Paper II, §3.3 / Theorem 3.1. `ε₀` is the minimum
 squared-Hellinger separation between the true rule `R` and any competitor in the model class; it
 sits in `T_discover = O(r · log(1/δ) / ε₀²)` and is inherited by Paper III.
 

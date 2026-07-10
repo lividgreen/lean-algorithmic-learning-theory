@@ -80,9 +80,15 @@ rev = "v1.0"
 
 ## Papers
 
-The development machine-checks the load-bearing results of a series of papers
-on bounded learners in deterministic environments (preprints forthcoming; this
-README will link arXiv IDs as they appear), and is described as a whole in a
+The development machine-checks the load-bearing results of a companion series
+of papers on bounded learners in deterministic environments. Docstrings cite
+the series as **Paper I** (decoupling and the categorical threshold for
+representational reflection), **Paper II** (MDL dominance and finite-time rule
+discovery), **Paper III** (polynomial-time convergence under statistical
+queries), and **Paper IV** (the capstone; structural proof-chain check only);
+`FV-*` tags name rows of the papers' formal-verification tables, mirrored by
+the axiom-audit guard files. Preprints are forthcoming — this README will link
+arXiv IDs as they appear — and the development is described as a whole in a
 formalization paper (in preparation).
 
 ## Citation and license

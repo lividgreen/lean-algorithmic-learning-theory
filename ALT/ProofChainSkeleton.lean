@@ -1,12 +1,17 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style header linter.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
 
 /-!
 # Paper IV proof-chain skeleton (§6 Main Theorem + Appendix table)
 
-Provenance: `04_inevitability_of_reflective_subsystems.md`, §2 (axioms A1–A5),
+Provenance: Paper IV, §2 (axioms A1–A5),
 §3 (physical lemmas L1–L5), §4 (Paper II import: discovery), §5 (Paper III import: tractability),
 §6 (Theorem 6.1 + its proof), and the Appendix ("The Proof Chain in One Table"), the source of
 truth for the dependency edges.

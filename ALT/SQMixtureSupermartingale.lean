@@ -1,14 +1,19 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 import ALT.SQSearchPhaseMass
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style linters (long doc lines).
+-- Formal-check file, not Mathlib-destined: opt out of the house-style linters (long doc lines).
 set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-!
 # The mixture mass `Z_t` as a genuine supermartingale (Paper III Appendix A, FV-I)
 
-Provenance: `03_polynomial_convergence_under_SQ.md`, Appendix A: "Ville's inequality: the likelihood
+Provenance: Paper III, Appendix A: "Ville's inequality: the likelihood
 ratio is a non-negative supermartingale under realizability", with `Z_t = ∑ w(R')·L_t(R')` and
 `𝔼[Z_0] ≤ 1` by Kraft. This is exactly the premise FV-G's chained theorem
 (`SQSearchPhaseMass.search_phase_mass_ville_chain`, `ALT/SQSearchPhaseMass.lean`) still carries

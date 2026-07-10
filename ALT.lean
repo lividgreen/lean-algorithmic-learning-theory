@@ -1,8 +1,8 @@
--- Root umbrella: imports every Mathlib-side module, so `lake build ALT` (and doc-gen4,
--- whose library facet documents the ROOT modules' closure) covers them all.
--- The four Foundation-side modules (AxiomAuditFoundation, GodelChecker,
--- GodelCheckerComplete, GodelComplete) cannot be co-imported here (Matrix.map clash);
--- they are extra `roots` in lakefile.toml so docs and the build cover them too.
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import ALT.AdditiveComplexity
 import ALT.AxiomAuditMathlib
 import ALT.BayesRedundancy
@@ -71,3 +71,42 @@ import ALT.SmokeTest
 import ALT.StructureFunction
 import ALT.TimeCost
 import ALT.Ville
+
+/-!
+# ALT — Algorithmic Learning Theory in Lean 4
+
+Machine-checked algorithmic learning theory over Mathlib: Ville's inequality,
+statistical-query learning (statistical dimension, version-space envelopes, parity's
+exponential lower bound), a prequential-MDL discovery chain, a step-counting cost
+model for `Nat.Partrec.Code` carrying a greedy learner verified both correct and
+polynomial-step, a realizability (assembly) category over Kleene's first algebra
+with a bounded recursor, and a bounded Gödel decision.
+
+The development machine-checks the load-bearing results of a companion paper
+series, cited in docstrings as:
+
+* **Paper I** — decoupling and the categorical threshold for representational
+  reflection (the realizability category, the bounded recursor, the Gödel threshold);
+* **Paper II** — MDL dominance and finite-time rule discovery;
+* **Paper III** — polynomial-time convergence under statistical queries;
+* **Paper IV** — the capstone (structural proof-chain check only).
+
+The papers are in preparation; the repository README links preprints as they
+appear. References of the form "Paper N §X" point into that series, and `FV-*`
+tags name rows of the papers' formal-verification tables, mirrored by the
+build-enforced axiom guards in `ALT.AxiomAuditMathlib` and
+`ALT.AxiomAuditFoundation`.
+
+## Verification standard
+
+No `sorry`, `admit`, or `native_decide`; standard axioms only (`propext`,
+`Classical.choice`, `Quot.sound`), with every capstone's exact axiom set
+build-enforced by `#guard_msgs in #print axioms` guards.
+
+This root module imports every Mathlib-side module. The four Foundation-side
+modules (`ALT.AxiomAuditFoundation`, `ALT.GodelChecker`,
+`ALT.GodelCheckerComplete`, `ALT.GodelComplete`) cannot be co-imported with the
+Mathlib umbrella in one file (a `Matrix.map` root-name clash) and are listed as
+separate library roots in `lakefile.toml`, so the build and the API docs cover
+them as well.
+-/

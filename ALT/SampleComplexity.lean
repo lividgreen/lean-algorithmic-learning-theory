@@ -1,12 +1,17 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style header linter.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
 
 /-!
 # Sample complexity (Paper III, §4 Theorem 4.1(i)) — the ε₀-absorption
 
-Provenance: `03_polynomial_convergence_under_SQ.md`, §4 (Theorem 4.1 part (i) and the
+Provenance: Paper III, §4 (Theorem 4.1 part (i) and the
 "Remark on ε₀").
 
 Status: PROVED as a pure real-arithmetic bound. **This is the part-(i) *sample-count* absorption

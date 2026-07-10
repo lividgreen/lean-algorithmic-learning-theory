@@ -1,12 +1,17 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style header linter.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
 
 /-!
 # Parameterized Natural Numbers Object + depth bound (Paper I, §4–§5)
 
-Provenance: `01_decoupling_and_categorical_threshold.md`, §5.1 (why *parameterized*, not a *true*,
+Provenance: Paper I, §5.1 (why *parameterized*, not a *true*,
 NNO), §5.2 (Definition 5.1 + Proposition 5.2 depth bound), with the capacity model of §3
 (a subsystem has `≤ 2^K` distinguishable states) and §6's depth `M ≤ 2^{K−|s_code|}`.
 

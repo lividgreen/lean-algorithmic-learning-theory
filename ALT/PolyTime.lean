@@ -1,14 +1,19 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 import ALT.TimeCost
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style linters.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-!
-# A `PolyTime` predicate on the native cost `tc`, with the closure toolkit (F20 Stage C1)
+# A `PolyTime` predicate on the native cost `tc`, with the closure toolkit
 
-Provenance: the native-cost-model workstream, stage C1. Builds on `ALT/TimeCost.lean` (`evalT`,
+Provenance: the native-cost-model workstream. Builds on `ALT/TimeCost.lean` (`evalT`,
 `val`, `tc`, `RfindFree`, the step laws, `tc_prec_le`). Downstream infra for bounding a concrete
 algorithm's `tc` (the greedy 1-DL consistency solver, a later stage).
 
@@ -237,7 +242,7 @@ theorem tc_prec_le' {cf cg : Code} {a B : ℕ} :
 * `hbase` — the base code `cf`'s native cost is poly in its argument's bit-length;
 * `hiter` — the iteration count `m = N.unpair.2` is poly in the input bit-length `Nat.size N`
   (a genuine restriction: `m` can be exponential in `Nat.size N` for an unconstrained packing, so the
-  caller's loop must arrange a poly step count — see the module/report notes);
+  caller's loop must arrange a poly step count — see the module notes);
 * `Bstep`/`hBstep`/`hstep` — a per-step cost bound `Bstep N` (poly in `Nat.size N`) that holds
   UNIFORMLY over the iterations `i < m` of input `N`; this is where the accumulator matters — the step
   input threads `val (prec cf cg) (⟨a, i⟩)`, so `Bstep` can only be poly because that accumulator is;

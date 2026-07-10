@@ -1,14 +1,19 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 import ALT.ParameterizedNNO
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style linters.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-!
 # Rep(S) on ONE faithful carrier: the Cartesian-closed category of FINITE sets (Paper I §4, §6.1)
 
-Provenance: `01_decoupling_and_categorical_threshold.md` §4 (Proposition 4.3 — Rep(S) is "a full
+Provenance: Paper I §4 (Proposition 4.3 — Rep(S) is "a full
 subcategory of finite sets, Cartesian closed up to capacity"; the realizability "functions as data"
 layer) and §6.1 (Definition 6.1 — ONE Rep(S) that is a CCC AND contains the bounded recursor).
 
@@ -110,7 +115,7 @@ theorem reflective_satisfiable (gTS : ℕ) : Reflective gTS :=
 
 end RepFintype
 
-/-! ### F19: the bounded recursor as an INITIAL object (relativized universal property, Paper I §5)
+/-! ### The bounded recursor as an INITIAL object (relativized universal property, Paper I §5)
 
 We upgrade the orbit-form bounded recursor (`ParameterizedNNO.ParamNNO.bounded_recursor`) to a
 genuine **categorical universal property**, reusing Mathlib's `CategoryTheory.Limits.IsInitial`.

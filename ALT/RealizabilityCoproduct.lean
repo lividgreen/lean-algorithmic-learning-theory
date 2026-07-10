@@ -1,9 +1,14 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 import ALT.Realizability
 import ALT.RealizabilityCCC
 import ALT.RecursorAlgebra
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style linters.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
 set_option linter.style.longLine false
 -- Definitional `show` (unfolding assembly/algebra projections) is used idiomatically here.
@@ -13,7 +18,7 @@ set_option linter.style.show false
 # Finite coproducts in the realizability category `Asm`, and the recursor's initial-algebra
 universal property ON THE GENUINE CARRIER (Paper I §4, §5; upstreamable)
 
-Provenance: `01_decoupling_and_categorical_threshold.md` §4 (Rep(S) as a realizability category) and
+Provenance: Paper I §4 (Rep(S) as a realizability category) and
 §5 (the bounded recursor). `ALT/RealizabilityCCC.lean` (FV-12) built the genuine carrier
 `RealizabilityCCC.Asm` — assemblies over Kleene's first PCA (`Nat.Partrec.Code`) — and proved it
 **Cartesian closed** (terminal + products + exponentials). This file adds the missing **finite

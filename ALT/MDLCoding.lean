@@ -1,15 +1,20 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 import ALT.MDLDominance
 import ALT.KolmogorovComplexity
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style linters.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-!
 # Lookup-table coding bound — Paper II, Theorem 2.1 eq. (2)
 
-Provenance: `02_mdl_dominance_and_discovery.md` §2.2 eq. (2), the lookup-table (direct-storage)
+Provenance: Paper II §2.2 eq. (2), the lookup-table (direct-storage)
 lower bound `MDL₂(lookup) ≥ L = n·log₂|O|`. `ALT/MDLDominance.lean` proves the dominance
 *arithmetic* taking `Ltable = n·log|O|` as a definition; this file derives that table cost from an
 explicit binary coding model so the bound is content-checked, not just named. Mathlib has no coding
@@ -160,7 +165,7 @@ theorem exists_long_codeword (enc : (Fin n → A) → List Bool) (henc : Functio
 
 /-! ## Rule-based two-part code — Paper II, Theorem 2.1 eq. (1) (upper bound)
 
-Provenance: `02_mdl_dominance_and_discovery.md` §2.2 eq. (1), `MDL₂(rule) ≤ Lrule = r + 2·log₂ r +
+Provenance: Paper II §2.2 eq. (1), `MDL₂(rule) ≤ Lrule = r + 2·log₂ r +
 c₃ + log₂|O| + log₂ n + O(1)`. `MDLDominance.Lrule` takes this as a definition; here we build an
 explicit two-part code and bound its length, so `Lrule` is a proved upper bound on a real code.
 

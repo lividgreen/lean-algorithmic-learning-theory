@@ -1,9 +1,14 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import ALT.DeterministicDiscovery
 import ALT.SQMixtureSupermartingale
 import ALT.SQPredictiveTransfer
 import ALT.SQVersionSpace
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style linters (long defs/lines).
+-- Formal-check file, not Mathlib-destined: opt out of the house-style linters (long defs/lines).
 set_option linter.style.header false
 set_option linter.style.longLine false
 -- `posterior_concentration_transfer` carries `[DecidableEq ι]` for the `deterministic_discovery`
@@ -14,7 +19,7 @@ set_option linter.unusedDecidableInType false
 /-!
 # The prequential-MDL-with-SQ-pruning algorithm as a Lean object (Paper III §4 / App A, FV-K)
 
-Provenance: `03_polynomial_convergence_under_SQ.md`, §4 Theorem 4.1 + proof sketch (a)–(c) and
+Provenance: Paper III, §4 Theorem 4.1 + proof sketch (a)–(c) and
 Appendix A "The adaptation". The algorithm carries a posterior over deterministic candidate rules;
 at each step it (Bayes-)filters candidates inconsistent with the observed symbol, and on scheduled
 queries it prunes every candidate whose predicted statistic deviates from the oracle answer by more
@@ -64,10 +69,10 @@ queries scheduled by `t`) of the time-`t` Bayes-consistent set.
   (Paper III §4(i) writes `w(R ∣ o_{1:T}) ≥ 1 − δ`; the machinery delivers the stronger `1 − δ/2`,
   matching Paper II Theorem 3.1's form — kept as `1 − δ/2`.)
 
-## What this does NOT establish (out of scope / later stages; no overclaiming)
-* Not the query-schedule CONSTRUCTION for a concrete class (BFJKMR enumeration, stage 6): `sched`
+## What this does NOT establish (out of scope here; no overclaiming)
+* Not the query-schedule CONSTRUCTION for a concrete class (BFJKMR enumeration): `sched`
   and `stat`/`oracleAns` are abstract data.
-* Not the collector / `evaln` / `H_T` epiplexity layer (Prop 2.2, stage 5c(ii)).
+* Not the collector / `evaln` / `H_T` epiplexity layer (Prop 2.2 — see `Collector.lean`).
 * Not the per-step COST accounting beyond FV-B1's arithmetic (Lemma 4.2 stays prose).
 * Not the countable candidate class (`cands` is a `Finset`; `algorithm_discovery` instantiates
   `cands = Finset.univ`, matching `deterministic_discovery`'s full-`Fintype ι` normalizer).

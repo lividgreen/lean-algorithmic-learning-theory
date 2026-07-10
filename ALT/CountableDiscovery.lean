@@ -1,7 +1,12 @@
+/-
+Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Mykola Palamarchuk
+-/
 import Mathlib
 import ALT.BayesRedundancy
 
--- Tier-1 formal check, not Mathlib-destined: opt out of the house-style linters.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
 set_option linter.style.longLine false
 set_option linter.unusedSectionVars false
@@ -11,7 +16,7 @@ set_option linter.unusedDecidableInType false
 /-!
 # Countable discovery — Paper II Theorem 3.1 over a countable hypothesis class
 
-Provenance: `02_mdl_dominance_and_discovery.md` §1.1, §3. `ALT/DeterministicDiscovery.lean` proves
+Provenance: Paper II §1.1, §3. `ALT/DeterministicDiscovery.lean` proves
 the unconditional realizable-deterministic discovery theorem for a **finite** hypothesis class
 (`ι : Fintype`). The paper's actual setting (§1.1) is a **countable** class with the
 Kolmogorov-weighted prior `w(R') = 2^{−K(R')}` over all programs. This file lifts the discovery
