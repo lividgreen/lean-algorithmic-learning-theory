@@ -10,19 +10,23 @@ set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-!
-# The realizability layer of Rep(S): finite assemblies over a universal machine (Paper I §4.1)
+# The realizability layer of Rep(S): finite assemblies over a universal machine ([Decoupling] §4.1)
 
-Provenance: Paper I §4.1 (Definition 4.1) — the realizability
+Provenance: [Decoupling] §4.1 (Definition 4.1) — the realizability
 content of Rep(S): objects are finite sets encoded into work memory, and **every morphism carries a
 code that is itself a value** ("functions as data"). FV-10 (`RepFintype.lean`) certified the
 finite-set categorical *shape*; this file adds the **realizability layer** FV-10 explicitly left
 paper-level — morphisms are *realized* by codes for an actual universal machine.
 
 ## Why this is novel infrastructure
-A 2026 deep-research sweep found that realizability / assembly categories / PCAs are **absent from
-Lean / Mathlib**. The nearest prior art in any prover is UniMath's Coq category of partial
-equivalence relations (a Cartesian-closed realizability category in the sense of van Oosten 2008),
-which is tied to univalent foundations and not portable to Lean. What Mathlib *does* ship is the full
+Realizability **categories** — assemblies together with their categorical structure — are absent
+from Mathlib. Lean 4 does have a standalone development of partial combinatory algebras (Bauer,
+`andrejbauer/partial-combinatory-algebras`, 2024), but no assembly category built over one. The
+nearest mechanized prior art in any prover is the Coq formalization of combinatory algebras and
+their realizability semantics accompanying Cohen, Grunfeld, Kirst and Miquey (2025), together
+with UniMath's Coq Cartesian-closed category of partial equivalence relations (a realizability
+category in the sense of van Oosten 2008) — both in other foundations, not portable to Lean.
+What Mathlib *does* ship is the full
 substrate of Kleene's first partial combinatory algebra — `Nat.Partrec.Code` with a universal `eval`,
 the s-m-n theorem (`curry`/`eval_curry`), identity (`Code.id`/`eval_id`), composition (`Code.comp`,
 `eval (comp cf cg) n = eval cg n >>= eval cf`), and `exists_code` — but never assembles it into a

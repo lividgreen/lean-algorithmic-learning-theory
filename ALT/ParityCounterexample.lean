@@ -9,9 +9,9 @@ import Mathlib
 set_option linter.style.header false
 
 /-!
-# Parity counterexample to Assumption A (Paper III, §5)
+# Parity counterexample to Assumption A ([SQ], §5)
 
-Provenance: Paper III, §3.4 (statistical dimension + Assumption A),
+Provenance: [SQ], §3.4 (statistical dimension + Assumption A),
 §4 (Theorem 4.1, which assumes `d_SQ = poly(r)`), and §5 ("What about Parity?"). The mathematical
 content is the elementary "exponential beats every polynomial".
 
@@ -30,7 +30,7 @@ Status: PROVED as pure real-asymptotics statements. This is the *arithmetic core
 * Not the identification `r ≈ n`, and not that parity's `d_SQ` really *is* `2^Ω(n)` (the
   Blum–Furst–Jackson–Kearns–Mansour–Rudich fact). We take "`d_SQ` is exponential in `r`" as the
   MODELED PREMISE.
-* Not Raz's `Ω(r²)` memory lower bound, not that it violates Paper II's C1, and not that
+* Not Raz's `Ω(r²)` memory lower bound, not that it violates [Discovery]'s C1, and not that
   `g(r,δ) = O(r·log(r/δ))` is "false for parity" — those §5 consequences stay in prose.
 * We prove ONLY the arithmetic: exponential ⇏ polynomial, hence Assumption A fails.
 
@@ -51,7 +51,7 @@ open Asymptotics Filter
 (`2^{Ω(n)}` with `r ≈ n`, the base folded into `ε > 0`). -/
 noncomputable def dSQ (ε r : ℝ) : ℝ := Real.exp (ε * r)
 
-/-- "Assumption A" (Paper III §3.4 / §4): `d_SQ` is polynomially bounded in `r`. The weakest
+/-- "Assumption A" ([SQ] §3.4 / §4): `d_SQ` is polynomially bounded in `r`. The weakest
 reasonable form of "poly-bounded" (genuine natural-number degree `k`), so its negation is the
 strongest faithful "not polynomial" claim. -/
 def PolyBounded (f : ℝ → ℝ) : Prop :=

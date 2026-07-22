@@ -14,12 +14,12 @@ set_option linter.style.longLine false
 # Cheng (2026) Theorem 4: a NECESSITY (lower) bound — not a sufficiency result (ChengCCC)
 
 Provenance: re-checking `Cheng, R. (2026), Context Channel Capacity` (arXiv:2603.07415), the import
-behind Paper II (Paper II) §4 retention (Proposition 4.2).
+behind [Discovery] ([Discovery]) §4 retention (Proposition 4.2).
 
 Cheng's Theorem 4 is the LOWER bound
   `Fgt̄ ≥ max(0, 1 − C_ctx / H(T)) · Fgt̄_max`,
 which makes context capacity `C_ctx ≥ H(T)` **necessary** for low forgetting (`C_ctx = 0` forces
-`Fgt̄ ≥ Fgt̄_max`, i.e. catastrophic forgetting). Paper II's Prop 4.2 reads "the right side
+`Fgt̄ ≥ Fgt̄_max`, i.e. catastrophic forgetting). [Discovery]'s Prop 4.2 reads "the right side
 vanishes, giving zero expected forgetting" — i.e. it treats the *vacuous* lower bound (all the
 theorem yields once `C_ctx ≥ H(T)`) as if it were an *upper* bound of zero. That is a
 necessary-as-sufficient error: a vanishing LOWER bound says nothing about an upper bound on
@@ -43,7 +43,7 @@ noncomputable def cccLower (Cctx HT Fgtmax : ℝ) : ℝ := max 0 (1 - Cctx / HT)
 
 /-- **The necessary-not-sufficient point, machine-checked.** Once `C_ctx ≥ H(T)` (with `H(T) > 0`),
 Cheng's Theorem-4 lower bound equals `0`. So Theorem 4 then asserts only `Fgt̄ ≥ 0` — vacuous — and
-gives NO upper bound on forgetting. Paper II's Prop 4.2, which infers "zero expected forgetting"
+gives NO upper bound on forgetting. [Discovery]'s Prop 4.2, which infers "zero expected forgetting"
 from this vanishing, misuses a *necessary* condition as a *sufficient* one. -/
 theorem cccLower_vacuous (Cctx HT Fgtmax : ℝ) (hHT : 0 < HT) (hsuff : HT ≤ Cctx) :
     cccLower Cctx HT Fgtmax = 0 := by

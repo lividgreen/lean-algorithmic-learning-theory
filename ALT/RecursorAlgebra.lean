@@ -10,9 +10,9 @@ set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-!
-# A genuine, discriminating initial algebra for the bounded recursor (Paper I §5)
+# A genuine, discriminating initial algebra for the bounded recursor ([Decoupling] §5)
 
-Provenance: Paper I §5 (bounded recursor).
+Provenance: [Decoupling] §5 (bounded recursor).
 Companion / upgrade to the FV-17 material in `ALT/RepFintype.lean`
 (`ParameterizedNNO.ParamNNO.recursorCone_isInitial`).
 

@@ -11,9 +11,10 @@ set_option linter.style.header false
 /-!
 # Pressure window Π: break-even (B1a) + interval structure (B1b)
 
-Provenance: the conjectural pressure-window framing ("usefulness and retention are the same ratio", target **B1a**)
-and its ratio form ("the pressure ratio `Π = L_struct / K_avail`" and its two-sided window, target
-**B1b**). B1a: the rule is worth retaining exactly when the selective payoff of the MDL dominance
+Provenance: the conjectural pressure-window framing ("usefulness and retention are the same
+ratio", target **B1a**) and its ratio form ("the pressure ratio `Π = L_struct / K_avail`" and its
+two-sided window, target **B1b**). B1a: the rule is worth retaining exactly when the selective
+payoff of the MDL dominance
 gap exceeds the Landauer upkeep, iff the observation length exceeds an explicit break-even
 threshold `(L − r) · v > p_err · |s_code| · kT · ln 2`. B1b: the localized regime band is an
 explicit interval in the pressure ratio `Π`, naming its edges `Π_low`, `Π_high`.
@@ -51,7 +52,7 @@ scissors under two POSITED monotonicities, S2).
 * `payoff` uses the LEADING gap `(L − r)`. The exact dominance gap (with the `−O(log L)` correction)
   is `MDLDominance.dominance_gap_eq`; a tighter break-even via that correction is an optional
   refinement, NOT claimed here.
-* The numerator is Paper II's `L` (the proved dominance gap). the framing's `L_struct`
+* The numerator is [Discovery]'s `L` (the proved dominance gap). the framing's `L_struct`
   (epiplexity flux) is the conjectural pressure-window numerator; replacing `L` by `L_struct` is the
   CONJECTURAL step and is NOT done here.
 * `v`, `p_err`, `kT` are modeled real parameters; `kT · ln 2` is the physical Landauer input (cited,
@@ -74,8 +75,8 @@ scissors under two POSITED monotonicities, S2).
   POSITED, NOT derived. Deriving `AccessDegrading` (local `S_T`/`L_struct` ↓ under expansion) from
   conservation + expansion is the EXPRESSIVITY WALL: no existing theorem links local
   bounded-observer epiplexity dynamics to global conservation/expansion (the entropy-density,
-  `E[K]=H`, DPI, and ergodic-mixing routes all require building the missing bridge). `t` is an abstract time parameter; "expansion" is modeled ONLY as these two
-  monotonicities.
+  `E[K]=H`, DPI, and ergodic-mixing routes all require building the missing bridge). `t` is an
+  abstract time parameter; "expansion" is modeled ONLY as these two monotonicities.
 * (S2) This proves the scissors logic only — monotone inputs ⟹ `Π` antitone ⟹ the window is a time
   interval. It makes NO claim that any physical system's `L_struct`/`K_avail` are actually monotone
   (Layer-2), NO rate claim, and NO non-emptiness claim (whether `t₁ ≤ t₂`, i.e. whether the window
@@ -158,8 +159,9 @@ theorem Pi_mono_left {L₁ L₂ K_avail : ℝ} (hK : 0 < K_avail) (h : L₁ ≤ 
   rw [Pi, Pi]; gcongr
 
 /-! ## S2 — access degradation and the dynamical window (conjectural framing).
-The two monotonicities below are POSITED (the access-degradation operator and its cosmological input), NOT derived —
-deriving `L_struct`↓ from conservation + expansion is the expressivity wall. -/
+The two monotonicities below are POSITED (the access-degradation operator and its cosmological
+input), NOT derived — deriving `L_struct`↓ from conservation + expansion is the expressivity
+wall. -/
 
 /-- The access-degradation operator's defining property: structured local flux is non-increasing in
 time and non-negative. (POSITED; the conjectural epiplexity `L_struct`.) -/

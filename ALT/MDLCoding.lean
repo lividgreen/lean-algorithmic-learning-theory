@@ -12,9 +12,9 @@ set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-!
-# Lookup-table coding bound — Paper II, Theorem 2.1 eq. (2)
+# Lookup-table coding bound — [Discovery], Theorem 2.1 eq. (2)
 
-Provenance: Paper II §2.2 eq. (2), the lookup-table (direct-storage)
+Provenance: [Discovery] §2.2 eq. (2), the lookup-table (direct-storage)
 lower bound `MDL₂(lookup) ≥ L = n·log₂|O|`. `ALT/MDLDominance.lean` proves the dominance
 *arithmetic* taking `Ltable = n·log|O|` as a definition; this file derives that table cost from an
 explicit binary coding model so the bound is content-checked, not just named. Mathlib has no coding
@@ -163,9 +163,9 @@ theorem exists_long_codeword (enc : (Fin n → A) → List Bool) (henc : Functio
       _ = (2 : ℝ) ^ (M + 1) := by push_cast; ring
   rwa [Real.logb_pow] at key
 
-/-! ## Rule-based two-part code — Paper II, Theorem 2.1 eq. (1) (upper bound)
+/-! ## Rule-based two-part code — [Discovery], Theorem 2.1 eq. (1) (upper bound)
 
-Provenance: Paper II §2.2 eq. (1), `MDL₂(rule) ≤ Lrule = r + 2·log₂ r +
+Provenance: [Discovery] §2.2 eq. (1), `MDL₂(rule) ≤ Lrule = r + 2·log₂ r +
 c₃ + log₂|O| + log₂ n + O(1)`. `MDLDominance.Lrule` takes this as a definition; here we build an
 explicit two-part code and bound its length, so `Lrule` is a proved upper bound on a real code.
 

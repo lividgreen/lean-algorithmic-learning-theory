@@ -9,9 +9,9 @@ import Mathlib
 set_option linter.style.header false
 
 /-!
-# Kolmogorov complexity on Mathlib's universal machine (Paper II §1.1, Paper III §2)
+# Kolmogorov complexity on Mathlib's universal machine ([Discovery] §1.1, [SQ] §2)
 
-Provenance: Paper II, §1.1 (`K(R) = r` relative to a fixed universal
+Provenance: [Discovery], §1.1 (`K(R) = r` relative to a fixed universal
 reference machine `U_ref`, with the invariance-constant caveat). Built directly on Mathlib's
 `Nat.Partrec.Code` (the universal partial-recursive machine `Code.eval`) and Kleene's recursion
 theorem `Nat.Partrec.Code.fixed_point₂`.
@@ -53,7 +53,7 @@ computable and that `K` is unbounded), so they are faithful even though the valu
 ## What this does NOT establish (flagged / other steps)
 * Does NOT reconnect `K` to the abstract `r`/`K` of the existing files — a separate later step, and
   it requires the bit-length measure (see above), not this index measure.
-* NOT time-bounded `K_t` / epiplexity (Paper III §2.1) — a later slice (the `evaln`-set is empty for
+* NOT time-bounded `K_t` / epiplexity ([SQ] §2.1) — a later slice (the `evaln`-set is empty for
   small budgets, so `K ≤ K_t` needs budget/nonemptiness care).
 * NOT two-machine invariance (Mathlib has one fixed `eval`; faithful restatement = constant overhead
   under a computable re-encoding — deferred).
@@ -79,7 +79,7 @@ def Computes (c : Code) (x : ℕ) : Prop := c.eval 0 = Part.some x
 
 /-- Kolmogorov (least-index) complexity on Mathlib's universal machine `Code.eval`: the least
 program length over codes outputting `x` from input `0`. Well-defined — `Code.const x` computes
-`x`, so the minimand is nonempty. (Paper II §1.1 `K(R) = r`, relative to a fixed machine.) -/
+`x`, so the minimand is nonempty. ([Discovery] §1.1 `K(R) = r`, relative to a fixed machine.) -/
 noncomputable def K (x : ℕ) : ℕ := sInf { l | ∃ c, Computes c x ∧ codelen c = l }
 
 /-- The constant code outputs `x` from any input. -/

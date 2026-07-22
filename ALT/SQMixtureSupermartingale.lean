@@ -11,14 +11,14 @@ set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-!
-# The mixture mass `Z_t` as a genuine supermartingale (Paper III Appendix A, FV-I)
+# The mixture mass `Z_t` as a genuine supermartingale ([SQ] Appendix A, FV-I)
 
-Provenance: Paper III, Appendix A: "Ville's inequality: the likelihood
+Provenance: [SQ], Appendix A: "Ville's inequality: the likelihood
 ratio is a non-negative supermartingale under realizability", with `Z_t = ∑ w(R')·L_t(R')` and
 `𝔼[Z_0] ≤ 1` by Kraft. This is exactly the premise FV-G's chained theorem
 (`SQSearchPhaseMass.search_phase_mass_ville_chain`, `ALT/SQSearchPhaseMass.lean`) still carries
 as `hsuper : Supermartingale Z ℱ μ`. FV-I **constructs** that `Z` on a trajectory space, discharging
-the premise for the paper's realizable-deterministic regime (Paper II §3): candidates are
+the premise for the paper's realizable-deterministic regime ([Discovery] §3): candidates are
 deterministic rules, the truth predicts the realized symbol with probability 1, so each per-step
 likelihood factor of a candidate lies in `[0,1]` and `L_t(R') = ∏_{s<t} (factor s)`.
 
@@ -43,16 +43,16 @@ events depending only on coordinates `≤ i`. FOUND in Mathlib (not hand-rolled)
 * `integral_Z_zero_le_one` — `𝔼[Z_0] ≤ 1` from Kraft (`Z_0 = ∑ w` is constant).
 * `search_phase_mass_bound` — the FV-G chain instantiated at this constructed `Z`: the
   supermartingale / nonnegativity / `𝔼[Z_0]≤1` premises are DISCHARGED, leaving only the FV-G
-  search-side data (`pruned`, `m`, `Φ`, `hcharge`). This is the stage-3 punchline.
+  search-side data (`pruned`, `m`, `Φ`, `hcharge`).
 * `detFactor`, `detFactor_mem_Icc`, `detFactor_stronglyMeasurable`, `L_det_eq_indicator`,
-  `Z_det_supermartingale` (stage-5a hardening) — the abstract factor `g` made CONCRETE for the
+  `Z_det_supermartingale` — the abstract factor `g` made CONCRETE for the
   paper's DETERMINISTIC rule class: `detFactor pred i s ω = 𝟙[pred i s (ω|_{<s}) = ω s]` is the
   `0/1` likelihood of a deterministic rule, its `ℱ_{s+1}`-strong measurability is PROVED from
   `Filtration.piLE`'s coordinate structure over a discrete alphabet (no longer a named hypothesis),
   `L_det` is literally the alive-consistent indicator, and `Z_det_supermartingale` is a genuine
   supermartingale with NO abstract-`g` hypotheses — only the deterministic `pred`, weights, Kraft.
 
-## What this does NOT establish (out of scope / later stages; no overclaiming)
+## What this does NOT establish (out of scope; no overclaiming)
 * Not the stochastic-truth martingale (Grünwald–Mehta stochastic case): the
   antitone shortcut is specific to the deterministic regime's `[0,1]` factors.
 * Not the countable candidate class: `cands` is a `Finset` (matching the FV-F/G/H pruning
@@ -61,7 +61,7 @@ events depending only on coordinates `≤ i`. FOUND in Mathlib (not hand-rolled)
   dynamics: `detFactor` genuinely instantiates the `[0,1]`-valued,
   `ℱ_{s+1}`-measurable factor for deterministic rules (closing the FV-I measurability residue), but
   which `pred` the algorithm emits is the algorithm-layer identification, still ahead.
-* Not the Kraft bound's origin (Paper II `PriorNormalization`/`PrefixComplexity`): imported here as
+* Not the Kraft bound's origin ([Discovery] `PriorNormalization`/`PrefixComplexity`): imported here as
   the hypothesis `hkraft : ∑ w ≤ 1`.
 -/
 
@@ -172,7 +172,7 @@ theorem integral_Z_zero_le_one [IsProbabilityMeasure μ] : μ[Z cands w g 0] ≤
   exact hkraft
 
 include hw hkraft hg01 hgmeas in
-/-- FV-I capstone (stage-3 punchline): the FV-G search-phase mass bound, with its supermartingale /
+/-- FV-I capstone: the FV-G search-phase mass bound, with its supermartingale /
 nonnegativity / `𝔼[Z_0] ≤ 1` premises DISCHARGED by the constructed mixture `Z`. Only the FV-G
 search-side data survives as hypotheses (`pruned`, `m`, `Φ`, `hcharge` — now conditioned on the
 concrete `∀ t, Z t ω < 1/δ`). -/
@@ -194,9 +194,9 @@ end Construction
 
 section DeterministicFactor
 
-/-! ### The deterministic-rule factor (stage-5a hardening: completing FV-I for the paper's rule class)
+/-! ### The deterministic-rule factor (completing FV-I for the paper's rule class)
 
-Paper II/III rules are DETERMINISTIC: a candidate `R'` predicts a single next symbol
+[Discovery] / [SQ] rules are DETERMINISTIC: a candidate `R'` predicts a single next symbol
 `pred R' s h ∈ X` from the length-`s` history `h`, so its per-step likelihood of the realized symbol
 is `0/1`. This section instantiates the abstract factor `g` at that concrete `detFactor`, discharging
 FV-I's last named hypothesis (`hgmeas`) for the deterministic regime: the strong measurability is
@@ -208,8 +208,8 @@ variable {X : Type*} [MeasurableSpace X] [Countable X] [MeasurableSingletonClass
   {ι : Type*}
 
 /-- The per-step likelihood of a DETERMINISTIC candidate: `1` if the rule `pred i` predicts the
-realized symbol `ω s` from the history `ω|_{<s}`, else `0` (Paper II/III rules are deterministic:
-`p_{R'}(x ∣ h) ∈ {0,1}`). -/
+realized symbol `ω s` from the history `ω|_{<s}`, else `0` ([Discovery] / [SQ] rules are
+deterministic: `p_{R'}(x ∣ h) ∈ {0,1}`). -/
 def detFactor (pred : ι → (s : ℕ) → (Fin s → X) → X) (i : ι) (s : ℕ) (ω : ℕ → X) : ℝ :=
   if pred i s (fun k => ω k) = ω s then 1 else 0
 
@@ -256,7 +256,7 @@ theorem L_det_eq_indicator (pred : ι → (s : ℕ) → (Fin s → X) → X) (i 
 
 variable {μ : Measure (ℕ → X)}
 
-/-- FV-I hardening (stage-5a): `Z` for the paper's DETERMINISTIC rule class is a genuine
+/-- FV-I hardening: `Z` for the paper's DETERMINISTIC rule class is a genuine
 supermartingale for ANY probability truth law, with NO abstract-`g` hypotheses left — only the
 deterministic rule `pred`, the weights, and Kraft. -/
 theorem Z_det_supermartingale [IsProbabilityMeasure μ]

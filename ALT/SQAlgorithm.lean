@@ -17,9 +17,9 @@ set_option linter.style.longLine false
 set_option linter.unusedDecidableInType false
 
 /-!
-# The prequential-MDL-with-SQ-pruning algorithm as a Lean object (Paper III §4 / App A, FV-K)
+# The prequential-MDL-with-SQ-pruning algorithm as a Lean object ([SQ] §4 / App A, FV-K)
 
-Provenance: Paper III, §4 Theorem 4.1 + proof sketch (a)–(c) and
+Provenance: [SQ], §4 Theorem 4.1 + proof sketch (a)–(c) and
 Appendix A "The adaptation". The algorithm carries a posterior over deterministic candidate rules;
 at each step it (Bayes-)filters candidates inconsistent with the observed symbol, and on scheduled
 queries it prunes every candidate whose predicted statistic deviates from the oracle answer by more
@@ -57,7 +57,7 @@ queries scheduled by `t`) of the time-`t` Bayes-consistent set.
 * `algorithm_damage_le` (FV-H `ε_t` identification): FV-H's accumulated predictive damage
   instantiated at the algorithm's OWN step families — survivors `alive … (t+1)` vs the step-`t`
   pruned-away set `prunedAt … t` — so `ε_t` is the algorithm's literal normalized pruned fraction.
-* `posterior_concentration_transfer`: the algorithm's Dirac pmf instantiates Paper II's
+* `posterior_concentration_transfer`: the algorithm's Dirac pmf instantiates [Discovery]'s
   `deterministic_discovery`, giving Theorem-3.1 concentration for the UNpruned Bayes posterior.
 * `algorithm_discovery` (**Theorem 4.1(i) for the PRUNED algorithm**): the pruned posterior on the
   truth `iR` is `≥ 1 − δ/2`. The composition is MONOTONICITY, not "concentration ∘ damage": the
@@ -66,8 +66,8 @@ queries scheduled by `t`) of the time-`t` Bayes-consistent set.
   pruned quotient DOMINATES the unpruned one, which is `≥ 1 − δ/2` by
   `posterior_concentration_transfer`. The damage bound (`algorithm_damage_le`) keeps its SEPARATE
   role — bounding the predictive distribution's perturbation — and does NOT enter part (i).
-  (Paper III §4(i) writes `w(R ∣ o_{1:T}) ≥ 1 − δ`; the machinery delivers the stronger `1 − δ/2`,
-  matching Paper II Theorem 3.1's form — kept as `1 − δ/2`.)
+  ([SQ] §4(i) writes `w(R ∣ o_{1:T}) ≥ 1 − δ`; the machinery delivers the stronger `1 − δ/2`,
+  matching [Discovery] Theorem 3.1's form — kept as `1 − δ/2`.)
 
 ## What this does NOT establish (out of scope here; no overclaiming)
 * Not the query-schedule CONSTRUCTION for a concrete class (BFJKMR enumeration): `sched`
@@ -195,7 +195,7 @@ II's `DeterministicDiscovery.deterministic_discovery` at the algorithm's own det
 — the Dirac pmf `q i s x = 𝟙[pred i s (ω|_{<s}) = x]` — gives Theorem-3.1 concentration for the
 algorithm's UNpruned Bayes posterior: for `n ≥ (K(iR)·ln2 + ln(2/δ))/(2ε₀)` under per-step
 separation `hsep`, the posterior on the true rule `iR` is `≥ 1 − δ/2`. This is the pmf-indexing
-identification (Paper II ↔ the algorithm); composing it with `algorithm_damage_le` into a full
+identification ([Discovery] ↔ the algorithm); composing it with `algorithm_damage_le` into a full
 Theorem-4.1(i) statement for the PRUNED algorithm is the assembly residue (see module docstring). -/
 theorem posterior_concentration_transfer [Fintype X] [Fintype ι] [DecidableEq ι]
     (pred : ι → (s : ℕ) → (Fin s → X) → X) (w : ι → ℝ) (ω : ℕ → X) (iR : ι)
@@ -231,7 +231,7 @@ theorem posterior_mono_of_subset (v : ι → ℝ) (S S' : Finset ι) (hsub : S' 
     Finset.sum_le_sum_of_subset_of_nonneg hsub (fun i hiS _ => hnn i hiS)
   exact div_le_div_of_nonneg_left hpos.le hS'pos hSge
 
-/-- **Bridge (FV-I ↔ Paper II):** the algorithm's Dirac pmf `Lik` in `posterior_concentration_transfer`
+/-- **Bridge (FV-I ↔ [Discovery]):** the algorithm's Dirac pmf `Lik` in `posterior_concentration_transfer`
 IS FV-I's likelihood `L (detFactor pred)` — both are `∏_{s<n} 𝟙[pred i s (ω|_{<s}) = ω s]`, so the
 identification is definitional (`rfl`). -/
 theorem Lik_qDirac_eq_L_det (pred : ι → (s : ℕ) → (Fin s → X) → X) (i : ι) (n : ℕ) (ω : ℕ → X) :

@@ -12,9 +12,9 @@ set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-!
-# A SOUND-AND-COMPLETE bounded proof relation over Foundation (Paper I §6.3)
+# A SOUND-AND-COMPLETE bounded proof relation over Foundation ([Decoupling] §6.3)
 
-Provenance: Paper I §6.3 (Theorem 6.3, Level L2b) — the
+Provenance: [Decoupling] §6.3 (Theorem 6.3, Level L2b) — the
 strengthening flagged there as the "research-grade, non-load-bearing refinement": a
 decision morphism that decides bounded `T`-non-provability for *arbitrary* `φ`, not merely the
 soundness-only verdict on `G` of `ALT/GodelChecker.lean`.
@@ -51,7 +51,7 @@ certified.
 ## The computable-AND-complete decider: a documented WALL
 Merging FV-8's *computable* checker (`GodelChecker.Prf`, which `#eval`s but is incomplete) with this
 file's *complete* decision (`Decide`, over `Bootstrapping.Proof`, but `noncomputable`) into ONE
-computable-and-complete bounded decider is **walled** against the pinned Foundation (rev `f6eed55`,
+computable-and-complete bounded decider is **walled** against the pinned Foundation (rev `b47cf447`,
 Lean 4.31). The two probe routes and their precise gaps:
 
 * **(a) reflection over the arithmetized predicate.** `Bootstrapping.Proof T p (⌜φ⌝)` unfolds to
@@ -79,11 +79,11 @@ executable complete derivation checker, in Foundation; upstream-PR targets).
 
 ## Witness theory and axioms
 `paMinus_complete_decides` at `T★ = 𝗣𝗔⁻` (`PeanoMinus`) — **fully axiom-clean** (`#print axioms` =
-`propext, Classical.choice, Quot.sound`); `Δ₁` via `Theory.Δ₁.ofFinite`. An `𝗜𝚺₁` variant
-(`isigma1_complete_decides`, same statement at `𝗜𝚺₁`) was **retired**: it carried
-Foundation's single named axiom `ISigma1_delta1Definable`, and the development is now zero-named-axiom.
-`𝗣𝗔⁻ ⊊ 𝗜𝚺₁`, so the `𝗣𝗔⁻` capstone is the weaker, more faithful (§5.3-class) statement; restore the
-`𝗜𝚺₁` form from git history if upstream proves `ISigma1_delta1Definable` (an upstream-PR target).
+`propext, Classical.choice, Quot.sound`); `Δ₁` via `Theory.Δ₁.ofFinite`. The parallel `𝗜𝚺₁` witness
+`isigma1_complete_decides` (the same statement at `𝗜𝚺₁`) is **also fully axiom-clean**: Foundation's
+`𝗜𝚺₁.Δ₁` definability is a *theorem* (`ISigma1_delta1Definable`, discharged upstream), so it carries
+no named axiom either. `𝗣𝗔⁻ ⊊ 𝗜𝚺₁`, so the `𝗣𝗔⁻` capstone is the weaker, more faithful (§5.3-class)
+statement, and the `𝗜𝚺₁` form is the parallel witness at Foundation's canonical Σ₁-induction theory.
 -/
 
 namespace GodelCheckerComplete
@@ -93,8 +93,15 @@ open LO LO.FirstOrder LO.FirstOrder.Arithmetic LO.FirstOrder.Arithmetic.Bootstra
 /-- Sentences of the language of ordered rings — the `Formula` object of §6.3. -/
 abbrev S : Type := Sentence ℒₒᵣ
 
-/-- The Gödel number of a sentence (Foundation's `⌜·⌝`, equal to `Encodable.encode`). -/
-noncomputable abbrev gnum (φ : S) : ℕ := (⌜φ⌝ : ℕ)
+/-- The Gödel number of a sentence — the `Encodable` code, hence **computable**. It agrees with
+Foundation's quotation `⌜·⌝` at the standard model: `gnum_eq_quote`. -/
+abbrev gnum (φ : S) : ℕ := Encodable.encode φ
+
+/-- The two Gödel numberings agree at `V = ℕ`: the `Encodable` code of a sentence *is* its
+Foundation quotation. So `gnum` may be used wherever `(⌜·⌝ : ℕ)` is expected, and the switch to the
+computable definition costs nothing. -/
+theorem gnum_eq_quote (φ : S) : gnum φ = (⌜φ⌝ : ℕ) := by
+  simp [gnum, Sentence.quote_eq_encode]
 
 /-- §6.3 L2b — the bounded proof relation, **complete form**: `p` codes a genuine `T`-derivation of
 `φ`. This is Foundation's real arithmetized proof predicate `Bootstrapping.Proof`, NOT a hand-rolled
@@ -190,12 +197,19 @@ theorem paMinus_complete_decides (M : ℕ) :
   intro p _ hpf
   exact hunprov (Prf_sound 𝗣𝗔⁻ hpf)
 
-/-! ### Retired: `isigma1_complete_decides`
-
-`isigma1_complete_decides`, the `𝗜𝚺₁` counterpart of `paMinus_complete_decides`, went through
-`exists_true_but_unprovable_sentence 𝗜𝚺₁`, hence carried Foundation's single named axiom
-`ISigma1_delta1Definable`; the axiom-clean `𝗣𝗔⁻` capstone above is the weaker, more faithful
-(§5.3-class) statement (`𝗣𝗔⁻ ⊊ 𝗜𝚺₁`). Restore from git history if upstream proves
-`ISigma1_delta1Definable` (an upstream-PR target). -/
+/-- **§6.3 Theorem 6.3, L2b — complete, for the real `𝗜𝚺₁` Gödel sentence.** The `𝗜𝚺₁` counterpart of
+`paMinus_complete_decides`: the real Gödel sentence `G` of `𝗜𝚺₁` (true in `ℕ`, unprovable in `𝗜𝚺₁`)
+is decided as bounded-non-provable by the **sound-and-complete** decision morphism, for every budget
+`M`. Foundation's `𝗜𝚺₁.Δ₁` instance is a *theorem* (`ISigma1_delta1Definable`, discharged upstream),
+so this witness is **fully axiom-clean**: `#print axioms` = `propext, Classical.choice, Quot.sound`.
+`𝗣𝗔⁻ ⊊ 𝗜𝚺₁`, so `paMinus_complete_decides` above is the weaker, more faithful (§5.3-class)
+statement. -/
+theorem isigma1_complete_decides (M : ℕ) :
+    ∃ G : S, (ℕ↓[ℒₒᵣ] ⊧ G) ∧ ((𝗜𝚺₁ : ArithmeticTheory) ⊬ G) ∧ Decide 𝗜𝚺₁ M G = true := by
+  obtain ⟨G, htrue, hunprov⟩ := exists_true_but_unprovable_sentence 𝗜𝚺₁
+  refine ⟨G, htrue, hunprov, ?_⟩
+  rw [decide_eq_true_iff]
+  intro p _ hpf
+  exact hunprov (Prf_sound 𝗜𝚺₁ hpf)
 
 end GodelCheckerComplete

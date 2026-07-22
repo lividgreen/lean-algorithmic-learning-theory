@@ -13,9 +13,9 @@ set_option linter.style.longLine false
 /-!
 # A `PolyTime` predicate on the native cost `tc`, with the closure toolkit
 
-Provenance: the native-cost-model workstream. Builds on `ALT/TimeCost.lean` (`evalT`,
+Provenance: the native cost model. Builds on `ALT/TimeCost.lean` (`evalT`,
 `val`, `tc`, `RfindFree`, the step laws, `tc_prec_le`). Downstream infra for bounding a concrete
-algorithm's `tc` (the greedy 1-DL consistency solver, a later stage).
+algorithm's `tc` (the greedy 1-DL consistency solver, `ALT/DecisionListSolver.lean`).
 
 ## HONEST FRAMING — unit cost, measured against input BIT-LENGTH
 `tc` is a UNIT-cost model: each AST primitive costs `1` regardless of operand magnitude. So "polynomial

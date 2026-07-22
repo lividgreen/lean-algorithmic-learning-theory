@@ -9,9 +9,9 @@ import Mathlib
 set_option linter.style.header false
 
 /-!
-# Parameterized Natural Numbers Object + depth bound (Paper I, §4–§5)
+# Parameterized Natural Numbers Object + depth bound ([Decoupling], §4–§5)
 
-Provenance: Paper I, §5.1 (why *parameterized*, not a *true*,
+Provenance: [Decoupling], §5.1 (why *parameterized*, not a *true*,
 NNO), §5.2 (Definition 5.1 + Proposition 5.2 depth bound), with the capacity model of §3
 (a subsystem has `≤ 2^K` distinguishable states) and §6's depth `M ≤ 2^{K−|s_code|}`.
 
@@ -45,11 +45,12 @@ interest is `r ≪ K`, where `K − r` is the genuine working-bit count.
 * NOT the full categorical universal property of Definition 5.1 (the slice-category formulation,
   the recursor as a morphism with a categorical uniqueness); we give the elementary orbit recursor.
 * NOT `Rep(S)`, its products/exponentials, the CCC structure, or the §4.4 Rule-30 construction —
-  that machinery is target **D2** (Cartesian-closedness).
+  that machinery is the Cartesian-closed structure).
 * NOT Proposition 5.2's second (thermal) bound `exp(ΔE/kT)/|s_code|` — physical, prose.
 * NOT the Gödel threshold (§5.3 / Def 6.1 / Thm 6.2: `M > g(T_S)`, depth-suffices-for-Gödel) —
-  that is target **D4** + the Foundation port. NOT Curry–Howard–Lambek.
-* `K` here is the §3 **capacity bit-count**, NOT Kolmogorov complexity (which is target **D3**);
+  that is `ALT/GodelThreshold.lean` + the Foundation port. NOT Curry–Howard–Lambek.
+* `K` here is the §3 **capacity bit-count**, NOT Kolmogorov complexity
+  (`ALT/KolmogorovComplexity.lean`);
   `r, K` stay abstract `ℕ`.
 
 ## Hypotheses: paper-stated vs added
@@ -64,15 +65,16 @@ namespace ParameterizedNNO
 
 open Function
 
-/-- Paper I §5.1: no finite-state subsystem admits a *true* NNO. A true NNO needs an infinite
+/-- [Decoupling] §5.1: no finite-state subsystem admits a *true* NNO. A true NNO needs an infinite
 hierarchy of distinct successors — an injective orbit `n ↦ succ^[n] zero` — which the Pigeonhole
 Principle forbids on a finite state space (the successor must eventually cycle). -/
 theorem no_true_nno {W : Type*} [Finite W] (zero : W) (succ : W → W) :
     ¬ Injective (fun n : ℕ => succ^[n] zero) :=
   not_injective_infinite_finite _
 
-/-- Paper I Definition 5.1 (finite/combinatorial core): a depth-`M` parameterized NNO on a finite
-state space `W`. The basepoint `zero`, successor `succ`, depth `M = depth`, and bullet 1 — the
+/-- [Decoupling] Definition 5.1 (finite/combinatorial core): a depth-`M` parameterized NNO on a
+finite state space `W`. The basepoint `zero`, successor `succ`, depth `M = depth`, and bullet 1
+— the
 `M+1` iterates `zero, succ zero, …, succ^M zero` are pairwise distinct (`orbit_injective`). The
 defining recursion (bullet 2) is the derived `ParamNNO.bounded_recursor`. -/
 structure ParamNNO (W : Type*) [Fintype W] where
@@ -112,8 +114,9 @@ theorem ParamNNO.Recurses.orbit_eq {P : ParamNNO W} {A : Type*} {a : A} {f : A �
   | zero => intro _; simpa using hr.1
   | succ k ih => intro hk; rw [hr.2 k (by omega), ih (by omega), Function.iterate_succ_apply']
 
-/-- Paper I Definition 5.1 bullet 2 (orbit form, the §5.1–§5.2 link): for any `(A, a, f)` there is
-a recursor `h` satisfying the depth-`M` recursion, and any two such recursors agree on `N_M`.
+/-- [Decoupling] Definition 5.1 bullet 2 (orbit form, the §5.1–§5.2 link): for any `(A, a, f)`
+there is a recursor `h` satisfying the depth-`M` recursion, and any two such recursors agree
+on `N_M`.
 
 Existence **uses `orbit_injective`**: `h` is well-defined on `N_M` precisely because the `M+1`
 iterates are distinct. Uniqueness on `N_M` does not need it (the recursion pins the values). -/

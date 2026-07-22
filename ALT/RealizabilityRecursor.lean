@@ -16,7 +16,7 @@ set_option linter.style.longLine false
 /-!
 # Rep(S) unified on ONE carrier: the bounded recursor as an object of the realizability CCC (FV-13)
 
-Provenance: Paper I §4 + §6.1 (Definition 6.1 — ONE `Rep(S)`
+Provenance: [Decoupling] §4 + §6.1 (Definition 6.1 — ONE `Rep(S)`
 that is Cartesian closed AND contains the bounded recursor). This file closes the "stand-in
 mismatch" the earlier formalizations recorded:
 

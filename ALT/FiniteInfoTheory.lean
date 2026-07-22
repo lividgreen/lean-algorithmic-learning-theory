@@ -12,7 +12,7 @@ set_option linter.style.longLine false
 /-!
 # Finite-discrete Shannon information theory — scaffolding toward Cheng's Theorem 4
 
-Provenance: the information-theoretic core of `Cheng, R. (2026)` Theorem 4 (Paper II §4 retention),
+Provenance: the information-theoretic core of `Cheng, R. (2026)` Theorem 4 ([Discovery] §4 retention),
 re-checked in `ALT/ChengCCC.lean`. That file machine-checks the misidentification / forgetting
 lower bounds *modulo* two named hypotheses — the **data-processing inequality** (`I(T;θ) ≤ C_ctx`)
 and **Fano's inequality** (`P_e ≥ (H(T|θ) − 1)/log(K−1)`). Mathlib has neither (only
@@ -44,7 +44,7 @@ Done here (all `sorry`-free):
 `Real.binEntropy Pe` (≤ `log 2`) in place of `log 2` — that refinement needs Jensen on the concavity
 of `binEntropy` (and a per-`y` normalisation); the looser `log 2` is all `fano'`/`ChengCCC` consume.
 `ChengCCC`'s abstract arithmetic skeletons (`misid_lower_bound`, `forgetting_lower_bound`) still take
-Fano/DPI/`hCond` as explicit hypotheses, but the wiring pass IS done: `cheng_misid_bound_discharged`
+Fano/DPI/`hCond` as explicit hypotheses, but the wiring IS done: `cheng_misid_bound_discharged`
 and `cheng_forgetting_bound_discharged` discharge all three against these theorems for the Markov
 chain `T → c → θ`, leaving only the modelling setup (and, for forgetting, Cheng's informal Step-4
 link `hConn`). No `sorry` is used; missing results are simply absent.

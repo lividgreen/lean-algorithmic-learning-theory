@@ -12,16 +12,16 @@ import ALT.GodelThreshold
 set_option linter.style.header false
 
 /-!
-# Full representational reflection assembly (Paper I §6, capstone of D1 ∧ D2 ∧ D4)
+# Full representational reflection assembly ([Decoupling] §6, capstone of D1 ∧ D2 ∧ D4)
 
-Provenance: Paper I, §6 (Definition 6.1 representational
+Provenance: [Decoupling], §6 (Definition 6.1 representational
 reflection, Theorem 6.2, and the closing "Consequence"). Ties together the three skeleton
 components:
 D2 (`ALT/CartesianClosed.lean`, CCC), D1 (`ALT/ParameterizedNNO.lean`, the parameterized NNO
 + depth), D4 (`ALT/GodelThreshold.lean`, the Gödel threshold).
 
-Status: PROVED. Completes the Paper I chain at the SKELETON level — the faithful Def-6.1 assembly
-plus the §6 Consequence composing through it.
+Status: PROVED. Completes the [Decoupling] chain at the SKELETON level — the faithful
+Def-6.1 assembly plus the §6 Consequence composing through it.
 Superseded as the genuine carrier by `RealizabilityRecursor.lean` (CCC ∧ recursor unified on ONE
 object, FV-13) and `CategoricalThreshold.lean` (Theorem 6.2 on that carrier, FV-15); retained as
 the guarded D1 ∧ D2 ∧ D4 skeleton capstone.
@@ -33,12 +33,12 @@ combinatorial `ParamNNO` on a *finite* type `W`. They are NOT a single unified `
 `Reflective` below BUNDLES the three Def-6.1 ingredients on their respective stand-ins — it is NOT a
 proof that one constructed `Rep(S)` is reflective.
 
-## Finding: the CCC conjunct is off the critical path (cf. B4)
+## Finding: the CCC conjunct is off the critical path (cf. `ALT/ProofChainSkeleton.lean`)
 The §6 Consequence (`reflective_representsUnderivableTruth`) flows through the **NNO depth + Gödel
 incompleteness** only; the CCC conjunct (`Nonempty (MonoidalClosed Type)`) is destructured as
 `_hCCC` and never used. It is carried for Definition-6.1 faithfulness but is OFF the critical path
-to this consequence — exactly as B4 found SQ-learnability off-path to bare representational
-reflection. Moreover,
+to this consequence — exactly as `ALT/ProofChainSkeleton.lean` found SQ-learnability off-path to
+bare representational reflection. Moreover,
 on the `Type` stand-in `Nonempty (MonoidalClosed Type)` is trivially true (`Type` is always
 cartesian closed), so here the conjunct is structurally-present-but-content-light — another honest
 face of the stand-in mismatch. For a real `Rep(S)` it would be the substantive Proposition 4.3.
@@ -60,7 +60,7 @@ face of the stand-in mismatch. For a real `Rep(S)` it would be the substantive P
 * No physical / `Rep(S)` realization: no `s_code`/`s_work`, no Decoupling Lemma, no Theorem 6.2
   (`K > g(r,δ)` ⟹ reflective via a real subsystem); `gnum`/`Derivable`/`True_`/`Sentence` abstract.
 * The CCC conjunct is required by Def 6.1 and carried in `Reflective`, but the consequence flows
-  through the NNO + Gödel — CCC is off the critical path (cf. B4).
+  through the NNO + Gödel — CCC is off the critical path (cf. `ALT/ProofChainSkeleton.lean`).
 * `reflective_satisfiable` is non-vacuity on the stand-ins, not a claim that every subsystem is
   reflective.
 
@@ -85,8 +85,9 @@ def Reflective (gTS : ℕ) : Prop :=
 
 /-- §6 **Consequence** (the capstone): a reflective subsystem, under incompleteness for its theory,
 represents a sentence true-but-underivable in its internal logic — at its NNO depth. The NNO-depth
-conjunct supplies the threshold via D4's `reflective_of_depth`; the CCC conjunct `_hCCC` is carried
-for Def-6.1 faithfulness but is OFF the critical path to this consequence (cf. B4). -/
+conjunct supplies the threshold via `reflective_of_depth`; the CCC conjunct `_hCCC` is carried
+for Def-6.1 faithfulness but is OFF the critical path to this consequence (cf.
+`ALT/ProofChainSkeleton.lean`). -/
 theorem reflective_representsUnderivableTruth
     {Sentence : Type*} (gnum : Sentence → ℕ) (Derivable True_ : Sentence → Prop) (gTS : ℕ)
     (hMA : Reflective gTS)

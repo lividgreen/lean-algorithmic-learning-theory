@@ -9,15 +9,15 @@ import Mathlib
 set_option linter.style.header false
 
 /-!
-# Predictive transfer: the Bayes-mixture perturbation bound (Paper III Appendix A)
+# Predictive transfer: the Bayes-mixture perturbation bound ([SQ] Appendix A)
 
-Provenance: Paper III, Appendix A "Soundness of SQ pruning":
+Provenance: [SQ], Appendix A "Soundness of SQ pruning":
 * "Removing this mass perturbs the one-step predictive distribution by `≤ δ/2` in total." (≈l.294)
 * "the predictive guarantee is preserved up to the `o(δ)` pruned mass." (≈l.296)
 * the still-prose item "the predictive-transfer step that turns an `O(r)` pruned mass into the
-  preserved one-step guarantee. It is the Bayes-mixture argument of Paper II, prose." (≈l.298)
+  preserved one-step guarantee. It is the Bayes-mixture argument of [Discovery], prose." (≈l.298)
 * `ALT/SQPrunedMass.lean` records the same non-goal: the union "into a single soundness statement
-  … stays in prose (it is the Bayes-mixture argument of Paper II)."
+  … stays in prose (it is the Bayes-mixture argument of [Discovery])."
 
 This file (FV-H) discharges that predictive-transfer step. It is the companion to FV-F
 (`ALT/SQPrunedMass.lean`, post-discovery `∑ ε ≤ δ/2`) and FV-G (`ALT/SQSearchPhaseMass.lean`,

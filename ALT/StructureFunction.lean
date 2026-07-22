@@ -11,9 +11,9 @@ set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-!
-# Kolmogorov structure function — the 45° / geometric lower bound (Paper II §2.3, FV-14)
+# Kolmogorov structure function — the 45° / geometric lower bound ([Discovery] §2.3, FV-14)
 
-Provenance: Paper II §2.3 (the structure-function backdrop of Theorem 2.1)
+Provenance: [Discovery] §2.3 (the structure-function backdrop of Theorem 2.1)
 and Vereshchagin–Vitányi (2004) / Shen–Uspensky–Vereshchagin. This file makes §2.3's load-bearing
 inequality genuine on the **additive carrier** (`AdditiveComplexity.KE`, `ALT/AdditiveComplexity.lean`).
 Extends `ALT/BinaryConstant.lean` (`bconst`, `eval_bconst`, `elen_bconst_le`, `dbl`) and reuses
@@ -53,11 +53,11 @@ singleton `{x}` gives nonemptiness for `α ≥ KE x + c₀`.
 * `c₂ = 36 + elen extractor + 2·elen dbl` — extractor + two `pair`/`comp` opcodes + the `bconst`
   additive slack. The paper's `O(log)` slack absorbs any fixed `c₁`, `c₂`.
 
-## Boundaries (docstring; reported to the wiring session)
+## Boundaries
 * Full V&V identity / minimal sufficient statistic — needs conditional `KE(·|·)` + Symmetry of
   Information (no prover has either); a contribution-grade follow-on.
 * Evaln-budgeted version — the `evaln`-budget wall applies identically (eval-level only, like `prop_2_2_eval`).
-* Paper II §2.3's use stays backdrop; this slice makes its load-bearing inequality genuine.
+* [Discovery] §2.3's use stays backdrop; this module makes its load-bearing inequality genuine.
 -/
 
 namespace StructureFunction

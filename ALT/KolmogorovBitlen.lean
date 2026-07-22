@@ -11,9 +11,9 @@ import ALT.KolmogorovTimeBounded
 set_option linter.style.header false
 
 /-!
-# Bit-length Kolmogorov complexity: uncomputability (D3 Slice 3)
+# Bit-length Kolmogorov complexity: uncomputability (Slice 3)
 
-Provenance: Paper II, §1.1 (`r = K(R)`, "program length in bits", and the
+Provenance: [Discovery], §1.1 (`r = K(R)`, "program length in bits", and the
 invariance-constant caveat). Extends `ALT/KolmogorovComplexity.lean` (Slice 1: `codelen`,
 `Computes`, `K`, `K_le`, `K_unbounded`, `K_not_computable` via `fixed_point₂`) and
 `ALT/KolmogorovTimeBounded.lean` (Slice 2: `codelen' = Nat.size ∘ encode`, `K_bitlen`,

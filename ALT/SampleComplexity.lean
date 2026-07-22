@@ -9,9 +9,9 @@ import Mathlib
 set_option linter.style.header false
 
 /-!
-# Sample complexity (Paper III, §4 Theorem 4.1(i)) — the ε₀-absorption
+# Sample complexity ([SQ], §4 Theorem 4.1(i)) — the ε₀-absorption
 
-Provenance: Paper III, §4 (Theorem 4.1 part (i) and the
+Provenance: [SQ], §4 (Theorem 4.1 part (i) and the
 "Remark on ε₀").
 
 Status: PROVED as a pure real-arithmetic bound. **This is the part-(i) *sample-count* absorption
@@ -21,7 +21,7 @@ count (the "Remark on ε₀" collapse). All real content (the algorithm, SQ prun
 bypasses) is taken as GIVEN and stays prose.
 
 ## What this DOES establish
-* `sample_complexity_r2`: the imported Paper II Thm 3.1 discovery bound `O((r + log(1/δ))/ε₀)`
+* `sample_complexity_r2`: the imported [Discovery] Thm 3.1 discovery bound `O((r + log(1/δ))/ε₀)`
   (proof step (a)) collapses to the *stated* `O(r²·log(1/δ))` under the benign-class assumption
   `ε₀ = Ω(1/r)` (modeled `ε₀ ≥ 1/(a·r)`), with explicit witness constant `2·a·c`.
 
@@ -36,8 +36,8 @@ Theorem 4.1: B1 multiplies an `O(r)` cost into an already-`O(r·log(1/δ))` wind
 * No SQ machinery: not the SQ oracle, the statistical dimension `d_SQ`, or the candidate-enumeration
   bound.
 * No impossibility bypasses: not Miyabe, Raz, or Farr–Wallace.
-* It takes the Paper II Thm 3.1 discovery bound (step (a)) as GIVEN and proves only the arithmetic
-  absorption of `ε₀` into the `r²` factor. Bookkeeping, not the Paper III theorem.
+* It takes the [Discovery] Thm 3.1 discovery bound (step (a)) as GIVEN and proves only the
+  arithmetic absorption of `ε₀` into the `r²` factor. Bookkeeping, not the [SQ] theorem.
 
 ## Hypotheses: paper-stated vs added
 * Paper-stated / faithful: the step-(a) discovery bound `O((r + log(1/δ))/ε₀)`; `r ≥ 1`; positivity
@@ -54,14 +54,14 @@ Theorem 4.1: B1 multiplies an `O(r)` cost into an already-`O(r·log(1/δ))` wind
 
 namespace SampleComplexity
 
-/-- Theorem 4.1(i) sample complexity, via the §4 "Remark on ε₀" absorption: the imported Paper II
+/-- Theorem 4.1(i) sample complexity, via the §4 "Remark on ε₀" absorption: the imported [Discovery]
 Thm 3.1 discovery bound `O((r + log(1/δ))/ε₀)` (proof step (a)) collapses to the *stated*
 `O(r²·log(1/δ))` under the benign-class assumption `ε₀ = Ω(1/r)` (modeled `ε₀ ≥ 1/(a·r)`), with
 explicit witness constant `2·a·c`. This is the part-(i) claim `PolyTimeAccounting` (FV-B1) flags as
 NOT covered (it does the step-(c) total-work product). `Real.log` is the natural log. -/
 theorem sample_complexity_r2
     (Tdiscover ε₀ r c a δ : ℝ)
-    (hImport : Tdiscover ≤ c * (r + Real.log (1 / δ)) / ε₀) -- step (a): Paper II Thm 3.1 import
+    (hImport : Tdiscover ≤ c * (r + Real.log (1 / δ)) / ε₀) -- step (a): [Discovery] Thm 3.1 import
     (hε₀ : 1 / (a * r) ≤ ε₀) -- benign class: ε₀ = Ω(1/r)
     (ha : 0 < a) (hc : 0 ≤ c) (hr : 1 ≤ r)
     (hδ0 : 0 < δ) (hδe : δ ≤ Real.exp (-1)) : -- confidence regime δ ≤ 1/e ⇒ log(1/δ) ≥ 1

@@ -13,7 +13,7 @@ set_option linter.style.header false
 /-!
 # Exact-gap retention break-even (unifying FV-4 dominance and B1a retention)
 
-Provenance: Paper II, §2.1 / Theorem 2.1 (FV-4, the static MDL dominance
+Provenance: [Discovery], §2.1 / Theorem 2.1 (FV-4, the static MDL dominance
 gap `Ltable − Lrule`) and the conjectural retention break-even framing (B1a). B1a
 (`ALT/PressureWindow.lean`) proved the break-even using the LEADING gap `(L − r)` and flagged the
 exact gap as an optional refinement; this file delivers that refinement by instantiating B1a's

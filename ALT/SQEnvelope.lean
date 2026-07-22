@@ -16,9 +16,9 @@ set_option linter.style.longLine false
 set_option linter.style.openClassical false
 
 /-!
-# The SQ version-space envelope via Szörényi's maximality + packing (Paper III App A, FV-L)
+# The SQ version-space envelope via Szörényi's maximality + packing ([SQ] App A, FV-L)
 
-Provenance: Paper III, §3.4 (statistical dimension `d_SQ` +
+Provenance: [SQ], §3.4 (statistical dimension `d_SQ` +
 Assumption A), §4 step (b) (SQ-based enumeration of the version space `M_T`), and Appendix A ("the
 version-space bound", "the SQ handle", "the truth survives"). Mathematical route: Szörényi,
 "Characterizing Statistical Query Learning: Simplified Notions and Proofs" (ALT 2009) — the
@@ -68,7 +68,7 @@ already handles the pairwise-SEPARATED survivor case):
 ## The identifiability hypothesis (named, flagged prominently)
 `subset_card_le_sqDim_of_ident` / `fvA4_envelope_discharged` assume
 `hident : ∀ i ∈ M, ∀ j ∈ M, (∀ φ, |ans φ i − ans φ j| ≤ 2τ) → i = j` — "distinct candidate rules are
-`2τ`-distinguishable on some query". This is where Paper III's "deterministic distinct rules are
+`2τ`-distinguishable on some query". This is where [SQ]'s "deterministic distinct rules are
 distinguishable" lives. It is a real hypothesis: with it, the covering map is injective and the
 version space collapses onto a separated family; WITHOUT it, bounding the near-duplicate clusters
 inside a covering ball by the extra `poly(k)` factor of App A's `poly(d_SQ)·poly(k)` is exactly the

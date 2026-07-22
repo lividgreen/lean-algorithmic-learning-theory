@@ -12,9 +12,9 @@ set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-!
-# Two-machine invariance of the Paper II prior complexity (P-II item 2; FV-AC ported)
+# Two-machine invariance of the [Discovery] prior complexity (FV-AC ported)
 
-Provenance: Paper II §1.1 — `K(R) = r` "relative to a fixed universal
+Provenance: [Discovery] §1.1 — `K(R) = r` "relative to a fixed universal
 reference machine `U_ref`", with the explicit caveat *"Invariance-constant caveats apply; we assume
 `r` is large enough that the reference-machine dependence is a lower-order correction."* This file
 formalizes that caveat as the **two-machine (interpreter) invariance** of the additive program-length
@@ -34,7 +34,7 @@ Two candidate carriers were probed:
   length `elen`, additive by construction: `elen (comp cf cg) = 3 + elen cf + elen cg`). Here the
   additive-compose bound is native. **Chosen.**
 
-So the invariance is carried by `KE` (Paper III's additive measure) — the ONLY carrier on which the
+So the invariance is carried by `KE` ([SQ]'s additive measure) — the ONLY carrier on which the
 additive form is true. The `2^{−KP}` prior itself (`PrefixComplexity.kraft_prior`) is unchanged and
 remains the semimeasure. **Full unification** — a `KE`-based prior semimeasure `∑_x 2^{−KE x} ≤ 1`
 (`kraft_KP_E`) plus a `KP_E ↔ KP` comparison — is **not** a clean transfer and is deliberately NOT

@@ -18,7 +18,7 @@ set_option linter.style.header false
 /-!
 # Cross-file `K`-reconnection: the abstract `r` is the real Kolmogorov complexity
 
-Provenance: Paper II, §1.1 (`r = K(R)`, "program length in bits"). Ties
+Provenance: [Discovery], §1.1 (`r = K(R)`, "program length in bits"). Ties
 the abstract `r : ℝ` of the MDL-corpus theorems to the genuine bit-length Kolmogorov complexity
 (`ALT/KolmogorovTimeBounded.lean`, `K_bitlen`/`K_bitlen_eq`) of a concrete rule `R`.
 
@@ -57,9 +57,9 @@ namespace KReconnection
 
 open KolmogorovComplexity
 
-/-- The paper's `r = K(R)` in **bits** (Paper II §1.1), as the real Kolmogorov complexity of a rule
-`R` (modelled as a `Nat.Partrec.Code`). By `K_bitlen_eq`, this is `Nat.size (K (encode R))`
-— the bit-length of the least-index complexity of `R`'s Gödel number. -/
+/-- The paper's `r = K(R)` in **bits** ([Discovery] §1.1), as the real Kolmogorov complexity
+of a rule `R` (modelled as a `Nat.Partrec.Code`). By `K_bitlen_eq`, this is
+`Nat.size (K (encode R))` — the bit-length of the least-index complexity of `R`'s Gödel number. -/
 noncomputable def ruleComplexity (R : Nat.Partrec.Code) : ℕ := K_bitlen (Encodable.encode R)
 
 /-- Corollary 2.2 (representability) at the genuine `r = K(R)`. Instantiation of

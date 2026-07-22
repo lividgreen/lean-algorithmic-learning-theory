@@ -11,15 +11,15 @@ set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-!
-# Retention upper bound — Paper II §4, Proposition 4.2 (the architectural side)
+# Retention upper bound — [Discovery] §4, Proposition 4.2 (the architectural side)
 
-Provenance: Paper II §4.1–§4.4. Cheng's Theorem 4 (the *necessity* /
+Provenance: [Discovery] §4.1–§4.4. Cheng's Theorem 4 (the *necessity* /
 lower-bound side: context capacity is needed to avoid catastrophic forgetting) is machine-checked in
 `ALT/ChengCCC.lean`. Its lower bound is **vacuous** once `C_ctx ≥ H(T)`
 (`ChengCCC.cccLower_vacuous`), so it cannot supply the *upper* bound — that the discovered rule
-actually persists. That upper bound is an **architectural** fact about Paper II's
+actually persists. That upper bound is an **architectural** fact about [Discovery]'s
 conditional-regeneration design, previously stated only in prose; we machine-check it here by reusing
-Paper I's Decoupling Lemma (`ALT/Decoupling.lean`, FV-7).
+[Decoupling]'s Decoupling Lemma (`ALT/Decoupling.lean`, FV-7).
 
 ## The architecture (§4.1), as the named modelling premise
 In conditional regeneration the work memory `s_work` is **recomputed from `s_code` each step**, rather
@@ -50,7 +50,7 @@ variable {ι V M : Type*}
 /-- **Retention (persistence of the discovered rule).** Under the conditional-regeneration invariant
 `Fixes U R` (the update never overwrites the code region `R = s_code`) and a faithful decoder
 `Faithful decode R`, the decoded rule is unchanged across *all* `k` operational steps from *every*
-initial state — zero drift over the entire lifetime. This is the `(⇒)` direction of Paper I's
+initial state — zero drift over the entire lifetime. This is the `(⇒)` direction of [Decoupling]'s
 `Decoupling.decoupling_iff_persists_all`, reused verbatim. -/
 theorem retention_persists {U : Mem ι V → Mem ι V} {R : Set ι} {decode : Mem ι V → M}
     (hU : Fixes U R) (hf : Faithful decode R) :

@@ -14,7 +14,7 @@ set_option linter.style.longLine false
 /-!
 # The orbit collector `collector cR` — discharging Prop 2.2's modeled premise
 
-Provenance: Paper III §2.2 / Prop 2.2 (~lines 107–119), the FV-AC row.
+Provenance: [SQ] §2.2 / Prop 2.2 (~lines 107–119), the FV-AC row.
 Extends `ALT/AdditiveComplexity.lean` (`E`, `elen`, `KE`, `KE_t`, `E_len_comp`) and
 `ALT/BinaryConstant.lean` (`bconst`, `eval_bconst`, `elen_bconst_le`, `prop_2_2_core`).
 
@@ -48,7 +48,7 @@ assembled length is still `elen cR + O(log n) = r + O(log n)`.
 * Assembly: `assembly cR n := comp (collector cR) (pair zero (bconst n))`. On input `0`:
   `bconst n → n`, `pair zero (bconst n) → Nat.pair 0 n`, `collector cR` iterates → `orbitAcc rs n`.
 
-## Boundaries (reported to the wiring session)
+## Boundaries
 * **Target B (explicit `evaln` budget) — WALL.** `evaln`'s single budget `k` guards `n ≤ k` at every
   node (and `evaln_bound` forces every intermediate value `≤ k`), so any budget for the iterator is at
   least its largest intermediate value `orbitAcc rs n` — super-exponential in `n`, NOT polynomial.

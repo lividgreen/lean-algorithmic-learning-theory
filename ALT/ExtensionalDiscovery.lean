@@ -13,9 +13,9 @@ set_option linter.unusedFintypeInType false
 set_option linter.unusedDecidableInType false
 
 /-!
-# Extensional `[R]`-concentration — Paper II Proposition 3.2 over the near-twin-rich countable class
+# Extensional `[R]`-concentration — [Discovery] Proposition 3.2 over the near-twin-rich countable class
 
-Provenance: Paper II §3.3, **Proposition 3.2**. This is the honest,
+Provenance: [Discovery] §3.3, **Proposition 3.2**. This is the honest,
 non-vacuous countable-class discovery statement that *drops per-step separation entirely* (so it is
 non-empty on exactly the all-programs class where the per-step-separated `CountableDiscovery.countable_discovery`
 is vacuous). It is a **fresh development** — indicator likelihoods, no separation — not an extension

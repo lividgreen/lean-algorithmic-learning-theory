@@ -14,9 +14,9 @@ set_option linter.unusedFintypeInType false
 set_option linter.unusedDecidableInType false
 
 /-!
-# Unconditional posterior concentration — Paper II Theorem 3.1 (realizable-deterministic)
+# Unconditional posterior concentration — [Discovery] Theorem 3.1 (realizable-deterministic)
 
-Provenance: Paper II §3. This gives a **direct, fully unconditional** proof
+Provenance: [Discovery] §3. This gives a **direct, fully unconditional** proof
 of Theorem 3.1 (the prequential posterior concentrates on the true rule) in the
 realizable-deterministic case — **no Grünwald–Mehta import, no Markov inequality, no
 posterior-of-close hypothesis**. It replaces the whole `GrunwaldMehtaDiscovery` chain by an
@@ -36,7 +36,7 @@ cumulative separation is `n·ε₀`, so `Lik i n ≤ exp(−2 n ε₀)`, and
 * `q_self_le_exp`, `competitor_likelihood_decay`, `posterior_lower_bound`, and the capstone
   `deterministic_discovery`. The **only** hypotheses are the model (pmf `q`, prior `w` with
   `w R = 2^{−K(R)}`, `∑ w ≤ 1`), realizability (`q R s (ω s) = 1`), and **separation**
-  (`hsep`, per step). No `hrate` (GM Thm 7.4), no Markov, no `posterior_of_close`.
+  (`hsep`, per step). No `hrate` (GM Thm 22), no Markov, no `posterior_of_close`.
 
 ## Separation form and discovery time
 * **Separation (per-step):** `hsep : ∀ i ≠ R, ∀ t < n, ε₀ ≤ D_H²(δ_{ω_t}, q_i(·|ω_{<t}))`.

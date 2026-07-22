@@ -9,7 +9,7 @@ set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-!
-# Realizer-length non-closure (Paper I §4.3 — categorical Kolmogorov / Shannon counting bound)
+# Realizer-length non-closure ([Decoupling] §4.3 — categorical Kolmogorov / Shannon counting bound)
 
 FV-14 (`exp_card_overflow`) shows the exponential overflows capacity in *element count*
 (`|α→α| = |α|^|α| > 2^s`). This is the **realizer-length** half: by a counting bound, since
@@ -89,7 +89,7 @@ theorem exp_realizer_overflow (s : ℕ) (hs : 1 ≤ s) :
   obtain ⟨f, hf⟩ := realizer_length_overflow s hcard
   exact ⟨f, realizes_of_finite f, hf⟩
 
-/-- **Explicit exponential magnitude** (Paper I §4.3). Sharpens
+/-- **Explicit exponential magnitude** ([Decoupling] §4.3). Sharpens
 `exp_realizer_overflow` from the linear `> s`-bit figure to the paper's literal `≈ 2^{|s_work|}`-bit
 figure: the SAME fitting object `fatAsm s` (working carrier `Fin (2^s)`, so `|s_work| = s`) carries a
 genuine morphism (`Realizes f`) every realizer of which has bit-length `≥ s · 2^s`. The core is the
@@ -117,5 +117,79 @@ theorem exp_realizer_overflow_exponential (s : ℕ) (hs : 1 ≤ s) :
   intro r hr
   have hlen := hf r hr
   omega
+
+/-! ### Almost-all form of the counting bound ([Decoupling] §4.3 / §7.2, FV-16) -/
+
+open Classical in
+/-- **Counting bound, cardinality form.** At most `2 ^ b` functions `A → B` admit a realizer of
+bit-length `≤ b`. Each such function chooses a short realizer, whose Gödel code lands in `Fin (2^b)`
+(via `Nat.size_le`), and a code realizes at most one function (`realizes_unique`), so the choice is
+injective. -/
+theorem shortRealizable_card_le (A B : Assembly) (b : ℕ) :
+    Fintype.card {f : A.carrier → B.carrier // ∃ r : Code, bitlen r ≤ b ∧ RealizesBy r f} ≤ 2 ^ b := by
+  have hlt : ∀ f : {f : A.carrier → B.carrier // ∃ r : Code, bitlen r ≤ b ∧ RealizesBy r f},
+      Encodable.encode f.2.choose < 2 ^ b :=
+    fun f => Nat.size_le.mp f.2.choose_spec.1
+  let φ : {f : A.carrier → B.carrier // ∃ r : Code, bitlen r ≤ b ∧ RealizesBy r f} → Fin (2 ^ b) :=
+    fun f => ⟨Encodable.encode f.2.choose, hlt f⟩
+  have hφinj : Function.Injective φ := by
+    intro f g hfg
+    have hcode : f.2.choose = g.2.choose :=
+      Encodable.encode_injective (by simpa [φ, Fin.mk.injEq] using hfg)
+    apply Subtype.ext
+    have hrf : RealizesBy f.2.choose f.1 := f.2.choose_spec.2
+    have hrg : RealizesBy f.2.choose g.1 := by rw [hcode]; exact g.2.choose_spec.2
+    exact realizes_unique hrf hrg
+  have hle := Fintype.card_le_of_injective φ hφinj
+  rwa [Fintype.card_fin] at hle
+
+open Classical in
+/-- **Almost-all form** ([Decoupling] §4.3 / §7.2). All but at most `2 ^ b` of the functions `A → B` have
+**every** realizer longer than `b` bits: the "long-realizer" set is the complement of the
+short-realizable set, whose cardinality is `≤ 2 ^ b` by `shortRealizable_card_le`. -/
+theorem almost_all_realizer_overflow (A B : Assembly) (b : ℕ) :
+    Fintype.card (A.carrier → B.carrier) - 2 ^ b ≤
+      Fintype.card {f : A.carrier → B.carrier // ∀ r : Code, RealizesBy r f → b < bitlen r} := by
+  have hiff : ∀ f : A.carrier → B.carrier,
+      (∀ r : Code, RealizesBy r f → b < bitlen r) ↔ ¬ ∃ r : Code, bitlen r ≤ b ∧ RealizesBy r f := by
+    intro f
+    constructor
+    · rintro h ⟨r, hb, hr⟩
+      have := h r hr
+      omega
+    · intro h r hr
+      by_contra hlt
+      exact h ⟨r, by omega, hr⟩
+  rw [Fintype.card_congr (Equiv.subtypeEquivRight hiff), Fintype.card_subtype_compl]
+  have := shortRealizable_card_le A B b
+  omega
+
+open Classical in
+/-- **Capacity instantiation** ([Decoupling] §4.3, the "generic element"). For the capacity-filling
+`fatAsm s` (working carrier `Fin (2^s)`, so `|s_work| = s`), all but at most `2^(s·2^s − 1)` of the
+`2^(s·2^s)` endomorphisms need a realizer of bit-length `≥ s·2^s`: the generic morphism between
+capacity objects has no short realizer. -/
+theorem almost_all_fatAsm_overflow (s : ℕ) (hs : 1 ≤ s) :
+    2 ^ (s * 2 ^ s) - 2 ^ (s * 2 ^ s - 1) ≤
+      Fintype.card {f : (fatAsm s).carrier → (fatAsm s).carrier //
+        ∀ r : Code, RealizesBy r f → s * 2 ^ s ≤ bitlen r} := by
+  have hpos : 0 < s * 2 ^ s := mul_pos (by omega) (by positivity)
+  have hcong : Fintype.card {f : (fatAsm s).carrier → (fatAsm s).carrier //
+        ∀ r : Code, RealizesBy r f → (s * 2 ^ s - 1) < bitlen r} =
+      Fintype.card {f : (fatAsm s).carrier → (fatAsm s).carrier //
+        ∀ r : Code, RealizesBy r f → s * 2 ^ s ≤ bitlen r} := by
+    apply Fintype.card_congr
+    apply Equiv.subtypeEquivRight
+    intro f
+    constructor
+    · intro h r hr; have := h r hr; omega
+    · intro h r hr; have := h r hr; omega
+  have hcardEq : Fintype.card ((fatAsm s).carrier → (fatAsm s).carrier) = 2 ^ (s * 2 ^ s) := by
+    have hc : Fintype.card (fatAsm s).carrier = 2 ^ s := by
+      change Fintype.card (Fin (2 ^ s)) = 2 ^ s; simp
+    rw [Fintype.card_fun, hc, ← pow_mul]
+  have key := almost_all_realizer_overflow (fatAsm s) (fatAsm s) (s * 2 ^ s - 1)
+  rw [hcardEq, hcong] at key
+  exact key
 
 end Realizability

@@ -12,24 +12,21 @@ set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-!
-# A concrete sound bounded proof-checker over Foundation (Paper I §6.3, the Level-2 witness)
+# A concrete sound bounded proof-checker over Foundation ([Decoupling] §6.3, the Level-2 witness)
 
-Provenance: Paper I §6.3 (Theorem 6.3, Levels L2a/L2b). This
+Provenance: [Decoupling] §6.3 (Theorem 6.3, Levels L2a/L2b). This
 discharges the abstract `BoundedChecker` interface of `ALT/GodelInternalization.lean` (FV-8)
 with a **concrete decidable sound checker** over Foundation's `Sentence ℒₒᵣ`, so the L2b
 decision `Decide(G) = true` holds for a **real** Gödel sentence.
 
-**Opt-in / NOT wired into root `ALT.lean`** (like `ALT/GodelComplete.lean`): build with
-`lake build ALT.GodelChecker`.
-
-## Why this lives on the Foundation side (the import divide, again)
-The Mathlib-side `BoundedChecker`/`Decide`/`decide_godel` live behind the `import Mathlib` umbrella, whose
-`Matrix.map` collides with `Foundation.Vorspiel.Matrix`'s root `Matrix.map`. So a concrete checker
-over Foundation's `Sentence ℒₒᵣ` cannot literally instantiate that structure in one file; we
-re-prove the (tiny) L2b decision step here directly — exactly the architecture `GodelComplete.lean`
-already uses for the incompleteness import. The checker below provides, concretely, every field of
-`BoundedChecker`: `Formula := Sentence ℒₒᵣ`, `gnum := Encodable.encode`, `Derivable := (T ⊢ ·)`,
-the decidable `Prf`, and the **soundness** `Prf φ p = true → T ⊢ φ` (`Prf_sound`).
+## The checker is restated, not instantiated
+Rather than literally instantiating the Mathlib-side `BoundedChecker` structure of
+`ALT/GodelInternalization.lean`, the (tiny) L2b decision step is re-proved here directly against
+Foundation's `Sentence ℒₒᵣ` — the same architecture `ALT/GodelComplete.lean` uses for the
+incompleteness import, and it keeps the concrete checker readable on its own terms. The checker
+below provides, concretely, every field of `BoundedChecker`: `Formula := Sentence ℒₒᵣ`,
+`gnum := Encodable.encode`, `Derivable := (T ⊢ ·)`, the decidable `Prf`, and the **soundness**
+`Prf φ p = true → T ⊢ φ` (`Prf_sound`).
 
 ## The checker (faithful, NOT degenerate)
 A proof code decodes (via `Encodable`) to a `List Step`, a Hilbert-style script over a fixed,
@@ -51,11 +48,12 @@ named axiom. This is the recommended witness. The earlier obstruction (no `Δ₁
 for `𝗥₀`/`𝗤`, both infinite via the `𝗘𝗤` schema) is sidestepped because `𝗣𝗔⁻` — though it extends
 `𝗥₀` — is itself finite.
 
-An earlier `𝗜𝚺₁` variant (`isigma1_decides_bounded_nonprovability'`, same statement at `T = 𝗜𝚺₁`)
-was **retired**: it carried Foundation's single named axiom `ISigma1_delta1Definable`
-(its own Δ₁ TODO), whereas the whole development is now zero-named-axiom. `𝗣𝗔⁻ ⊊ 𝗜𝚺₁`, so the `𝗣𝗔⁻`
-capstone is the weaker, more faithful (§5.3-class) statement; restore the `𝗜𝚺₁` form from git history
-if upstream proves `ISigma1_delta1Definable` (an upstream-PR target).
+A parallel `𝗜𝚺₁` witness (`isigma1_decides_bounded_nonprovability'`, the same statement at `T = 𝗜𝚺₁`)
+is **also fully axiom-clean**: Foundation's `𝗜𝚺₁`/`𝗣𝗔` `Δ₁`-definability is a *theorem*
+(`ISigma1_delta1Definable`), so `exists_true_but_unprovable_sentence 𝗜𝚺₁` carries no named axiom and
+`#print axioms` of the witness shows only `propext, Classical.choice, Quot.sound`. `𝗣𝗔⁻ ⊊ 𝗜𝚺₁`, so
+the `𝗣𝗔⁻` capstone is the weaker, more faithful (§5.3-class) statement, and the `𝗜𝚺₁` form is the
+parallel witness at Foundation's canonical Σ₁-induction theory.
 
 ## Computable but INCOMPLETE (the other half of the wall)
 This checker is **computable** (`Prf` `#eval`s — see `prf_nondegenerate`/`prf_accepts_mp`) but
@@ -208,8 +206,10 @@ theorem Prf_accepts (Ax : List S) (steps : List Step) (φ : S) (proven : List S)
 
 /-- **§6.3 Theorem 6.3, L2b — concrete, FULLY axiom-clean.** With witness theory `T★ = 𝗣𝗔⁻`
 (`PeanoMinus`). Because `𝗣𝗔⁻` is a *finite* theory (`PeanoMinus.finite`), its `Δ₁`-definability
-is obtained constructively from `Theory.Δ₁.ofFinite` — with **no** appeal to Foundation's named
-`ISigma1_delta1Definable` axiom (the `𝗜𝚺₁` variant that once accompanied this capstone is retired). So the **actual** Gödel sentence `G` of `𝗣𝗔⁻` (true in `ℕ`,
+is obtained constructively from `Theory.Δ₁.ofFinite`, needing no appeal to Foundation's
+`𝗜𝚺₁`/`𝗣𝗔` `Δ₁`-definability result `ISigma1_delta1Definable` at all (the parallel `𝗜𝚺₁` witness
+`isigma1_decides_bounded_nonprovability'` below does route through it — now discharged upstream, so it
+too is axiom-clean). So the **actual** Gödel sentence `G` of `𝗣𝗔⁻` (true in `ℕ`,
 unprovable in `𝗣𝗔⁻`) is decided as bounded-non-provable for the concrete sound checker over any
 provable axiom `Ax`, and `#print axioms` shows only `propext, Classical.choice, Quot.sound`.
 
@@ -226,6 +226,24 @@ theorem paMinus_decides_bounded_nonprovability
   by_contra h
   rw [Bool.not_eq_false] at h
   exact hunprov (Prf_sound 𝗣𝗔⁻ Ax hAx δ p h)
+
+/-- **§6.3 Theorem 6.3, L2b — concrete, for the real `𝗜𝚺₁` Gödel sentence.** The parallel witness to
+`paMinus_decides_bounded_nonprovability` at Foundation's canonical Σ₁-induction theory `T = 𝗜𝚺₁`: the
+**actual** Gödel sentence `G` of `𝗜𝚺₁` (true in `ℕ`, unprovable in `𝗜𝚺₁`) is decided as
+bounded-non-provable for the concrete sound checker over any provable axiom `Ax`. Foundation's
+`𝗜𝚺₁.Δ₁` instance is a *theorem* (`ISigma1_delta1Definable`, the `𝗜𝚺₁`/`𝗣𝗔` `Δ₁`-definability
+obligation discharged upstream), so this witness is **fully axiom-clean**: `#print axioms` shows only
+`propext, Classical.choice, Quot.sound`. `𝗣𝗔⁻ ⊊ 𝗜𝚺₁`, so `paMinus_decides_bounded_nonprovability`
+above is the weaker, more faithful (§5.3-class) statement. -/
+theorem isigma1_decides_bounded_nonprovability'
+    (Ax : List S) (hAx : ∀ c ∈ Ax, (𝗜𝚺₁ : ArithmeticTheory) ⊢ c) (Mchk : ℕ) :
+    ∃ G : S, (ℕ↓[ℒₒᵣ] ⊧ G) ∧ ((𝗜𝚺₁ : ArithmeticTheory) ⊬ G) ∧
+      ∀ p, p ≤ Mchk → Prf Ax G p = false := by
+  obtain ⟨δ, htrue, hunprov⟩ := exists_true_but_unprovable_sentence 𝗜𝚺₁
+  refine ⟨δ, htrue, hunprov, fun p _ => ?_⟩
+  by_contra h
+  rw [Bool.not_eq_false] at h
+  exact hunprov (Prf_sound 𝗜𝚺₁ Ax hAx δ p h)
 
 /-- The singleton axiom list `[⊤]` is genuinely `𝗜𝚺₁`-provable (`verum!`), so it is a legitimate
 axiom set for the capstone — the checker is sound over a NON-empty, real axiom set. -/

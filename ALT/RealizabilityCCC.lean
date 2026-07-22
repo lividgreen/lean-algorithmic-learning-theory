@@ -11,9 +11,9 @@ set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-!
-# The realizability category is Cartesian closed (Paper I §4.3, the genuine CCC)
+# The realizability category is Cartesian closed ([Decoupling] §4.3, the genuine CCC)
 
-Provenance: Paper I §4.1–§4.3 — Rep(S) is "Cartesian closed
+Provenance: [Decoupling] §4.1–§4.3 — Rep(S) is "Cartesian closed
 (up to capacity)", with the exponential `[A ⇒ B]` the set of realizer-codes implementing morphisms
 "under extensional equality". `ALT/Realizability.lean` (FV-11) established the realizability
 *category* and *products* on a single-encoding assembly, but found the exponential needs the

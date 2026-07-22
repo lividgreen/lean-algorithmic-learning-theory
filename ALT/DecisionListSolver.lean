@@ -14,10 +14,16 @@ set_option linter.style.longLine false
 /-!
 # Inner scan primitives of the greedy 1-DL consistency solver
 
-Provenance: the native-cost-model workstream. Builds on `ALT/DecisionListData.lean` (the data layer:
+Provenance: the native cost model (`ALT/TimeCost.lean`). Builds on `ALT/DecisionListData.lean`
+(the data layer:
 `readM`/`readK`, `peel`/`cPeel`, `headL`/`tailL`, `WF`, `readM_le_size`/`readK_le_size`,
 `encodeList`, `peel_encode`) and `ALT/PolyTime.lean` (`PolyTime`, `PolyBounded`, `polyTime_loop`,
 `tc_prec_le'`, the closure toolkit).
+
+The construction is labeled in three layers, cited in comments below:
+**C2a** — the data layer (`ALT/DecisionListData.lean`); **C2b** — the polynomial-time account (the
+scan and the greedy outer loop `solve`; its outer loop is tagged `C2b-outer`); **C2c** — greedy
+correctness (`solve` decides 1-DL consistency).
 -/
 
 namespace OneDL

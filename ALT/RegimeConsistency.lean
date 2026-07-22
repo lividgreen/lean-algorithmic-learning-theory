@@ -9,11 +9,11 @@ import Mathlib
 set_option linter.style.header false
 
 /-!
-# Regime consistency (Paper II, §1.2)
+# Regime consistency ([Discovery], §1.2)
 
-Provenance: Paper II, §1.2 (the regime constants C1–C3). The regime
-`r ≪ K ≪ L` is load-bearing in Papers II–IV; this file certifies it is internally consistent in
-the ordering sense.
+Provenance: [Discovery], §1.2 (the regime constants C1–C3). The regime
+`r ≪ K ≪ L` is load-bearing in [Discovery], [SQ], and [Inevitability]; this file certifies it is
+internally consistent in the ordering sense.
 
 Status: PROVED as pure real-arithmetic statements. This is the *arithmetic core* of the §1.2
 regime only.
@@ -55,7 +55,7 @@ namespace RegimeConsistency
 /-- The regime `r ≪ K ≪ L` is internally consistent: under C1–C3 with explicit named constant
 conditions, the strict ordering `r < K < L` holds. The two estimates are independent — `r < K`
 from C1 (`c₀·r·log(r/δ) > r`, since `c₀ ≥ 1` and `log(r/δ) > 1`) and `K < L` from C2
-(`c₁·K > K`, since `c₁ > 1` and `K > 0`). (Paper II §1.2.) -/
+(`c₁·K > K`, since `c₁ > 1` and `K > 0`). ([Discovery] §1.2.) -/
 theorem regime_strict_ordering
     (r K L c₀ c₁ c₂ δ : ℝ)
     (hC1 : c₀ * r * Real.log (r / δ) ≤ K) -- C1 capacity above threshold

@@ -10,9 +10,9 @@ import ALT.CapacityThreshold
 set_option linter.style.header false
 
 /-!
-# Static MDL dominance (Paper II, Theorem 2.1 / Sub-problem A)
+# Static MDL dominance ([Discovery], Theorem 2.1 / Sub-problem A)
 
-Provenance: Paper II, §1.2 (regime constants C1–C3), §2.1 (the
+Provenance: [Discovery], §1.2 (regime constants C1–C3), §2.1 (the
 theorem), §2.2 (its proof: eq. (1) rule cost, eq. (2) table cost, Step 3 subtraction),
 §2.3 (structure-function connection). Reuses `CapacityThreshold.Kmin` (the §2.2 model cost
 `r + 2 log r + c₃`) from the Cor 2.2 warm-up.
@@ -69,12 +69,12 @@ namespace MDLDominance
 
 open CapacityThreshold
 
-/-- Rule-based two-part code length (Paper II §2.2 eq. (1), upper bound): the model cost
+/-- Rule-based two-part code length ([Discovery] §2.2 eq. (1), upper bound): the model cost
 `Kmin r c₃ = r + 2 log r + c₃` plus the data-given-model cost `log|O| + log n + cd`. -/
 noncomputable def Lrule (r c₃ O n cd : ℝ) : ℝ :=
   Kmin r c₃ + Real.log O + Real.log n + cd
 
-/-- Optimal lookup-table length (Paper II §2.2 eq. (2), lower bound): `MDL₂(lookup) ≥ L`, with
+/-- Optimal lookup-table length ([Discovery] §2.2 eq. (2), lower bound): `MDL₂(lookup) ≥ L`, with
 `L = n · log|O|` the raw observation length of §2.1. -/
 noncomputable def Ltable (O n : ℝ) : ℝ := n * Real.log O
 
@@ -92,7 +92,7 @@ theorem dominance_gap_eq (r c₃ O n cd : ℝ) :
 /-- Theorem 2.1 (arithmetic core): in the regime, the rule-based two-part code is strictly
 shorter than the lookup table. The operative hypotheses are `hn` and the named regime margin
 `hReg`; `_hr, _hO, _hc₃, _hcd` document the regime constants (C3 buffer, alphabet ≥ 3, nonneg
-overheads) but are subsumed by `hReg`, so they are `_`-marked. (Paper II §1.2 + §2.1/§2.2.) -/
+overheads) but are subsumed by `hReg`, so they are `_`-marked. ([Discovery] §1.2 + §2.1/§2.2.) -/
 theorem mdl_dominance (r c₃ O n cd : ℝ)
     (_hr : 3 ≤ r) -- C3 buffer r ≥ c₂ ≥ 3 (paper: r ≥ c₂; concrete instance)
     (_hO : 3 ≤ O) -- alphabet ≥ 3 (paper: |O| ≥ 2; STRENGTHENED → log O > 1, excludes binary)

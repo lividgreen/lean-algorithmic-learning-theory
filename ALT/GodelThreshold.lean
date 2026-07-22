@@ -11,18 +11,17 @@ import ALT.ParameterizedNNO
 set_option linter.style.header false
 
 /-!
-# Gödel threshold skeleton (Paper I §5.3 + §6)
+# Gödel threshold skeleton ([Decoupling] §5.3 + §6)
 
-Provenance: Paper I, §5.3 (Proposition 5.3, the Gödel depth
+Provenance: [Decoupling], §5.3 (Proposition 5.3, the Gödel depth
 condition) and §6 (Definition 6.1 representational reflection, Theorem 6.2 categorical threshold).
-Pure propositional/predicate logic, in the spirit of B4 (`ALT/ProofChainSkeleton.lean`).
+Pure propositional/predicate logic, in the spirit of `ALT/ProofChainSkeleton.lean`.
 
 The abstract predicates and the threshold lemma now live in the Mathlib-free `ALT/GodelCore.lean`
 (`GodelThreshold.Representable`, `…RepresentsUnderivableTruth`, `…Incompleteness`,
-`…godel_threshold`) — so the Foundation side (`ALT/GodelComplete.lean`) can import and discharge
-the *literal* `GodelThreshold.Incompleteness` symbol without the `import Mathlib`/Foundation
-`Matrix.map` collision. This file adds the part that genuinely needs Mathlib: the D1-NNO–tied
-`reflective_of_depth`.
+`…godel_threshold`) — so the Foundation side (`ALT/GodelComplete.lean`) imports and discharges the
+*literal* `GodelThreshold.Incompleteness` symbol that this file's results assume. This file adds
+the part that genuinely needs Mathlib: the D1-NNO–tied `reflective_of_depth`.
 
 Status: PROVED as pure logic. The incompleteness theorem itself is an imported HYPOTHESIS in the
 threshold lemma; it is discharged from the Foundation port in `ALT/GodelComplete.lean`.

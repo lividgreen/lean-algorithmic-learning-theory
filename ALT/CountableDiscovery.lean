@@ -14,9 +14,9 @@ set_option linter.unusedFintypeInType false
 set_option linter.unusedDecidableInType false
 
 /-!
-# Countable discovery — Paper II Theorem 3.1 over a countable hypothesis class
+# Countable discovery — [Discovery] Theorem 3.1 over a countable hypothesis class
 
-Provenance: Paper II §1.1, §3. `ALT/DeterministicDiscovery.lean` proves
+Provenance: [Discovery] §1.1, §3. `ALT/DeterministicDiscovery.lean` proves
 the unconditional realizable-deterministic discovery theorem for a **finite** hypothesis class
 (`ι : Fintype`). The paper's actual setting (§1.1) is a **countable** class with the
 Kolmogorov-weighted prior `w(R') = 2^{−K(R')}` over all programs. This file lifts the discovery

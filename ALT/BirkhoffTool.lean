@@ -111,9 +111,13 @@ hypothesis in the citable spectral-gap Hoeffding shape, from which the FV-E orac
 is reached by the same real-analysis as `SQOracle.sq_oracle_sample_complexity`. -/
 
 /-- **FJS-shaped mixing Hoeffding hypothesis** (Fan–Jiang–Sun, JMLR 22(139), 2021, Thm 1).
-For a stationary trajectory law with absolute spectral gap `1 − λ ∈ (0, 1]`, the single-orbit
-empirical mean of a bounded query-ensemble `Z` concentrates around its stationary mean `predZ`
-with the Hoeffding variance proxy inflated by the mixing constant `c = (2 − λ)/(1 − λ) ≥ 1`.
+For a stationary Markov trajectory law with absolute spectral gap `1 − λ ∈ (0, 1]` — where
+`λ = ‖P − Π‖` is the operator norm of the transition operator on the mean-zero subspace of `L²(π)`,
+so that reversibility is NOT required — the single-orbit empirical mean of a bounded query-ensemble
+`Z` concentrates around its stationary mean `predZ` with the Hoeffding variance proxy inflated by
+the mixing constant `c = (1 + λ)/(1 − λ) ≥ 1`.  (For a query bounded in `[a, b]` the constant is
+`((b − a)²/4)·(1 + λ)/(1 − λ)`; the `[−1, 1]` normalization used throughout here makes the leading
+factor `1`.)
 
 This is the single-orbit analogue of `SQOracle.sq_oracle_concentration`; at `c = 1` (`λ = 0`,
 the i.i.d. case) the two coincide.  It is stated as a *hypothesis*: deriving it from a spectral gap

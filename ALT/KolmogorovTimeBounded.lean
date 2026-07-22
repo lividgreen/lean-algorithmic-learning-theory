@@ -10,10 +10,10 @@ import ALT.KolmogorovComplexity
 set_option linter.style.header false
 
 /-!
-# Time-bounded Kolmogorov complexity + bit-length refinement (D3 Slice 2)
+# Time-bounded Kolmogorov complexity + bit-length refinement (Slice 2)
 
-Provenance: Paper III, §2.1 (time-bounded Kolmogorov complexity) and
-§2.2 (Prop 2.2, the deterministic bridge); Paper II, §1.1 (`r = K(R)`,
+Provenance: [SQ], §2.1 (time-bounded Kolmogorov complexity) and
+§2.2 (Prop 2.2, the deterministic bridge); [Discovery], §1.1 (`r = K(R)`,
 "program length in bits"). Extends `ALT/KolmogorovComplexity.lean` (Slice 1: `codelen`,
 `Computes`, `K`, `K_le`, `exists_min_code`, `K_unbounded`, `K_not_computable`).
 
@@ -21,7 +21,7 @@ Status: PROVED. Slice 2 adds the time-bounded measure and the bit-length value-r
 
 ## `K_t` is classical time-bounded K — NOT the epiplexity functional `S_T`
 `K_t` below is **classical time-bounded Kolmogorov complexity**: the least program length over
-*deterministic* codes outputting a fixed `x` within a step budget. This is distinct from Paper III
+*deterministic* codes outputting a fixed `x` within a step budget. This is distinct from [SQ]
 §2.1's **epiplexity** `S_T(X) := |P*|`, `P* = argmin_{P ∈ P_T} { |P| + E_X[log(1/P(X))] }`, which
 minimizes description length **plus expected log-loss** over **probabilistic** programs for a random
 variable `X` (the `H_T` residual-entropy term). `S_T`/epiplexity is a distinct, load-bearing notion
@@ -69,7 +69,7 @@ open Nat.Partrec Nat.Partrec.Code
 /-- Code-lengths of programs outputting `x` from input `0` within `t` steps (`evaln`). -/
 def tCodelens (t x : ℕ) : Set ℕ := { l | ∃ c, x ∈ Code.evaln t c 0 ∧ codelen c = l }
 
-/-- Time-bounded (least-index) Kolmogorov complexity (Paper III §2.1): least program length over
+/-- Time-bounded (least-index) Kolmogorov complexity ([SQ] §2.1): least program length over
 codes that output `x` from input `0` within `t` `evaln`-steps; `⊤` if none halts in budget `t`.
 
 This is *classical* time-bounded K — the deterministic `|P|` component of §2.1's epiplexity `S_T`

@@ -1,5 +1,5 @@
 name = "alt"
-version = "1.0.0"
+version = "1.1.0"
 keywords = ["math", "learning-theory", "probability", "computability", "realizability"]
 defaultTargets = ["ALT"]
 
@@ -17,23 +17,15 @@ rev = "v4.31.0"
 [[require]]
 name = "Foundation"
 git = "https://github.com/FormalizedFormalLogic/Foundation"
-rev = "f6eed55facfb6c95a40775da301a1c9e3447e4bf"
+rev = "b47cf447255addf88a5d72781d0d29641948eb6e"
 
 [[lean_lib]]
 name = "ALT"
 # doc-gen4's library facet documents the ROOT modules and their import closure,
-# and Lake only counts a root that some glob matches (`isBuildableModule`), so:
+# and Lake only counts a root that some glob matches (`isBuildableModule`), so
 # the glob must be `ALT.*` (root AND submodules — `ALT.+` excludes the root
-# itself, which is how v1.0's CI produced "0 root modules" and empty docs),
-# and the roots must list the umbrella `ALT` (whose ALT.lean imports every
-# Mathlib-side module) PLUS the four Foundation-side modules, which cannot be
-# co-imported with the Mathlib umbrella in one file (`Matrix.map` clash) and
-# would otherwise be built via the glob but missing from the docs.
-roots = [
-  "ALT",
-  "ALT.AxiomAuditFoundation",
-  "ALT.GodelChecker",
-  "ALT.GodelCheckerComplete",
-  "ALT.GodelComplete",
-]
+# itself, which is how v1.0's CI produced "0 root modules" and empty docs).
+# The umbrella `ALT` is the sole root: ALT.lean imports every module, so its
+# import closure is the whole development and the docs cover all of it.
+roots = ["ALT"]
 globs = ["ALT.*"]

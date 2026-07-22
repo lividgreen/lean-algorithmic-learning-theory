@@ -13,9 +13,9 @@ set_option linter.style.header false
 set_option linter.style.openClassical false
 
 /-!
-# Genuine SQ objects: concept class, statistical dimension, oracle (Paper III §3, FV-J)
+# Genuine SQ objects: concept class, statistical dimension, oracle ([SQ] §3, FV-J)
 
-Provenance: Paper III, §3.1 (the SQ oracle answers a query
+Provenance: [SQ], §3.1 (the SQ oracle answers a query
 `φ : Input → [−1,1]` with an estimate of `E_D[φ]` within tolerance `τ`), §3.4 (the statistical
 dimension: "every `τ`-separated subfamily of `M` has size at most `d_SQ(M, μ)`" — distribution-
 SPECIFIC, the BQ1 point of §3), §5 (parity has `d_SQ = 2^Ω(n)`), and Appendix A ("a query separates
@@ -39,7 +39,8 @@ orthogonality), bridging FV-A3's previously-MODELED exponential premise (`parity
   survivor set `V ⊆ M` has `V.card ≤ sqDim M τ ans`.
 * `survivors_polyBounded_of_separated` — reusing `ParityCounterexample.PolyBounded` verbatim:
   Assumption A on the GENUINE `sqDim` (as a family) plus pairwise separation ⇒ survivor count is
-  `poly`. (For the envelope under `2τ`-identifiability see `SQEnvelope.lean`; the unconditional version is not formalized.)
+  `poly`. (For the envelope under `2τ`-identifiability see `SQEnvelope.lean`; the unconditional
+  version is not formalized.)
 * `sqDim_mono_queries` (BQ1) — fewer separating queries ⇒ smaller-or-equal dimension: the
   distribution-specificity of `d_SQ(M, μ)` (a distribution-specific `ans` never exceeds a
   distribution-free `ans'` that can realize all its separations).
@@ -112,6 +113,131 @@ theorem sqDim_mono_queries {Q' : Type*} (M : Finset ι) (τ : ℝ)
   refine ⟨hSM, hsub, fun i hi j hj hij => ?_⟩
   obtain ⟨φ, hφ⟩ := hpair i hi j hj hij
   exact h i j φ hφ
+
+/-- The statistical dimension is **antitone in the tolerance**: a coarser separation threshold
+admits fewer separated subfamilies. If `τ₁ ≤ τ₂` then every `τ₂`-separated subfamily is already
+`τ₁`-separated (from `τ₁ ≤ τ₂ < |·|`), so the filtered powerset shrinks and its sup of cardinalities
+can only decrease. No nonnegativity needed; this is what lets a `2τ`-net be bounded by `sqDim` at
+the working tolerance `τ`. -/
+theorem sqDim_antitone_tol (M : Finset ι) (ans : Q → ι → ℝ) {τ₁ τ₂ : ℝ} (h : τ₁ ≤ τ₂) :
+    sqDim M τ₂ ans ≤ sqDim M τ₁ ans := by
+  apply Finset.sup_mono
+  intro S hS
+  rw [Finset.mem_filter, Finset.mem_powerset] at hS ⊢
+  obtain ⟨hSM, hsub, hpair⟩ := hS
+  refine ⟨hSM, hsub, fun i hi j hj hij => ?_⟩
+  obtain ⟨φ, hφ⟩ := hpair i hi j hj hij
+  exact ⟨φ, lt_of_le_of_lt h hφ⟩
+
+/-- A **maximum-cardinality `2τ`-separated subfamily** (a `2τ`-net) of a finite candidate set `V`
+exists: the powerset of `V` filtered by `SepFam M (2τ)` is finite and nonempty (`∅` is separated),
+so it has a cardinality-maximal element `N`. The filtering predicate is `SepFam M`, which already
+entails `N ⊆ M`, so `sqDim M` measures the net at the same threshold (no `V ⊆ M` hypothesis needed).
+Its linear `sqDim` bound and covering by maximality drive the identifiability-free envelope. -/
+theorem exists_maximal_sepFam (M : Finset ι) (τ : ℝ) (ans : Q → ι → ℝ) {V : Finset ι} :
+    ∃ N, N ⊆ V ∧ SepFam M (2 * τ) ans N ∧
+      ∀ S, S ⊆ V → SepFam M (2 * τ) ans S → S.card ≤ N.card := by
+  classical
+  have hemp : SepFam M (2 * τ) ans ∅ :=
+    ⟨Finset.empty_subset M, fun i hi => absurd hi (Finset.notMem_empty i)⟩
+  have hPne : (V.powerset.filter (SepFam M (2 * τ) ans)).Nonempty := by
+    refine ⟨∅, ?_⟩
+    rw [Finset.mem_filter, Finset.mem_powerset]
+    exact ⟨Finset.empty_subset V, hemp⟩
+  obtain ⟨N, hNP, hNmax⟩ :=
+    (V.powerset.filter (SepFam M (2 * τ) ans)).exists_max_image Finset.card hPne
+  rw [Finset.mem_filter, Finset.mem_powerset] at hNP
+  refine ⟨N, hNP.1, hNP.2, fun S hSV hS => ?_⟩
+  apply hNmax
+  rw [Finset.mem_filter, Finset.mem_powerset]
+  exact ⟨hSV, hS⟩
+
+/-- **Maximality ⇒ covering.** A cardinality-maximal `2τ`-separated subfamily `N ⊆ V` is a `2τ`-net
+of `V`: every `v ∈ V` lies within `2τ` of some `n ∈ N` on *every* query. Indeed, if `v` were
+`2τ`-separated from all of `N`, then `insert v N` would be a larger `2τ`-separated subfamily of `V`,
+contradicting maximality — no transitivity is used, only closeness to a representative. The
+`v ∈ N` case (take `n := v`) needs `0 ≤ τ`. -/
+theorem sepNet_covers (M : Finset ι) (τ : ℝ) (ans : Q → ι → ℝ) (hτ : 0 ≤ τ)
+    {V N : Finset ι} (hNV : N ⊆ V) (hVM : V ⊆ M)
+    (hNsep : SepFam M (2 * τ) ans N)
+    (hNmax : ∀ S, S ⊆ V → SepFam M (2 * τ) ans S → S.card ≤ N.card) :
+    ∀ v ∈ V, ∃ n ∈ N, ∀ φ, |ans φ v - ans φ n| ≤ 2 * τ := by
+  classical
+  intro v hv
+  by_cases hvN : v ∈ N
+  · exact ⟨v, hvN, fun φ => by rw [sub_self, abs_zero]; linarith⟩
+  · by_contra hcon
+    -- `v` is `2τ`-separated from every `n ∈ N`.
+    simp only [not_exists, not_and, not_forall, not_le] at hcon
+    have hvsep : ∀ n ∈ N, ∃ φ, Separates (2 * τ) ans φ v n := fun n hn => hcon n hn
+    have hsymm : ∀ (φ : Q) (x y : ι),
+        Separates (2 * τ) ans φ x y → Separates (2 * τ) ans φ y x := by
+      intro φ x y hxy
+      change 2 * τ < |ans φ y - ans φ x|
+      rwa [abs_sub_comm]
+    have hins_sub : insert v N ⊆ V := Finset.insert_subset hv hNV
+    have hSep : SepFam M (2 * τ) ans (insert v N) := by
+      refine ⟨hins_sub.trans hVM, ?_⟩
+      intro a ha b hb hab
+      rcases Finset.mem_insert.mp ha with hav | haN
+      · rcases Finset.mem_insert.mp hb with hbv | hbN
+        · exact absurd (hav.trans hbv.symm) hab
+        · rw [hav]; exact hvsep b hbN
+      · rcases Finset.mem_insert.mp hb with hbv | hbN
+        · rw [hbv]; exact (hvsep a haN).imp fun φ h => hsymm φ v a h
+        · exact hNsep.2 a haN b hbN hab
+    have hle := hNmax (insert v N) hins_sub hSep
+    rw [Finset.card_insert_of_notMem hvN] at hle
+    omega
+
+/-- The **mass-merge averaging bound**, fully abstract (no net object needed). Reassigning each
+`v ∈ V` to a representative `ρ v` that is `2τ`-close on every query, and summing the *nonnegative*
+masses `w v`, moves each query answer by a mass-weighted average of `2τ`-close values: the merged
+answer differs from the full answer by at most `2τ · Σ w`. Dividing by `Σ w > 0` gives the
+normalized statement `|A_full − A_merge| ≤ 2τ`; this unnormalized form is the clean core. -/
+theorem merge_answer_close (τ : ℝ) (ans : Q → ι → ℝ) (V : Finset ι) (w : ι → ℝ)
+    (hw : ∀ v ∈ V, 0 ≤ w v) (ρ : ι → ι)
+    (hclose : ∀ v ∈ V, ∀ φ, |ans φ v - ans φ (ρ v)| ≤ 2 * τ) (φ : Q) :
+    |∑ v ∈ V, w v * (ans φ v - ans φ (ρ v))| ≤ 2 * τ * ∑ v ∈ V, w v := by
+  calc |∑ v ∈ V, w v * (ans φ v - ans φ (ρ v))|
+      ≤ ∑ v ∈ V, |w v * (ans φ v - ans φ (ρ v))| := Finset.abs_sum_le_sum_abs _ _
+    _ ≤ ∑ v ∈ V, w v * (2 * τ) := by
+        apply Finset.sum_le_sum
+        intro v hv
+        rw [abs_mul, abs_of_nonneg (hw v hv)]
+        exact mul_le_mul_of_nonneg_left (hclose v hv φ) (hw v hv)
+    _ = 2 * τ * ∑ v ∈ V, w v := by
+        rw [Finset.mul_sum]
+        apply Finset.sum_congr rfl
+        intro v _
+        ring
+
+/-- The **identifiability-free version-space envelope** (the BFJKMR clustering argument). For any
+version space `V ⊆ M` and `0 ≤ τ`, there is a net `N ⊆ V` of card `≤ sqDim M τ ans`, with a
+retraction `ρ : ι → ι` sending every `v ∈ V` into `N` within `2τ` on every query. Crucially there
+is **no** pairwise-separation / identifiability hypothesis on `V`: `N` is a maximal `2τ`-separated
+subfamily (`exists_maximal_sepFam`), bounded by `sqDim` at threshold `2τ ≥ τ` via antitonicity
+(`sepFam_card_le_sqDim` + `sqDim_antitone_tol`), and covering by maximality (`sepNet_covers`).
+Composed with `merge_answer_close` (masses merged onto `ρ`) this bounds the merged predictor's
+answer shift by `2τ`. This is the object [SQ] Thm 4.1 / Appendix A cites in place of
+`2τ`-identifiability: a learner-side net-and-merge available under Assumption A alone. -/
+theorem versionSpace_net_envelope (M : Finset ι) (τ : ℝ) (ans : Q → ι → ℝ) (hτ : 0 ≤ τ)
+    {V : Finset ι} (hVM : V ⊆ M) :
+    ∃ (N : Finset ι) (ρ : ι → ι), N ⊆ V ∧ N.card ≤ sqDim M τ ans ∧
+      (∀ v ∈ V, ρ v ∈ N) ∧ (∀ v ∈ V, ∀ φ, |ans φ v - ans φ (ρ v)| ≤ 2 * τ) := by
+  classical
+  obtain ⟨N, hNV, hNsep, hNmax⟩ := exists_maximal_sepFam M τ ans (V := V)
+  have hcov := sepNet_covers M τ ans hτ hNV hVM hNsep hNmax
+  have hcard : N.card ≤ sqDim M τ ans :=
+    le_trans (sepFam_card_le_sqDim M (2 * τ) ans hNsep)
+      (sqDim_antitone_tol M ans (by linarith))
+  refine ⟨N, fun v => if hv : v ∈ V then (hcov v hv).choose else v, hNV, hcard, ?_, ?_⟩
+  · intro v hv
+    simp only [dif_pos hv]
+    exact (hcov v hv).choose_spec.1
+  · intro v hv φ
+    simp only [dif_pos hv]
+    exact (hcov v hv).choose_spec.2 φ
 
 /-- The SQ oracle of §3.1 as an object: `answer` estimates the truth's query values within `τ`. -/
 def IsSQOracle (answer truth : Q → ℝ) (τ : ℝ) : Prop := ∀ φ, |answer φ - truth φ| ≤ τ

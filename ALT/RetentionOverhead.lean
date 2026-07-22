@@ -10,9 +10,9 @@ import ALT.CapacityThreshold
 set_option linter.style.header false
 
 /-!
-# Retention capacity overhead (Paper II, §4.4 eq. (4))
+# Retention capacity overhead ([Discovery], §4.4 eq. (4))
 
-Provenance: Paper II, §4.3 (conditional-regeneration architecture,
+Provenance: [Discovery], §4.3 (conditional-regeneration architecture,
 Def 4.1 / Prop 4.2) and §4.4 (capacity overhead, eq. (4)), with the persistent-code cost
 `|s_code| = r + 2 log r` reused from `CapacityThreshold.Kmin` (the §2.2 model cost at `c₃ = 0`).
 
@@ -25,7 +25,7 @@ capacity-overhead claim only.
   routing/quantization term `c₇·log(r/δ)`. Pure algebra; reuses the warm-up's `Kmin`.
 * `overhead_bigO`: under an explicit NAMED regime, the overhead is bounded by the explicit
   constant `c₆ + c₇ + 3` times `r·log(r/δ)` — a concrete-constant instance of eq. (4)'s
-  `g(r,δ) = O(r·log(r/δ))` claim, completing the static Paper II arithmetic picture.
+  `g(r,δ) = O(r·log(r/δ))` claim, completing the static [Discovery] arithmetic picture.
 
 ## What this does NOT establish (stays in prose; no overclaiming)
 * No Kolmogorov complexity: `r`, `δ`, `c₆`, `c₇` are abstract reals; we do not formalize `r = K(R)`.
@@ -56,7 +56,7 @@ namespace RetentionOverhead
 
 open CapacityThreshold
 
-/-- Capacity overhead of the conditional-regeneration architecture (Paper II §4.4 eq. (4)):
+/-- Capacity overhead of the conditional-regeneration architecture ([Discovery] §4.4 eq. (4)):
 the persistent code `|s_code| = r + 2 log r = Kmin r 0`, plus working memory `c₆·r` (sufficient
 to simulate one step of a length-`r` program) and the consolidated routing/quantization term
 `c₇·log(r/δ)` (context-routing `O(log r)` and MML quantization `O(log(1/δ))`, since
@@ -75,7 +75,7 @@ theorem overhead_eq (r δ c₆ c₇ : ℝ) :
 the explicit constant `c₆ + c₇ + 3` times `r·log(r/δ)`. The four terms of `g` are each dominated
 by their `r·log(r/δ)` counterpart: `r ≤ r·ℓ` and `c₆·r ≤ c₆·r·ℓ` (since `ℓ := log(r/δ) ≥ 1`),
 `2 log r ≤ 2·r·ℓ` (since `log r ≤ ℓ` and `r ≥ 1`), and `c₇·ℓ ≤ c₇·r·ℓ` (since `r ≥ 1`). All five
-hypotheses are load-bearing. (Paper II §1.2 C3 buffer + §4.4 eq. (4).) -/
+hypotheses are load-bearing. ([Discovery] §1.2 C3 buffer + §4.4 eq. (4).) -/
 theorem overhead_bigO (r δ c₆ c₇ : ℝ)
     (hr : 3 ≤ r) -- C3 buffer r ≥ c₂ ≥ 3 (concrete instance; gives log(r/δ) ≥ 1)
     (hδ0 : 0 < δ) (hδ1 : δ < 1) -- confidence parameter in (0,1) → r ≤ r/δ

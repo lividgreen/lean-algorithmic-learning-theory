@@ -3,26 +3,25 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
--- Targeted (non-umbrella) import: gives ℕ order + `omega` without pulling
--- `Mathlib.LinearAlgebra.Matrix.Defs`, so this file stays co-importable with Foundation.
+-- Targeted (non-umbrella) import: gives ℕ order + `omega` and keeps this shared core light.
 import Mathlib.Order.Basic
 
 set_option linter.style.header false
 
 /-!
-# Gödel threshold — pure-logic core (Paper I §5.3 + §6)
+# Gödel threshold — pure-logic core ([Decoupling] §5.3 + §6)
 
 Mathlib-free core of `ALT/GodelThreshold.lean` (D4): the abstract predicates and the threshold
 lemma, in `namespace GodelThreshold` so all existing references (`GodelThreshold.Incompleteness`,
 `…RepresentsUnderivableTruth`, `…godel_threshold`, `…Representable`) resolve unchanged.
 
-This file deliberately imports **nothing** (core Lean only). That lets BOTH the Mathlib side
-(`ALT/GodelThreshold.lean`, which adds the D1-NNO–tied `reflective_of_depth`) and the Foundation
-side (`ALT/GodelComplete.lean`, which discharges `Incompleteness` from the ported Gödel theorem)
-import these definitions. The split is forced: `ALT/*` files use the `import Mathlib` umbrella,
-whose `Matrix.map` collides with `Foundation.Vorspiel.Matrix`'s root-namespace `Matrix.map`, so a
-single file cannot import both Foundation and (umbrella-)Mathlib. Keeping the core Mathlib-free is
-the clean bridge: the literal `GodelThreshold.Incompleteness` symbol lives here and is shared.
+This file stays deliberately light (core Lean plus `Mathlib.Order.Basic`). That lets BOTH the
+Mathlib side (`ALT/GodelThreshold.lean`, which adds the D1-NNO–tied `reflective_of_depth`) and the
+Foundation side (`ALT/GodelComplete.lean`, which discharges `Incompleteness` from the ported Gödel
+theorem) import these definitions and share the **literal** `GodelThreshold.Incompleteness` symbol,
+so the hypothesis one side states is exactly the one the other discharges. Factoring the shared
+predicates into a single lightweight module is what makes that identity structural rather than
+incidental.
 
 Status: PROVED as pure logic (`#print axioms` → standard axioms only).
 -/

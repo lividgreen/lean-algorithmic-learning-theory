@@ -10,9 +10,9 @@ set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-!
-# Capacity threshold for rule-based encodings (Paper II, Corollary 2.2)
+# Capacity threshold for rule-based encodings ([Discovery], Corollary 2.2)
 
-Provenance: Paper II, §1.2 (regime constants C1–C3) and
+Provenance: [Discovery], §1.2 (regime constants C1–C3) and
 §2.4 (Corollary 2.2), with the model-cost form `r + 2 log r + O(1)` from §2.2 eq. (1).
 
 Status: PROVED as a pure real-arithmetic statement. This is the *arithmetic core* of
@@ -48,7 +48,7 @@ namespace CapacityThreshold
 
 /-- Minimal model-description cost of the rule-based two-part encoding, in bits:
 program length `r`, the Elias-δ self-delimiting overhead `2 log r`, and the
-universal-evaluator overhead `c₃`. (Paper II §2.2 eq. (1), §2.4 Cor 2.2.) -/
+universal-evaluator overhead `c₃`. ([Discovery] §2.2 eq. (1), §2.4 Cor 2.2.) -/
 noncomputable def Kmin (r c₃ : ℝ) : ℝ := r + 2 * Real.log r + c₃
 
 /-- Bits-form capacity threshold (Cor 2.2), matching §2.2's base-2 coding: program length `r`
@@ -57,7 +57,7 @@ same threshold with the constant base-change `1/log 2` absorbed into `c₀` (pap
 noncomputable def KminBits (r c₃ : ℝ) : ℝ := r + 2 * Real.logb 2 r + c₃
 
 /-- A capacity `K` is *representable* (can host the rule-based encoding) iff it meets the
-threshold `Kmin`. (Paper II, Corollary 2.2.) -/
+threshold `Kmin`. ([Discovery], Corollary 2.2.) -/
 def Representable (K r c₃ : ℝ) : Prop := Kmin r c₃ ≤ K
 
 /-- Part (a): representability is exactly the capacity threshold. Definitional — this records
@@ -70,7 +70,7 @@ theorem representable_iff_ge_Kmin (K r c₃ : ℝ) :
 Given the C1 capacity bound `K ≥ c₀·r·log(r/δ)`, the NAMED constant conditions force
 `K ≥ Kmin r c₃`, i.e. the rule-based encoding is representable. The proof splits the
 slack `c₀ ≥ 3` as `1 + 1 + 1` to dominate the three terms `r`, `2 log r`, and `c₃` of
-`Kmin`. (Paper II, §1.2 C1/C3 + §2.4 Cor 2.2.) -/
+`Kmin`. ([Discovery], §1.2 C1/C3 + §2.4 Cor 2.2.) -/
 theorem representable_of_C1
     (K r c₀ c₂ c₃ δ : ℝ)
     (hC1 : c₀ * r * Real.log (r / δ) ≤ K) -- C1 capacity bound

@@ -9,9 +9,9 @@ import Mathlib
 set_option linter.style.header false
 
 /-!
-# Cartesian-closedness of a stand-in for Rep(S) (Paper I §4)
+# Cartesian-closedness of a stand-in for Rep(S) ([Decoupling] §4)
 
-Provenance: Paper I, §4.1 (objects/morphisms of `Rep(S)`),
+Provenance: [Decoupling], §4.1 (objects/morphisms of `Rep(S)`),
 §4.2 (products), §4.3 (exponentials — "this is where functions become data", the heart), §4.4
 (the Rule-30 example), §4.5 (what is / isn't constructed). Built on Mathlib's `MonoidalClosed`
 (cartesian-closed = monoidal-closed over the cartesian monoidal structure).

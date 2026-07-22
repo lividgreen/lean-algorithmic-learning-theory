@@ -9,9 +9,9 @@ import Mathlib
 set_option linter.style.header false
 
 /-!
-# Poly-time accounting (Paper III, §4 Theorem 4.1) — thin bookkeeping
+# Poly-time accounting ([SQ], §4 Theorem 4.1) — thin bookkeeping
 
-Provenance: Paper III, §4 (Theorem 4.1, parts (i)–(iv) and proof
+Provenance: [SQ], §4 (Theorem 4.1, parts (i)–(iv) and proof
 step (c)).
 
 Status: PROVED as a pure real-arithmetic product bound. **This is deliberately THIN bookkeeping —
@@ -36,8 +36,8 @@ equates to the part-(i) order — not the sample-complexity claim of part (i) di
 * No SQ machinery: not the SQ oracle, the statistical dimension `d_SQ`, or the BFJKMR `poly(r)`
   candidate-enumeration bound (step (b)).
 * No impossibility bypasses: not Miyabe, Raz, or Farr–Wallace.
-* It takes the sample bound (part iii, from Paper II Thm 3.1) and the per-step bound as GIVEN and
-  proves only that their product is `O(r²·log(1/δ))`. Bookkeeping, not the Paper III theorem.
+* It takes the sample bound (part iii, from [Discovery] Thm 3.1) and the per-step bound as GIVEN and
+  proves only that their product is `O(r²·log(1/δ))`. Bookkeeping, not the [SQ] theorem.
 
 ## Hypotheses: paper-stated vs added
 * Paper-stated / faithful: the part-(iii) window bound; the per-step compute bound; the total;

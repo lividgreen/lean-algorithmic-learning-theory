@@ -13,7 +13,7 @@ set_option linter.style.longLine false
 /-!
 # Data layer for the 1-DL consistency solver
 
-Provenance: the native-cost-model workstream. Builds on `ALT/PolyTime.lean` (`PolyTime`,
+Provenance: the native cost model (`ALT/TimeCost.lean`). Builds on `ALT/PolyTime.lean` (`PolyTime`,
 `PolyBounded`, the base/`comp` closures, `polyTime_loop`, `tc_prec_le'`, `exists_two_pow_gt_poly`).
 Downstream: the greedy 1-decision-list consistency solver (`DecisionListSolver.lean`), whose scan/peel loops iterate
 over the `m` examples and `k` features.
@@ -32,14 +32,14 @@ which decodes by pure `unpair` (flag `= left`, head `= left ∘ right`, tail `= 
 `inst = Nat.pair k (Nat.pair m data)` — `k`, `m` are flat slots. `data` is a flag-cons list of `m`
 examples; an example is `Nat.pair label fv` with `fv` a flag-cons list of `k` bits.
 
-## What lands (C2a complete)
+## What this establishes (C2a, the data layer — complete)
 Part 1: encoding + `WF`, the flat accessors `cReadK`/`cReadM` (`PolyTime`, `tc = O(1)`), and the size
 bound `readM/readK inst ≤ Nat.size inst` under `WF` (I2). Part 2: the decode-cost verdict + pivot; the
 `peel` loop (`cPeel`, `O(1)`-`tc` step) and the indexed accessors `getExample`/`getLabel`/`getFeature`,
 each `PolyTime` GIVEN a poly-bit index (`polyTime_peel`); and List-model correctness
 (`getExample_encode`). One residual — `polyTime_peel` needs the index's
 `PolyBounded` as a HYPOTHESIS, since the natural index (`readM`) is only poly-bit under `WF`; that is
-what C2b must thread.
+what the solver layer (C2b, `ALT/DecisionListSolver.lean`) must thread.
 -/
 
 namespace OneDL

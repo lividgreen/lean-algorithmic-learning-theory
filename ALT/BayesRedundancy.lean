@@ -13,12 +13,12 @@ set_option linter.unusedDecidableInType false
 set_option linter.unusedFintypeInType false
 
 /-!
-# Bayes-mixture redundancy — Paper II §3, Sub-problem B (toward an unconditional Theorem 3.1)
+# Bayes-mixture redundancy — [Discovery] §3, Sub-problem B (toward an unconditional Theorem 3.1)
 
-Provenance: Paper II §3. Theorem 3.1's rate (3) is the classical
+Provenance: [Discovery] §3. Theorem 3.1's rate (3) is the classical
 Bayes-mixture redundancy bound (Hutter 2003, 2005; in the discrete-class concentration form,
 Lattimore–Hutter–Sunehag 2013), here *proved* directly in the **realizable-deterministic** case —
-no Grünwald–Mehta import. (Grünwald–Mehta 2020 Thm 7.4 enters only in
+no Grünwald–Mehta import. (Grünwald–Mehta 2020 Thm 22 enters only in
 `ALT/GrunwaldMehtaDiscovery.lean`, as the named hypothesis `hrate`, for the separate general
 stochastic / aggregate-separation case.) The redundancy argument:
 
@@ -44,7 +44,7 @@ This file proves the **two elementary core lemmas** (later prompts assemble (2),
 * **Squared Hellinger** of two finite "distributions" `p, q : α → ℝ`:
   `sqHellinger p q = (1/2) Σ_x (√(p x) − √(q x))²`. (`δ_o` is the point mass `x ↦ if x = o then 1 else 0`.)
 
-Everything here is elementary (Mathlib calculus + `Finset`); no `sorry`. The deep GM Thm 7.4 is
+Everything here is elementary (Mathlib calculus + `Finset`); no `sorry`. The deep GM Thm 22 is
 *not* used — this is the realizable-deterministic route that will let §3 drop `hrate`.
 -/
 
@@ -70,6 +70,11 @@ theorem log_le_hellinger {a : ℝ} (ha : 0 < a) (_ha1 : a ≤ 1) :
 /-- Squared Hellinger distance of two finite "distributions": `(1/2) Σ_x (√(p x) − √(q x))²`. -/
 noncomputable def sqHellinger {α : Type*} [Fintype α] (p q : α → ℝ) : ℝ :=
   (1 / 2) * ∑ x, (Real.sqrt (p x) - Real.sqrt (q x)) ^ 2
+
+/-- Squared Hellinger distance is nonnegative (a half-sum of squares); no hypothesis on `p`, `q`. -/
+theorem sqHellinger_nonneg {α : Type*} [Fintype α] (p q : α → ℝ) : 0 ≤ sqHellinger p q := by
+  unfold sqHellinger
+  exact mul_nonneg (by norm_num) (Finset.sum_nonneg fun x _ => sq_nonneg _)
 
 /-- **Point-mass identity.** For a pmf `q` (`q ≥ 0`, `Σ q = 1`) and a point `o`, the squared Hellinger
 distance to the point mass `δ_o` is `D_H²(δ_o, q) = 1 − √(q o)`. Combined with `log_le_hellinger`
@@ -299,6 +304,138 @@ theorem average_hellinger_rate (hq : ∀ i s x, 0 ≤ q i s x) (hw : ∀ i, 0 �
     field_simp
   rw [heq]; exact hcum
 
+/-! ## (D) Bounded surprise: an `n`-free ceiling on the number of high-error steps
+
+A pigeonhole on top of the cumulative bound. Since the *total* squared Hellinger error over the first
+`n` steps is at most `K(R)·ln2 / 2` — a quantity that does not grow with `n` — the steps at which the
+predictor errs by more than a fixed `ε` cannot be many: there are fewer than `K(R)·ln2 / (2ε)` of
+them, **uniformly in `n`**. Beyond that finite budget of "surprises" the mixture predicts within `ε`
+forever after; the exceptional steps may, however, occur anywhere in time.
+
+The bound carries **no separation hypothesis** — that is its entire point. On hypothesis classes where
+per-step separation is vacuous, and a *chronological* discovery rate is provably unavailable (no bound
+of the form "after step `T` all steps are good"), this counting statement is what survives: the
+surprises are budgeted, but not scheduled. -/
+
+/-- The **surprise set**: the steps `t < n` at which the mixture's one-step squared Hellinger error
+against the realised symbol exceeds `ε`. -/
+noncomputable def surpriseSet (q : ι → ℕ → A → ℝ) (w : ι → ℝ) (ω : ℕ → A) (ε : ℝ) (n : ℕ) :
+    Finset ℕ :=
+  (Finset.range n).filter fun t =>
+    ε < sqHellinger (fun x => if x = ω t then 1 else 0) (condPred q w ω t)
+
+lemma surpriseSet_subset (ε : ℝ) (n : ℕ) : surpriseSet q w ω ε n ⊆ Finset.range n :=
+  Finset.filter_subset _ _
+
+lemma lt_of_mem_surpriseSet {ε : ℝ} {n t : ℕ} (ht : t ∈ surpriseSet q w ω ε n) :
+    ε < sqHellinger (fun x => if x = ω t then 1 else 0) (condPred q w ω t) :=
+  (Finset.mem_filter.mp ht).2
+
+/-- **Bounded surprise ([Discovery] §3.3, Proposition 3.3) — robust form.** The number of steps at
+which the one-step squared Hellinger error exceeds `ε`, times `ε`, is at most the description length
+`K(R)·ln2 / 2`:  `|{t < n : D_H²ₜ > ε}| · ε ≤ K(R)·ln2 / 2`.
+
+The right-hand side is free of `n`, so the count is bounded uniformly in the horizon. Proof: every
+term of the surprise set exceeds `ε` (pigeonhole), the omitted terms are nonnegative
+(`sqHellinger_nonneg`), and the total is bounded by the cumulative redundancy bound
+([Discovery] §3.2 eq. (4)). No hypothesis on `ε`, and — crucially — **no separation hypothesis**. -/
+theorem surprise_card_mul_le (hq : ∀ i s x, 0 ≤ q i s x) (hw : ∀ i, 0 ≤ w i)
+    (hreal : ∀ s, q R s (ω s) = 1) (hsumw : ∑ i, w i = 1) (hqsum : ∀ i s, ∑ x, q i s x = 1)
+    (k : ℕ) (hwR : w R = (2 : ℝ) ^ (-(k : ℝ))) (ε : ℝ) (n : ℕ) :
+    ((surpriseSet q w ω ε n).card : ℝ) * ε ≤ (k : ℝ) * Real.log 2 / 2 := by
+  have hlow : ((surpriseSet q w ω ε n).card : ℝ) * ε
+      ≤ ∑ t ∈ surpriseSet q w ω ε n,
+          sqHellinger (fun x => if x = ω t then 1 else 0) (condPred q w ω t) := by
+    have h := Finset.card_nsmul_le_sum (surpriseSet q w ω ε n)
+      (fun t => sqHellinger (fun x => if x = ω t then 1 else 0) (condPred q w ω t)) ε
+      (fun t ht => le_of_lt (lt_of_mem_surpriseSet ht))
+    simpa [nsmul_eq_mul] using h
+  have hmono : ∑ t ∈ surpriseSet q w ω ε n,
+        sqHellinger (fun x => if x = ω t then 1 else 0) (condPred q w ω t)
+      ≤ ∑ t ∈ Finset.range n,
+          sqHellinger (fun x => if x = ω t then 1 else 0) (condPred q w ω t) :=
+    Finset.sum_le_sum_of_subset_of_nonneg (surpriseSet_subset ε n)
+      (fun t _ _ => sqHellinger_nonneg _ _)
+  have hcum := cumulative_hellinger hq hw hreal hsumw hqsum k hwR n
+  linarith
+
+/-- **Bounded surprise ([Discovery] §3.3, Proposition 3.3) — quantitative form.** For `ε > 0`,
+
+`|{t < n : D_H²(δ_{ωₜ}, condₜ) > ε}| ≤ K(R)·ln2 / (2ε)`,
+
+uniformly in `n`. The predictor's stock of `ε`-surprises is finite and paid for by the description
+length of the true rule alone; nothing is asserted about *when* they occur. Carries **no separation
+hypothesis**. -/
+theorem surprise_card_le (hq : ∀ i s x, 0 ≤ q i s x) (hw : ∀ i, 0 ≤ w i)
+    (hreal : ∀ s, q R s (ω s) = 1) (hsumw : ∑ i, w i = 1) (hqsum : ∀ i s, ∑ x, q i s x = 1)
+    (k : ℕ) (hwR : w R = (2 : ℝ) ^ (-(k : ℝ))) {ε : ℝ} (hε : 0 < ε) (n : ℕ) :
+    ((surpriseSet q w ω ε n).card : ℝ) ≤ (k : ℝ) * Real.log 2 / (2 * ε) := by
+  have h := surprise_card_mul_le hq hw hreal hsumw hqsum k hwR ε n
+  have h2 : (0 : ℝ) < 2 * ε := by linarith
+  rw [le_div_iff₀ h2]
+  have hring : ((surpriseSet q w ω ε n).card : ℝ) * (2 * ε)
+      = 2 * (((surpriseSet q w ω ε n).card : ℝ) * ε) := by ring
+  rw [hring]; linarith
+
+/-- **Bounded surprise ([Discovery] §3.3, Proposition 3.3) — strict form.** For `ε > 0` and a true
+rule of positive description length `k = K(R) > 0`, the count is *strictly* below the budget:
+
+`|{t < n : D_H²(δ_{ωₜ}, condₜ) > ε}| < K(R)·ln2 / (2ε)`,
+
+uniformly in `n`. Strictness comes from the defining inequality of the surprise set being strict when
+the set is nonempty; when it is empty the count is `0`, below the positive right-hand side. Carries
+**no separation hypothesis**. -/
+theorem surprise_card_lt (hq : ∀ i s x, 0 ≤ q i s x) (hw : ∀ i, 0 ≤ w i)
+    (hreal : ∀ s, q R s (ω s) = 1) (hsumw : ∑ i, w i = 1) (hqsum : ∀ i s, ∑ x, q i s x = 1)
+    (k : ℕ) (hk : 0 < k) (hwR : w R = (2 : ℝ) ^ (-(k : ℝ))) {ε : ℝ} (hε : 0 < ε) (n : ℕ) :
+    ((surpriseSet q w ω ε n).card : ℝ) < (k : ℝ) * Real.log 2 / (2 * ε) := by
+  have h2 : (0 : ℝ) < 2 * ε := by linarith
+  have hk' : (0 : ℝ) < (k : ℝ) := by exact_mod_cast hk
+  have hlog : (0 : ℝ) < Real.log 2 := Real.log_pos (by norm_num)
+  rcases Finset.eq_empty_or_nonempty (surpriseSet q w ω ε n) with hS | hS
+  · rw [hS]
+    simpa using div_pos (mul_pos hk' hlog) h2
+  · have hstrict : ((surpriseSet q w ω ε n).card : ℝ) * ε
+        < ∑ t ∈ surpriseSet q w ω ε n,
+            sqHellinger (fun x => if x = ω t then 1 else 0) (condPred q w ω t) := by
+      have hcst : ∑ _t ∈ surpriseSet q w ω ε n, ε
+          < ∑ t ∈ surpriseSet q w ω ε n,
+              sqHellinger (fun x => if x = ω t then 1 else 0) (condPred q w ω t) :=
+        Finset.sum_lt_sum_of_nonempty hS (fun t ht => lt_of_mem_surpriseSet ht)
+      simpa [Finset.sum_const, nsmul_eq_mul] using hcst
+    have hmono : ∑ t ∈ surpriseSet q w ω ε n,
+          sqHellinger (fun x => if x = ω t then 1 else 0) (condPred q w ω t)
+        ≤ ∑ t ∈ Finset.range n,
+            sqHellinger (fun x => if x = ω t then 1 else 0) (condPred q w ω t) :=
+      Finset.sum_le_sum_of_subset_of_nonneg (surpriseSet_subset ε n)
+        (fun t _ _ => sqHellinger_nonneg _ _)
+    have hcum := cumulative_hellinger hq hw hreal hsumw hqsum k hwR n
+    rw [lt_div_iff₀ h2]
+    have hring : ((surpriseSet q w ω ε n).card : ℝ) * (2 * ε)
+        = 2 * (((surpriseSet q w ω ε n).card : ℝ) * ε) := by ring
+    rw [hring]; linarith
+
 end Prequential
+
+/-! ## Axiom audit
+
+Each guard **fails `lake build`** if the theorem's axiom set ever drifts from the standard
+`[propext, Classical.choice, Quot.sound]`. -/
+
+/-- info: 'BayesRedundancy.sqHellinger_nonneg' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms sqHellinger_nonneg
+
+/-- info: 'BayesRedundancy.surprise_card_mul_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms surprise_card_mul_le
+
+/-- info: 'BayesRedundancy.surprise_card_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms surprise_card_le
+
+/-- info: 'BayesRedundancy.surprise_card_lt' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms surprise_card_lt
 
 end BayesRedundancy

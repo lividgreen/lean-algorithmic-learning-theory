@@ -10,9 +10,9 @@ import Mathlib
 set_option linter.style.header false
 
 /-!
-# Positive arithmetic core of SQ version-space pruning (Paper III §3.4 / §4(b) / Appendix A)
+# Positive arithmetic core of SQ version-space pruning ([SQ] §3.4 / §4(b) / Appendix A)
 
-Provenance: Paper III, §3.4 (statistical dimension `d_SQ` +
+Provenance: [SQ], §3.4 (statistical dimension `d_SQ` +
 Assumption A), §4 step (b) (SQ-based enumeration of `M_T`), and Appendix A (the BFJKMR →
 prequential adaptation: "the version-space bound", "the SQ handle", "the truth survives").
 
@@ -48,7 +48,7 @@ Status: PROVED as pure real-arithmetic / asymptotic statements. This is the *ari
   `O(1/√n)` query estimate. The "empirical answer is within `τ` of the truth's mean" fact is taken
   as the hypothesis `hemp`, not derived.
 * Not the negligible-pruned-mass / competitor-decay half of Appendix A's soundness (claim 2): that
-  is the Paper II Bayes-mixture redundancy argument and stays in prose. We prove only the
+  is the [Discovery] Bayes-mixture redundancy argument and stays in prose. We prove only the
   *geometric* half — truth retained, separated impostors removed.
 * Not Theorem 4.1's poly-time accounting (that is FV-B1, `PolyTimeAccounting.lean`); here we supply
   only the `poly(r)` size of the retained support that accounting consumes.
@@ -114,6 +114,51 @@ theorem separated_impostor_pruned
     (hsep : 3 * τ < |predR' - predR|) :
     2 * τ < |predR' - emp| := by
   have h1 : |predR' - predR| ≤ |predR' - emp| + |emp - predR| := abs_sub_le predR' emp predR
+  linarith
+
+/-! ### Window-noise refinement of the `2τ` geometry ([SQ] §3.1)
+
+The window-sufficiency assumption (W) of [SQ] §3.1 — "the window determines the next observation
+under R" — is the *determinism* of the one-step predictor `f_R`.  It weakens gracefully to a
+**window-noise rate** `η := μ(o_{t+1} ≠ f_R(w_t))`, the Bayes error of the predictor under the
+invariant measure (`W` is `η = 0`). The realized answer is then the *joint* mean `a = 𝔼_μ φ(w,
+o_next)`, which the empirical time-average concentrates on; the *deterministic* truth is
+`predR = 𝔼_μ φ(w, f_R(w))`, and the two differ by the noise gap `|a − predR| ≤ 2η` (the query is
+`[−1,1]`-valued; `SQOracle.noise_gap_integral`).  The two lemmas below are the noisy siblings of
+`truth_survives_pruning` / `separated_impostor_pruned`: the deterministic truth survives the
+*unchanged* `2τ`-pruning rule exactly when the window-noise budget `2η ≤ τ` holds, and a separated
+impostor picks up the matching `+2η` slack.  Both specialize to the noiseless lemmas at `η = 0`. -/
+
+-- `hτ`, `hη` are kept for regime faithfulness (they parallel the noiseless lemma and the paper's
+-- `η, τ ≥ 0` budget) though the arithmetic needs only the budget `2η ≤ τ`; hence the scoped linter.
+set_option linter.unusedVariables false in
+/-- **T2a-noisy — the truth survives noisy pruning** ([SQ] §3.1, the window-noise refinement of
+`truth_survives_pruning`).  The empirical answer concentrates on the noisy answer `a`
+(`|emp − a| ≤ τ`), and `a` sits within the window-noise gap `2η` of the deterministic-prediction
+truth `predR` (`|a − predR| ≤ 2η`).  Then, provided the window-noise budget `2η ≤ τ` holds, the
+truth's deviation `|predR − emp|` from the empirical answer is still `≤ 2τ` — so the *unchanged*
+`2τ`-pruning rule never discards it.  At `η = 0` (forcing `a = predR`) this is
+`truth_survives_pruning`. -/
+theorem truth_survives_pruning_noisy
+    (predR a emp τ η : ℝ) (hτ : 0 ≤ τ) (hη : 0 ≤ η)
+    (hbudget : 2 * η ≤ τ) (hconc : |emp - a| ≤ τ) (hnoise : |a - predR| ≤ 2 * η) :
+    |predR - emp| ≤ 2 * τ := by
+  have h := abs_sub_le predR a emp
+  rw [abs_sub_comm predR a, abs_sub_comm a emp] at h
+  linarith
+
+/-- **T2b-noisy — separated impostors are pruned, with noise slack** ([SQ] §3.1, the window-noise
+refinement of `separated_impostor_pruned`).  A candidate `predR'` whose predicted mean is
+`> 3τ + 2η`-separated from the deterministic truth `predR` still deviates from the empirical answer
+by `|predR' − emp| > 2τ`, so it is pruned.  The separation threshold picks up exactly the `+2η`
+window-noise slack over the noiseless `3τ`.  At `η = 0` this is `separated_impostor_pruned`. -/
+theorem separated_impostor_pruned_noisy
+    (predR predR' a emp τ η : ℝ)
+    (hconc : |emp - a| ≤ τ) (hnoise : |a - predR| ≤ 2 * η)
+    (hsep : 3 * τ + 2 * η < |predR' - predR|) :
+    2 * τ < |predR' - emp| := by
+  have h1 : |predR' - predR| ≤ |predR' - emp| + |emp - predR| := abs_sub_le predR' emp predR
+  have h2 : |emp - predR| ≤ |emp - a| + |a - predR| := abs_sub_le emp a predR
   linarith
 
 end SQVersionSpace

@@ -16,9 +16,9 @@ set_option linter.style.show false
 
 /-!
 # Finite coproducts in the realizability category `Asm`, and the recursor's initial-algebra
-universal property ON THE GENUINE CARRIER (Paper I §4, §5; upstreamable)
+universal property ON THE GENUINE CARRIER ([Decoupling] §4, §5; upstreamable)
 
-Provenance: Paper I §4 (Rep(S) as a realizability category) and
+Provenance: [Decoupling] §4 (Rep(S) as a realizability category) and
 §5 (the bounded recursor). `ALT/RealizabilityCCC.lean` (FV-12) built the genuine carrier
 `RealizabilityCCC.Asm` — assemblies over Kleene's first PCA (`Nat.Partrec.Code`) — and proved it
 **Cartesian closed** (terminal + products + exponentials). This file adds the missing **finite

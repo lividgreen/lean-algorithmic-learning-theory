@@ -12,7 +12,7 @@ set_option linter.style.header false
 /-!
 # A second concrete `learner → CCC/NNO` instance: the modular counter
 
-Provenance: Paper I, §4 (Rep(S) as a CCC), §4.4 (the Rule-30
+Provenance: [Decoupling], §4 (Rep(S) as a CCC), §4.4 (the Rule-30
 cellular-automaton worked example), §4.5 / Conjecture 4.4 (the general functor
 `DecoupledLearner → CCC_NNO` is OPEN). This file is a supporting win toward it: a SECOND concrete
 decoupled-learner instance beyond Rule-30 — the modular counter (state `ZMod (n+1)`, update =
@@ -43,7 +43,7 @@ Status: PROVED as concrete `ZMod` arithmetic. A supporting instance, not the fun
   in prose rather than re-deriving the categorical exponential (Mathlib's `ihom` object is abstract,
   not defeq to `→` — see D2).
 * "Decoupled" is modeled minimally here (the rule `step` held as a separate datum `stepAsData`
-  applied to state), NOT the full D1–D4 decoupling of Paper I §3.
+  applied to state), NOT the full D1–D4 decoupling of [Decoupling] §3.
 * Reuses `cyclicParamNNO` (D1) and (in prose) the `Type` CCC (D2); proves NO new categorical
   machinery.
 
@@ -65,7 +65,7 @@ abbrev State (n : ℕ) : Type := ZMod (n + 1)
 /-- The one-step update: advance the counter by one. -/
 def step (n : ℕ) : State n → State n := fun s => s + 1
 
-/-- The functions-as-data object: this learner's one-step update rules (Paper I §4.5).
+/-- The functions-as-data object: this learner's one-step update rules ([Decoupling] §4.5).
 This is the `Type`-level exponential `State n ⇒ State n` of the D2 CCC stand-in. -/
 abbrev Rules (n : ℕ) : Type := State n → State n
 
@@ -88,7 +88,7 @@ theorem step_iterate (n k : ℕ) (s : State n) : (step n)^[k] s = s + (k : State
     push_cast
     ring
 
-/-- The functions-as-data object is finite (Paper I §4.4 `exp_finite`, concretely). -/
+/-- The functions-as-data object is finite ([Decoupling] §4.4 `exp_finite`, concretely). -/
 instance (n : ℕ) : Fintype (Rules n) := inferInstance
 
 /-- Its cardinality: `(n+1)^(n+1)` one-step rules over a state space of `n+1` configurations. -/

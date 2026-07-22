@@ -16,7 +16,7 @@ set_option linter.style.longLine false
 /-!
 # Theorem 6.2 as ONE machine-checked theorem on the genuine carrier (FV-15)
 
-Provenance: Paper I §6.1 (Definition 6.1, Theorem 6.2) and
+Provenance: [Decoupling] §6.1 (Definition 6.1, Theorem 6.2) and
 §6.3 (the represent-but-cannot-derive consequence). This file closes the seam recorded at
 Theorem 6.2 ("Theorem 6.2's *statement* … is assembled at paper level; no single Lean theorem
 asserts it"): it bundles the three previously-separate machine-checked constituents into ONE
@@ -104,5 +104,48 @@ theorem categorical_threshold
     intro hInc
     exact reflectiveAsm_representsUnderivableTruth gnum Derivable True_ g
       (reflectiveAsm_satisfiable_depth g Mchk hidx) hInc
+
+/-! ### Corollary 6.4 (Capacity stratification of the categorical threshold, [Decoupling] §6.4)
+
+A subsystem with `w` work bits **hosts** the Gödel-decision recursor for a theory of Gödel size `g`
+exactly when `w` meets the linear capacity `2n`, `n := ⌈log₂(g+1)⌉`. This stratifies §6's threshold
+by working-memory budget: the property is monotone in `w`, is entered precisely at capacity `2n`,
+and is excluded below `n`. -/
+
+/-- [Decoupling] §6.4 (Corollary 6.4): a subsystem with `w` work bits **hosts** the categorical threshold
+for a theory of Gödel size `g` when its budget covers the linear capacity `capacity n = 2n`,
+`n := ⌈log₂(g+1)⌉` (the size of the Gödel sentence). -/
+def hostsAt (w g : ℕ) : Prop := GodelInternalization.capacity (Nat.clog 2 (g + 1)) ≤ w
+
+/-- **Monotone in the work budget**: more work memory only helps. -/
+theorem hostsAt_mono {w w' g : ℕ} (h : w ≤ w') : hostsAt w g → hostsAt w' g :=
+  fun hw => le_trans hw h
+
+/-- **Entered at capacity**: the threshold is met exactly once the budget reaches `capacity n = 2n`. -/
+theorem hostsAt_enters (g : ℕ) : hostsAt (GodelInternalization.capacity (Nat.clog 2 (g + 1))) g :=
+  le_refl _
+
+/-- **Excluded below `n`**: a budget under the Gödel-sentence size `n = ⌈log₂(g+1)⌉` cannot host the
+threshold — indeed the capacity is the strictly larger `2n`, so `w < n` fails already. -/
+theorem hostsAt_excludes {w g : ℕ} (h : w < Nat.clog 2 (g + 1)) : ¬ hostsAt w g := by
+  intro hh
+  simp only [hostsAt, GodelInternalization.capacity] at hh
+  omega
+
+/-- **Corollary 6.4, the delivered object.** Once `w` hosts the threshold (`hostsAt w g`) and the
+proof-code budget satisfies `g < M_chk ≤ g²`, the genuine FV-15 object of Theorem 6.2 is realized at
+budget `w`: a reflective object `R` of the realizability CCC `Asm`, of working depth `M_chk`, whose
+bounded-recursor object `FitsIn`s the `w` work bits (by capacity monotonicity from the linear `2n`),
+and which — under imported incompleteness at `g` — represents a true-but-underivable sentence. -/
+theorem hostsAt_threshold
+    {Sentence : Type*} (gnum : Sentence → ℕ) (Derivable True_ : Sentence → Prop)
+    {w g Mchk : ℕ} (h : hostsAt w g) (h1 : g < Mchk) (h2 : Mchk ≤ g ^ 2) :
+    ∃ R : ReflectiveAsm g,
+      R.depth = Mchk ∧
+      CapacityLayer.FitsIn (recursorAsm R.depth) w ∧
+      (GodelThreshold.Incompleteness gnum Derivable True_ g →
+        ∃ M, GodelThreshold.RepresentsUnderivableTruth gnum Derivable True_ M) := by
+  obtain ⟨R, hdepth, hfits, hcons⟩ := categorical_threshold gnum Derivable True_ g Mchk h1 h2
+  exact ⟨R, hdepth, hfits.mono h, hcons⟩
 
 end CategoricalThreshold

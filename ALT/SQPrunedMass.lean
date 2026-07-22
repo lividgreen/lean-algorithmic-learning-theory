@@ -9,9 +9,9 @@ import Mathlib
 set_option linter.style.header false
 
 /-!
-# Post-discovery pruned mass: competitor-decay + Kraft (Paper III Appendix A, Claim 2)
+# Post-discovery pruned mass: competitor-decay + Kraft ([SQ] Appendix A, Claim 2)
 
-Provenance: Paper III, Appendix A "Soundness of SQ pruning", Claim 2
+Provenance: [SQ], Appendix A "Soundness of SQ pruning", Claim 2
 (the accumulated pruned mass is `≤ δ/2`).  This file supplies the **post-discovery half** of that
 claim: once the search has run past `T_discover`, the total posterior mass ever assigned to pruned
 competitors is `≤ δ/2`, established by competitor decay + the Kraft inequality **alone** — with *no*
@@ -21,10 +21,10 @@ This is the companion to `ALT/SQVersionSpace.lean` (FV-A4, "truth survives pruni
 `ALT/SQOracle.lean` (FV-E, the empirical-answer concentration): there the geometry of a *single*
 pruning step is proved; here the *accumulated* mass across the whole pruned set is summed & bounded.
 
-Like `ALT/SampleComplexity.lean` (FV-B2) this file reuses Paper II as **imported hypotheses**
+Like `ALT/SampleComplexity.lean` (FV-B2) this file reuses [Discovery] as **imported hypotheses**
 rather than re-deriving it: the per-competitor posterior bound
 `wt i ≤ w i · 2^K · exp(−2tε₀)` is taken as the hypothesis `hdecay`, which bundles two cited facts —
-the likelihood decay `L_t(R') ≤ exp(−2tε₀)` (Paper II `DeterministicDiscovery`) and the
+the likelihood decay `L_t(R') ≤ exp(−2tε₀)` ([Discovery] `DeterministicDiscovery`) and the
 normaliser lower bound `Z_t ≥ w(R) = 2^{−K}`.  The NEW content proved here is exactly the two steps
 the paper leaves implicit:
 
@@ -46,10 +46,10 @@ description length in nats-vs-bits is absorbed into `K`) and the algebra stays i
 * Not the pre-discovery half of Claim 2 (the transient `t < T_discover` mass), which is the
   martingale / maximal-inequality argument the paper cites — this file is explicitly the
   *post-`T_discover`* contribution.
-* Not the decay `L_t(R') ≤ exp(−2tε₀)` nor the normaliser `Z_t ≥ 2^{−K}`: those are the Paper II
+* Not the decay `L_t(R') ≤ exp(−2tε₀)` nor the normaliser `Z_t ≥ 2^{−K}`: those are the [Discovery]
   `DeterministicDiscovery` facts, imported here pre-bundled as the single hypothesis `hdecay`.
 * Not the union with `ALT/SQOracle.lean`'s `1−δ` truth-survival into a single `1−δ` soundness
-  statement: that final assembly stays in prose (it is the Bayes-mixture argument of Paper II).
+  statement: that final assembly stays in prose (it is the Bayes-mixture argument of [Discovery]).
 -/
 
 namespace SQPrunedMass
@@ -75,8 +75,8 @@ theorem prefactor_le
 
 /-- FV-F (Appendix A Claim 2, post-discovery half): the accumulated post-discovery pruned mass is
 `≤ δ/2`, by competitor decay + Kraft alone — no maximal inequality. The per-competitor bound
-`wt i ≤ w i · 2^K · exp(−2tε₀)` (decay + normaliser, Paper II) is uniform in `t` past `T_discover`,
-so summing over the pruned set with Kraft `∑ w ≤ 1` gives `∑ wt ≤ δ/2`. -/
+`wt i ≤ w i · 2^K · exp(−2tε₀)` (decay + normaliser, [Discovery]) is uniform in `t` past
+`T_discover`, so summing over the pruned set with Kraft `∑ w ≤ 1` gives `∑ wt ≤ δ/2`. -/
 theorem accumulated_pruned_mass_le
     {ι : Type*} (pruned : Finset ι) (w wt : ι → ℝ) (K t ε₀ δ : ℝ)
     (hw0 : ∀ i ∈ pruned, 0 ≤ w i)

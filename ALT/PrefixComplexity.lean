@@ -7,18 +7,19 @@ import Mathlib
 import ALT.KolmogorovComplexity
 import ALT.KolmogorovBitlen
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
+-- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
+set_option linter.style.longLine false
 
 /-!
 # Prefix-free Kolmogorov complexity `KP` is a semimeasure
 
-Paper II §1.1 prior (FV-13); Solomonoff/Levin.
+[Discovery] §1.1 prior (FV-13); Solomonoff/Levin.
 
 Provenance: extends `ALT/KolmogorovComplexity.lean` (Slice 1: `Computes`, `codelen`, `K`, `K_le`,
 `exists_min_code`). Formalizes the **universal a-priori semimeasure** bound `∑ₓ 2⁻ᴷᴾ⁽ˣ⁾ ≤ 1`
 (Levin's coding theorem / Solomonoff prior), the defining property of a *prefix-free* Kolmogorov
-complexity. Connects to Paper II §1.1 (`K(R)`, program length in bits) and Paper III §2.
+complexity. Connects to [Discovery] §1.1 (`K(R)`, program length in bits) and [SQ] §2.
 
 ## Why this is genuine content (not reusable from the existing measures)
 The plain bit-length complexity `K_bitlen` (`ALT/KolmogorovBitlen.lean`) is **not** a
@@ -34,9 +35,9 @@ on program indices, so that the description set is prefix-free and its Kraft sum
 * `K_injective`: distinct outputs have distinct least-index programs.
 * `kraft_plen : ∑' m, 2⁻¹ ^ plen m ≤ 1`: the Kraft inequality for the `plen` code (the crux).
 * `kraft_KP : ∑' x, 2⁻¹ ^ KP x ≤ 1`: **the headline** — `KP` is a semimeasure.
-* `kraft_prior : ∑' i : ι, 2⁻¹ ^ KP (Encodable.encode i) ≤ 1`: the Paper II prior bridge — the prior
-  `w(R') ∝ 2⁻ᴷᴾ⁽ᵉⁿᶜᵒᵈᵉ ᴿ'⁾` over any encodable rule class is a semimeasure (closes Paper II FV-1's
-  caveat; this file is Paper II **FV-13**).
+* `kraft_prior : ∑' i : ι, 2⁻¹ ^ KP (Encodable.encode i) ≤ 1`: the [Discovery] prior bridge — the prior
+  `w(R') ∝ 2⁻ᴷᴾ⁽ᵉⁿᶜᵒᵈᵉ ᴿ'⁾` over any encodable rule class is a semimeasure (closes [Discovery] FV-1's
+  caveat; this file is [Discovery] **FV-13**).
 * `KP_not_computable`: `KP` is genuinely **uncomputable** (Berry argument, mirroring
   `K_bitlen_not_computable`).
 
@@ -163,7 +164,7 @@ theorem kraft_KP : ∑' x, (2⁻¹ : ℝ≥0∞) ^ (KP x) ≤ 1 := by
   exact (ENNReal.tsum_comp_le_tsum_of_injective K_injective
     (fun m => (2⁻¹ : ℝ≥0∞) ^ (plen m))).trans kraft_plen
 
-/-- **The Paper II prior `w(R') = 2⁻ᴷᴾ⁽ᵉⁿᶜᵒᵈᵉ ᴿ'⁾` is a semimeasure** over any encodable rule class
+/-- **The [Discovery] prior `w(R') = 2⁻ᴷᴾ⁽ᵉⁿᶜᵒᵈᵉ ᴿ'⁾` is a semimeasure** over any encodable rule class
 `ι`: `∑' R' : ι, 2⁻¹ ^ KP (encode R') ≤ 1`. Re-index `kraft_KP` along the injective `encode : ι → ℕ`
 (`tsum_comp_le_tsum_of_injective`). This is the prior used in the MDL/discovery corpus. -/
 theorem kraft_prior {ι : Type*} [Encodable ι] :

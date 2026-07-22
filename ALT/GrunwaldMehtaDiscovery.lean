@@ -11,19 +11,19 @@ set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-!
-# Finite-time discovery — Paper II §3, Theorem 3.1 (prequential MDL)
+# Finite-time discovery — [Discovery] §3, Theorem 3.1 (prequential MDL)
 
-Provenance: Paper II §3.2 (central/Bernstein condition) and §3.3
-(concentration + separation ⇒ discovery). The deep engine — **Grünwald–Mehta (2020) Theorem 7.4**
+Provenance: [Discovery] §3.2 (central/Bernstein condition) and §3.3
+(concentration + separation ⇒ discovery). The deep engine — **Grünwald–Mehta (2020) Theorem 22**
 (the central condition implies an `O(1/n)` fast rate) — is a published black box: Mathlib has no
 PAC-Bayes / fast-rate machinery, so for the **general stochastic** case we **import it as a
 hypothesis** (`hrate`) and do NOT reprove it.
 
 **No import remains for the paper's actual claim.** For the **realizable-deterministic** case — the
-setting of Paper II's Sub-problem B — Theorem 3.1 is proved **fully unconditionally** in
+setting of [Discovery]'s Sub-problem B — Theorem 3.1 is proved **fully unconditionally** in
 `ALT/DeterministicDiscovery.lean` (`deterministic_discovery`): a direct
 competitor-likelihood-decay argument over the prequential Bayes mixture of
-`ALT/BayesRedundancy.lean`, with **no** GM Thm 7.4, **no** Markov step, and **no**
+`ALT/BayesRedundancy.lean`, with **no** GM Thm 22, **no** Markov step, and **no**
 posterior-of-close hypothesis. The GM-conditional development below is the general-stochastic
 generalization; `hrate` is its one genuine import, eliminated in the deterministic case.
 (N.B. the two are different quantities: `hrate` here bounds `E[D_H²(P̄ₙ, P_R)]` — the Hellinger of the
@@ -33,7 +33,7 @@ GM rate is precisely the bridge between them, so the deterministic proof does no
 
 This file machine-checks the paper's own two contributions feeding Theorem 3.1:
 
-* **Piece 1 — `bernstein_central`** (§3.2): the central/`v`-GRIP condition `E[X²] ≤ ℓmax·E[X]` for a
+* **Piece 1 — `bernstein_central`** (§3.2): the central/Bernstein condition `E[X²] ≤ ℓmax·E[X]` for a
   bounded non-negative excess loss, fully proved (elementary).
 * **Piece 2 — `discovery_posterior_bound`** (§3.3): given the imported GM rate `Z n ≤ B/n`, a Markov
   step, and the separation/posterior modelling implication (all named hypotheses), the elementary
@@ -44,7 +44,7 @@ This file machine-checks the paper's own two contributions feeding Theorem 3.1:
   rate `Z n ≤ B/n` past the threshold `n ≥ 2B/(δ ε₀)` gives `Z n ≤ (δ/2)·ε₀`, Markov then gives the
   tail `≤ δ/2`, and the posterior implication gives `w(R) ≥ 1 − δ/2`.
 * ASSUMED (named hypotheses, **general stochastic case only** — all eliminated in the
-  realizable-deterministic `DeterministicDiscovery.deterministic_discovery`): `hrate` = **GM Thm 7.4**
+  realizable-deterministic `DeterministicDiscovery.deterministic_discovery`): `hrate` = **GM Thm 22**
   (the one deep import here); `hpost` = `posterior_of_close`, the modelling implication that a mixture
   within `ε₀` of `P_R` (which, under the separation `hsep`, only `R` can achieve) carries posterior
   weight `w(R) ≥ 1 − tail`.
@@ -53,7 +53,7 @@ This file machine-checks the paper's own two contributions feeding Theorem 3.1:
   `discovery_posterior_bound_markov` re-derives the discovery bound using it — so the abstract
   `hmarkov` of the original `discovery_posterior_bound` (kept for the elementary arithmetic form) is
   replaced by a genuine theorem. `W` remains the abstract squared-Hellinger r.v. (the Hellinger
-  functional / Bayes mixture stay the modelling interface, like GM Thm 7.4).
+  functional / Bayes mixture stay the modelling interface, like GM Thm 22).
 
 `Z : ℕ → ℝ` models `E[D_H²(P̄ₙ, P_R)]`; `ε₀` is the squared-Hellinger separation of
 `EpsilonZeroBound.eps0`; `B = c·(r·log 2 + log(1/δ))` is the `EpsilonZeroBound.Tdiscover` numerator.
@@ -84,7 +84,7 @@ theorem bernstein_central {Ω : Type*} [Fintype Ω] (μ X : Ω → ℝ) (ℓmax 
 
 /-! ## Piece 2 — concentration + separation ⇒ discovery (§3.3)
 
-The imported GM rate (Thm 7.4) is modelled as `hrate : Z n ≤ B/n` on the non-negative distance
+The imported GM rate (Thm 22) is modelled as `hrate : Z n ≤ B/n` on the non-negative distance
 `Z n = E[D_H²(P̄ₙ, P_R)]`, with `B = c·(r·log 2 + log(1/δ))`. Past the discovery threshold the rate
 is below `(δ/2)·ε₀`; Markov turns that into a tail bound `≤ δ/2`; and the posterior implication
 turns *that* into posterior concentration `w(R) ≥ 1 − δ/2`. Every step except the elementary
@@ -124,7 +124,7 @@ theorem markov_tail {Z : ℕ → ℝ} {B δ ε₀ tail : ℝ} {n : ℕ}
     linarith [hZn]
   linarith [hmarkov, htail]
 
-/-- **§3.3 discovery (assembly).** Under the imported GM fast rate (`hrate` = Grünwald–Mehta Thm 7.4),
+/-- **§3.3 discovery (assembly).** Under the imported GM fast rate (`hrate` = Grünwald–Mehta Thm 22),
 Markov (`hmarkov`), and the separation/posterior modelling implication (`hpost` =
 `posterior_of_close`: since by separation only `R` lies within `ε₀` of `P_R`, the event "mixture
 within `ε₀`" — which holds with probability `≥ 1 − tail` — forces posterior weight `w ≥ 1 − tail`),
@@ -153,8 +153,8 @@ the tail bound `μ.real {ω | ε₀ ≤ W ω} ≤ B/(n·ε₀)` as a *proved* fa
 * PROVED: the Markov tail (`markov_tail_real`) — a real application of Mathlib's Markov inequality,
   replacing the abstract `hmarkov`.
 * STILL the modelling interface (unchanged): `W` is *the* squared-Hellinger r.v. (we do not build the
-  Hellinger functional or the Bayes mixture `P̄ₙ` — that stays the interface, like GM Thm 7.4);
-  `hrate : ∫ W ∂μ ≤ B/n` is **GM Thm 7.4** (the imported black box); and `hpost` =
+  Hellinger functional or the Bayes mixture `P̄ₙ` — that stays the interface, like GM Thm 22);
+  `hrate : ∫ W ∂μ ≤ B/n` is **GM Thm 22** (the imported black box); and `hpost` =
   `posterior_of_close`, the separation ⇒ posterior modelling implication. -/
 
 /-- **Markov tail (real Markov inequality).** For a non-negative integrable `W` with expectation
@@ -175,7 +175,7 @@ theorem markov_tail_real {Ω : Type*} [MeasurableSpace Ω] (μ : Measure Ω) (W 
 /-- **§3.3 discovery with the Markov step discharged.** Same conclusion as `discovery_posterior_bound`
 — posterior concentration `w(R) ≥ 1 − δ/2` past the threshold `n ≥ 2B/(δ ε₀)` — but the Markov tail
 is now a *proved* application of Mathlib's Markov inequality (`markov_tail_real`) instead of the
-abstract `hmarkov`. The only remaining named hypotheses are `hrate` (GM Thm 7.4, the imported rate on
+abstract `hmarkov`. The only remaining named hypotheses are `hrate` (GM Thm 22, the imported rate on
 `∫ W ∂μ`) and `hpost` (`posterior_of_close`, the separation ⇒ posterior implication); `W` abstractly
 denotes the squared-Hellinger r.v. -/
 theorem discovery_posterior_bound_markov {Ω : Type*} [MeasurableSpace Ω] (μ : Measure Ω) (W : Ω → ℝ)

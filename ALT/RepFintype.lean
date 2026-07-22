@@ -11,9 +11,9 @@ set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-!
-# Rep(S) on ONE faithful carrier: the Cartesian-closed category of FINITE sets (Paper I §4, §6.1)
+# Rep(S) on ONE faithful carrier: the Cartesian-closed category of FINITE sets ([Decoupling] §4, §6.1)
 
-Provenance: Paper I §4 (Proposition 4.3 — Rep(S) is "a full
+Provenance: [Decoupling] §4 (Proposition 4.3 — Rep(S) is "a full
 subcategory of finite sets, Cartesian closed up to capacity"; the realizability "functions as data"
 layer) and §6.1 (Definition 6.1 — ONE Rep(S) that is a CCC AND contains the bounded recursor).
 
@@ -115,7 +115,7 @@ theorem reflective_satisfiable (gTS : ℕ) : Reflective gTS :=
 
 end RepFintype
 
-/-! ### The bounded recursor as an INITIAL object (relativized universal property, Paper I §5)
+/-! ### The bounded recursor as an INITIAL object (relativized universal property, [Decoupling] §5)
 
 We upgrade the orbit-form bounded recursor (`ParameterizedNNO.ParamNNO.bounded_recursor`) to a
 genuine **categorical universal property**, reusing Mathlib's `CategoryTheory.Limits.IsInitial`.

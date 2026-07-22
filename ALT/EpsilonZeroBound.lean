@@ -9,16 +9,17 @@ import Mathlib
 set_option linter.style.header false
 
 /-!
-# The explicit ε₀ lower bound (Paper II §3.3 / Theorem 3.1)
+# The explicit ε₀ lower bound ([Discovery] §3.3 / Theorem 3.1)
 
-Provenance: Paper II, §3.3 / Theorem 3.1. `ε₀` is the minimum
+Provenance: [Discovery], §3.3 / Theorem 3.1. `ε₀` is the minimum
 squared-Hellinger separation between the true rule `R` and any competitor in the model class; it
-sits in `T_discover = O(r · log(1/δ) / ε₀²)` and is inherited by Paper III.
+sits in `T_discover = O(r · log(1/δ) / ε₀²)` and is inherited by [SQ].
 
 There is NO universal lower bound on `ε₀` — parity-type classes drive it to zero (that is
-`ALT/ParityCounterexample.lean` / FV-A3). So F5 does not bound `ε₀` in general; it DEMOTES `ε₀`
-from a factor hidden in the big-O to an explicit, named class parameter: `ε₀` as a minimum over the
-class, its strict positivity, an explicit lower bound for "well-separated" classes, and the
+`ALT/ParityCounterexample.lean` / FV-A3). So this module does not bound `ε₀` in general; it
+DEMOTES `ε₀` from a factor hidden in the big-O to an explicit, named class parameter: `ε₀` as a
+minimum over the class, its strict positivity, an explicit lower bound for "well-separated"
+classes, and the
 resulting conditional polynomial discovery bound.
 
 Status: PROVED as pure `Finset` / real arithmetic. A thin supporting win (cf. `PolyTimeAccounting`).
@@ -40,7 +41,7 @@ Status: PROVED as pure `Finset` / real arithmetic. A thin supporting win (cf. `P
 * `sep : ι → ℝ` abstractly models the squared-Hellinger separation `d_H²(P_R, P_{R_i})` as a real
   per competitor; the measure-theoretic Hellinger distance is NOT constructed here (deferred — would
   need probability machinery).
-* Ties to Paper II Theorem 3.1 by making the `ε₀`-dependence explicit; the constant `c` and the
+* Ties to [Discovery] Theorem 3.1 by making the `ε₀`-dependence explicit; the constant `c` and the
   discovery / concentration analysis itself (Grünwald–Mehta) stay IMPORTED (the FV-7 / §3 boundary),
   not re-proved.
 * Pure arithmetic / reparametrization-level; no new learning-theory content.
@@ -56,7 +57,7 @@ namespace EpsilonZeroBound
 
 open Real Finset
 
-/-- ε₀ (Paper II §3.3): the least squared-Hellinger separation between the true rule `R` and any
+/-- ε₀ ([Discovery] §3.3): the least squared-Hellinger separation between the true rule `R` and any
 competitor in the finite nonempty model class.
 `sep i` models `d_H²(P_R, P_{R_i})`; ε₀ is its infimum over the class. -/
 noncomputable def eps0 {ι : Type*} (M : Finset ι) (hM : M.Nonempty) (sep : ι → ℝ) : ℝ :=
@@ -79,8 +80,8 @@ theorem eps0_le_sep {ι : Type*} {M : Finset ι} (hM : M.Nonempty) {sep : ι →
     (hi : i ∈ M) : eps0 M hM sep ≤ sep i :=
   Finset.inf'_le sep hi
 
-/-- Discovery time as an EXPLICIT function of ε₀ (Paper II Thm 3.1): the `1/ε₀²` is in the open, not
-hidden in the big-O. -/
+/-- Discovery time as an EXPLICIT function of ε₀ ([Discovery] Thm 3.1): the `1/ε₀²` is in the
+open, not hidden in the big-O. -/
 noncomputable def Tdiscover (c r δ ε0 : ℝ) : ℝ :=
   c * (r * Real.log 2 + Real.log (1 / δ)) / ε0 ^ 2
 
