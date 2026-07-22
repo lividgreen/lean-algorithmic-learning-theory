@@ -1,0 +1,105 @@
+{
+  "ignore": {
+    "ALT.BayesRedundancy": [
+      "Mathlib.Algebra.BigOperators.Field"
+    ],
+    "ALT.BinaryConstant": [
+      "Mathlib.Data.Nat.Size"
+    ],
+    "ALT.BinaryKraft": [
+      "Mathlib.InformationTheory.Coding.KraftMcMillan",
+      "Mathlib.Topology.Algebra.InfiniteSum.Real"
+    ],
+    "ALT.BoundedInterp": [
+      "Mathlib.Data.Nat.Size",
+      "Mathlib.Tactic.NormNum",
+      "Mathlib.Tactic.Positivity",
+      "Mathlib.Tactic.Ring"
+    ],
+    "ALT.CapacityLayer": [
+      "Mathlib.Data.Finite.Sum"
+    ],
+    "ALT.CapacityThreshold": [
+      "Mathlib.Analysis.Complex.ExponentialBounds"
+    ],
+    "ALT.CartesianClosed": [
+      "Mathlib.Data.Finite.Prod"
+    ],
+    "ALT.DecisionListSolver": [
+      "Mathlib.Tactic.IntervalCases"
+    ],
+    "ALT.Decoupling": [
+      "Mathlib.Data.Set.Insert"
+    ],
+    "ALT.ExtensionalDiscovery": [
+      "Mathlib.Analysis.Normed.Group.Indicator",
+      "Mathlib.Analysis.Normed.Group.Tannery"
+    ],
+    "ALT.FiniteInfoTheory": [
+      "Mathlib.Algebra.BigOperators.Field"
+    ],
+    "ALT.GodelInternalization": [
+      "Mathlib.Tactic.Linarith"
+    ],
+    "ALT.KolmogorovComplexity": [
+      "Mathlib.Data.Nat.SuccPred"
+    ],
+    "ALT.KolmogorovTimeBounded": [
+      "Mathlib.Data.Nat.Size"
+    ],
+    "ALT.MDLCoding": [
+      "Mathlib.Data.Nat.Digits.Lemmas"
+    ],
+    "ALT.ParameterizedNNO": [
+      "Mathlib.Data.ZMod.Basic",
+      "Mathlib.Tactic.Ring"
+    ],
+    "ALT.ParityCounterexample": [
+      "Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics"
+    ],
+    "ALT.PersistenceCapacity": [
+      "Mathlib.Data.Finite.Perm",
+      "Mathlib.Data.List.GetD",
+      "Mathlib.Data.Set.Card.Arithmetic"
+    ],
+    "ALT.PolyTime": [
+      "Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics",
+      "Mathlib.Data.Nat.Size",
+      "Mathlib.Tactic.Positivity"
+    ],
+    "ALT.PrefixComplexity": [
+      "Mathlib.Topology.Algebra.InfiniteSum.ENNReal"
+    ],
+    "ALT.ProofChainSkeleton": [
+      "Mathlib.Tactic.Linter.Header"
+    ],
+    "ALT.RealizerLength": [
+      "Mathlib.Data.Nat.Size",
+      "Mathlib.Tactic.Linarith",
+      "Mathlib.Tactic.Positivity"
+    ],
+    "ALT.RecursorAlgebra": [
+      "Mathlib.Data.Fintype.Sum"
+    ],
+    "ALT.RegimeConsistency": [
+      "Mathlib.Analysis.Complex.ExponentialBounds"
+    ],
+    "ALT.RetentionUpperBound": [
+      "Mathlib.Algebra.BigOperators.Group.Finset.Basic"
+    ],
+    "ALT.SQOracle": [
+      "Mathlib.Probability.Moments.SubGaussian"
+    ],
+    "ALT.SQPredictiveTransfer": [
+      "Mathlib.Algebra.Order.BigOperators.Ring.Finset",
+      "Mathlib.Tactic.FieldSimp",
+      "Mathlib.Tactic.Linarith"
+    ],
+    "ALT.StructureFunction": [
+      "Mathlib.Data.List.GetD"
+    ],
+    "ALT.Ville": [
+      "Mathlib.Probability.Martingale.OptionalStopping"
+    ]
+  }
+}

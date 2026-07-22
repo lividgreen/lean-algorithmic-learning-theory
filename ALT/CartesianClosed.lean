@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib
+import Mathlib.CategoryTheory.Monoidal.Closed.Types
+import Mathlib.Combinatorics.Quiver.ReflQuiver
+import Mathlib.Data.Finite.Prod
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false

@@ -34,7 +34,8 @@ and connects it to the FV-E oracle interface.
   tolerance `τ` with confidence `≥ 1 − δ`, in the exact shapes the FV-E interface
   (`SQOracle.sq_oracle_sample_complexity` / `SQOracle.empirical_isSQOracle`) consumes.
 -/
-import Mathlib
+import Mathlib.Dynamics.BirkhoffSum.Average
+import Mathlib.Dynamics.Ergodic.Ergodic
 import ALT.Birkhoff.PointwiseBirkhoff
 import ALT.SQOracle
 

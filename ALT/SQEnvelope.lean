@@ -5,7 +5,6 @@ Authors: Mykola Palamarchuk
 -/
 import ALT.SQObjects
 import ALT.SQVersionSpace
-import Mathlib
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters (long lines/defs).
 set_option linter.style.header false

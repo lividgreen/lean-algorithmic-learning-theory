@@ -1,6 +1,6 @@
 # lean-algorithmic-learning-theory
 
-[![DOI](https://zenodo.org/badge/1295588509.svg)](https://doi.org/10.5281/zenodo.21284775)
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.21284775-blue)](https://doi.org/10.5281/zenodo.21284775)
 
 Machine-checked **algorithmic learning theory** in Lean 4 + Mathlib — the
 query-model, information-theoretic, and computational side of learning theory,
@@ -105,6 +105,10 @@ complementing the empirical-process/statistical side formalized in
   choice-free, and the structural capstone depends on no axioms at all.
 - **Build-enforced axiom hygiene**: 560 `#guard_msgs in #print axioms` guards
   assert each capstone's exact axiom set; `lake build` fails on any drift.
+- **Targeted imports throughout**: every module names exactly the Mathlib
+  files it uses — no monolith `import Mathlib`, one vendored port excepted —
+  so the dependency surface is explicit and the build/docs closure stays
+  proportionate to what is actually used.
 - To *genuinely* re-verify (guards only re-run on true elaboration), delete
   the project's compiled artifacts first:
   `rm -rf .lake/build/lib/lean/ALT*` then `lake build`.

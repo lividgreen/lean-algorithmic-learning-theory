@@ -3,8 +3,8 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib
 import ALT.ParameterizedNNO
+import Mathlib.CategoryTheory.Limits.Shapes.IsTerminal
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false

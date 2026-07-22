@@ -18,10 +18,11 @@ permissions:
   pages: write # deploy API docs to GitHub Pages
   id-token: write # OIDC token for the Pages deployment
 
-# Never run two Pages deployments concurrently.
+# Never run two Pages deployments concurrently. Queue rather than cancel:
+# with the docs resume-cache below, every run's progress is worth keeping.
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -41,8 +42,28 @@ jobs:
       - uses: leanprover/lean-action@v1
         with:
           use-github-cache: false
+      # Docs for the closure are heavy; a killed run must not start over.
+      # Restore prior progress, cap the step below GitHub's 6 h job kill, and
+      # save progress EVEN ON FAILURE — successive runs then converge instead
+      # of restarting (the 2026-07-23 zombie-run lesson).
+      - name: Restore docs progress
+        id: docs-cache-restore
+        uses: actions/cache/restore@v6
+        with:
+          path: .lake/build/doc
+          key: docs-${{ hashFiles('lean-toolchain') }}-${{ hashFiles('lake-manifest.json') }}-${{ github.sha }}
+          restore-keys: |
+            docs-${{ hashFiles('lean-toolchain') }}-${{ hashFiles('lake-manifest.json') }}-
+            docs-${{ hashFiles('lean-toolchain') }}-
       - name: Build API docs
+        timeout-minutes: 300
         run: ~/.elan/bin/lake build ALT:docs
+      - name: Save docs progress
+        if: always()
+        uses: actions/cache/save@v6
+        with:
+          path: .lake/build/doc
+          key: ${{ steps.docs-cache-restore.outputs.cache-primary-key }}
       - name: Assemble pages
         run: |
           mkdir -p pages

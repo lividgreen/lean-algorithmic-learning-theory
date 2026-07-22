@@ -88,7 +88,6 @@ import ALT.SQVersionSpace
 import ALT.SampleComplexity
 import ALT.SearchCost
 import ALT.SearchSpace
-import ALT.SmokeTest
 import ALT.StructureFunction
 import ALT.TimeCost
 import ALT.UniversalAt

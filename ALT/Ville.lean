@@ -3,7 +3,7 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib
+import Mathlib.Probability.Martingale.OptionalStopping
 
 -- Ville's inequality for non-negative supermartingales (FV-G hardening; a genuine Mathlib gap).
 -- Complete proofs, no `sorry`; wired into ALT.lean and axiom-guarded in AxiomAuditMathlib.lean.
