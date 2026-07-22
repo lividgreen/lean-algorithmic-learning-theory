@@ -1,6 +1,6 @@
 # lean-algorithmic-learning-theory
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21284775.svg)](https://doi.org/10.5281/zenodo.21284775)
+[![DOI](https://zenodo.org/badge/1295588509.svg)](https://doi.org/10.5281/zenodo.21284775)
 
 Machine-checked **algorithmic learning theory** in Lean 4 + Mathlib — the
 query-model, information-theoretic, and computational side of learning theory,
@@ -147,7 +147,7 @@ as a whole in a formalization paper (in preparation).
 
 See `CITATION.cff` — archived releases: concept DOI
 [10.5281/zenodo.21284775](https://doi.org/10.5281/zenodo.21284775)
-(v1.0: [10.5281/zenodo.21284776](https://doi.org/10.5281/zenodo.21284776)). Code is Apache-2.0 (`LICENSE`); third-party attribution in
+(this release, v1.1: [10.5281/zenodo.21493562](https://doi.org/10.5281/zenodo.21493562)). Code is Apache-2.0 (`LICENSE`); third-party attribution in
 `NOTICE`. Developed by Mykola Palamarchuk (independent researcher), with
 substantial AI assistance (Claude Code, Anthropic) under the author's
 direction and review — every result is machine-checked by Lean and replayed

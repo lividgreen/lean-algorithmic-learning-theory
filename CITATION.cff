@@ -26,6 +26,9 @@ identifiers:
   - type: doi
     value: 10.5281/zenodo.21284776
     description: Version DOI (v1.0, 2026-07-09)
+  - type: doi
+    value: 10.5281/zenodo.21493562
+    description: Version DOI (v1.1, 2026-07-22)
 keywords:
   - Lean 4
   - Mathlib
