@@ -153,9 +153,17 @@ theorem exists_copairCode (rf rg : ℕ) :
     rw [Denumerable.encode_ofNat] at hEr
     exact hEr
 
-/-- Chosen injection/copairing codes (realizers are values; `.choose` uses only `Classical.choice`). -/
+/-! Chosen injection/copairing codes. Each is a realizer picked from the corresponding existence
+lemma, so the realizers are genuine values; `.choose` uses only `Classical.choice`. -/
+
+/-- The realizer of the left injection: it tags its input with `0` (`ap_inlCode`). -/
 noncomputable def inlCode : ℕ := exists_inlCode.choose
+
+/-- The realizer of the right injection: it tags its input with `1` (`ap_inrCode`). -/
 noncomputable def inrCode : ℕ := exists_inrCode.choose
+
+/-- The realizer of the copairing of two tracked maps: on a tagged input it dispatches to `rf` or
+`rg` according to the tag (`ap_copairCode`). -/
 noncomputable def copairCode (rf rg : ℕ) : ℕ := (exists_copairCode rf rg).choose
 
 theorem ap_inlCode (n : ℕ) : ap inlCode n = Part.some (Nat.pair 0 n) := exists_inlCode.choose_spec n

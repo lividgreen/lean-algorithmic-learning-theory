@@ -108,8 +108,12 @@ structure ReflectiveAsm (gTS : ℕ) where
   /-- (ii) a bounded-recursor OBJECT of depth `> gTS` in the SAME category. -/
   depth : ℕ
   depth_gt : gTS < depth
+  /-- the basepoint, as a morphism out of the terminal object — "`0`" named categorically. -/
   zero : terminalAsm ⟶ recursorAsm depth
+  /-- the successor, as an endomorphism of the recursor object. -/
   succ : recursorAsm depth ⟶ recursorAsm depth
+  /-- the same counter read combinatorially on the carrier `ZMod (depth+1)`; `orbit_depth` and
+  `succ_eq`/`zero_eq` tie it to `zero`/`succ`, so the two readings are one object. -/
   orbit : ParamNNO (ZMod (depth + 1))
   /-- the recursor object's own depth parameter is the structure depth, so the §5 depth bound
   (`orbit.orbit_injective`) witnesses `gTS < orbit.depth` — exactly the Level-1 indexing precondition

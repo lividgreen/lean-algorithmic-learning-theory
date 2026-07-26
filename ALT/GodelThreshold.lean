@@ -14,20 +14,20 @@ set_option linter.style.header false
 
 Provenance: [Decoupling], §5.3 (Proposition 5.3, the Gödel depth
 condition) and §6 (Definition 6.1 representational reflection, Theorem 6.2 categorical threshold).
-Pure propositional/predicate logic, in the spirit of `ALT/ProofChainSkeleton.lean`.
+Pure propositional/predicate logic, in the spirit of `ALT/ChainDependencyAudit.lean`.
 
-The abstract predicates and the threshold lemma now live in the Mathlib-free `ALT/GodelCore.lean`
+The abstract predicates and the threshold lemma now live in the order-only `ALT/GodelCore.lean`
 (`GodelThreshold.Representable`, `…RepresentsUnderivableTruth`, `…Incompleteness`,
 `…godel_threshold`) — so the Foundation side (`ALT/GodelComplete.lean`) imports and discharges the
 *literal* `GodelThreshold.Incompleteness` symbol that this file's results assume. This file adds
-the part that genuinely needs Mathlib: the D1-NNO–tied `reflective_of_depth`.
+the part that genuinely needs Mathlib: the NNO-tied `reflective_of_depth`.
 
 Status: PROVED as pure logic. The incompleteness theorem itself is an imported HYPOTHESIS in the
 threshold lemma; it is discharged from the Foundation port in `ALT/GodelComplete.lean`.
 
 ## What this DOES establish
-* `reflective_of_depth`: the Theorem 6.2 form, tied to D1 — a subsystem whose parameterized NNO
-  (`ParameterizedNNO.ParamNNO`) has depth strictly exceeding `gTS` (exactly Def 6.1's `M > g(T_S)`),
+* `reflective_of_depth`: the Theorem 6.2 form, tied to the NNO — a subsystem whose
+  `ParameterizedNNO.ParamNNO` has depth strictly exceeding `gTS` (exactly Def 6.1's `M > g(T_S)`),
   under incompleteness, represents-an-underivable-truth.
 
 (For `Representable`/`RepresentsUnderivableTruth`/`Incompleteness`/`godel_threshold`, see
@@ -37,7 +37,8 @@ threshold lemma; it is discharged from the Foundation port in `ALT/GodelComplete
 * Does NOT prove Gödel incompleteness — imported as the `GodelCore` `Incompleteness` hypothesis;
   discharged in `ALT/GodelComplete.lean` via the `FormalizedFormalLogic/Foundation` port.
 * NOT the arithmetization / Gödel numbering (`gnum` abstract); NOT the theory `T_S` (`Q` plus
-  `Δ₀`-induction); NOT `Rep(S)`, the CCC (D2), or the parameterized-NNO *existence* (D1).
+  `Δ₀`-induction); NOT `Rep(S)`, the CCC (`ALT/CartesianClosed.lean`), or the parameterized-NNO
+  *existence* (`ALT/ParameterizedNNO.lean`).
 * NOT the full Def 6.1 conjunction (CCC + NNO + `M > g(T_S)`) — only its representable-but-
   underivable-truth core (see `ALT/Reflective.lean`).
 * No physical or mathematical content; pure threshold logic.
@@ -53,9 +54,9 @@ namespace GodelThreshold
 
 variable {Sentence : Type*} (gnum : Sentence → ℕ) (Derivable True_ : Sentence → Prop)
 
-/-- Theorem 6.2 form, tied to D1: a subsystem whose parameterized NNO has depth strictly exceeding
-the Gödel number (`g(T_S) < M`, exactly Def 6.1's `M > g(T_S)`), under incompleteness, represents
-an underivable truth. `P.depth` is the depth `M` of `ParameterizedNNO.ParamNNO`. -/
+/-- Theorem 6.2 form, tied to the NNO: a subsystem whose parameterized NNO has depth strictly
+exceeding the Gödel number (`g(T_S) < M`, exactly Def 6.1's `M > g(T_S)`), under incompleteness,
+represents an underivable truth. `P.depth` is the depth `M` of `ParameterizedNNO.ParamNNO`. -/
 theorem reflective_of_depth {W : Type*} [Fintype W]
     (P : ParameterizedNNO.ParamNNO W) (gTS : ℕ) (hM : gTS < P.depth)
     (hInc : Incompleteness gnum Derivable True_ gTS) :

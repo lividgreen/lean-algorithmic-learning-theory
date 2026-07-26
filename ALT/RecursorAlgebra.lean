@@ -62,7 +62,15 @@ def succEndo : Type ⥤ Type where
     apply ConcreteCategory.ext_apply
     intro x; rcases x with u | a <;> simp
 
-@[simp] lemma succEndo_obj (X : Type) : succEndo.obj X = (PUnit ⊕ X) := rfl
+/-- The endofunctor's action on objects, `F X = PUnit ⊕ X`, definitionally.
+
+Deliberately NOT a `simp` lemma. `succEndo.obj X` occurs inside the *type* arguments of the
+`ConcreteCategory` coercion on every morphism out of `F X` — in particular on an algebra's
+structure map `str : F A ⟶ A`. Rewriting it there leaves a term that no longer matches the
+algebra lemmas below (and is not type-correct at `instances` transparency), so as a default
+simp step it removes exactly the goals it is meant to help. Apply it explicitly where the
+`PUnit ⊕ X` form is what is wanted. -/
+lemma succEndo_obj (X : Type) : succEndo.obj X = (PUnit ⊕ X) := rfl
 
 @[simp] lemma succEndo_map_apply {X Y : Type} (g : X ⟶ Y) (x : succEndo.obj X) :
     succEndo.map g x = Sum.map id g x := rfl
@@ -107,10 +115,10 @@ def boundedAlg (M : ℕ) : Endofunctor.Algebra succEndo where
   str := ↾(Sum.elim (fun _ : PUnit => (0 : Fin (M + 1))) (boundedSucc M))
 
 @[simp] lemma boundedAlg_str_inl (M : ℕ) (u : PUnit) :
-    (boundedAlg M).str (Sum.inl u : succEndo.obj (Fin (M + 1))) = (0 : Fin (M + 1)) := rfl
+    (boundedAlg M).str (Sum.inl u : succEndo.obj (boundedAlg M).a) = (0 : Fin (M + 1)) := rfl
 
 @[simp] lemma boundedAlg_str_inr (M : ℕ) (k : Fin (M + 1)) :
-    (boundedAlg M).str (Sum.inr k : succEndo.obj (Fin (M + 1))) = boundedSucc M k := rfl
+    (boundedAlg M).str (Sum.inr k : succEndo.obj (boundedAlg M).a) = boundedSucc M k := rfl
 
 @[simp] lemma boundedAlg_z (M : ℕ) : z (boundedAlg M) = (0 : Fin (M + 1)) := rfl
 

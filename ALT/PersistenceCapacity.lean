@@ -7420,6 +7420,9 @@ written in.
 Anchors: [Persistence] §2 + §5 + §8. No numbered result of [Persistence] is claimed machine-checked
 by its presence. -/
 
+/-- The habitat world rewritten on flat cells: conjugate `habitatWorld κ k G` by the packing
+`flatHab κ k`, so the state space is a single `Fin (κ * 3 ^ k)`-indexed memory rather than a
+product. Same dynamics, in the vocabulary a price is written in. -/
 def flatWorld (κ k : ℕ) (G : Mem (Fin κ) Bool → Mem (Fin κ) Bool) :
     Mem (Fin (κ * 3 ^ k)) Bool → Mem (Fin (κ * 3 ^ k)) Bool :=
   fun x => flatHab κ k (habitatWorld κ k G ((flatHab κ k).symm x))

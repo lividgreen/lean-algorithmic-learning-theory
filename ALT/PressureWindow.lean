@@ -95,6 +95,12 @@ scissors under two POSITED monotonicities, S2).
 `Real.log` is the natural logarithm; `Real.log 2 = ln 2` is the Landauer constant.
 -/
 
+-- The two existing cores are "inspected and cross-referenced but NOT imported" (above): `upkeep`
+-- is an energy flux, not `RetentionOverhead.g`'s capacity bits, and `payoff` abstracts the leading
+-- dominance gap, so no reuse is available and B1a "is kept self-contained".
+assert_not_exists MDLDominance.mdl_dominance
+assert_not_exists RetentionOverhead.g
+
 namespace PressureWindow
 
 open Real

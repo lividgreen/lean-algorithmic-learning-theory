@@ -69,8 +69,56 @@ complementing the empirical-process/statistical side formalized in
   initial-algebra characterization of the bounded recursor under which
   **Lambek's lemma provably fails**. On top: the structural category of
   decoupled learners with capacity-respecting simulations
-  (`DecoupledSimulation.lean`), and realizer transport priced in both
-  program length and workspace (`GradeTransport.lean`).
+  (`DecoupledSimulation.lean`), realizer transport priced in both
+  program length and workspace (`GradeTransport.lean`), a capacity-graded
+  exponential with priced application and two-way graded transport
+  (`GradedApplication.lean`, `GradedConjugation.lean`, `GradedSimulation.lean`),
+  and a build-enforced boundary: the represent-but-cannot-derive phenomenon is
+  re-exported over an import closure from which the exponential object is
+  *absent*, so "no function space is needed" is machine-enforced rather than
+  observed (`MinimalityWitness.lean`).
+- **Evolution in a skew-product fiber** (`SkewFiber.lean`,
+  `WeightedFiber.lean`, `QuantizationRate.lean`): a skew product is priced by
+  its ingredients' codes plus a constant, with nothing scaling in the state
+  count; and a fiber whose state is a weight vector over candidate rules,
+  updated by fitness-proportional selection, has an update that *is* Bayes'
+  rule — normalizing the integer multiplicative step gives exactly the
+  posterior, term for term, with no division, because the posterior depends on
+  the weight vector only through its ray. What a finite carrier costs is then
+  priced both ways: below an exactness horizon the finite run **equals** the
+  exact Bayes run (the projection has nothing to do, and the horizon is sharp),
+  and past it one generation stays within `4C/W` of the exact posterior in
+  total variation. Honest boundary: no projection onto a finite carrier is a
+  replicator step, the residual does not telescope over a run, and no
+  accumulated bound is claimed.
+- **A surprise budget, and decoupling on a growing code region**
+  (`SurpriseBudget.lean`, `AccretiveDecoupling.lean`): an unconditional bound
+  on how often a prequential mixture is surprised, priced per event against a
+  reading's robustness margin — and the formalization corrected the assembly it
+  was built from, since a margin does *not* compose across consecutive
+  perturbations: two independent structural conditions on the host each rescue
+  it, and a small counterexample shows neither may be dropped. Separately, the
+  decoupling equivalence holds verbatim on a monotonically *growing* code
+  region, with an append-only witness on which the limit region is not
+  read-only, so the statement does not reduce to one fixed partition.
+- **A substrate class, and a capacity clause that is necessary**
+  (`SubstrateClass.lean`): the prerequisites a bounded learner needs in order
+  to reach the reflective threshold, as reusable objects — a decoupled
+  substrate, a regularity regime, and reflective capacity — with the capacity
+  clause machine-checked at the working recursor depth the threshold demands,
+  placing the reflective object inside the capacity the host has left after its
+  code region. The capacity requirement is proved **necessary** on an
+  identified family of Gödel numbers, and proved *not* necessary on another;
+  no general characterization is claimed. Also machine-checked: the regularity
+  regime does not imply the capacity clause, a separation the informal
+  presentation is easy to elide.
+- **A dependency audit of the reflection chain**
+  (`ChainDependencyAudit.lean`): which imports each conclusion actually
+  consumes, with unused-binder marking so that "off the critical path" is
+  compiler-certified rather than asserted — statistical-query learnability is
+  off the path to bare representational reflection, while the steady-state
+  per-step bound genuinely consumes retention. Purely structural: it proves no
+  import, all edges being abstract propositions.
 - **A bounded Gödel decision** (`GodelChecker.lean`,
   `GodelCheckerComplete.lean`): an executable sound bounded proof-checker and
   a sound-and-complete bounded non-provability decision, axiom-clean for the
@@ -103,7 +151,7 @@ complementing the empirical-process/statistical side formalized in
 - No `sorry`, `admit`, or `native_decide`; standard axioms only
   (`propext`, `Classical.choice`, `Quot.sound`) — several cores are
   choice-free, and the structural capstone depends on no axioms at all.
-- **Build-enforced axiom hygiene**: 560 `#guard_msgs in #print axioms` guards
+- **Build-enforced axiom hygiene**: 602 `#guard_msgs in #print axioms` guards
   assert each capstone's exact axiom set; `lake build` fails on any drift.
 - **Targeted imports throughout**: every module names exactly the Mathlib
   files it uses — no monolith `import Mathlib`, one vendored port excepted —
@@ -129,7 +177,7 @@ library `ALT`):
 [[require]]
 name = "alt"
 git = "https://github.com/lividgreen/lean-algorithmic-learning-theory"
-rev = "v1.1"
+rev = "v1.2"
 ```
 
 ## Papers
@@ -141,9 +189,11 @@ categorical threshold for representational reflection), **[Discovery]** (MDL
 dominance and finite-time rule discovery), **[SQ]** (polynomial-time
 convergence under statistical queries), **[Persistence]** (resource-bounded
 persistence capacity: the priced decoder), and **[Inevitability]** (the
-capstone; structural proof-chain check only) — so "[Discovery] §2.2" names a section of
-that paper. `FV-*` tags name rows of the papers' formal-verification tables,
-mirrored by the axiom-audit guard files. Preprints are forthcoming — this
+realization-synthesis capstone: two independent routes to a reflective
+subsystem, and the open problem of realizing both on one
+witness) — so "[Discovery] §2.2" names a section of that paper. `FV-*` tags name rows of the
+papers' formal-verification tables, mirrored by the axiom-audit guard files.
+Preprints are forthcoming — this
 README will link arXiv IDs as they appear — and the development is described
 as a whole in a formalization paper (in preparation).
 
@@ -151,7 +201,9 @@ as a whole in a formalization paper (in preparation).
 
 See `CITATION.cff` — archived releases: concept DOI
 [10.5281/zenodo.21284775](https://doi.org/10.5281/zenodo.21284775)
-(this release, v1.1: [10.5281/zenodo.21493562](https://doi.org/10.5281/zenodo.21493562)). Code is Apache-2.0 (`LICENSE`); third-party attribution in
+— which always resolves to the latest version. This release is v1.2; its version
+DOI is recorded here and in `CITATION.cff` once Zenodo mints it from the GitHub
+Release. Code is Apache-2.0 (`LICENSE`); third-party attribution in
 `NOTICE`. Developed by Mykola Palamarchuk (independent researcher), with
 substantial AI assistance (Claude Code, Anthropic) under the author's
 direction and review — every result is machine-checked by Lean and replayed

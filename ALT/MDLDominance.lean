@@ -21,8 +21,9 @@ Sub-problem A only.
 
 ## What this DOES establish
 * `dominance_gap_eq`: the §2.2 Step-3 identity — the lookup-minus-rule advantage is *exactly*
-  `(L − r) − logCorr`, where `logCorr = 2 log r + log|O| + log n + c₃ + cd` is the `O(log L)`
-  correction of §2.1. Pure algebra, no regime, no strengthened constants.
+  `(L − r) − logCorr`, where `logCorr = 2 log r + log|O| + log n + c₃ + cd` is the §2.1 correction
+  with `log|O|` kept explicit — it is `O(log L)` only in the fixed-alphabet case (`|O|` fixed), not
+  in general. Pure algebra, no regime, no strengthened constants.
 * `mdl_dominance`: under an explicit NAMED regime margin `hReg`, the rule-based two-part code
   is strictly shorter than the lookup table, `Lrule < Ltable`.
 
@@ -77,7 +78,8 @@ noncomputable def Lrule (r c₃ O n cd : ℝ) : ℝ :=
 `L = n · log|O|` the raw observation length of §2.1. -/
 noncomputable def Ltable (O n : ℝ) : ℝ := n * Real.log O
 
-/-- The logarithmic correction term — the `O(log L)` of the §2.1 statement. -/
+/-- The logarithmic correction term of the §2.1 statement, with `log|O|` kept explicit — equal to
+`O(log L)` only in the fixed-alphabet case (`|O|` fixed), not in general. -/
 noncomputable def logCorr (r O n c₃ cd : ℝ) : ℝ :=
   2 * Real.log r + Real.log O + Real.log n + c₃ + cd
 

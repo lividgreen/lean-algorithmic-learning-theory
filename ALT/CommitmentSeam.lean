@@ -15,7 +15,7 @@ Provenance: [Discovery] Theorem 5.1(iv), the commitment step — the bridge from
 the §4 read-only code.
 
 ## The boundary this file draws, and does not cross
-[Discovery] Theorem 5.1(iv) says: *once the posterior mass on `R` exceeds `1 − δ/2` (after
+[Discovery] Theorem 5.1(iv) says: *once the posterior mass on `R` reaches `1 − δ/2` (after
 `T_discover`), the rule `R` is written into the persistent code `s_code`.* The paper is explicit
 that this is an **architectural assumption** — it is *not* derived in §3, where the learner's state
 is the full mixture rather than a single rule — and that the residual stochastic failure mode is
@@ -59,9 +59,9 @@ is a contradiction exactly when `δ < 1`. The hypothesis is therefore not cosmet
 weakened to `δ ≤ 1`: at `δ = 1` the threshold is `1/2`, two candidates can tie there, and the
 committed rule is genuinely undefined.
 
-The threshold is stated as `1 − δ/2 ≤ p i` where the paper writes "exceeds `1 − δ/2`". The
-non-strict form is what `algorithm_discovery` delivers, and it is the *easier* trigger — it commits
-at least as often — so uniqueness, the load-bearing direction, is proved against the harder case.
+The threshold is stated in the non-strict form `1 − δ/2 ≤ p i`. That is what `algorithm_discovery`
+delivers, and it is the *easier* trigger — it commits at least as often — so uniqueness, the
+load-bearing direction, is proved against the harder case.
 -/
 
 namespace CommitmentSeam
@@ -153,7 +153,7 @@ theorem prunedPosterior_nonneg [Fintype ι] (pred : ι → (s : ℕ) → (Fin s 
 
 /-- **The pruned posterior has total mass `1` on the survivor set** — it is a genuine probability
 there, which is what makes `commits_unique` applicable. (Over the *whole* candidate set the same
-quotient sums to more than `1`, the normalizer running over survivors only; the survivor set is the
+quotient sums to at least `1`, the normalizer running over survivors only; the survivor set is the
 right domain for the commitment step, and the one the paper's "posterior mass on `R`" refers to.) -/
 theorem prunedPosterior_sum_alive [Fintype ι] (pred : ι → (s : ℕ) → (Fin s → X) → X)
     (stat : ι → Q → ℝ) (oracleAns : Q → ℝ) (τ : ℝ) (sched : ℕ → Finset Q) (w : ι → ℝ) (n : ℕ)

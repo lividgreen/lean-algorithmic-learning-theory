@@ -8,6 +8,7 @@ import ALT.GodelCheckerAutomaton
 import ALT.GodelCheckerComplete
 import ALT.GodelComplete
 import ALT.ExcessOrderComplete
+import ALT.MinimalityWitness
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -46,6 +47,16 @@ of the axiom list.
 /-- info: 'GodelChecker.prf_accepts_mp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms GodelChecker.prf_accepts_mp
+
+-- FV-8 / Proposition 4.5 (minimality) — the fragment-witness re-exports: the same internalization
+-- capstones, re-stated over an import closure the `assert_not_exists` guards prove exponential-free.
+/-- info: 'MinimalityWitness.fragment_internalization' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms MinimalityWitness.fragment_internalization
+
+/-- info: 'MinimalityWitness.fragment_decides_godel' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms MinimalityWitness.fragment_decides_godel
 
 -- FV-19 (§6.5 Proposition 6.5, concrete): the reflective decision automaton run over the executable
 -- checker, halting `true` on the actual 𝗣𝗔⁻ Gödel sentence — fully axiom-clean for the finite witness.

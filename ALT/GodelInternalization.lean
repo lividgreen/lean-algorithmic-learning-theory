@@ -35,9 +35,10 @@ Gödel sentence, §5.3). Two budgets enter (Definition 6.1), kept apart:
 Capacities are **bit-lengths**: hosting depth `M_chk` costs working memory `|s_work| ≥ log₂ M_chk`.
 The explicit capacity polynomial is `capacity n := 2 * n` (§6.3: `|s_work| = poly(n)`): with
 `M_chk ≤ g^2` (a concrete `poly(g)`) we prove `M_chk + 1 ≤ 2 ^ (capacity n)` by `Nat`/`omega`
-reasoning, and tie the necessity direction to the sharp pigeonhole `depth_succ_le_two_pow` of D1.
+reasoning, and tie the necessity direction to the sharp pigeonhole
+`ParameterizedNNO.depth_succ_le_two_pow`.
 The bounded search ranges over `ProofCode M_chk := {p // p ≤ M_chk}` (a `Fintype`) and is the finite
-fold along the orbit of the bounded recursor `cyclicParamNNO M_chk` of D1 — no exponential.
+fold along the orbit of the bounded recursor `cyclicParamNNO M_chk` — no exponential.
 
 ## What this DOES establish (the abstract conditional — axiom-clean)
 * `BoundedChecker`: the abstract §6.3 interface — a `Formula` type, a decidable bounded proof
@@ -46,14 +47,15 @@ fold along the orbit of the bounded recursor `cyclicParamNNO M_chk` of D1 — no
 * `Decide`/`decide_eq_true_iff`: the L2b decision morphism `Decide φ = ⋀_{p ≤ M_chk} ¬Prf(φ,p)` is
   total (a `Fintype` fold) and `Decide φ = true ↔ ∀ p ≤ M_chk, ¬Prf(φ,p)`.
 * `decide_eq_true_iff_orbit`: the same fold expressed along the **recursor orbit** of
-  `cyclicParamNNO M_chk` (`ProofCode` enumerated by the D1 orbit, valued by `ZMod.val`).
+  `cyclicParamNNO M_chk` (`ProofCode` enumerated by the recursor orbit, valued by `ZMod.val`).
 * `decide_godel` (the L2b ∧ L3 capstone): from `GodelThreshold.Incompleteness` (imported Gödel) and
   the soundness field, `Decide(G_{T_S}) = true` — Rep(S) decides bounded non-provability.
 * `capacity_bound`: explicit `M_chk + 1 ≤ 2 ^ (capacity n)` for `M_chk ≤ g^2` (capacity polynomial).
 * `proofCodes_embed`: `ProofCode M_chk ↪ S_work` once `M_chk + 1 ≤ 2^{|s_work|}` (i.e. `ProofCode
   ⊆ S_work`).
 * `prop_5_4` (Proposition 5.4, necessity): a recursor on `W` with `|W| = 2^{|s_work|}` indexing `g`
-  forces `|s_work| ≥ Nat.clog 2 (g+1)` — the two-sided threshold's lower edge, from D1's pigeonhole.
+  forces `|s_work| ≥ Nat.clog 2 (g+1)` — the two-sided threshold's lower edge, from the NNO
+  pigeonhole.
 * `internalization` (Theorem 6.3, L1 ∧ L2b ∧ capacity bundled): the concrete §6.3 statement.
 
 ## What this does NOT establish (flagged)
@@ -71,7 +73,7 @@ fold along the orbit of the bounded recursor `cyclicParamNNO M_chk` of D1 — no
 * Paper-stated / faithful: the §6.3 `Prf`/`Decide` construction; Proposition 5.4; the two budgets;
   the capacity polynomial `poly(n)`; soundness (accepts ⇒ derivable).
 * Added / modeling: `Formula`/`gnum`/`Derivable` abstract; the concrete `poly(g) := g^2` witness for
-  `M_chk`; `capacity n := 2*n`; the recursor on `ZMod (M_chk+1)` (D1's `cyclicParamNNO`).
+  `M_chk`; `capacity n := 2*n`; the recursor on `ZMod (M_chk+1)` (`cyclicParamNNO`).
 -/
 
 namespace GodelInternalization
@@ -82,7 +84,7 @@ open ParameterizedNNO
 
 /-- §6.3: `ProofCode := {p ∈ S_work : p ≤ M_chk}`, the proof codes within the working budget.
 A `Fintype` of cardinality `M_chk + 1`, in bijection with the orbit `Fin (M_chk+1)` of the bounded
-recursor `cyclicParamNNO M_chk` (D1). -/
+recursor `cyclicParamNNO M_chk`. -/
 abbrev ProofCode (Mchk : ℕ) : Type := {p : ℕ // p ≤ Mchk}
 
 /-- `ProofCode M_chk ≃ Fin (M_chk+1)`: the proof codes are exactly the recursor's orbit indices. -/
@@ -122,11 +124,19 @@ size map `gnum`, an internal `Derivable` predicate, a recursion budget `Mchk`, a
 bounded proof relation `Prf φ p` ("`p` is a proof of `φ`," codes `p ≤ Mchk`) that is **sound** —
 accepting a code implies derivability (one direction; the only direction §6.3 L2b needs). -/
 structure BoundedChecker where
+  /-- the type of sentences the checker reasons about. -/
   Formula : Type
+  /-- the size (Gödel number) of a sentence. -/
   gnum : Formula → ℕ
+  /-- the subsystem's own derivability — the predicate the checker under-approximates. -/
   Derivable : Formula → Prop
+  /-- the recursion budget: proof codes are searched only up to `Mchk`. -/
   Mchk : ℕ
+  /-- the bounded proof relation, **decidable** by construction: `Prf φ p = true` says the code `p`
+  is a proof of `φ`. Being `Bool`-valued is what makes the decision morphism a total fold. -/
   Prf : Formula → ℕ → Bool
+  /-- soundness: accepting a code implies derivability. Only this direction is needed — the
+  decision morphism concludes non-provability from the checker finding nothing. -/
   sound : ∀ φ p, Prf φ p = true → Derivable φ
 
 variable (C : BoundedChecker)
@@ -144,7 +154,7 @@ theorem decide_eq_true_iff (φ : C.Formula) :
   rw [Decide, decide_eq_true_eq]
   exact ⟨fun h p hp => h ⟨p, hp⟩, fun h p => h p.1 p.2⟩
 
-/-- The L2b fold as a finite fold **along the recursor orbit** of `cyclicParamNNO M_chk` (D1):
+/-- The L2b fold as a finite fold **along the recursor orbit** of `cyclicParamNNO M_chk`:
 `Decide φ = true` iff `¬Prf(φ, p)` for every `p` enumerated as `ZMod.val` of an orbit element. This
 is the precise §6.3 sense in which the bounded search is "a single finite fold along the orbit of
 the bounded recursor `N_{M_chk}`". -/
@@ -222,7 +232,7 @@ theorem proofCodes_embed (Mchk sworkBits : ℕ) {W : Type*} [Fintype W]
 memory `W` with `|W| = 2^{|s_work|}` whose indexing depth reaches `g` (`g ≤ P.depth`, i.e. `g` is
 in range, Level 1) forces `|s_work| ≥ Nat.clog 2 (g+1)`. Below this capacity no decoupled subsystem
 even indexes `G_{T_S}`, hence none of the Gödel phenomenon of §6. Rides the machine-checked
-pigeonhole `depth_succ_le_two_pow` (D1). -/
+pigeonhole `depth_succ_le_two_pow`. -/
 theorem prop_5_4 {W : Type*} [Fintype W] (P : ParamNNO W) (sworkBits g : ℕ)
     (hW : Fintype.card W = 2 ^ sworkBits) (hg : g ≤ P.depth) :
     Nat.clog 2 (g + 1) ≤ sworkBits := by

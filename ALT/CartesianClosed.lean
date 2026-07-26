@@ -19,7 +19,7 @@ Provenance: [Decoupling], §4.1 (objects/morphisms of `Rep(S)`),
 (cartesian-closed = monoidal-closed over the cartesian monoidal structure).
 
 Status: PROVED. This is the CCC/exponential machinery `Rep(S)` needs, exhibited on a **stand-in**
-(`Type u`) — the CCC conjunct for the eventual full-`Reflective` assembly (D2 ∧ D1 ∧ D4).
+(`Type u`) — the CCC conjunct for the eventual full-`Reflective` assembly.
 
 ## Stand-in status (read this — `Type u` is NOT `Rep(S)`)
 `Rep(S)`'s objects are finite types `⊆ {0,1}^|s_work|` and its morphisms are `s_code`-implemented
@@ -32,7 +32,7 @@ finitely-many-programs flavor. This file establishes "the CCC/exponential machin
 on a stand-in", which is the correct role for the CCC conjunct.
 
 Superseded as the genuine carrier by `RepFintype.lean` (the finite-set CCC, FV-10) and
-`RealizabilityCCC.lean` (the realizability CCC, FV-12); retained as the D2 stand-in that
+`RealizabilityCCC.lean` (the realizability CCC, FV-12); retained as the CCC stand-in that
 `Reflective.lean` assembles.
 
 ## What this DOES establish
@@ -50,7 +50,8 @@ Superseded as the genuine carrier by `RepFintype.lean` (the finite-set CCC, FV-1
   bounded-budget restriction on morphisms, no universal-evaluator construction (§4.5: it is
   per-architecture, out of scope).
 * NOT the §4.4 Rule-30 cellular-automaton construction.
-* NOT the NNO (D1) or the Gödel threshold (D4) — only the CCC/exponential structure.
+* NOT the parameterized NNO (`ALT/ParameterizedNNO.lean`) or the Gödel threshold
+  (`ALT/GodelThreshold.lean`) — only the CCC/exponential structure.
 * `Type u` is a stand-in, NOT `Rep(S)` itself — objects/morphisms are unrestricted.
 
 ## Hypotheses: paper-stated vs added

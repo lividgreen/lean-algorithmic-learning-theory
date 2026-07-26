@@ -11,12 +11,12 @@ set_option linter.style.header false
 /-!
 # Gödel threshold — pure-logic core ([Decoupling] §5.3 + §6)
 
-Mathlib-free core of `ALT/GodelThreshold.lean` (D4): the abstract predicates and the threshold
+Shared pure-logic core of `ALT/GodelThreshold.lean`: the abstract predicates and the threshold
 lemma, in `namespace GodelThreshold` so all existing references (`GodelThreshold.Incompleteness`,
 `…RepresentsUnderivableTruth`, `…godel_threshold`, `…Representable`) resolve unchanged.
 
 This file stays deliberately light (core Lean plus `Mathlib.Order.Basic`). That lets BOTH the
-Mathlib side (`ALT/GodelThreshold.lean`, which adds the D1-NNO–tied `reflective_of_depth`) and the
+Mathlib side (`ALT/GodelThreshold.lean`, which adds the NNO-tied `reflective_of_depth`) and the
 Foundation side (`ALT/GodelComplete.lean`, which discharges `Incompleteness` from the ported Gödel
 theorem) import these definitions and share the **literal** `GodelThreshold.Incompleteness` symbol,
 so the hypothesis one side states is exactly the one the other discharges. Factoring the shared
@@ -26,6 +26,13 @@ incidental.
 Status: PROVED as pure logic (`#print axioms` → standard axioms only).
 -/
 
+-- "This file stays deliberately light (core Lean plus `Mathlib.Order.Basic`)", so that both the
+-- Mathlib side and the Foundation side can import it: neither side's weight is in scope here.
+assert_not_exists LO.FirstOrder.Arithmetic.exists_true_but_unprovable_sentence
+assert_not_exists ParameterizedNNO.ParamNNO
+assert_not_exists Nat.Partrec.Code
+assert_not_exists CategoryTheory.Functor
+
 namespace GodelThreshold
 
 universe u
@@ -33,7 +40,8 @@ universe u
 variable {Sentence : Type u} (gnum : Sentence → ℕ) (Derivable True_ : Sentence → Prop)
 
 /-- §5.3: a sentence is representable in the depth-`M` NNO `N_M` iff its Gödel number is within the
-depth — i.e. it is one of the `M+1` orbit elements indexed `0…M` of D1's `ParamNNO`. -/
+depth — i.e. it is one of the `M+1` orbit elements indexed `0…M` of
+`ParameterizedNNO.ParamNNO`. -/
 def Representable (M : ℕ) (s : Sentence) : Prop := gnum s ≤ M
 
 /-- Def 6.1's operative consequence (§6): the subsystem contains a representable sentence that is
@@ -43,7 +51,7 @@ def RepresentsUnderivableTruth (M : ℕ) : Prop :=
   ∃ s, Representable gnum M s ∧ True_ s ∧ ¬ Derivable s
 
 /-- Gödel's first incompleteness theorem for `T_S` as an abstract statement: a sentence `G` with
-Gödel number `gTS`, true in the standard model but not derivable. In D4 this was an imported
+Gödel number `gTS`, true in the standard model but not derivable. Here it is an imported
 HYPOTHESIS; `ALT/GodelComplete.lean` discharges it from the Foundation port. -/
 def Incompleteness (gTS : ℕ) : Prop := ∃ G, gnum G = gTS ∧ True_ G ∧ ¬ Derivable G
 

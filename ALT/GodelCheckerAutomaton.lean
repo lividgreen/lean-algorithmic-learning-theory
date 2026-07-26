@@ -31,6 +31,10 @@ proof code (`step`/`workNext`). After `M_chk + 1` steps the read-out Boolean is 
 (`paMinus_automaton_decides`), mirroring `GodelChecker.paMinus_decides_bounded_nonprovability`.
 -/
 
+-- "The **categorical** Decoupling statements … stay on the Mathlib side" (above), and
+-- `code_fixed` is "proved locally, without the Mathlib-side Decoupling Lemma": not in scope here.
+assert_not_exists Decoupling.decoupling_iff_persists_all
+
 namespace GodelCheckerAutomaton
 
 open LO LO.Entailment LO.FirstOrder LO.FirstOrder.Arithmetic GodelChecker

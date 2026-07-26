@@ -44,6 +44,11 @@ explicit hypothesis).  The bound is `≤ 1`, not `= 1`: a uniquely-decodable cod
 complete, and sub-normalization is what the `∝ 2^{−K}` prior of [Discovery] §1.1 needs.
 -/
 
+-- "it is deliberately a leaf: it imports only Mathlib, so both the universal-prior side and the
+-- program-length side can use it without either importing the other": neither consumer is in scope.
+assert_not_exists PriorNormalization.prior_tsum_le_one
+assert_not_exists AdditiveComplexity.KE
+
 namespace BinaryKraft
 
 open InformationTheory

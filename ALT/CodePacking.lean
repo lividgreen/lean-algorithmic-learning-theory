@@ -773,13 +773,17 @@ into them. The input is `⟨v, ⟨f, k⟩⟩`. -/
 /-- The stack tail. -/ def rK : Code := comp right right
 /-- The frame's tag. -/ def rTag : Code := comp left rF
 /-- The frame's payload. -/ def rPay : Code := comp right rF
-/-- Payload slots. -/
-def rPay1 : Code := comp left rPay
-def rPay2 : Code := comp right rPay
-def rPay21 : Code := comp left rPay2
-def rPay22 : Code := comp right rPay2
-def rPay221 : Code := comp left rPay22
-def rPay222 : Code := comp right rPay22
+/-! Payload slots. The digits after `rPay` spell the projection path into the frame's payload, read
+left to right: `1` takes a pair's first component, `2` its second. So `rPay221` is "second, second,
+first". Each is built from the slot one digit shorter, and its value on `⟨v, ⟨f, k⟩⟩` is the
+matching `unpair` chain on `f.unpair.2` (`val_rPay1` and below). -/
+
+/-- The payload's first component. -/ def rPay1 : Code := comp left rPay
+/-- The payload's second component. -/ def rPay2 : Code := comp right rPay
+/-- First component of `rPay2`. -/ def rPay21 : Code := comp left rPay2
+/-- Second component of `rPay2`. -/ def rPay22 : Code := comp right rPay2
+/-- First component of `rPay22`. -/ def rPay221 : Code := comp left rPay22
+/-- Second component of `rPay22`. -/ def rPay222 : Code := comp right rPay22
 
 @[simp] theorem val_rV (v f k : ℕ) : val rV (Nat.pair v (Nat.pair f k)) = v := by
   rw [rV, val_left', Nat.unpair_pair]
@@ -1876,11 +1880,47 @@ theorem spaceCost_succ_bound {n B : ℕ} (h1 : Nat.size n ≤ B) (h2 : Nat.size 
     spaceCost succ n ≤ B := by
   rw [spaceCost_succ]; omega
 
+/-- **Selection tail of a counter-advancing fold step.** The skeleton
+`comp cIte (pair G (pair (comp succ cAcc) cAcc))` is shared by every step that reads the
+accumulator, forms `if G then acc + 1 else acc`, and — selection being strict — never costs
+more than its guard once the counter's width fits the budget. Given the guard's own cost bound,
+that the guard evaluates to a single bit, and that `16` copies of the arms' pair width (plus
+slack) still fit `B`, this discharges the two arms, the guard-and-arms pair width, and the final
+`cIte` charge in one application — no composite is ever rewritten by its parts. -/
+theorem spaceCost_iteAdvance_bound {G : Code} {I B : ℕ}
+    (hGcost : spaceCost G I ≤ B)
+    (hGbit : Nat.size (val G I) ≤ 1)
+    (hI : Nat.size I ≤ B)
+    (hcnt : 16 * Nat.size (Nat.pair (val cAcc I + 1) (val cAcc I)) + 64 ≤ B) :
+    spaceCost (comp cIte (pair G (pair (comp succ cAcc) cAcc))) I ≤ B := by
+  have hSucc : val (comp succ cAcc) I = val cAcc I + 1 := by rw [val_comp, val_succ']
+  have hm0 : Nat.size (val cAcc I) ≤ Nat.size (Nat.pair (val cAcc I + 1) (val cAcc I)) :=
+    Nat.size_le_size (Nat.right_le_pair _ _)
+  have hm1 : Nat.size (val cAcc I + 1) ≤ Nat.size (Nat.pair (val cAcc I + 1) (val cAcc I)) :=
+    Nat.size_le_size (Nat.left_le_pair _ _)
+  refine spaceCost_comp_bound (spaceCost_pair_bound hGcost ?_ ?_) ?_
+  · -- the two arms: increment the counter, keep the old value
+    refine spaceCost_pair_bound
+      (spaceCost_comp_bound (by rw [spaceCost_cAcc]; exact hI)
+        (spaceCost_succ_bound (by omega) (by omega)))
+      (by rw [spaceCost_cAcc]; exact hI) ?_
+    rw [hSucc]; omega
+  · -- the width of the guard-and-arms pair
+    rw [val_pair, hSucc]
+    have := size_pair_le' (val G I) (Nat.pair (val cAcc I + 1) (val cAcc I))
+    omega
+  · -- the selection charge, priced against the pair the arms form
+    rw [val_pair, val_pair, hSucc]
+    have := spaceCost_cIte (Nat.pair (val G I) (Nat.pair (val cAcc I + 1) (val cAcc I)))
+    have := size_pair_le' (val G I) (Nat.pair (val cAcc I + 1) (val cAcc I))
+    omega
+
 /-! ### The bit-length fold
 
-The first walk carried out entirely on the shape layer: the proof term below has the same tree
-shape as `sizeStep` itself, one `bound` application per node, and no rewriting of a composite by
-its parts. The hypothesis `m ≤ Nat.size a` is what keeps the exponentiation affordable — `cPow2`
+The first walk carried out entirely on the shape layer: the guard block below is one `bound`
+application per node, with no rewriting of a composite by its parts, and the selection tail is
+discharged in a single `spaceCost_iteAdvance_bound` — the combinator every counter-advancing fold
+shares. The hypothesis `m ≤ Nat.size a` is what keeps the exponentiation affordable — `cPow2`
 costs linearly in its *argument*, so the fold's counter must stay inside the answer's width. -/
 
 theorem spaceCost_sizeStep (a y m : ℕ) (hm : m ≤ Nat.size a) :
@@ -1893,9 +1933,6 @@ theorem spaceCost_sizeStep (a y m : ℕ) (hm : m ≤ Nat.size a) :
     have h1 := size_pair_le' a (Nat.pair y m)
     have h2 := size_pair_le' y m
     omega
-  have hSApair : Nat.size (Nat.pair (m + 1) m) ≤ 2 * Nat.size a + 2 := by
-    have := size_pair_le' (m + 1) m
-    omega
   -- the values the step forms, each named once so no outer step re-expands an inner one
   have hA : val cAcc (Nat.pair a (Nat.pair y m)) = m := val_cAcc a y m
   have hL : val left (Nat.pair a (Nat.pair y m)) = a := by rw [val_left', Nat.unpair_pair]
@@ -1903,22 +1940,13 @@ theorem spaceCost_sizeStep (a y m : ℕ) (hm : m ≤ Nat.size a) :
     rw [val_comp, hA, val_cPow2]
   have hInner : val (pair (comp cPow2 cAcc) left) (Nat.pair a (Nat.pair y m))
       = Nat.pair (2 ^ m) a := by rw [val_pair, hPow, hL]
-  have hS : val (comp succ cAcc) (Nat.pair a (Nat.pair y m)) = m + 1 := by
-    rw [val_comp, hA, val_succ']
-  have hSA : val (pair (comp succ cAcc) cAcc) (Nat.pair a (Nat.pair y m))
-      = Nat.pair (m + 1) m := by rw [val_pair, hS, hA]
   -- the guard's value is a bit; its width is bounded without computing it
   have hGsize : Nat.size (val (comp cLe (pair (comp cPow2 cAcc) left))
       (Nat.pair a (Nat.pair y m))) ≤ 1 := by
     rw [val_comp, hInner, val_cLe]
     split <;> simp
-  have hW : Nat.size (Nat.pair (val (comp cLe (pair (comp cPow2 cAcc) left))
-      (Nat.pair a (Nat.pair y m))) (Nat.pair (m + 1) m)) ≤ 4 * Nat.size a + 4 := by
-    have := size_pair_le' (val (comp cLe (pair (comp cPow2 cAcc) left))
-      (Nat.pair a (Nat.pair y m))) (Nat.pair (m + 1) m)
-    omega
   rw [sizeStep]
-  refine spaceCost_comp_bound (spaceCost_pair_bound ?_ ?_ ?_) ?_
+  refine spaceCost_iteAdvance_bound ?_ hGsize (by omega) ?_
   · -- the guard `2 ^ acc ≤ a`
     refine spaceCost_comp_bound (spaceCost_pair_bound ?_ ?_ ?_) ?_
     · refine spaceCost_comp_bound ?_ ?_
@@ -1935,17 +1963,9 @@ theorem spaceCost_sizeStep (a y m : ℕ) (hm : m ≤ Nat.size a) :
       have h := spaceCost_cLe (2 ^ m) a
       rw [size_two_pow] at h
       omega
-  · -- the two arms, both charged: selection is strict
-    refine spaceCost_pair_bound ?_ ?_ ?_
-    · refine spaceCost_comp_bound ?_ ?_
-      · rw [spaceCost_cAcc]; omega
-      · rw [hA]; exact spaceCost_succ_bound (by omega) (by omega)
-    · rw [spaceCost_cAcc]; omega
-    · rw [hS, hA]; omega
-  · rw [hSA]; omega
-  · rw [val_pair, hSA]
-    have := spaceCost_cIte (Nat.pair (val (comp cLe (pair (comp cPow2 cAcc) left))
-      (Nat.pair a (Nat.pair y m))) (Nat.pair (m + 1) m))
+  · -- the counter's width still fits the budget
+    rw [hA]
+    have := size_pair_le' (m + 1) m
     omega
 
 /-- The fold itself. The generic `prec` bound does not apply here: it offers only a *width* bound
@@ -2018,11 +2038,6 @@ theorem spaceCost_divStep (n d y m : ℕ) (hm : m ≤ n) :
     rw [val_comp, hRpair, val_cMul]
   have hProd : Nat.size ((m + 1) * d) ≤ Nat.size n + 1 + Nat.size d :=
     le_trans (size_mul_le (m + 1) d) (by omega)
-  have hARMS : val (pair (comp succ cAcc) cAcc) (Nat.pair (Nat.pair n d) (Nat.pair y m))
-      = Nat.pair (m + 1) m := by rw [val_pair, hSucc, hA]
-  have hARMSsize : Nat.size (Nat.pair (m + 1) m) ≤ 2 * Nat.size n + 2 := by
-    have := size_pair_le' (m + 1) m
-    omega
   -- the two tests and the conjunction are bits; their widths are bounded without computing them
   have hPle : val (comp OneDL.cIsPos cArgD) (Nat.pair (Nat.pair n d) (Nat.pair y m)) ≤ 1 := by
     rw [val_comp]; exact OneDL.val_cIsPos_le_one _
@@ -2034,11 +2049,8 @@ theorem spaceCost_divStep (n d y m : ℕ) (hm : m ≤ n) :
       (comp cLe (pair (comp cMul (pair (comp succ cAcc) cArgD)) cArgN))))
       (Nat.pair (Nat.pair n d) (Nat.pair y m)) ≤ 1 := by
     rw [val_comp, val_pair]; exact OneDL.val_cAnd_le_one _ _
-  have hGsz := size_le_self (val (comp OneDL.cAnd (pair (comp OneDL.cIsPos cArgD)
-      (comp cLe (pair (comp cMul (pair (comp succ cAcc) cArgD)) cArgN))))
-      (Nat.pair (Nat.pair n d) (Nat.pair y m)))
   rw [divStep]
-  refine spaceCost_comp_bound (spaceCost_pair_bound ?_ ?_ ?_) ?_
+  refine spaceCost_iteAdvance_bound ?_ ((size_le_self _).trans hGle) (by omega) ?_
   · -- the guard: positivity of the divisor, and the trial multiple still fitting
     refine spaceCost_comp_bound (spaceCost_pair_bound ?_ ?_ ?_) ?_
     · refine spaceCost_comp_bound ?_ ?_
@@ -2088,25 +2100,9 @@ theorem spaceCost_divStep (n d y m : ℕ) (hm : m ≤ n) :
         (val (comp cLe (pair (comp cMul (pair (comp succ cAcc) cArgD)) cArgN))
         (Nat.pair (Nat.pair n d) (Nat.pair y m))))
       omega
-  · -- the two arms, both charged
-    refine spaceCost_pair_bound ?_ ?_ ?_
-    · refine spaceCost_comp_bound ?_ ?_
-      · rw [spaceCost_cAcc]; omega
-      · rw [hA]; exact spaceCost_succ_bound (by omega) (by omega)
-    · rw [spaceCost_cAcc]; omega
-    · rw [hSucc, hA]; omega
-  · rw [hARMS]
-    have := size_pair_le' (val (comp OneDL.cAnd (pair (comp OneDL.cIsPos cArgD)
-      (comp cLe (pair (comp cMul (pair (comp succ cAcc) cArgD)) cArgN))))
-      (Nat.pair (Nat.pair n d) (Nat.pair y m))) (Nat.pair (m + 1) m)
-    omega
-  · rw [val_pair, hARMS]
-    have h1 := size_pair_le' (val (comp OneDL.cAnd (pair (comp OneDL.cIsPos cArgD)
-      (comp cLe (pair (comp cMul (pair (comp succ cAcc) cArgD)) cArgN))))
-      (Nat.pair (Nat.pair n d) (Nat.pair y m))) (Nat.pair (m + 1) m)
-    have h2 := spaceCost_cIte (Nat.pair (val (comp OneDL.cAnd (pair (comp OneDL.cIsPos cArgD)
-      (comp cLe (pair (comp cMul (pair (comp succ cAcc) cArgD)) cArgN))))
-      (Nat.pair (Nat.pair n d) (Nat.pair y m))) (Nat.pair (m + 1) m))
+  · -- the counter's width still fits the budget
+    rw [hA]
+    have := size_pair_le' (m + 1) m
     omega
 
 /-- The division fold. As with the bit-length fold, the accumulator's *value* is what has to be
@@ -2436,14 +2432,10 @@ theorem spaceCost_trailStep (a y m : ℕ) (hm : m ≤ Nat.size a) :
       = a % 2 ^ (m + 1) := by rw [val_comp, val_pair, hL, hHdr, val_cMod]
   have hSub : val (comp cSub (pair cHdrPow (constCode 1))) (Nat.pair a (Nat.pair y m))
       = 2 ^ (m + 1) - 1 := by rw [val_comp, val_pair, hHdr, val_constCode, val_cSub]
-  have hARMS : val (pair (comp succ cAcc) cAcc) (Nat.pair a (Nat.pair y m))
-      = Nat.pair (m + 1) m := by rw [val_pair, hSucc, hA]
   have hGle : val (comp cEq (pair (comp cMod (pair left cHdrPow))
       (comp cSub (pair cHdrPow (constCode 1))))) (Nat.pair a (Nat.pair y m)) ≤ 1 := by
     rw [val_comp, val_pair, hMod, hSub, val_cEq]
     split <;> simp
-  have hGsz := size_le_self (val (comp cEq (pair (comp cMod (pair left cHdrPow))
-    (comp cSub (pair cHdrPow (constCode 1))))) (Nat.pair a (Nat.pair y m)))
   -- the exponentiation, charged by the accumulator's value
   have hHdrCost : spaceCost cHdrPow (Nat.pair a (Nat.pair y m))
       ≤ 32 * max (Nat.size a) (Nat.size y) + 256 := by
@@ -2456,7 +2448,7 @@ theorem spaceCost_trailStep (a y m : ℕ) (hm : m ≤ Nat.size a) :
       have := spaceCost_cPow2 (m + 1)
       omega
   rw [trailStep]
-  refine spaceCost_comp_bound (spaceCost_pair_bound ?_ ?_ ?_) ?_
+  refine spaceCost_iteAdvance_bound ?_ ((size_le_self _).trans hGle) (by omega) ?_
   · -- the guard: are the bottom `acc + 1` bits all ones?
     refine spaceCost_comp_bound (spaceCost_pair_bound ?_ ?_ ?_) ?_
     · refine spaceCost_comp_bound (spaceCost_pair_bound ?_ ?_ ?_) ?_
@@ -2484,28 +2476,9 @@ theorem spaceCost_trailStep (a y m : ℕ) (hm : m ≤ Nat.size a) :
     · rw [val_pair, hMod, hSub]
       have := spaceCost_cEq (a % 2 ^ (m + 1)) (2 ^ (m + 1) - 1)
       omega
-  · refine spaceCost_pair_bound ?_ ?_ ?_
-    · refine spaceCost_comp_bound ?_ ?_
-      · rw [spaceCost_cAcc]; omega
-      · rw [hA]; exact spaceCost_succ_bound (by omega) (by omega)
-    · rw [spaceCost_cAcc]; omega
-    · rw [hSucc, hA]
-      have := size_pair_le' (m + 1) m
-      omega
-  · rw [hARMS]
-    have := size_pair_le' (val (comp cEq (pair (comp cMod (pair left cHdrPow))
-      (comp cSub (pair cHdrPow (constCode 1))))) (Nat.pair a (Nat.pair y m)))
-      (Nat.pair (m + 1) m)
-    have h2 := size_pair_le' (m + 1) m
-    omega
-  · rw [val_pair, hARMS]
-    have h1 := size_pair_le' (val (comp cEq (pair (comp cMod (pair left cHdrPow))
-      (comp cSub (pair cHdrPow (constCode 1))))) (Nat.pair a (Nat.pair y m)))
-      (Nat.pair (m + 1) m)
-    have h2 := size_pair_le' (m + 1) m
-    have h3 := spaceCost_cIte (Nat.pair (val (comp cEq (pair (comp cMod (pair left cHdrPow))
-      (comp cSub (pair cHdrPow (constCode 1))))) (Nat.pair a (Nat.pair y m)))
-      (Nat.pair (m + 1) m))
+  · -- the counter's width still fits the budget
+    rw [hA]
+    have := size_pair_le' (m + 1) m
     omega
 
 theorem spaceCost_trailCore (n : ℕ) : ∀ m,
@@ -3368,8 +3341,13 @@ theorem growBound_cSel {b x y : Code} {ccb dcb cc dc cw dw : ℕ}
     split <;> omega
 
 /-- The columns a whole selection tree sits in. The cost is thirty-two times the arms' width, the
-price of the test the selection performs on the triple it forms; it does not climb with nesting. -/
+price of the test the selection performs on the triple it forms; it does not climb with nesting.
+`treeC` is the workspace coefficient and `treeD` the workspace constant of `GrowBound` — a tree
+costs `treeC * size I + treeD`. Its output width stays at the arms' `branchC`, since a selection
+returns one of its arms unchanged. -/
 abbrev treeC : ℕ := 131072
+
+/-- The additive workspace constant of a selection tree; see `treeC`. -/
 abbrev treeD : ℕ := 131120
 
 theorem GrowBound.toTree {g : Code} (h : GrowBound g branchC branchC branchC branchC) :
@@ -3468,10 +3446,20 @@ theorem growBound_uTail : GrowBound uTail 64 256 1 0 := by
   exact (growBound_comp growBound_cCfStk growBound_cStkTail).mono
     (by norm_num) (by norm_num) (by norm_num) (by norm_num)
 
-/-- The columns the whole step sits in. -/
+/-! The columns the whole step sits in: the four `GrowBound` figures every step variant is brought
+to, so that a step's bound composes with the next without the coefficients climbing. Workspace is
+`stepC * size I + stepD`, output width `stepW * size I + stepE`. -/
+
+/-- The step's workspace coefficient. -/
 abbrev stepC : ℕ := 524288
+
+/-- The step's additive workspace constant. -/
 abbrev stepD : ℕ := 131120
+
+/-- The step's output-width coefficient. -/
 abbrev stepW : ℕ := 16384
+
+/-- The step's additive output-width constant. -/
 abbrev stepE : ℕ := 4096
 
 theorem growBound_uDescend : GrowBound uDescend stepC stepD stepW stepE := by

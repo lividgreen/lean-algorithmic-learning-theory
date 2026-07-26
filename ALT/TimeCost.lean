@@ -184,6 +184,12 @@ a bounded checker actually holds — can stay polynomial. `spaceCost_prec_le` is
 loop: a per-step workspace bound `S` together with an accumulator-bitlength bound `S` caps the whole
 `prec` at `max (spaceCost cf a) S`, with NO growth in the iteration count `n` (a `max`, not the `tc`
 sum). `rfind'` is the placeholder `0` (out of fragment), keeping the parallel with `tc`. -/
+
+/-- The native **space** cost: `spaceCost c n` is the largest bitlength (`Nat.size`) of any value
+appearing as an argument or a result while unfolding `c` on input `n` — the workspace a bounded
+checker must hold, as opposed to `tc`'s step count. Charged along the same values `evalT`
+computes, so on the `rfind'`-free fragment it measures the genuine `eval` computation. `rfind'`
+itself is the placeholder `0`, out of fragment. -/
 def spaceCost : Code → ℕ → ℕ
   | zero => fun n => max (Nat.size n) (Nat.size 0)
   | succ => fun n => max (Nat.size n) (Nat.size (n + 1))

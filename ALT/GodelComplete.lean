@@ -13,13 +13,13 @@ set_option linter.style.longLine false
 /-!
 # Discharging the Gödel `Incompleteness` hypothesis via Foundation
 
-Provenance: closes the imported hypothesis of `ALT/GodelCore.lean` (D4) — and hence the capstone
+Provenance: closes the imported hypothesis of `ALT/GodelCore.lean` — and hence the capstone
 `ALT/Reflective.lean` — using upstream `FormalizedFormalLogic/Foundation` (pinned rev `b47cf447`,
 Lean 4.31 + Mathlib v4.31), via `LO.FirstOrder.Arithmetic.exists_true_but_unprovable_sentence` (Gödel's first
 incompleteness theorem for arithmetic theories `T` with `[T.Δ₁] [𝗥₀ ⪯ T] [T.SoundOnHierarchy 𝚺 1]`).
 
 ## The shared `Incompleteness` symbol
-This file discharges the **literal** `GodelThreshold.Incompleteness` symbol — that is why D4's core
+This file discharges the **literal** `GodelThreshold.Incompleteness` symbol — that is why the core
 was factored into the lightweight `ALT/GodelCore.lean`, which both this file and
 `ALT/GodelThreshold.lean` import, so the hypothesis assumed there is exactly the one proved here.
 The two halves stay distinct terms by design:
@@ -62,7 +62,7 @@ most faithful axiom-clean non-vacuity *witness* is `𝗣𝗔⁻` (finite, Δ₁ 
 * The generic adapter is a HYPOTHETICAL implication (it consumes `[T.Δ₁] [𝗥₀ ⪯ T]` and
   `ℕ`-soundness); the axiom-clean concrete non-vacuity witnesses are the finite `𝗣𝗔⁻` (most faithful)
   and its `𝗜𝚺₁` parallel.
-* The NNO/CCC side keeps its D1/D2 stand-in caveats (combinatorial `ParamNNO` on finite `W`; CCC on
+* The NNO/CCC side keeps its stand-in caveats (combinatorial `ParamNNO` on finite `W`; CCC on
   `Type`) — not a unified `Rep(S)`; not a claim about a physical `Rep(S)`.
 -/
 
@@ -85,7 +85,7 @@ theorem incompleteness_of_arith (T : ArithmeticTheory) [T.Δ₁] [𝗥₀ ⪯ T]
 /-- Concrete chain result for `T = 𝗜𝚺₁`: a Gödel sentence of `𝗜𝚺₁`, true in `ℕ` but unprovable in
 `𝗜𝚺₁`, is represented at depth `gTS + 1` — discharging the `GodelThreshold.Incompleteness` hypothesis
 with NO remaining hypothesis. The depth `gTS + 1` equals
-`(ParameterizedNNO.cyclicParamNNO (gTS + 1)).depth` (D1); the NNO-object form is
+`(ParameterizedNNO.cyclicParamNNO (gTS + 1)).depth`; the NNO-object form is
 `GodelThreshold.reflective_of_depth` on the Mathlib side, kept a separate term here (see the
 shared-symbol note above). Foundation's `𝗜𝚺₁.Δ₁` instance is a theorem
 (`ISigma1_delta1Definable`, discharged upstream), so this witness is **fully axiom-clean**. -/

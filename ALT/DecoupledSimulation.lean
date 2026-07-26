@@ -15,14 +15,17 @@ Provenance: [Decoupling] §4.5 — the *domain* of the functor Conjecture 4.4 as
 learners, with capacity-respecting simulations as morphisms. This file defines those morphisms and
 proves they form a category.
 
-## Scope: STRUCTURAL only
+## Scope: STRUCTURAL, with the graded enrichment in a sibling module
 A capacity-respecting simulation is a triple: a hosting square, a code-locality condition, and a
-**resource grade** on the reading family. Only the first two are here. The graded enrichment — the
-uniform-budget field and the realizer-transport lemma that prices a realizer of grade `g` in the
-guest by a grade computed from `(g, b, τ)` in the host — is **deliberately absent**: it waits on
-the encoding conventions that fix the price, and nothing below should be read as establishing it.
-What is established is that the *underlying* structure is a category: morphisms compose, identities
-exist, and the two conditions are closed under both.
+**resource grade** on the reading family. The first two are here; the third is the graded enrichment
+`GradedSimulates` in `ALT/GradedSimulation.lean`, where `CodedReading` carries each frame's coded
+reading pair at a uniform budget `b` and `inducedMap` transports a graded morphism along one frame.
+The price is `(g, b)`, not `(g, b, τ)`: a guest realizer of grade `g`, read by a pair of index
+length at most `b`, is priced by `4 · max g b + 9` in the host. The dilation `τ` prices *time* — it
+multiplies along a tower of hosting squares — and does not enter the per-application realizer grade,
+exactly as the transport law of `ALT/GradeTransport.lean` finds. What *this* file establishes is
+that the underlying structure is a category: morphisms compose, identities exist, and the two
+conditions are closed under both.
 
 ## The two conditions, and why only one of them is primitive
 A decoupled subsystem splits its state as `C × W` — a code region and a work region — and its step

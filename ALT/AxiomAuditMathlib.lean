@@ -61,6 +61,9 @@ import ALT.BoundedInterp
 import ALT.CodePacking
 import ALT.UniversalAt
 import ALT.GradeTransport
+import ALT.GradedApplication
+import ALT.GradedConjugation
+import ALT.GradedSimulation
 import ALT.Collector
 import ALT.DecisionListData
 import ALT.DecisionListSolver
@@ -78,8 +81,14 @@ import ALT.ExactBreakeven
 import ALT.KReconnection
 import ALT.KolmogorovComplexity
 import ALT.KolmogorovBitlen
-import ALT.ProofChainSkeleton
+import ALT.ChainDependencyAudit
 import ALT.ExcessOrder
+import ALT.SkewFiber
+import ALT.AccretiveDecoupling
+import ALT.SurpriseBudget
+import ALT.WeightedFiber
+import ALT.QuantizationRate
+import ALT.SubstrateClass
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -123,6 +132,104 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 /-- info: 'Decoupling.decoupling_iff_persists_on' depends on axioms: [Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms Decoupling.decoupling_iff_persists_on
+
+-- The accretive extension: the same equivalence for a monotonically growing code region, plus the
+-- coherence statement that the fixed-partition Proposition 3.4 is its constant-family case, and the
+-- append-only instance on which the region grows strictly and the limit region is NOT read-only.
+/-- info: 'Decoupling.accretive_decoupling_iff' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms Decoupling.accretive_decoupling_iff
+
+/-- info: 'Decoupling.accretive_iff_persists_on_const' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms Decoupling.accretive_iff_persists_on_const
+
+/-- info: 'Decoupling.exists_strictly_accretive_decoupling' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms Decoupling.exists_strictly_accretive_decoupling
+
+-- The surprise-budget assembly: [Discovery]'s event count priced in cells, against [Persistence]'s
+-- robustness margin and repair tax. Two survival theorems under two different (independent)
+-- hypotheses on the host, and the counterexample showing that without either one a debt that fits
+-- inside the margin still destroys the reading.
+/-- info: 'SurpriseBudget.debt_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms SurpriseBudget.debt_le
+
+/-- info: 'SurpriseBudget.survives_of_margin' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms SurpriseBudget.survives_of_margin
+
+/-- info: 'SurpriseBudget.survives_of_corrects' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms SurpriseBudget.survives_of_corrects
+
+/-- info: 'SurpriseBudget.badWorld_not_survives' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms SurpriseBudget.badWorld_not_survives
+
+/-- info: 'SurpriseBudget.capacity_price' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms SurpriseBudget.capacity_price
+
+-- The weighted fiber: fitness-proportional selection on a frequency-independent likelihood, whose
+-- exact step IS Bayesian update; the carrier projection that a finite host forces; the transported
+-- pricing assembly; and the instance showing the projection is not the identity.
+/-- info: 'WeightedFiber.toDist_bayesStep' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.toDist_bayesStep
+
+/-- info: 'WeightedFiber.raw_wGen' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.raw_wGen
+
+/-- info: 'WeightedFiber.wFiber_emergence_pricing' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.wFiber_emergence_pricing
+
+/-- info: 'WeightedFiber.surjective_argmaxFrame_of_settled' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.surjective_argmaxFrame_of_settled
+
+/-- info: 'WeightedFiber.weighted_fiber_not_exactly_bayes' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.weighted_fiber_not_exactly_bayes
+
+-- The quantization rate: the exactness horizon below which the finite run IS the exact run
+-- (and its sharpness witness), the general L¹-normalization fact, the per-step residual bounds on
+-- the carrier projection, the composed rate against exact Bayes, and the universal total-variation
+-- cap that reconciles the rate with the annihilation instance above.
+/-- info: 'WeightedFiber.raw_wRun_eq_bayesRun' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.raw_wRun_eq_bayesRun
+
+/-- info: 'WeightedFiber.toDist_wRun_eq_bayes' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.toDist_wRun_eq_bayes
+
+/-- info: 'WeightedFiber.wRun_ne_bayesRun_witness' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.wRun_ne_bayesRun_witness
+
+/-- info: 'WeightedFiber.l1_normalize_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.l1_normalize_le
+
+/-- info: 'WeightedFiber.toDist_project_close' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.toDist_project_close
+
+/-- info: 'WeightedFiber.toDist_project_rate' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.toDist_project_rate
+
+/-- info: 'WeightedFiber.wGen_bayes_rate' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.wGen_bayes_rate
+
+/-- info: 'WeightedFiber.toDist_sub_le_two' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.toDist_sub_le_two
 
 -- §3.5 robustness of the exclusion (FV-22): moving decoders and the price of a frame. The update
 -- restricts to a bijection on the recurrent core; the core is the exact ceiling on what ANY
@@ -1059,6 +1166,27 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 /-- info: 'PersistenceCapacity.emergence' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms PersistenceCapacity.emergence
+
+-- The skew-product fiber: `emergence` applied to a host whose fiber evolves. `skewWorldFin` runs a
+-- base rule and a base-driven fiber rule on one carrier; `skewBuilder` weaves the two tables, so the
+-- world's code is the two rules' codes composed (`KE_skewWorldFin_le`) rather than its own
+-- exponential table. `fiber_emergence_pricing` instantiates the fiber with one generation of
+-- variation and selection over a population of candidate codewords and prices the fittest reading at
+-- `elen cS + elen cF + elen cθ + O(1)`, taking the fiber's convergence as a named hypothesis;
+-- `surjective_fittestFrame_of_fixed` exhibits a configuration meeting that hypothesis, so the
+-- pricing is not vacuous. No numbered result.
+
+/-- info: 'SkewFiber.KE_skewWorldFin_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms SkewFiber.KE_skewWorldFin_le
+
+/-- info: 'SkewFiber.fiber_emergence_pricing' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms SkewFiber.fiber_emergence_pricing
+
+/-- info: 'SkewFiber.surjective_fittestFrame_of_fixed' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms SkewFiber.surjective_fittestFrame_of_fixed
 
 -- Basins: a region a permutation world never leaves is setwise invariant (`image_perm_eq`), so the
 -- world restricts to a permutation of it and, transported along an enumeration, is a world of its
@@ -2591,6 +2719,78 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms BoundedUniversal.universalAt_holds
 
+-- The graded exponential and the price of applying it (`ALT/GradedApplication.lean`).
+-- `gradedExp` grades the exponential by realizer description length — the currency bounded
+-- universality already charges in, and the same measure the realizer-length counting bound uses
+-- (`grade_encode`). `appValue_mem_ap` / `exists_appRun_of_mem_ap`: application, repackaged as a run
+-- of the reference dynamics rather than the algebra's skeleton-less decode, computes exactly the
+-- algebra's application — the machine's own soundness and completeness at the application
+-- interface. `appConfig_size_le`: the whole of what a grade buys on the workspace side, the INITIAL
+-- configuration's width; later configurations hold values the computation produced, so the account
+-- stays relative to a named width hypothesis, whose satisfiability on a finishing run is
+-- `exists_width_bound`. `gradedApp_workspace_affine`: the account at the discharged affine price,
+-- with no hypothesis on the cost function left. `gradedExp_app_realizes_within`: semantics and
+-- price together — the applied value is genuinely realized, within the grade-derived budget.
+-- `gradedExp_fitsIn`: over a modest codomain the graded exponential is a capacity object again,
+-- fitting in exactly its grade, where the ungraded one overflows every capacity.
+/-- info: 'GradedApplication.grade_encode' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms GradedApplication.grade_encode
+
+/-- info: 'GradedApplication.appValue_mem_ap' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms GradedApplication.appValue_mem_ap
+
+/-- info: 'GradedApplication.exists_appRun_of_mem_ap' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms GradedApplication.exists_appRun_of_mem_ap
+
+/-- info: 'GradedApplication.appConfig_size_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms GradedApplication.appConfig_size_le
+
+/-- info: 'GradedApplication.exists_width_bound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms GradedApplication.exists_width_bound
+
+/-- info: 'GradedApplication.gradedApp_workspace_affine' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms GradedApplication.gradedApp_workspace_affine
+
+/-- info: 'GradedApplication.gradedExp_app_realizes_within' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms GradedApplication.gradedExp_app_realizes_within
+
+/-- info: 'GradedApplication.gradedExp_fitsIn' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms GradedApplication.gradedExp_fitsIn
+
+-- Transport at grade (`ALT/GradedConjugation.lean`): the conjugation of a graded realizer one level
+-- up from the single-encoding `GradeTransport`, on the many-realizers assemblies the graded
+-- exponential is built over. `gradedTransport` carries an element of `[A ⇒ B]_g` to an element of the
+-- re-encoded exponential at grade `4·max g b + 9` — its underlying function unchanged, its realizer the
+-- transported index (`transportIdx`), whose grade the one-hop max-affine law bounds and whose tracking
+-- `tracks_transportIdx` supplies. The capstone guard certifies the whole chain — the index-currency
+-- law, the Asm-level transport, and the packaging — is axiom-clean.
+/-- info: 'GradedConjugation.gradedTransport' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms GradedConjugation.gradedTransport
+
+-- The pullback direction of the same transport (`ALT/GradedConjugation.lean`): `gradedPullback`
+-- carries a graded morphism to one between the pullbacks of its assemblies along a reading pair, at
+-- grade `4·max g b + 9` — the mirror of `gradedTransport`, the retraction on the output side.
+/-- info: 'GradedConjugation.gradedPullback' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms GradedConjugation.gradedPullback
+
+-- The hosting-induced assembly map (`ALT/GradedSimulation.lean`): `GradedSimulates.inducedMap` is the
+-- map a capacity-respecting decoupled simulation induces on graded exponentials, per frame — the
+-- guest-coded hypotheses discharge the pullback's retraction, and the grade grows by one hop to
+-- `4·max g b + 9` (the price is `(g, b)`, not `(g, b, τ)`).
+/-- info: 'GradedSimulation.GradedSimulates.inducedMap' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms GradedSimulation.GradedSimulates.inducedMap
+
 /-- info: 'AdditiveComplexity.prop_2_2_t_poly' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms AdditiveComplexity.prop_2_2_t_poly
@@ -2777,8 +2977,8 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 
 The capstones below (each module docstring's "What this DOES establish" list) were built before the
 audit-umbrella discipline and carried no guard; added here for uniform coverage at the same bar.
-Grouped by paper. `ProofChainSkeleton`'s pure-propositional chain depends on NO axioms — a strict
-subset the guard pins verbatim. -/
+Grouped by paper. `ChainDependencyAudit`'s pure-propositional chain depends on NO axioms — a
+strict subset the guard pins verbatim. -/
 
 -- [Decoupling] §4 CCC stand-in for Rep(S) (`ALT/CartesianClosed.lean`, namespace `RepSCCC`): Prop 4.3
 -- Cartesian-closedness (`repS_cartesianClosed`), the §4.3 evaluation/currying universal property
@@ -2800,7 +3000,7 @@ subset the guard pins verbatim. -/
 #guard_msgs (whitespace := lax) in
 #print axioms RepSCCC.exp_finite
 
--- [Decoupling] §5.3/§6 Gödel threshold (`ALT/GodelThreshold.lean`), tied to D1's `ParamNNO`: the
+-- [Decoupling] §5.3/§6 Gödel threshold (`ALT/GodelThreshold.lean`), tied to `ParamNNO`: the
 -- Theorem 6.2 form — depth `> g(T_S)` under incompleteness ⟹ represents-an-underivable-truth. Pure
 -- threshold logic, so it is `Classical.choice`-free (`[propext, Quot.sound]`, a strict subset).
 /-- info: 'GodelThreshold.reflective_of_depth' depends on axioms: [propext, Quot.sound] -/
@@ -2942,22 +3142,24 @@ subset the guard pins verbatim. -/
 #guard_msgs (whitespace := lax) in
 #print axioms KolmogorovComplexity.K_bitlen_not_computable
 
--- [Inevitability] proof-chain skeleton (`ALT/ProofChainSkeleton.lean`): the §6 assembly is logically
--- connected with no missing link (`inevitability_full`) and bare representational reflection sits off
--- the tractability/retention path (`reflective_core`). Pure propositional logic — NO axioms.
-/-- info: 'ProofChainSkeleton.inevitability_full' does not depend on any axioms -/
+-- Reflection-chain dependency audit (`ALT/ChainDependencyAudit.lean`): all five named edges
+-- compose into the three terminal claims with no missing link (`chain_complete`) and bare
+-- reflection sits off the tractability/retention path (`reflection_off_sq_and_retention`). Pure
+-- propositional logic — NO axioms.
+/-- info: 'ChainDependencyAudit.chain_complete' does not depend on any axioms -/
 #guard_msgs (whitespace := lax) in
-#print axioms ProofChainSkeleton.inevitability_full
+#print axioms ChainDependencyAudit.chain_complete
 
-/-- info: 'ProofChainSkeleton.reflective_core' does not depend on any axioms -/
+/-- info: 'ChainDependencyAudit.reflection_off_sq_and_retention' does not depend on any axioms -/
 #guard_msgs (whitespace := lax) in
-#print axioms ProofChainSkeleton.reflective_core
+#print axioms ChainDependencyAudit.reflection_off_sq_and_retention
 
 -- …and the steady-state per-step resource bound ([SQ] Cor 4.4) is likewise off the SQ path
--- (`steady_state_bounded`): reached without the tractability edge and without SQ-learnability.
-/-- info: 'ProofChainSkeleton.steady_state_bounded' does not depend on any axioms -/
+-- (`steady_state_on_retention_off_sq`): reached without the tractability edge and without
+-- SQ-learnability.
+/-- info: 'ChainDependencyAudit.steady_state_on_retention_off_sq' does not depend on any axioms -/
 #guard_msgs (whitespace := lax) in
-#print axioms ProofChainSkeleton.steady_state_bounded
+#print axioms ChainDependencyAudit.steady_state_on_retention_off_sq
 
 -- [Discovery] §2.3 — Kolmogorov structure function, the 45° / geometric lower bound (FV-14,
 -- slice one) on the additive carrier. Two-part description (per model) `KE_le_of_model`; the four
@@ -3005,3 +3207,25 @@ subset the guard pins verbatim. -/
 /-- info: 'ExcessOrder.witness_outgrows' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms ExcessOrder.witness_outgrows
+
+-- [Inevitability] §2 Definitions 2.1–2.3 — the reflective threshold and the substrate class.
+-- The paper's own headline theorem (5.1(b)) gets its first Lean object here: `substrateL_reachesThreshold`.
+/-- info: 'SubstrateClass.substrateL_reachesThreshold' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms SubstrateClass.substrateL_reachesThreshold
+
+/-- info: 'SubstrateClass.reflectiveCapacity_fitsIn_headroom' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms SubstrateClass.reflectiveCapacity_fitsIn_headroom
+
+/-- info: 'SubstrateClass.incompleteness_not_unconditionally_satisfiable' does not depend on any axioms -/
+#guard_msgs (whitespace := lax) in
+#print axioms SubstrateClass.incompleteness_not_unconditionally_satisfiable
+
+/-- info: 'SubstrateClass.s3_not_implied_by_s2' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms SubstrateClass.s3_not_implied_by_s2
+
+/-- info: 'SubstrateClass.substrate_satisfiable' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms SubstrateClass.substrate_satisfiable

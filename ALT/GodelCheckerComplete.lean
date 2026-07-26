@@ -180,6 +180,9 @@ theorem decide_nonvacuous (T : ArithmeticTheory) [T.Δ₁] : ∃ M, Decide T M (
 
 /-! ### Capstones — §6.3 L2b for the real Gödel sentence, now a complete decision -/
 
+/-- `𝗣𝗔⁻` is `Δ₁`-definable: it is a finite theory, and a finite theory's axiom
+set is decidable outright. This is what lets the capstones below instantiate the
+general checker at `𝗣𝗔⁻`. -/
 noncomputable local instance : (𝗣𝗔⁻ : ArithmeticTheory).Δ₁ :=
   Theory.Δ₁.ofFinite 𝗣𝗔⁻ PeanoMinus.finite
 

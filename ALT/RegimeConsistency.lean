@@ -12,8 +12,8 @@ set_option linter.style.header false
 # Regime consistency ([Discovery], §1.2)
 
 Provenance: [Discovery], §1.2 (the regime constants C1–C3). The regime
-`r ≪ K ≪ L` is load-bearing in [Discovery], [SQ], and [Inevitability]; this file certifies it is
-internally consistent in the ordering sense.
+`r ≪ K ≪ L` is load-bearing in [Discovery] and [SQ]; this file certifies
+it is internally consistent in the ordering sense.
 
 Status: PROVED as pure real-arithmetic statements. This is the *arithmetic core* of the §1.2
 regime only.

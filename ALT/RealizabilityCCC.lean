@@ -42,8 +42,12 @@ def ap (a b : ℕ) : Part ℕ := (Denumerable.ofNat Code a).eval b
 
 /-- An **assembly** over the PCA: a carrier with a realizability relation, every element realized. -/
 structure Asm where
+  /-- the underlying set of elements. -/
   carrier : Type
+  /-- `realizes n x` : the code `n` is a **realizer** of `x` — a program-level name for it. An
+  element may have many realizers, and a code may realize elements of several assemblies. -/
   realizes : ℕ → carrier → Prop
+  /-- every element has at least one realizer: nothing in the carrier is unnameable. -/
   realized : ∀ x, ∃ n, realizes n x
 
 /-- `r` **tracks** `f` : on any realizer `n` of `x`, `r·n` is defined and realizes `f x`. -/
@@ -110,7 +114,12 @@ def prodAsm (A B : Asm) : Asm where
     obtain ⟨nb, hb⟩ := B.realized p.2
     exact ⟨Nat.pair na nb, by simp only [Nat.unpair_pair]; exact ⟨ha, hb⟩⟩
 
+/-- The realizer of the first projection: the code of `Code.left`, which reads back the first
+component of a paired input (`ap_leftCode`). -/
 def leftCode : ℕ := Encodable.encode Code.left
+
+/-- The realizer of the second projection: the code of `Code.right`, which reads back the second
+component of a paired input (`ap_rightCode`). -/
 def rightCode : ℕ := Encodable.encode Code.right
 
 @[simp] theorem ap_leftCode (n : ℕ) : ap leftCode n = Part.some n.unpair.1 := by

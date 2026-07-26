@@ -79,9 +79,15 @@ finite state space `W`. The basepoint `zero`, successor `succ`, depth `M = depth
 `M+1` iterates `zero, succ zero, …, succ^M zero` are pairwise distinct (`orbit_injective`). The
 defining recursion (bullet 2) is the derived `ParamNNO.bounded_recursor`. -/
 structure ParamNNO (W : Type*) [Fintype W] where
+  /-- the basepoint `0` of the counter. -/
   zero : W
+  /-- the successor map; iterating it from `zero` walks the counter. -/
   succ : W → W
+  /-- how far the counter is guaranteed to count: the number of successor steps, `M`, whose
+  iterates stay pairwise distinct. -/
   depth : ℕ
+  /-- bullet 1 of Definition 5.1: the `M+1` iterates `zero, succ zero, …, succ^M zero` are
+  pairwise distinct. On a finite `W` this is exactly what bounds the counter's reach. -/
   orbit_injective : Injective (fun k : Fin (depth + 1) => succ^[k.val] zero)
 
 variable {W : Type*} [Fintype W]

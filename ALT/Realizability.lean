@@ -61,6 +61,7 @@ open Nat.Partrec CategoryTheory
 /-- A finite **assembly**: a finite carrier together with an injective encoding of its elements as
 codes (numbers) — an object of Rep(S) encoded into work memory (§4.1). -/
 structure Assembly where
+  /-- the underlying finite set of elements. -/
   carrier : Type
   [fin : Fintype carrier]
   /-- the `s_work` encoding: each element gets a code -/

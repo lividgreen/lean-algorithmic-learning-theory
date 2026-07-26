@@ -6,6 +6,7 @@ Authors: Mykola Palamarchuk
 import ALT.CapacityBoundedEval
 import ALT.AdditiveComplexity
 import ALT.Realizability
+import ALT.RealizerLength
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -35,18 +36,28 @@ algebra as realized on `Nat.Partrec.Code`. The full per-subsystem functor, with 
 the state-level bitstring layout, stays paper-level and is not established here. Nothing below
 quantifies over subsystems or mentions a state layout.
 
-## The two currencies, and the variable that is absent
-The point of pricing the conjugation is that its two costs obey *different* algebras:
+## The three currencies, and the variable that is absent
+The point of pricing the conjugation is that its costs obey *different* algebras:
 
 * **description length ADDS** — `elen_transport` is an exact identity,
   `elen (transport …) = elen c_emb + elen r + elen c_proj + 6`, the two `+3`s being the
   serialization's own overhead for the two `comp` nodes;
 * **workspace MAXES** — `spaceCost_transport_le` bounds the conjugate by `max g b`, where `g` is the
   realizer's own workspace grade and `b` the re-encoders'. Composition never sums workspace, so
-  conjugating a realizer costs no more room than the wider of the two jobs.
+  conjugating a realizer costs no more room than the wider of the two jobs;
+* **index-grade is MAX-AFFINE per hop** — `bitlen_transport_le` bounds the Gödel-index length of the
+  conjugate by `4 · max g b + 9`, where `g` bounds the realizer's index length and `b` the
+  re-encoders'. Each `comp` node costs a single `Nat.size` step over a square pairing, `2·max + 3`
+  (`bitlen_comp_le`), and the two nodes nest.
 
-The pairing factor of `2` that the workspace family charges elsewhere does not appear: a conjugation
-is built from `comp` alone and never forms a pair, so no packing is paid for.
+The pairing factor of `2` that the workspace family charges elsewhere does not appear in the
+workspace column: a conjugation is built from `comp` alone and never forms a pair, so no packing is
+paid for. The index column pays a different `2`, and pays it twice: the square pairing that
+serializes each `comp` node doubles bit-length, the two nodes nest, and the factor squares to `4`.
+That compounding is the point of the max-affine law being *per hop*. Iterating a transport along a
+tower multiplies the leading factor once per hop, so the index budget of an `n`-fold conjugation
+grows geometrically — which is exactly why this one-hop law is a theorem while the full functor of
+Conjecture 4.4, a transport iterated along a tower of hosting squares, stays open.
 
 **The dilation `τ` does not occur in either currency, and this is a finding rather than an
 omission.** A dilation relates the *clocks* of two dynamical systems — it multiplies along a tower
@@ -164,6 +175,56 @@ both. -/
 theorem elen_transport (c_emb c_proj r : Code) :
     elen (transport c_emb c_proj r) = elen c_emb + elen r + elen c_proj + 6 := by
   rw [transport, E_len_comp, E_len_comp]
+  omega
+
+/-! ## The index-length currency: grades MAX-AFFINE per hop -/
+
+/-- **One `comp` node costs a single `Nat.size` step over a square pairing.** Mathlib serializes
+`comp cf cg` as `2 · (2 · ⟨cf, cg⟩ + 1) + 4` (`Nat.Partrec.Code.encodeCode`), so its Gödel-index
+bit-length is `Nat.size` of that numeral. A square pairing doubles bit-length up to `2·max` of the
+parts' index lengths (`CheckerScratch.size_pair_le`), and the constant prefactor `4 · _ + 6` adds a
+further three bits — so a `comp` node's index length is at most `2·max` of its parts' plus three.
+This is the per-hop step that `bitlen_transport_le` compounds. -/
+theorem bitlen_comp_le (cf cg : Code) :
+    Realizability.bitlen (comp cf cg)
+      ≤ 2 * max (Realizability.bitlen cf) (Realizability.bitlen cg) + 3 := by
+  have henc : Encodable.encode (comp cf cg)
+      = 4 * Nat.pair (Encodable.encode cf) (Encodable.encode cg) + 6 := by
+    simp only [encodeCode_eq, encodeCode]; ring
+  have hstep : Nat.size (4 * Nat.pair (Encodable.encode cf) (Encodable.encode cg) + 6)
+      ≤ Nat.size (Nat.pair (Encodable.encode cf) (Encodable.encode cg)) + 3 := by
+    rw [Nat.size_le, pow_add]
+    have h : Nat.pair (Encodable.encode cf) (Encodable.encode cg)
+        < 2 ^ Nat.size (Nat.pair (Encodable.encode cf) (Encodable.encode cg)) := Nat.lt_size_self _
+    have hpos : (1 : ℕ) ≤ 2 ^ Nat.size (Nat.pair (Encodable.encode cf) (Encodable.encode cg)) :=
+      Nat.one_le_two_pow
+    have h8 : (2 : ℕ) ^ 3 = 8 := by norm_num
+    rw [h8]; omega
+  have hpair : Nat.size (Nat.pair (Encodable.encode cf) (Encodable.encode cg))
+      ≤ 2 * max (Nat.size (Encodable.encode cf)) (Nat.size (Encodable.encode cg)) :=
+    CheckerScratch.size_pair_le _ _
+  unfold Realizability.bitlen
+  rw [henc]
+  omega
+
+/-- **Capacity-respecting transport does not overflow the index budget ([Decoupling] §4.5).** The
+transport clause of Conjecture 4.4 priced in the third currency: if the two re-encoders have
+Gödel-index length at most `b` and the realizer at most `g`, the conjugate's index length is at most
+`4 · max g b + 9`. The bound is **max-affine in one hop** — the wider of the two grades times a
+fixed factor, plus a constant — not additive: an index budget is spent by nesting `comp` nodes, and
+there are two.
+
+The prefactor `4` is `2²`: each of the two nested `comp` nodes doubles bit-length through its square
+pairing (`bitlen_comp_le`), and the nodes compose. That the factor *compounds* per hop is why the
+one-hop law holds as stated while the iterated transport of the full functor — where the leading
+factor would multiply once per hosting square — remains a conjecture. -/
+theorem bitlen_transport_le {c_emb c_proj r : Code} {b g : ℕ}
+    (hemb : Realizability.bitlen c_emb ≤ b) (hproj : Realizability.bitlen c_proj ≤ b)
+    (hr : Realizability.bitlen r ≤ g) :
+    Realizability.bitlen (transport c_emb c_proj r) ≤ 4 * max g b + 9 := by
+  have hinner := bitlen_comp_le r c_proj
+  have houter := bitlen_comp_le c_emb (comp r c_proj)
+  rw [transport]
   omega
 
 end GradeTransport

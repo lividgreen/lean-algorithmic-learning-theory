@@ -3,6 +3,7 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
+import ALT.AccretiveDecoupling
 import ALT.AdditiveComplexity
 import ALT.AxiomAuditFoundation
 import ALT.AxiomAuditMathlib
@@ -18,6 +19,7 @@ import ALT.CapacityLayer
 import ALT.CapacityThreshold
 import ALT.CartesianClosed
 import ALT.CategoricalThreshold
+import ALT.ChainDependencyAudit
 import ALT.CheckerScratch
 import ALT.ChengCCC
 import ALT.CodeArith
@@ -45,6 +47,9 @@ import ALT.GodelCore
 import ALT.GodelInternalization
 import ALT.GodelThreshold
 import ALT.GradeTransport
+import ALT.GradedApplication
+import ALT.GradedConjugation
+import ALT.GradedSimulation
 import ALT.GrunwaldMehtaDiscovery
 import ALT.HellingerBridge
 import ALT.KReconnection
@@ -53,6 +58,7 @@ import ALT.KolmogorovComplexity
 import ALT.KolmogorovTimeBounded
 import ALT.MDLCoding
 import ALT.MDLDominance
+import ALT.MinimalityWitness
 import ALT.ParameterizedNNO
 import ALT.ParityCounterexample
 import ALT.PersistenceCapacity
@@ -62,7 +68,7 @@ import ALT.PrefixComplexity
 import ALT.PrefixInvariance
 import ALT.PressureWindow
 import ALT.PriorNormalization
-import ALT.ProofChainSkeleton
+import ALT.QuantizationRate
 import ALT.Realizability
 import ALT.RealizabilityCCC
 import ALT.RealizabilityCoproduct
@@ -88,10 +94,14 @@ import ALT.SQVersionSpace
 import ALT.SampleComplexity
 import ALT.SearchCost
 import ALT.SearchSpace
+import ALT.SkewFiber
 import ALT.StructureFunction
+import ALT.SubstrateClass
+import ALT.SurpriseBudget
 import ALT.TimeCost
 import ALT.UniversalAt
 import ALT.Ville
+import ALT.WeightedFiber
 
 /-!
 # ALT — Algorithmic Learning Theory in Lean 4
@@ -111,7 +121,8 @@ series, cited in docstrings as:
 * **[Discovery]** — MDL dominance and finite-time rule discovery;
 * **[SQ]** — polynomial-time convergence under statistical queries;
 * **[Persistence]** — resource-bounded persistence capacity: the priced decoder;
-* **[Inevitability]** — the capstone (structural proof-chain check only).
+* **[Inevitability]** — the realization-synthesis capstone: two independent routes to
+  a reflective subsystem, and the open problem of realizing both on one witness.
 
 The papers are in preparation; the repository README links preprints as they
 appear. References of the form "[Decoupling] §X" (a bracketed short-title key,
@@ -131,4 +142,16 @@ Foundation-based ones (`ALT.AxiomAuditFoundation`, `ALT.GodelChecker`,
 which discharge the Gödel incompleteness hypothesis against upstream
 `FormalizedFormalLogic/Foundation`. So `ALT` is the single library root, and
 the build and the API docs cover the development through it alone.
+
+Several modules state a dependency boundary in their docstring ("deliberately a
+leaf", "stays deliberately light", "cross-referenced but NOT imported") and hold
+themselves to it with `assert_not_exists` on a characteristic declaration of the
+excluded territory. An assertion whose witness name does not exist anywhere is
+vacuous, so the root re-checks them all below: since this module's import closure
+is the whole development, every such witness must resolve here.
 -/
+
+-- Silent when every `assert_not_exists` witness in the closure exists; warns, naming the module,
+-- for any witness that does not — i.e. for a boundary assertion that is silently vacuous.
+set_option linter.hashCommand false in
+#check_assertions!
