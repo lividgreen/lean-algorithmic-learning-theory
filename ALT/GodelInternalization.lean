@@ -208,7 +208,7 @@ within the *same* `2n` as the syntax objects and the recursor — and the two-si
 5.4 is tight up to a constant, not open at the verification step. (The remaining `Δ₀`/poly-time check
 of a held candidate, Buss 1986, runs in `poly(n)` scratch — paper-level.) The *assembly* of these
 per-constituent bounds into the scratch bound of the enumeration itself is machine-checked in
-`CheckerScratch.checker_scratch_closure` — the loop over all `M_chk + 1` candidates runs in a
+`CheckerWorkspace.checker_scratch_closure` — the loop over all `M_chk + 1` candidates runs in a
 workspace bounded independently of `M_chk` — with the per-candidate check entering there as its
 `hstep` hypothesis, exactly the paper-level input named above. -/
 theorem proofcode_workspace_bound (g Mchk : ℕ) (hM : Mchk ≤ g ^ 2) {p : ℕ} (hp : p ≤ Mchk) :

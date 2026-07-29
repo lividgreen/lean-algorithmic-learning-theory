@@ -5,6 +5,7 @@ Authors: Mykola Palamarchuk
 -/
 import Mathlib.Data.Nat.Size
 import ALT.AdditiveComplexity
+import ALT.Code.EvalLaws
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -33,13 +34,13 @@ doubling code `dbl` (`x ↦ 2x`, via universality) plus one `succ`/`id` per bit,
 * `dbl`, `eval_dbl`: a fixed doubling code and its eval law (from universality + `choose_spec`).
 * `bconst`, `eval_bconst`: the binary constant and its correctness `eval (bconst n) m = n`.
 * `elen_bconst_le`: the `O(Nat.size n)` length bound — the gate deliverable.
-* `size_succ_div_two`, `eval_comp_some`: supporting lemmas (binary-length recursion; `comp` eval on
-  a `some` output).
+* `size_succ_div_two`: the binary-length recursion the length bound runs on. The `comp` eval law
+  it is used with, `eval_comp_some`, comes from `ALT.Code.EvalLaws`.
 -/
 
 namespace AdditiveComplexity
 
-open Nat.Partrec Nat.Partrec.Code KolmogorovComplexity
+open Nat.Partrec Nat.Partrec.Code KolmogorovComplexity CodeEvalLaws
 
 /-- The binary-length recursion `Nat.size (n+1) = Nat.size ((n+1)/2) + 1`. Mathlib has no direct
 `size (n/2)` lemma; derive it from `Nat.size_bit` + `Nat.bit_bodd_div2` + `Nat.div2_val`. -/
@@ -74,13 +75,6 @@ noncomputable def bconst : ℕ → Code
   | 0 => Code.zero
   | n + 1 => comp (if (n + 1) % 2 = 0 then Code.id else Code.succ) (comp dbl (bconst ((n + 1) / 2)))
 decreasing_by exact Nat.div_lt_self (Nat.succ_pos n) (by omega)
-
-/-- If `b` outputs `v` on input `j`, then `comp a b` runs `a` on `v` (the `comp` eval law is
-definitional, then `Part.bind_some`). -/
-private theorem eval_comp_some {a b : Code} {j v : ℕ} (hv : eval b j = Part.some v) :
-    eval (comp a b) j = eval a v := by
-  change eval b j >>= eval a = eval a v
-  rw [hv]; exact Part.bind_some v (eval a)
 
 /-- Correctness: `bconst n` outputs `n` from any input (the constant ignores its argument). -/
 theorem eval_bconst (n m : ℕ) : (bconst n).eval m = Part.some n := by

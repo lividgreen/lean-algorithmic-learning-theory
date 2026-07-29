@@ -182,9 +182,9 @@ theorem elen_transport (c_emb c_proj r : Code) :
 /-- **One `comp` node costs a single `Nat.size` step over a square pairing.** Mathlib serializes
 `comp cf cg` as `2 · (2 · ⟨cf, cg⟩ + 1) + 4` (`Nat.Partrec.Code.encodeCode`), so its Gödel-index
 bit-length is `Nat.size` of that numeral. A square pairing doubles bit-length up to `2·max` of the
-parts' index lengths (`CheckerScratch.size_pair_le`), and the constant prefactor `4 · _ + 6` adds a
-further three bits — so a `comp` node's index length is at most `2·max` of its parts' plus three.
-This is the per-hop step that `bitlen_transport_le` compounds. -/
+parts' index lengths (`CodeSizeArith.size_pair_le_max`), and the constant prefactor `4 · _ + 6`
+adds a further three bits — so a `comp` node's index length is at most `2·max` of its parts' plus
+three. This is the per-hop step that `bitlen_transport_le` compounds. -/
 theorem bitlen_comp_le (cf cg : Code) :
     Realizability.bitlen (comp cf cg)
       ≤ 2 * max (Realizability.bitlen cf) (Realizability.bitlen cg) + 3 := by
@@ -202,7 +202,7 @@ theorem bitlen_comp_le (cf cg : Code) :
     rw [h8]; omega
   have hpair : Nat.size (Nat.pair (Encodable.encode cf) (Encodable.encode cg))
       ≤ 2 * max (Nat.size (Encodable.encode cf)) (Nat.size (Encodable.encode cg)) :=
-    CheckerScratch.size_pair_le _ _
+    CodeSizeArith.size_pair_le_max _ _
   unfold Realizability.bitlen
   rw [henc]
   omega

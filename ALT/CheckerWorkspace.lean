@@ -55,11 +55,12 @@ polynomial in the *value* `g` hence exponential in its bit-length — while the 
 no budget hypothesis at all and returns a bound in which `M_chk` does not occur.
 -/
 
-namespace CheckerScratch
+namespace CheckerWorkspace
 
 open Nat.Partrec (Code)
 open Nat.Partrec.Code
 open TimeCost
+open CodeSizeArith
 
 /-! ## The dictionary: `Nat.size` is the capacity vocabulary's bit-length -/
 
@@ -141,27 +142,6 @@ theorem checker_space_time_contrast {cf cg : Code} {S B a g Mchk : ℕ}
 
 /-! ## Holding the loop's input: the pairing cost -/
 
-/-- **Square pairing costs at most twice the wider component.** `Nat.pair x y` is Cantor's square
-pairing (`y² + x` or `x² + x + y`), so it lands strictly below `(2^M)²` where `M` is the larger of
-the two bit-lengths: `Nat.size (Nat.pair x y) ≤ 2M`. The constant `2` is attained (`x = 1, y = 0`
-gives `Nat.pair 1 0 = 2`, of size `2 = 2·1`). Mathlib bounds `Nat.pair` monotonically but does not
-state its bit-length. -/
-theorem size_pair_le (x y : ℕ) :
-    Nat.size (Nat.pair x y) ≤ 2 * max (Nat.size x) (Nat.size y) := by
-  set M := max (Nat.size x) (Nat.size y) with hM
-  have hx : x < 2 ^ M :=
-    Nat.lt_of_lt_of_le (Nat.lt_size_self x)
-      (Nat.pow_le_pow_right (by norm_num) (le_max_left _ _))
-  have hy : y < 2 ^ M :=
-    Nat.lt_of_lt_of_le (Nat.lt_size_self y)
-      (Nat.pow_le_pow_right (by norm_num) (le_max_right _ _))
-  rw [Nat.size_le]
-  have hpow : (2 : ℕ) ^ (2 * M) = 2 ^ M * 2 ^ M := by rw [two_mul, pow_add]
-  rw [hpow, Nat.pair]
-  split
-  · next h => nlinarith
-  · next h => nlinarith
-
 /-- **The loop's step input fits in linear capacity.** One iteration of the §6.3 checker is handed
 `⟨a, ⟨p, b⟩⟩`: the sentence data `a`, a candidate code `p ≤ M_chk`, and the one-bit running verdict
 `b ≤ 1`. With the sentence data itself within capacity, that packed input occupies
@@ -180,9 +160,9 @@ theorem checkerInput_size_le {g Mchk a p b : ℕ} (hM : Mchk ≤ g ^ 2) (hp : p 
     proofcode_size_le_capacity g Mchk hM hp
   have hbs : Nat.size b ≤ 1 := by
     rcases Nat.le_one_iff_eq_zero_or_eq_one.1 hb with rfl | rfl <;> simp
-  have h1 : Nat.size (Nat.pair p b) ≤ 2 * max (Nat.size p) (Nat.size b) := size_pair_le p b
+  have h1 : Nat.size (Nat.pair p b) ≤ 2 * max (Nat.size p) (Nat.size b) := size_pair_le_max p b
   have h2 : Nat.size (Nat.pair a (Nat.pair p b)) ≤
-      2 * max (Nat.size a) (Nat.size (Nat.pair p b)) := size_pair_le a _
+      2 * max (Nat.size a) (Nat.size (Nat.pair p b)) := size_pair_le_max a _
   omega
 
 /-! ## The loop's verdict agrees with the decision morphism -/
@@ -239,4 +219,4 @@ theorem checkerLoop_val_decides (C : GodelInternalization.BoundedChecker) (φ : 
   · rw [if_neg h]
     exact ⟨fun hc => absurd hc (by omega), fun hc => absurd (hiff.2 hc) h⟩
 
-end CheckerScratch
+end CheckerWorkspace

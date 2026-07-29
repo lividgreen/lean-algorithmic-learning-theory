@@ -20,8 +20,11 @@ import ALT.CapacityThreshold
 import ALT.CartesianClosed
 import ALT.CategoricalThreshold
 import ALT.ChainDependencyAudit
-import ALT.CheckerScratch
+import ALT.CheckerWorkspace
 import ALT.ChengCCC
+import ALT.Code.BitGates
+import ALT.Code.EvalLaws
+import ALT.Code.SizeArith
 import ALT.CodeArith
 import ALT.CodePacking
 import ALT.Collector
@@ -59,8 +62,10 @@ import ALT.KolmogorovTimeBounded
 import ALT.MDLCoding
 import ALT.MDLDominance
 import ALT.MinimalityWitness
+import ALT.NoisyWindowChain
 import ALT.ParameterizedNNO
 import ALT.ParityCounterexample
+import ALT.ParityWalk
 import ALT.PersistenceCapacity
 import ALT.PolyTime
 import ALT.PolyTimeAccounting
@@ -102,6 +107,7 @@ import ALT.TimeCost
 import ALT.UniversalAt
 import ALT.Ville
 import ALT.WeightedFiber
+import ALT.WindowDeterminism
 
 /-!
 # ALT — Algorithmic Learning Theory in Lean 4

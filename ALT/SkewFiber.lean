@@ -69,7 +69,7 @@ No numbered result is claimed machine-checked by this file.
 
 namespace SkewFiber
 
-open PersistenceCapacity Decoupling AdditiveComplexity
+open PersistenceCapacity Decoupling AdditiveComplexity CodeEvalLaws
 open Equiv MulAction
 
 -- `•` on the recurrent-core reading is the relabelling action `U • ℓ = ℓ ∘ U⁻¹`; the same local
@@ -81,15 +81,6 @@ attribute [local instance] arrowAction
 section Skew
 
 variable {n₁ n₂ : ℕ}
-
-/-- If `b` outputs `v` on input `j`, then `comp a b` runs `a` on `v` (the `comp` eval law is
-definitional). Local copy of the same helper `PersistenceCapacity` keeps private. -/
-private theorem eval_comp_some {a b : Nat.Partrec.Code} {j v : ℕ}
-    (hv : Nat.Partrec.Code.eval b j = Part.some v) :
-    Nat.Partrec.Code.eval (Nat.Partrec.Code.comp a b) j = Nat.Partrec.Code.eval a v := by
-  change Nat.Partrec.Code.eval b j >>= Nat.Partrec.Code.eval a = Nat.Partrec.Code.eval a v
-  rw [hv]
-  exact Part.bind_some v (Nat.Partrec.Code.eval a)
 
 /-- **The finite skew product** ([Inevitability] §6): the base coordinate steps by `S` alone, the
 fiber coordinate steps by `F` *read at the current base state*. The fiber sees the base; the base

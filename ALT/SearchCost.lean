@@ -3,6 +3,7 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
+import ALT.Code.EvalLaws
 import ALT.TimeCost
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
@@ -51,6 +52,7 @@ namespace TimeCost
 
 open Nat.Partrec (Code)
 open Nat.Partrec.Code
+open CodeEvalLaws
 
 /-! ## The probe-cost accumulator -/
 
@@ -205,12 +207,6 @@ theorem tcP_eq_tc {c : Code} (hc : RfindFree c) (n : ℕ) : tcP c n = Part.some 
   rw [tcP, evalP_eq_evalT hc n, Part.map_some]
 
 /-! ## Value-agreement on ALL of `Code` — the model is total -/
-
-/-- `eval`'s `pair` clause in bind/map form (upstream states it with `<*>`). -/
-theorem eval_pair_bind (cf cg : Code) (n : ℕ) :
-    eval (pair cf cg) n = (eval cf n).bind fun u => (eval cg n).map (Nat.pair u) := by
-  ext x
-  simp [eval, Seq.seq]
 
 /-- **Value-agreement, unrestricted.** The value component of the extended evaluator is `Code.eval`
 on every code, `rfind'` included. This is what `TimeCost.eval_eq_val` could only state on the

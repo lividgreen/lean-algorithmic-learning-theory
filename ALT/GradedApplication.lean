@@ -72,7 +72,7 @@ machine-checked affine price for applying it.
 namespace GradedApplication
 
 open Nat.Partrec (Code)
-open TimeCost RealizabilityCCC BoundedUniversal
+open TimeCost RealizabilityCCC BoundedUniversal CodeSizeArith
 
 /-! ## The grade currency -/
 

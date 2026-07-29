@@ -61,26 +61,13 @@ assembled length is still `elen cR + O(log n) = r + O(log n)`.
 
 namespace AdditiveComplexity
 
-open Nat.Partrec Nat.Partrec.Code KolmogorovComplexity
+open Nat.Partrec Nat.Partrec.Code KolmogorovComplexity CodeEvalLaws
 
-/-! ## Length law for `prec` and base eval helpers -/
+/-! ## Length law for `prec` -/
 
 /-- The additive length law for `prec` (identical shape to `E_len_comp`/`E_len_pair`). -/
 theorem E_len_prec (cf cg : Code) : elen (prec cf cg) = 3 + elen cf + elen cg := by
   simp only [elen, E, List.length_append, List.length_cons, List.length_nil]
-
-/-- Base eval law: `left` is left unpairing. -/
-theorem eval_left' (x : ℕ) : eval left x = Part.some x.unpair.1 := rfl
-
-/-- Base eval law: `right` is right unpairing. -/
-theorem eval_right' (x : ℕ) : eval right x = Part.some x.unpair.2 := rfl
-
-/-- If `b` outputs `v` on input `j`, then `comp a b` runs `a` on `v` (the `comp` eval law is
-definitional, then `Part.bind_some`). Local copy of `BinaryConstant`'s private helper. -/
-theorem eval_comp_some {a b : Code} {j v : ℕ} (hv : eval b j = Part.some v) :
-    eval (comp a b) j = eval a v := by
-  change eval b j >>= eval a = eval a v
-  rw [hv]; exact Part.bind_some v (eval a)
 
 /-! ## The orbit accumulator (Lean-level) and its orbit certification -/
 

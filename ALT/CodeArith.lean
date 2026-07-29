@@ -3,7 +3,7 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.DecisionListSolver
+import ALT.Code.BitGates
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -17,8 +17,8 @@ bounded recursion. This file builds them, each as a named code with its value eq
 
 ## What is reused
 The Boolean layer is already in the tree and is not rebuilt here — `cIsPos`, `cNot`, `cAnd`, `cOr`,
-`cEqBit`, `cSwap` and `cShape0` come from the decision-list solver's bit-gate library, together with
-their `≤ 1` bounds, and `constCode` from the polynomial-time layer. What is new here is the
+`cEqBit`, `cSwap` and `cShape0` come from the bit-gate library (`ALT/Code/BitGates.lean`), together
+with their `≤ 1` bounds, and `constCode` from the polynomial-time layer. What is new here is the
 numeric layer above them.
 
 ## The shape of every construction

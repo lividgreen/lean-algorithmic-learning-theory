@@ -6,7 +6,7 @@ Authors: Mykola Palamarchuk
 import Mathlib.Algebra.Order.Ring.Star
 import Mathlib.Data.Int.Star
 import Mathlib.Tactic.IntervalCases
-import ALT.PolyTime
+import ALT.Code.BitGates
 import ALT.DecisionListData
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
@@ -22,6 +22,10 @@ Provenance: the native cost model (`ALT/TimeCost.lean`). Builds on `ALT/Decision
 `encodeList`, `peel_encode`) and `ALT/PolyTime.lean` (`PolyTime`, `PolyBounded`, `polyTime_loop`,
 `tc_prec_le'`, the closure toolkit).
 
+The numbered layers below start at 2: layer 1 is the bit-logic gate library — `cIsPos`, `cNot`,
+`cOr`, `cAnd`, `cEqBit`, `cSwap`, `cShape0` with their value laws, `rfind'`-freeness and `tc`
+bounds — which lives in `ALT/Code/BitGates.lean`.
+
 The construction is labeled in three layers, cited in comments below:
 **C2a** — the data layer (`ALT/DecisionListData.lean`); **C2b** — the polynomial-time account (the
 scan and the greedy outer loop `solve`; its outer loop is tagged `C2b-outer`); **C2c** — greedy
@@ -33,215 +37,7 @@ namespace OneDL
 open Nat.Partrec (Code)
 open Nat.Partrec.Code
 open TimeCost
-
-/-! ## Layer 1 — a native bit-logic gate library
-
-**The finding that forces this.** The native `tc` charges 1 per AST unfolding and every `prec` runs
-its full iteration count, so any VALUE-arithmetic on a magnitude-`v` operand costs Θ(v) — value-linear,
-NOT poly-bit (the same wall as `cPred`). In particular the scan cannot compare general-`ℕ` labels for
-equality in poly-time. We therefore work in the **binary 1-DL setting** (features and labels ∈ {0,1})
-and compute with bit-logic gates whose recursion variable is a bit, so each gate is `O(1)`-`tc` on
-bits. Every gate below is **bit-closed**: its `val` is always `0` or `1`, whatever the input. Each gate
-gets a `val` law and a `tc` bound linear in the input value (hence `O(1)` on bits). The `tc` bounds use
-the uniform `tc_prec_le` — `tc_prec_le'` (visited-states-only) is needed only at the outer scan loop. -/
-
-/-- Reshape `n ↦ ⟨0, n⟩` so a `prec` recurses on the value `n` (seed `0`). -/
-def cShape0 : Code := pair zero (pair left right)
-
-theorem rfindFree_cShape0 : RfindFree cShape0 := ⟨trivial, trivial, trivial⟩
-
-theorem val_cShape0 (n : ℕ) : val cShape0 n = Nat.pair 0 n := by
-  simp only [cShape0, val_pair, val_zero, val_left, val_right, Nat.pair_unpair]
-
-theorem tc_cShape0 (n : ℕ) : tc cShape0 n = 5 := by
-  simp only [cShape0, tc_pair, tc_zero, tc_left, tc_right]
-
-/-- `[n ≠ 0]` as a `prec` recursing on the value: base `0`, step `1`. -/
-def isPosCore : Code := prec zero (constCode 1)
-/-- Positivity indicator `n ↦ [n ≠ 0]` (bit-closed). -/
-def cIsPos : Code := comp isPosCore cShape0
-
-theorem rfindFree_isPosCore : RfindFree isPosCore := ⟨trivial, rfindFree_constCode 1⟩
-theorem rfindFree_cIsPos : RfindFree cIsPos := ⟨rfindFree_isPosCore, rfindFree_cShape0⟩
-
-theorem val_isPosCore (a n : ℕ) : val isPosCore (Nat.pair a n) = if n = 0 then 0 else 1 := by
-  unfold isPosCore
-  cases n with
-  | zero => rw [val_prec_zero]; simp [val_zero]
-  | succ k => rw [val_prec_succ, val_constCode]; simp
-
-theorem val_cIsPos (n : ℕ) : val cIsPos n = if n = 0 then 0 else 1 := by
-  rw [cIsPos, val_comp, val_cShape0, val_isPosCore]
-
-theorem tc_isPosCore_le (a n : ℕ) : tc isPosCore (Nat.pair a n) ≤ 4 * n + 2 := by
-  unfold isPosCore
-  have h := tc_prec_le (cf := zero) (cg := constCode 1) (B := 3)
-    (fun x => tc_constCode_le 1 x) a n
-  simp only [tc_zero] at h
-  omega
-
-theorem tc_cIsPos_le (n : ℕ) : tc cIsPos n ≤ 4 * n + 8 := by
-  rw [cIsPos, tc_comp, tc_cShape0, val_cShape0]
-  have := tc_isPosCore_le 0 n
-  omega
-
-/-- Negation `n ↦ [n = 0]` (bit-closed). -/
-def notCore : Code := prec (constCode 1) zero
-
-/-- `notCore` on a bare input: `cShape0` reshapes `n ↦ ⟨0, n⟩` so the `prec` recurses on `n`
-itself, giving `val cNot n = [n = 0]`. -/
-def cNot : Code := comp notCore cShape0
-
-theorem rfindFree_notCore : RfindFree notCore := ⟨rfindFree_constCode 1, trivial⟩
-theorem rfindFree_cNot : RfindFree cNot := ⟨rfindFree_notCore, rfindFree_cShape0⟩
-
-theorem val_notCore (a n : ℕ) : val notCore (Nat.pair a n) = if n = 0 then 1 else 0 := by
-  unfold notCore
-  cases n with
-  | zero => rw [val_prec_zero, val_constCode]; simp
-  | succ k => rw [val_prec_succ]; simp [val_zero]
-
-theorem val_cNot (n : ℕ) : val cNot n = if n = 0 then 1 else 0 := by
-  rw [cNot, val_comp, val_cShape0, val_notCore]
-
-theorem tc_notCore_le (a n : ℕ) : tc notCore (Nat.pair a n) ≤ 2 * n + 4 := by
-  unfold notCore
-  have h := tc_prec_le (cf := constCode 1) (cg := zero) (B := 1)
-    (fun x => (tc_zero x).le) a n
-  have hb := tc_constCode_le 1 a
-  omega
-
-theorem tc_cNot_le (n : ℕ) : tc cNot n ≤ 2 * n + 10 := by
-  rw [cNot, tc_comp, tc_cShape0, val_cShape0]
-  have := tc_notCore_le 0 n
-  omega
-
-/-- Swap `⟨a,b⟩ ↦ ⟨b,a⟩`. -/
-def cSwap : Code := pair right left
-theorem rfindFree_cSwap : RfindFree cSwap := ⟨trivial, trivial⟩
-theorem val_cSwap (a b : ℕ) : val cSwap (Nat.pair a b) = Nat.pair b a := by
-  simp only [cSwap, val_pair, val_left, val_right, Nat.unpair_pair]
-theorem tc_cSwap (n : ℕ) : tc cSwap n = 3 := by simp only [cSwap, tc_pair, tc_left, tc_right]
-
-/-- Disjunction `⟨a,b⟩ ↦ a ∨ b` (bit-closed): recurse on `a`, seed `b`. -/
-def orCore : Code := prec cIsPos (constCode 1)
-
-/-- `orCore` after `cSwap`. A `prec` recurses on its input's *second* component, so the swap puts
-`a` there and `cOr ⟨a, b⟩` is the disjunction in the natural argument order. -/
-def cOr : Code := comp orCore cSwap
-
-theorem rfindFree_orCore : RfindFree orCore := ⟨rfindFree_cIsPos, rfindFree_constCode 1⟩
-theorem rfindFree_cOr : RfindFree cOr := ⟨rfindFree_orCore, rfindFree_cSwap⟩
-
-theorem val_orCore (b a : ℕ) :
-    val orCore (Nat.pair b a) = if a = 0 then (if b = 0 then 0 else 1) else 1 := by
-  unfold orCore
-  cases a with
-  | zero => rw [val_prec_zero, val_cIsPos]; simp
-  | succ k => rw [val_prec_succ, val_constCode]; simp
-
-theorem val_cOr (a b : ℕ) :
-    val cOr (Nat.pair a b) = if a = 0 then (if b = 0 then 0 else 1) else 1 := by
-  rw [cOr, val_comp, val_cSwap, val_orCore]
-
-theorem tc_orCore_le (b a : ℕ) : tc orCore (Nat.pair b a) ≤ 4 * b + 4 * a + 9 := by
-  unfold orCore
-  have h := tc_prec_le (cf := cIsPos) (cg := constCode 1) (B := 3)
-    (fun x => tc_constCode_le 1 x) b a
-  have hb := tc_cIsPos_le b
-  omega
-
-theorem tc_cOr_le (a b : ℕ) : tc cOr (Nat.pair a b) ≤ 4 * a + 4 * b + 13 := by
-  rw [cOr, tc_comp, tc_cSwap, val_cSwap]
-  have := tc_orCore_le b a
-  omega
-
-/-- Conjunction `⟨a,b⟩ ↦ a ∧ b` via De Morgan (prec-free, bit-closed). -/
-def cAnd : Code := comp cNot (comp cOr (pair (comp cNot left) (comp cNot right)))
-
-theorem rfindFree_cAnd : RfindFree cAnd :=
-  ⟨rfindFree_cNot, ⟨rfindFree_cOr, ⟨rfindFree_cNot, trivial⟩, ⟨rfindFree_cNot, trivial⟩⟩⟩
-
-theorem val_cAnd (a b : ℕ) :
-    val cAnd (Nat.pair a b) = if a = 0 then 0 else (if b = 0 then 0 else 1) := by
-  simp only [cAnd, val_comp, val_pair, val_left, val_right, val_cNot, val_cOr, Nat.unpair_pair]
-  by_cases ha : a = 0 <;> by_cases hb : b = 0 <;> simp [ha, hb]
-
-/-- Bit-equality `⟨a,b⟩ ↦ [a = b]` on bits, via `(a ∧ b) ∨ (¬a ∧ ¬b)` (prec-free, bit-closed).
-The general `val` law is "both zero, or both nonzero"; it coincides with equality exactly on the
-binary regime `a, b ∈ {0,1}` (`val_cEqBit_bit`). -/
-def cEqBit : Code :=
-  comp cOr (pair cAnd (comp cAnd (pair (comp cNot left) (comp cNot right))))
-
-theorem rfindFree_cEqBit : RfindFree cEqBit :=
-  ⟨rfindFree_cOr, rfindFree_cAnd, ⟨rfindFree_cAnd, ⟨rfindFree_cNot, trivial⟩, ⟨rfindFree_cNot, trivial⟩⟩⟩
-
-theorem val_cEqBit (a b : ℕ) :
-    val cEqBit (Nat.pair a b)
-      = if a = 0 then (if b = 0 then 1 else 0) else (if b = 0 then 0 else 1) := by
-  simp only [cEqBit, val_comp, val_pair, val_left, val_right, val_cNot, val_cAnd, val_cOr,
-    Nat.unpair_pair]
-  by_cases ha : a = 0 <;> by_cases hb : b = 0 <;> simp [ha, hb]
-
-/-- On bits, `cEqBit` genuinely tests equality. -/
-theorem val_cEqBit_bit {a b : ℕ} (ha : a ≤ 1) (hb : b ≤ 1) :
-    val cEqBit (Nat.pair a b) = if a = b then 1 else 0 := by
-  interval_cases a <;> interval_cases b <;> simp [val_cEqBit]
-
-/-- Every gate is **bit-closed**: `cIsPos` outputs a bit. -/
-theorem val_cIsPos_le_one (n : ℕ) : val cIsPos n ≤ 1 := by rw [val_cIsPos]; split <;> simp
-theorem val_cNot_le_one (n : ℕ) : val cNot n ≤ 1 := by rw [val_cNot]; split <;> simp
-theorem val_cOr_le_one (a b : ℕ) : val cOr (Nat.pair a b) ≤ 1 := by
-  rw [val_cOr]; split <;> [split <;> simp; simp]
-theorem val_cAnd_le_one (a b : ℕ) : val cAnd (Nat.pair a b) ≤ 1 := by
-  rw [val_cAnd]; split <;> [simp; split <;> simp]
-theorem val_cEqBit_le_one (a b : ℕ) : val cEqBit (Nat.pair a b) ≤ 1 := by
-  rw [val_cEqBit]; split <;> split <;> simp
-
-/-- `tc` of the composite conjunction gate — linear in the input values (`O(1)` on bits). -/
-theorem tc_cAnd_le (a b : ℕ) : tc cAnd (Nat.pair a b) ≤ 2 * a + 2 * b + 200 := by
-  have e := tc_cNot_le a
-  have f := tc_cNot_le b
-  have g := tc_cOr_le (val cNot a) (val cNot b)
-  have g' := tc_cNot_le (val cOr (Nat.pair (val cNot a) (val cNot b)))
-  have ha := val_cNot_le_one a
-  have hb := val_cNot_le_one b
-  have hor := val_cOr_le_one (val cNot a) (val cNot b)
-  simp only [cAnd, tc_comp, tc_pair, tc_left, tc_right, val_comp, val_left, val_right, val_pair,
-    Nat.unpair_pair]
-  omega
-
-/-- `tc` of the composite bit-equality gate — linear in the input values (`O(1)` on bits). -/
-theorem tc_cEqBit_le (a b : ℕ) : tc cEqBit (Nat.pair a b) ≤ 4 * a + 4 * b + 2000 := by
-  have hA := tc_cAnd_le a b
-  have hA2 := tc_cAnd_le (val cNot a) (val cNot b)
-  have e := tc_cNot_le a
-  have f := tc_cNot_le b
-  have ha := val_cNot_le_one a
-  have hb := val_cNot_le_one b
-  have hAnd1 := val_cAnd_le_one a b
-  have hAnd2 := val_cAnd_le_one (val cNot a) (val cNot b)
-  have g := tc_cOr_le (val cAnd (Nat.pair a b))
-    (val cAnd (Nat.pair (val cNot a) (val cNot b)))
-  simp only [cEqBit, tc_comp, tc_pair, tc_left, tc_right, val_comp, val_left, val_right, val_pair,
-    Nat.unpair_pair]
-  omega
-
-/-! ### Gate `tc`-on-bits bricks (reusable by findLit/maskUpdate)
-
-On bit operands every gate runs a constant number of steps: the `prec`-based gates unfold `≤ 1` times,
-the De-Morgan compositions are `prec`-free. -/
-
-theorem tc_cIsPos_bit {x : ℕ} (h : x ≤ 1) : tc cIsPos x ≤ 12 := by
-  have := tc_cIsPos_le x; omega
-theorem tc_cNot_bit {x : ℕ} (h : x ≤ 1) : tc cNot x ≤ 12 := by
-  have := tc_cNot_le x; omega
-theorem tc_cOr_bit {a b : ℕ} (ha : a ≤ 1) (hb : b ≤ 1) : tc cOr (Nat.pair a b) ≤ 21 := by
-  have := tc_cOr_le a b; omega
-theorem tc_cAnd_bit {a b : ℕ} (ha : a ≤ 1) (hb : b ≤ 1) : tc cAnd (Nat.pair a b) ≤ 204 := by
-  have := tc_cAnd_le a b; omega
-theorem tc_cEqBit_bit {a b : ℕ} (ha : a ≤ 1) (hb : b ≤ 1) : tc cEqBit (Nat.pair a b) ≤ 2008 := by
-  have := tc_cEqBit_le a b; omega
+open CodeSizeArith
 
 /-! ## Layer 2 — the purity scan `cPurity`
 
@@ -263,10 +59,10 @@ def bOr (a b : ℕ) : ℕ := if a = 0 then (if b = 0 then 0 else 1) else 1
 /-- bit-equality — mirrors `val_cEqBit`. -/
 def bEq (a b : ℕ) : ℕ := if a = 0 then (if b = 0 then 1 else 0) else (if b = 0 then 0 else 1)
 
-theorem bNot_le_one (n : ℕ) : bNot n ≤ 1 := by unfold bNot; split <;> simp
-theorem bAnd_le_one (a b : ℕ) : bAnd a b ≤ 1 := by unfold bAnd; split <;> [simp; split <;> simp]
-theorem bOr_le_one (a b : ℕ) : bOr a b ≤ 1 := by unfold bOr; split <;> [split <;> simp; simp]
-theorem bEq_le_one (a b : ℕ) : bEq a b ≤ 1 := by
+private theorem bNot_le_one (n : ℕ) : bNot n ≤ 1 := by unfold bNot; split <;> simp
+private theorem bAnd_le_one (a b : ℕ) : bAnd a b ≤ 1 := by unfold bAnd; split <;> [simp; split <;> simp]
+private theorem bOr_le_one (a b : ℕ) : bOr a b ≤ 1 := by unfold bOr; split <;> [split <;> simp; simp]
+private theorem bEq_le_one (a b : ℕ) : bEq a b ≤ 1 := by
   unfold bEq; split <;> split <;> simp
 
 /-- The label of an example `e = ⟨label, fv⟩`. -/
@@ -279,18 +75,18 @@ def featOf (e j : ℕ) : ℕ := headL (peel (fvOf e) j)
 /-! ### Reads as `Code`s -/
 
 /-- `headL` as a `Code` (`comp left right`). -/
-def cHead : Code := comp left right
+private def cHead : Code := comp left right
 /-- `tailL` as a `Code` (`comp right right`). -/
-def cTail : Code := comp right right
+private def cTail : Code := comp right right
 
-theorem rfindFree_cHead : RfindFree cHead := ⟨trivial, trivial⟩
-theorem rfindFree_cTail : RfindFree cTail := ⟨trivial, trivial⟩
-theorem val_cHead (L : ℕ) : val cHead L = headL L := by
+private theorem rfindFree_cHead : RfindFree cHead := ⟨trivial, trivial⟩
+private theorem rfindFree_cTail : RfindFree cTail := ⟨trivial, trivial⟩
+private theorem val_cHead (L : ℕ) : val cHead L = headL L := by
   simp only [cHead, val_comp, val_left, val_right, headL]
-theorem val_cTail (L : ℕ) : val cTail L = tailL L := by
+private theorem val_cTail (L : ℕ) : val cTail L = tailL L := by
   simp only [cTail, val_comp, val_right, tailL]
-theorem tc_cHead (L : ℕ) : tc cHead L = 3 := by simp only [cHead, tc_comp, tc_left, tc_right]
-theorem tc_cTail (L : ℕ) : tc cTail L = 3 := by simp only [cTail, tc_comp, tc_right]
+private theorem tc_cHead (L : ℕ) : tc cHead L = 3 := by simp only [cHead, tc_comp, tc_left, tc_right]
+private theorem tc_cTail (L : ℕ) : tc cTail L = 3 := by simp only [cTail, tc_comp, tc_right]
 
 /-! ### The packed input and its projections
 
@@ -313,24 +109,24 @@ is the `unpair` chain of its semantic twin spelled with `left`/`right`; the `val
 the identifications. -/
 
 /-- `instOf` as a `Code`. -/
-def cInst : Code := left
+private def cInst : Code := left
 /-- `maskOf` as a `Code`. -/
-def cMask : Code := comp left right
+private def cMask : Code := comp left right
 /-- `jOf` as a `Code`. -/
-def cJ : Code := comp left (comp right right)
+private def cJ : Code := comp left (comp right right)
 /-- `pOf` as a `Code`. -/
-def cP : Code := comp right (comp right right)
+private def cP : Code := comp right (comp right right)
 /-- `dataOf` as a `Code`: the example list, read out of the instance. -/
-def cData : Code := comp (comp right right) left
+private def cData : Code := comp (comp right right) left
 
-theorem val_cInst (n : ℕ) : val cInst n = instOf n := by simp only [cInst, val_left, instOf]
-theorem val_cMask (n : ℕ) : val cMask n = maskOf n := by
+private theorem val_cInst (n : ℕ) : val cInst n = instOf n := by simp only [cInst, val_left, instOf]
+private theorem val_cMask (n : ℕ) : val cMask n = maskOf n := by
   simp only [cMask, val_comp, val_left, val_right, maskOf]
-theorem val_cJ (n : ℕ) : val cJ n = jOf n := by
+private theorem val_cJ (n : ℕ) : val cJ n = jOf n := by
   simp only [cJ, val_comp, val_left, val_right, jOf]
-theorem val_cP (n : ℕ) : val cP n = pOf n := by
+private theorem val_cP (n : ℕ) : val cP n = pOf n := by
   simp only [cP, val_comp, val_right, pOf]
-theorem val_cData (n : ℕ) : val cData n = dataOf n := by
+private theorem val_cData (n : ℕ) : val cData n = dataOf n := by
   simp only [cData, val_comp, val_left, val_right, dataOf, readData, instOf]
 
 /-! ### The accumulator `⟨maskSuf, ⟨exSuf, ⟨sawZero, sawOne⟩⟩⟩` and the initial-state code -/
@@ -350,10 +146,10 @@ def initAcc (mask data : ℕ) : ℕ := Nat.pair mask (Nat.pair data (Nat.pair 0 
 /-- The base code: build `initAcc (maskOf n) (dataOf n)` from the packed input. -/
 def cInit : Code := pair cMask (pair cData (pair zero zero))
 
-theorem rfindFree_cInit : RfindFree cInit :=
+private theorem rfindFree_cInit : RfindFree cInit :=
   ⟨⟨trivial, trivial⟩, ⟨⟨⟨trivial, trivial⟩, trivial⟩, ⟨trivial, trivial⟩⟩⟩
 
-theorem val_cInit (n : ℕ) : val cInit n = initAcc (maskOf n) (dataOf n) := by
+private theorem val_cInit (n : ℕ) : val cInit n = initAcc (maskOf n) (dataOf n) := by
   simp only [cInit, val_pair, val_cMask, val_cData, val_zero, initAcc]
 
 /-! ### The step code `cStep` and its `val` law
@@ -362,10 +158,10 @@ Gate `val` laws restated with the semantic bit-ops (definitional folds) so the s
 `stepFn` form. The step input is `X = ⟨a, ⟨i, acc⟩⟩`; the seed `a` carries `j, p`, and `i` is unused
 (carried-suffix scan — the current cell is the head of the carried suffix). -/
 
-theorem val_cNot' (n : ℕ) : val cNot n = bNot n := val_cNot n
-theorem val_cAnd' (a b : ℕ) : val cAnd (Nat.pair a b) = bAnd a b := val_cAnd a b
-theorem val_cOr' (a b : ℕ) : val cOr (Nat.pair a b) = bOr a b := val_cOr a b
-theorem val_cEqBit' (a b : ℕ) : val cEqBit (Nat.pair a b) = bEq a b := val_cEqBit a b
+private theorem val_cNot' (n : ℕ) : val cNot n = bNot n := val_cNot n
+private theorem val_cAnd' (a b : ℕ) : val cAnd (Nat.pair a b) = bAnd a b := val_cAnd a b
+private theorem val_cOr' (a b : ℕ) : val cOr (Nat.pair a b) = bOr a b := val_cOr a b
+private theorem val_cEqBit' (a b : ℕ) : val cEqBit (Nat.pair a b) = bEq a b := val_cEqBit a b
 
 /-! The step code's pieces, all read off the step input `X = ⟨a, ⟨i, acc⟩⟩`: the `c*a` pair reaches
 into the seed `a` for the literal, the rest into `acc`. They build up in one chain — the current
@@ -374,39 +170,39 @@ the two updated flags — and `cStep` reassembles the accumulator from the last 
 identifies the whole with `stepFn`. -/
 
 /-- The accumulator. -/
-def cAcc : Code := comp right right
+private def cAcc : Code := comp right right
 /-- The literal's feature index `j`, from the seed. -/
-def cJa : Code := comp cJ left
+private def cJa : Code := comp cJ left
 /-- The literal's polarity bit `p`, from the seed. -/
-def cPa : Code := comp cP left
+private def cPa : Code := comp cP left
 /-- The mask suffix. -/
-def cMs : Code := comp left cAcc
+private def cMs : Code := comp left cAcc
 /-- The example suffix. -/
-def cEx : Code := comp left (comp right cAcc)
+private def cEx : Code := comp left (comp right cAcc)
 /-- The `sawZero` flag. -/
-def cZ0 : Code := comp left (comp right (comp right cAcc))
+private def cZ0 : Code := comp left (comp right (comp right cAcc))
 /-- The `sawOne` flag. -/
-def cZ1 : Code := comp right (comp right (comp right cAcc))
+private def cZ1 : Code := comp right (comp right (comp right cAcc))
 /-- The current mask bit: is this example still in play? -/
-def cB : Code := comp cHead cMs
+private def cB : Code := comp cHead cMs
 /-- The current example. -/
-def cE : Code := comp cHead cEx
+private def cE : Code := comp cHead cEx
 /-- The current example's label. -/
-def cLbl : Code := comp left cE
+private def cLbl : Code := comp left cE
 /-- The current example's feature vector. -/
-def cFv : Code := comp right cE
+private def cFv : Code := comp right cE
 /-- Feature `j` of the current example: peel its feature vector `j` cells, read the head bit. -/
-def cFeat : Code := comp cHead (comp cPeel (pair cFv cJa))
+private def cFeat : Code := comp cHead (comp cPeel (pair cFv cJa))
 /-- Does the current example's feature `j` match the literal's polarity `p`? -/
-def cEqFP : Code := comp cEqBit (pair cFeat cPa)
+private def cEqFP : Code := comp cEqBit (pair cFeat cPa)
 /-- Coverage: the example is still remaining AND the literal matches it. -/
-def cCov : Code := comp cAnd (pair cB cEqFP)
+private def cCov : Code := comp cAnd (pair cB cEqFP)
 /-- The current example's label, negated. -/
-def cNotLbl : Code := comp cNot cLbl
+private def cNotLbl : Code := comp cNot cLbl
 /-- The updated `sawZero`: set it if this example is covered and labelled `0`. -/
-def cZ0' : Code := comp cOr (pair cZ0 (comp cAnd (pair cCov cNotLbl)))
+private def cZ0' : Code := comp cOr (pair cZ0 (comp cAnd (pair cCov cNotLbl)))
 /-- The updated `sawOne`: set it if this example is covered and labelled `1`. -/
-def cZ1' : Code := comp cOr (pair cZ1 (comp cAnd (pair cCov cLbl)))
+private def cZ1' : Code := comp cOr (pair cZ1 (comp cAnd (pair cCov cLbl)))
 /-- The step: peel both suffixes one cell and carry the two updated flags. -/
 def cStep : Code := pair (comp cTail cMs) (pair (comp cTail cEx) (pair cZ0' cZ1'))
 
@@ -424,7 +220,7 @@ def stepFn (j p acc : ℕ) : ℕ :=
           (bAnd (bAnd (headL (msOf acc)) (bEq (featOf (headL (exOf acc)) j) p))
             (lblOf (headL (exOf acc)))))))
 
-theorem val_cStep (a i acc : ℕ) :
+private theorem val_cStep (a i acc : ℕ) :
     val cStep (Nat.pair a (Nat.pair i acc)) = stepFn (jOf a) (pOf a) acc := by
   simp only [cStep, cZ0', cZ1', cCov, cNotLbl, cB, cEqFP, cFeat, cFv, cE, cLbl, cEx, cMs, cZ0, cZ1,
     cAcc, cJa, cPa, val_pair, val_comp, val_left, val_right, val_cHead, val_cTail, val_cPeel,
@@ -432,7 +228,7 @@ theorem val_cStep (a i acc : ℕ) :
     stepFn, msOf, exOf, z0Of, z1Of, lblOf, fvOf, featOf]
 
 /-- **Loop = iterated step.** The `prec` loop iterates the semantic step `t` times from `initAcc`. -/
-theorem val_cLoop (n t : ℕ) :
+private theorem val_cLoop (n t : ℕ) :
     val (prec cInit cStep) (Nat.pair n t)
       = (stepFn (jOf n) (pOf n))^[t] (initAcc (maskOf n) (dataOf n)) := by
   induction t with
@@ -449,7 +245,7 @@ def stepPair (j p : ℕ) (z : ℕ × ℕ) (be : ℕ × ℕ) : ℕ × ℕ :=
 /-- **The scan realises the `List` fold.** Running the semantic step over the encoded mask/example
 lists (equal length) for `exs.length` iterations from `⟨mask, data, z0, z1⟩` empties both suffixes and
 `foldl`s `stepPair` over `zip msks exs`. -/
-theorem stepFn_iterate (j p : ℕ) (exs : List ℕ) :
+private theorem stepFn_iterate (j p : ℕ) (exs : List ℕ) :
     ∀ (msks : List ℕ) (z0 z1 : ℕ), msks.length = exs.length →
       (stepFn j p)^[exs.length]
           (Nat.pair (encodeList msks) (Nat.pair (encodeList exs) (Nat.pair z0 z1)))
@@ -480,18 +276,18 @@ theorem stepFn_iterate (j p : ℕ) (exs : List ℕ) :
 
 /-! ### Characterising the fold: `sawZero`/`sawOne` as coverage existentials -/
 
-theorem bOr_ne_zero (a b : ℕ) : bOr a b ≠ 0 ↔ a ≠ 0 ∨ b ≠ 0 := by
+private theorem bOr_ne_zero (a b : ℕ) : bOr a b ≠ 0 ↔ a ≠ 0 ∨ b ≠ 0 := by
   unfold bOr; by_cases ha : a = 0 <;> by_cases hb : b = 0 <;> simp [ha, hb]
-theorem bAnd_ne_zero (a b : ℕ) : bAnd a b ≠ 0 ↔ a ≠ 0 ∧ b ≠ 0 := by
+private theorem bAnd_ne_zero (a b : ℕ) : bAnd a b ≠ 0 ↔ a ≠ 0 ∧ b ≠ 0 := by
   unfold bAnd; by_cases ha : a = 0 <;> by_cases hb : b = 0 <;> simp [ha, hb]
-theorem bNot_ne_zero (n : ℕ) : bNot n ≠ 0 ↔ n = 0 := by
+private theorem bNot_ne_zero (n : ℕ) : bNot n ≠ 0 ↔ n = 0 := by
   unfold bNot; by_cases h : n = 0 <;> simp [h]
-theorem bAnd_eq_zero (a b : ℕ) : bAnd a b = 0 ↔ a = 0 ∨ b = 0 := by
+private theorem bAnd_eq_zero (a b : ℕ) : bAnd a b = 0 ↔ a = 0 ∨ b = 0 := by
   unfold bAnd; by_cases ha : a = 0 <;> by_cases hb : b = 0 <;> simp [ha, hb]
-theorem bAnd_le_left (a b : ℕ) : bAnd a b ≤ a := by unfold bAnd; split_ifs <;> omega
+private theorem bAnd_le_left (a b : ℕ) : bAnd a b ≤ a := by unfold bAnd; split_ifs <;> omega
 
 /-- Split a componentwise pair `foldl` into two independent scalar `foldl`s. -/
-theorem foldl_pair {α : Type*} (F G : α → ℕ → ℕ) (l : List α) (a b : ℕ) :
+private theorem foldl_pair {α : Type*} (F G : α → ℕ → ℕ) (l : List α) (a b : ℕ) :
     (l.foldl (fun z x => (F x z.1, G x z.2)) (a, b))
       = (l.foldl (fun y x => F x y) a, l.foldl (fun y x => G x y) b) := by
   induction l generalizing a b with
@@ -499,7 +295,7 @@ theorem foldl_pair {α : Type*} (F G : α → ℕ → ℕ) (l : List α) (a b : 
   | cons x xs ih => simp only [List.foldl_cons]; exact ih _ _
 
 /-- A `bOr`-accumulating `foldl` is nonzero iff the seed is, or some element fires. -/
-theorem orFold_ne_zero {α : Type*} (f : α → ℕ) (l : List α) (init : ℕ) :
+private theorem orFold_ne_zero {α : Type*} (f : α → ℕ) (l : List α) (init : ℕ) :
     (l.foldl (fun y x => bOr y (f x)) init) ≠ 0 ↔ init ≠ 0 ∨ ∃ x ∈ l, f x ≠ 0 := by
   induction l generalizing init with
   | nil => simp
@@ -509,7 +305,7 @@ theorem orFold_ne_zero {α : Type*} (f : α → ℕ) (l : List α) (init : ℕ) 
       tauto
 
 /-- The `sawZero` (`.1`) and `sawOne` (`.2`) components of the fold, as independent `bOr`-folds. -/
-theorem foldZ_fst (j p : ℕ) (l : List (ℕ × ℕ)) (z0 z1 : ℕ) :
+private theorem foldZ_fst (j p : ℕ) (l : List (ℕ × ℕ)) (z0 z1 : ℕ) :
     (l.foldl (stepPair j p) (z0, z1)).1
       = l.foldl (fun y be => bOr y
           (bAnd (bAnd be.1 (bEq (featOf be.2 j) p)) (bNot (lblOf be.2)))) z0 :=
@@ -517,7 +313,7 @@ theorem foldZ_fst (j p : ℕ) (l : List (ℕ × ℕ)) (z0 z1 : ℕ) :
     (foldl_pair (fun (be : ℕ × ℕ) a => bOr a (bAnd (bAnd be.1 (bEq (featOf be.2 j) p)) (bNot (lblOf be.2))))
                 (fun (be : ℕ × ℕ) a => bOr a (bAnd (bAnd be.1 (bEq (featOf be.2 j) p)) (lblOf be.2))) l z0 z1)
 
-theorem foldZ_snd (j p : ℕ) (l : List (ℕ × ℕ)) (z0 z1 : ℕ) :
+private theorem foldZ_snd (j p : ℕ) (l : List (ℕ × ℕ)) (z0 z1 : ℕ) :
     (l.foldl (stepPair j p) (z0, z1)).2
       = l.foldl (fun y be => bOr y
           (bAnd (bAnd be.1 (bEq (featOf be.2 j) p)) (lblOf be.2))) z1 :=
@@ -530,7 +326,7 @@ its feature-`j` bit against `p`. -/
 def Covered (j p : ℕ) (be : ℕ × ℕ) : Prop := be.1 ≠ 0 ∧ bEq (featOf be.2 j) p ≠ 0
 
 /-- **`sawOne` characterisation.** The `.2` flag fires iff some covered pair carries a nonzero label. -/
-theorem sawOne_iff (j p : ℕ) (l : List (ℕ × ℕ)) :
+private theorem sawOne_iff (j p : ℕ) (l : List (ℕ × ℕ)) :
     (l.foldl (stepPair j p) (0, 0)).2 ≠ 0 ↔ ∃ be ∈ l, Covered j p be ∧ lblOf be.2 ≠ 0 := by
   rw [foldZ_snd, orFold_ne_zero]
   simp only [bAnd_ne_zero, Covered]
@@ -541,7 +337,7 @@ theorem sawOne_iff (j p : ℕ) (l : List (ℕ × ℕ)) :
   · exact fun h => Or.inr h
 
 /-- **`sawZero` characterisation.** The `.1` flag fires iff some covered pair carries a zero label. -/
-theorem sawZero_iff (j p : ℕ) (l : List (ℕ × ℕ)) :
+private theorem sawZero_iff (j p : ℕ) (l : List (ℕ × ℕ)) :
     (l.foldl (stepPair j p) (0, 0)).1 ≠ 0 ↔ ∃ be ∈ l, Covered j p be ∧ lblOf be.2 = 0 := by
   rw [foldZ_fst, orFold_ne_zero]
   simp only [bAnd_ne_zero, bNot_ne_zero, Covered]
@@ -559,29 +355,29 @@ so the greedy loop can reject vacuously-pure (0-covering) literals (`findLit` ga
 sawAny`). -/
 
 /-- The `sawZero` flag of the final accumulator. -/
-def cZ0acc : Code := comp left (comp right right)
+private def cZ0acc : Code := comp left (comp right right)
 /-- The `sawOne` flag of the final accumulator. -/
-def cZ1acc : Code := comp right (comp right right)
+private def cZ1acc : Code := comp right (comp right right)
 /-- `sawAny = sawZero ∨ sawOne`: the literal covered at least one remaining example. -/
-def cSawAny : Code := comp cOr (pair cZ0acc cZ1acc)
+private def cSawAny : Code := comp cOr (pair cZ0acc cZ1acc)
 /-- The read-out verdict triple `⟨isPure, ⟨commonLabel, sawAny⟩⟩`. Purity is `¬(sawZero ∧ sawOne)`
 — the covered examples did not disagree — and the common label is `sawOne`. -/
-def cFinal : Code := pair (comp cNot (comp cAnd (pair cZ0acc cZ1acc))) (pair cZ1acc cSawAny)
+private def cFinal : Code := pair (comp cNot (comp cAnd (pair cZ0acc cZ1acc))) (pair cZ1acc cSawAny)
 /-- Identity shaper (the loop seed is the whole packed input). -/
-def cId : Code := pair left right
+private def cId : Code := pair left right
 /-- The iteration count `readM (instOf n)` — the number of examples. -/
-def cCount : Code := comp cReadM cInst
+private def cCount : Code := comp cReadM cInst
 /-- **The purity primitive** `cPurity`: run the scan `readM inst` times, then read out the verdict. -/
 def cPurity : Code := comp cFinal (comp (prec cInit cStep) (pair cId cCount))
 
-theorem val_cFinal (acc : ℕ) :
+private theorem val_cFinal (acc : ℕ) :
     val cFinal acc = Nat.pair (bNot (bAnd (z0Of acc) (z1Of acc)))
       (Nat.pair (z1Of acc) (bOr (z0Of acc) (z1Of acc))) := by
   simp only [cFinal, cSawAny, cZ0acc, cZ1acc, val_pair, val_comp, val_left, val_right, val_cNot',
     val_cAnd', val_cOr', z0Of, z1Of]
-theorem val_cId (n : ℕ) : val cId n = n := by
+private theorem val_cId (n : ℕ) : val cId n = n := by
   simp only [cId, val_pair, val_left, val_right, Nat.pair_unpair]
-theorem val_cCount (n : ℕ) : val cCount n = readM (instOf n) := by
+private theorem val_cCount (n : ℕ) : val cCount n = readM (instOf n) := by
   simp only [cCount, val_comp, val_cReadM, val_cInst]
 
 /-- The final accumulator after the full scan. -/
@@ -626,7 +422,7 @@ theorem purity_isPure_iff (n : ℕ) (msks exs : List ℕ)
 
 /-- **`commonLabel` read-out.** The verdict's second field (`.2.1`) is `sawOne`, which fires iff some
 covered example carries a nonzero (i.e. `1`, in the binary regime) label. -/
-theorem purity_commonLabel (n : ℕ) (msks exs : List ℕ)
+private theorem purity_commonLabel (n : ℕ) (msks exs : List ℕ)
     (hmask : maskOf n = encodeList msks) (hdata : dataOf n = encodeList exs)
     (hcount : readM (instOf n) = exs.length) (hlen : msks.length = exs.length) :
     (purityVal n).unpair.2.unpair.1 ≠ 0
@@ -638,7 +434,7 @@ theorem purity_commonLabel (n : ℕ) (msks exs : List ℕ)
 /-- **`sawAny` read-out.** The verdict's third field (`.2.2`) is `sawZero ∨ sawOne`, which fires iff the
 literal `(jOf n, pOf n)` **covers ≥1 remaining example** — the covering witness the greedy loop needs to
 reject vacuously-pure literals. -/
-theorem purity_sawAny (n : ℕ) (msks exs : List ℕ)
+private theorem purity_sawAny (n : ℕ) (msks exs : List ℕ)
     (hmask : maskOf n = encodeList msks) (hdata : dataOf n = encodeList exs)
     (hcount : readM (instOf n) = exs.length) (hlen : msks.length = exs.length) :
     (purityVal n).unpair.2.unpair.2 ≠ 0
@@ -663,33 +459,33 @@ threaded here as `PolyBounded` hypotheses (exactly the `polyTime_peel` pattern).
 
 /-! ### Accumulator-shape invariants -/
 
-theorem msOf_stepFn (j p acc : ℕ) : msOf (stepFn j p acc) = tailL (msOf acc) := by
+private theorem msOf_stepFn (j p acc : ℕ) : msOf (stepFn j p acc) = tailL (msOf acc) := by
   simp only [stepFn, msOf, Nat.unpair_pair]
-theorem exOf_stepFn (j p acc : ℕ) : exOf (stepFn j p acc) = tailL (exOf acc) := by
+private theorem exOf_stepFn (j p acc : ℕ) : exOf (stepFn j p acc) = tailL (exOf acc) := by
   simp only [stepFn, exOf, Nat.unpair_pair]
-theorem z0Of_stepFn_le_one (j p acc : ℕ) : z0Of (stepFn j p acc) ≤ 1 := by
+private theorem z0Of_stepFn_le_one (j p acc : ℕ) : z0Of (stepFn j p acc) ≤ 1 := by
   simp only [stepFn, z0Of, Nat.unpair_pair]; exact bOr_le_one _ _
-theorem z1Of_stepFn_le_one (j p acc : ℕ) : z1Of (stepFn j p acc) ≤ 1 := by
+private theorem z1Of_stepFn_le_one (j p acc : ℕ) : z1Of (stepFn j p acc) ≤ 1 := by
   simp only [stepFn, z1Of, Nat.unpair_pair]; exact bOr_le_one _ _
 
-theorem inv_msOf_le (j p mask data : ℕ) : ∀ t,
+private theorem inv_msOf_le (j p mask data : ℕ) : ∀ t,
     msOf ((stepFn j p)^[t] (initAcc mask data)) ≤ mask := by
   intro t
   induction t with
   | zero => simp only [Function.iterate_zero_apply, initAcc, msOf, Nat.unpair_pair]; exact le_refl _
   | succ k ih => rw [Function.iterate_succ_apply', msOf_stepFn]; exact le_trans (tailL_le _) ih
-theorem inv_exOf_le (j p mask data : ℕ) : ∀ t,
+private theorem inv_exOf_le (j p mask data : ℕ) : ∀ t,
     exOf ((stepFn j p)^[t] (initAcc mask data)) ≤ data := by
   intro t
   induction t with
   | zero => simp only [Function.iterate_zero_apply, initAcc, exOf, Nat.unpair_pair]; exact le_refl _
   | succ k ih => rw [Function.iterate_succ_apply', exOf_stepFn]; exact le_trans (tailL_le _) ih
-theorem inv_z0_le_one (j p mask data t : ℕ) :
+private theorem inv_z0_le_one (j p mask data t : ℕ) :
     z0Of ((stepFn j p)^[t] (initAcc mask data)) ≤ 1 := by
   cases t with
   | zero => simp only [Function.iterate_zero_apply, initAcc, z0Of, Nat.unpair_pair]; omega
   | succ k => rw [Function.iterate_succ_apply']; exact z0Of_stepFn_le_one _ _ _
-theorem inv_z1_le_one (j p mask data t : ℕ) :
+private theorem inv_z1_le_one (j p mask data t : ℕ) :
     z1Of ((stepFn j p)^[t] (initAcc mask data)) ≤ 1 := by
   cases t with
   | zero => simp only [Function.iterate_zero_apply, initAcc, z1Of, Nat.unpair_pair]; omega
@@ -697,7 +493,7 @@ theorem inv_z1_le_one (j p mask data t : ℕ) :
 
 /-! ### `rfind'`-freeness of the step code -/
 
-theorem rfindFree_cStep : RfindFree cStep := by
+private theorem rfindFree_cStep : RfindFree cStep := by
   simp only [cStep, cZ0', cZ1', cCov, cNotLbl, cB, cEqFP, cFeat, cFv, cE, cLbl, cEx, cMs, cZ0, cZ1,
     cAcc, cJa, cPa, cJ, cP, cHead, cTail, cAnd, cOr, cNot, cEqBit, cIsPos, cShape0, cSwap,
     isPosCore, notCore, orCore, cPeel, cTailStep, constCode, RfindFree, and_self]
@@ -708,49 +504,49 @@ Sub-code `val` laws at the step input `X = ⟨a, ⟨i, acc⟩⟩` (canonical rea
 feature peel, then bottom-up `tc` bounds culminating in `tc_cStep_le`: under bit operands every gate is
 `O(1)` and the only scaling cost is the feature peel to index `jOf a`. -/
 
-theorem vs_cAcc (a i acc : ℕ) : val cAcc (Nat.pair a (Nat.pair i acc)) = acc := by
+private theorem vs_cAcc (a i acc : ℕ) : val cAcc (Nat.pair a (Nat.pair i acc)) = acc := by
   simp only [cAcc, val_comp, val_right, Nat.unpair_pair]
-theorem vs_cMs (a i acc : ℕ) : val cMs (Nat.pair a (Nat.pair i acc)) = msOf acc := by
+private theorem vs_cMs (a i acc : ℕ) : val cMs (Nat.pair a (Nat.pair i acc)) = msOf acc := by
   simp only [cMs, cAcc, val_comp, val_left, val_right, Nat.unpair_pair, msOf]
-theorem vs_cEx (a i acc : ℕ) : val cEx (Nat.pair a (Nat.pair i acc)) = exOf acc := by
+private theorem vs_cEx (a i acc : ℕ) : val cEx (Nat.pair a (Nat.pair i acc)) = exOf acc := by
   simp only [cEx, cAcc, val_comp, val_left, val_right, Nat.unpair_pair, exOf]
-theorem vs_cZ0 (a i acc : ℕ) : val cZ0 (Nat.pair a (Nat.pair i acc)) = z0Of acc := by
+private theorem vs_cZ0 (a i acc : ℕ) : val cZ0 (Nat.pair a (Nat.pair i acc)) = z0Of acc := by
   simp only [cZ0, cAcc, val_comp, val_left, val_right, Nat.unpair_pair, z0Of]
-theorem vs_cZ1 (a i acc : ℕ) : val cZ1 (Nat.pair a (Nat.pair i acc)) = z1Of acc := by
+private theorem vs_cZ1 (a i acc : ℕ) : val cZ1 (Nat.pair a (Nat.pair i acc)) = z1Of acc := by
   simp only [cZ1, cAcc, val_comp, val_right, Nat.unpair_pair, z1Of]
-theorem vs_cJa (a i acc : ℕ) : val cJa (Nat.pair a (Nat.pair i acc)) = jOf a := by
+private theorem vs_cJa (a i acc : ℕ) : val cJa (Nat.pair a (Nat.pair i acc)) = jOf a := by
   simp only [cJa, cJ, val_comp, val_left, val_right, Nat.unpair_pair, jOf]
-theorem vs_cPa (a i acc : ℕ) : val cPa (Nat.pair a (Nat.pair i acc)) = pOf a := by
+private theorem vs_cPa (a i acc : ℕ) : val cPa (Nat.pair a (Nat.pair i acc)) = pOf a := by
   simp only [cPa, cP, val_comp, val_left, val_right, Nat.unpair_pair, pOf]
-theorem vs_cB (a i acc : ℕ) : val cB (Nat.pair a (Nat.pair i acc)) = headL (msOf acc) := by
+private theorem vs_cB (a i acc : ℕ) : val cB (Nat.pair a (Nat.pair i acc)) = headL (msOf acc) := by
   simp only [cB, cMs, cAcc, val_comp, val_cHead, val_left, val_right, Nat.unpair_pair, msOf]
-theorem vs_cE (a i acc : ℕ) : val cE (Nat.pair a (Nat.pair i acc)) = headL (exOf acc) := by
+private theorem vs_cE (a i acc : ℕ) : val cE (Nat.pair a (Nat.pair i acc)) = headL (exOf acc) := by
   simp only [cE, cEx, cAcc, val_comp, val_cHead, val_left, val_right, Nat.unpair_pair, exOf]
-theorem vs_cLbl (a i acc : ℕ) :
+private theorem vs_cLbl (a i acc : ℕ) :
     val cLbl (Nat.pair a (Nat.pair i acc)) = lblOf (headL (exOf acc)) := by
   simp only [cLbl, cE, cEx, cAcc, val_comp, val_cHead, val_left, val_right, Nat.unpair_pair, exOf,
     lblOf]
-theorem vs_cFv (a i acc : ℕ) :
+private theorem vs_cFv (a i acc : ℕ) :
     val cFv (Nat.pair a (Nat.pair i acc)) = fvOf (headL (exOf acc)) := by
   simp only [cFv, cE, cEx, cAcc, val_comp, val_cHead, val_left, val_right, Nat.unpair_pair, exOf,
     fvOf]
-theorem vs_cFeat (a i acc : ℕ) :
+private theorem vs_cFeat (a i acc : ℕ) :
     val cFeat (Nat.pair a (Nat.pair i acc)) = featOf (headL (exOf acc)) (jOf a) := by
   simp only [cFeat, cFv, cE, cEx, cAcc, cJa, cJ, val_comp, val_cHead, val_cPeel, val_pair, val_left,
     val_right, Nat.unpair_pair, exOf, fvOf, jOf, featOf]
-theorem vs_cEqFP (a i acc : ℕ) :
+private theorem vs_cEqFP (a i acc : ℕ) :
     val cEqFP (Nat.pair a (Nat.pair i acc)) = bEq (featOf (headL (exOf acc)) (jOf a)) (pOf a) := by
   simp only [cEqFP, val_comp, val_pair, val_cEqBit', vs_cFeat, vs_cPa]
-theorem vs_cCov (a i acc : ℕ) :
+private theorem vs_cCov (a i acc : ℕ) :
     val cCov (Nat.pair a (Nat.pair i acc))
       = bAnd (headL (msOf acc)) (bEq (featOf (headL (exOf acc)) (jOf a)) (pOf a)) := by
   simp only [cCov, val_comp, val_pair, val_cAnd', vs_cB, vs_cEqFP]
-theorem vs_cNotLbl (a i acc : ℕ) :
+private theorem vs_cNotLbl (a i acc : ℕ) :
     val cNotLbl (Nat.pair a (Nat.pair i acc)) = bNot (lblOf (headL (exOf acc))) := by
   simp only [cNotLbl, val_comp, val_cNot', vs_cLbl]
 
 /-- The feature peel costs `≤ 8·(index) + 4`. -/
-theorem tc_cPeel_le (L m : ℕ) : tc cPeel (Nat.pair L m) ≤ 8 * m + 4 := by
+private theorem tc_cPeel_le (L m : ℕ) : tc cPeel (Nat.pair L m) ≤ 8 * m + 4 := by
   unfold cPeel
   have h := tc_prec_le (cf := pair left right) (cg := cTailStep) (B := 7)
     (fun x => (tc_cTailStep x).le) L m
@@ -758,31 +554,31 @@ theorem tc_cPeel_le (L m : ℕ) : tc cPeel (Nat.pair L m) ≤ 8 * m + 4 := by
   omega
 
 -- Projection reads: constant `tc`.
-theorem tc_cAcc_le (a i acc : ℕ) : tc cAcc (Nat.pair a (Nat.pair i acc)) ≤ 3 := by
+private theorem tc_cAcc_le (a i acc : ℕ) : tc cAcc (Nat.pair a (Nat.pair i acc)) ≤ 3 := by
   simp only [cAcc, tc_comp, tc_right]; omega
-theorem tc_cMs_le (a i acc : ℕ) : tc cMs (Nat.pair a (Nat.pair i acc)) ≤ 5 := by
+private theorem tc_cMs_le (a i acc : ℕ) : tc cMs (Nat.pair a (Nat.pair i acc)) ≤ 5 := by
   have := tc_cAcc_le a i acc; simp only [cMs, tc_comp, tc_left]; omega
-theorem tc_cEx_le (a i acc : ℕ) : tc cEx (Nat.pair a (Nat.pair i acc)) ≤ 7 := by
+private theorem tc_cEx_le (a i acc : ℕ) : tc cEx (Nat.pair a (Nat.pair i acc)) ≤ 7 := by
   have := tc_cAcc_le a i acc; simp only [cEx, tc_comp, tc_left, tc_right]; omega
-theorem tc_cZ0_le (a i acc : ℕ) : tc cZ0 (Nat.pair a (Nat.pair i acc)) ≤ 9 := by
+private theorem tc_cZ0_le (a i acc : ℕ) : tc cZ0 (Nat.pair a (Nat.pair i acc)) ≤ 9 := by
   have := tc_cAcc_le a i acc; simp only [cZ0, tc_comp, tc_left, tc_right]; omega
-theorem tc_cZ1_le (a i acc : ℕ) : tc cZ1 (Nat.pair a (Nat.pair i acc)) ≤ 9 := by
+private theorem tc_cZ1_le (a i acc : ℕ) : tc cZ1 (Nat.pair a (Nat.pair i acc)) ≤ 9 := by
   have := tc_cAcc_le a i acc; simp only [cZ1, tc_comp, tc_right]; omega
-theorem tc_cJa_le (a i acc : ℕ) : tc cJa (Nat.pair a (Nat.pair i acc)) ≤ 7 := by
+private theorem tc_cJa_le (a i acc : ℕ) : tc cJa (Nat.pair a (Nat.pair i acc)) ≤ 7 := by
   simp only [cJa, cJ, tc_comp, tc_left, tc_right]; omega
-theorem tc_cPa_le (a i acc : ℕ) : tc cPa (Nat.pair a (Nat.pair i acc)) ≤ 7 := by
+private theorem tc_cPa_le (a i acc : ℕ) : tc cPa (Nat.pair a (Nat.pair i acc)) ≤ 7 := by
   simp only [cPa, cP, tc_comp, tc_left, tc_right]; omega
-theorem tc_cB_le (a i acc : ℕ) : tc cB (Nat.pair a (Nat.pair i acc)) ≤ 9 := by
+private theorem tc_cB_le (a i acc : ℕ) : tc cB (Nat.pair a (Nat.pair i acc)) ≤ 9 := by
   have := tc_cMs_le a i acc; simp only [cB, tc_comp, tc_cHead]; omega
-theorem tc_cE_le (a i acc : ℕ) : tc cE (Nat.pair a (Nat.pair i acc)) ≤ 11 := by
+private theorem tc_cE_le (a i acc : ℕ) : tc cE (Nat.pair a (Nat.pair i acc)) ≤ 11 := by
   have := tc_cEx_le a i acc; simp only [cE, tc_comp, tc_cHead]; omega
-theorem tc_cLbl_le (a i acc : ℕ) : tc cLbl (Nat.pair a (Nat.pair i acc)) ≤ 13 := by
+private theorem tc_cLbl_le (a i acc : ℕ) : tc cLbl (Nat.pair a (Nat.pair i acc)) ≤ 13 := by
   have := tc_cE_le a i acc; simp only [cLbl, tc_comp, tc_left]; omega
-theorem tc_cFv_le (a i acc : ℕ) : tc cFv (Nat.pair a (Nat.pair i acc)) ≤ 13 := by
+private theorem tc_cFv_le (a i acc : ℕ) : tc cFv (Nat.pair a (Nat.pair i acc)) ≤ 13 := by
   have := tc_cE_le a i acc; simp only [cFv, tc_comp, tc_right]; omega
 
 -- The feature read: the one value-scaling cost, `O(jOf a)`.
-theorem tc_cFeat_le (a i acc : ℕ) : tc cFeat (Nat.pair a (Nat.pair i acc)) ≤ 8 * jOf a + 40 := by
+private theorem tc_cFeat_le (a i acc : ℕ) : tc cFeat (Nat.pair a (Nat.pair i acc)) ≤ 8 * jOf a + 40 := by
   have hfv := tc_cFv_le a i acc
   have hja := tc_cJa_le a i acc
   have hpeel := tc_cPeel_le (val cFv (Nat.pair a (Nat.pair i acc)))
@@ -792,7 +588,7 @@ theorem tc_cFeat_le (a i acc : ℕ) : tc cFeat (Nat.pair a (Nat.pair i acc)) ≤
   omega
 
 -- Gate reads: `O(1)` on bit operands, via the linear gate bounds + operand bit facts.
-theorem tc_cEqFP_le (a i acc : ℕ) (hfeat : featOf (headL (exOf acc)) (jOf a) ≤ 1) (hp : pOf a ≤ 1) :
+private theorem tc_cEqFP_le (a i acc : ℕ) (hfeat : featOf (headL (exOf acc)) (jOf a) ≤ 1) (hp : pOf a ≤ 1) :
     tc cEqFP (Nat.pair a (Nat.pair i acc)) ≤ 8 * jOf a + 2100 := by
   have hf := tc_cFeat_le a i acc
   have hpa := tc_cPa_le a i acc
@@ -803,7 +599,7 @@ theorem tc_cEqFP_le (a i acc : ℕ) (hfeat : featOf (headL (exOf acc)) (jOf a) �
   simp only [cEqFP, tc_comp, tc_pair, val_pair]
   omega
 
-theorem tc_cNotLbl_le (a i acc : ℕ) (hlbl : lblOf (headL (exOf acc)) ≤ 1) :
+private theorem tc_cNotLbl_le (a i acc : ℕ) (hlbl : lblOf (headL (exOf acc)) ≤ 1) :
     tc cNotLbl (Nat.pair a (Nat.pair i acc)) ≤ 30 := by
   have hl := tc_cLbl_le a i acc
   have hlv : val cLbl (Nat.pair a (Nat.pair i acc)) ≤ 1 := by rw [vs_cLbl]; exact hlbl
@@ -811,7 +607,7 @@ theorem tc_cNotLbl_le (a i acc : ℕ) (hlbl : lblOf (headL (exOf acc)) ≤ 1) :
   simp only [cNotLbl, tc_comp]
   omega
 
-theorem tc_cCov_le (a i acc : ℕ) (hmask : headL (msOf acc) ≤ 1)
+private theorem tc_cCov_le (a i acc : ℕ) (hmask : headL (msOf acc) ≤ 1)
     (hfeat : featOf (headL (exOf acc)) (jOf a) ≤ 1) (hp : pOf a ≤ 1) :
     tc cCov (Nat.pair a (Nat.pair i acc)) ≤ 8 * jOf a + 2400 := by
   have hb := tc_cB_le a i acc
@@ -823,7 +619,7 @@ theorem tc_cCov_le (a i acc : ℕ) (hmask : headL (msOf acc) ≤ 1)
   simp only [cCov, tc_comp, tc_pair, val_pair]
   omega
 
-theorem tc_cZ0'_le (a i acc : ℕ) (hmask : headL (msOf acc) ≤ 1)
+private theorem tc_cZ0'_le (a i acc : ℕ) (hmask : headL (msOf acc) ≤ 1)
     (hfeat : featOf (headL (exOf acc)) (jOf a) ≤ 1) (hp : pOf a ≤ 1)
     (hlbl : lblOf (headL (exOf acc)) ≤ 1) (hz0 : z0Of acc ≤ 1) :
     tc cZ0' (Nat.pair a (Nat.pair i acc)) ≤ 8 * jOf a + 2800 := by
@@ -842,7 +638,7 @@ theorem tc_cZ0'_le (a i acc : ℕ) (hmask : headL (msOf acc) ≤ 1)
   simp only [cZ0', tc_comp, tc_pair, val_pair]
   omega
 
-theorem tc_cZ1'_le (a i acc : ℕ) (hmask : headL (msOf acc) ≤ 1)
+private theorem tc_cZ1'_le (a i acc : ℕ) (hmask : headL (msOf acc) ≤ 1)
     (hfeat : featOf (headL (exOf acc)) (jOf a) ≤ 1) (hp : pOf a ≤ 1)
     (hlbl : lblOf (headL (exOf acc)) ≤ 1) (hz1 : z1Of acc ≤ 1) :
     tc cZ1' (Nat.pair a (Nat.pair i acc)) ≤ 8 * jOf a + 2800 := by
@@ -864,7 +660,7 @@ theorem tc_cZ1'_le (a i acc : ℕ) (hmask : headL (msOf acc) ≤ 1)
 /-- **The per-step cost bound.** Under bit operands (mask head, feature bit, label — the binary regime;
 plus `pOf a` a bit and the two flags `≤ 1` by the accumulator invariant), the step costs
 `≤ 16·(jOf a) + 5700`: every gate is `O(1)` and only the feature peel scales. -/
-theorem tc_cStep_le (a i acc : ℕ) (hmask : headL (msOf acc) ≤ 1)
+private theorem tc_cStep_le (a i acc : ℕ) (hmask : headL (msOf acc) ≤ 1)
     (hfeat : featOf (headL (exOf acc)) (jOf a) ≤ 1) (hp : pOf a ≤ 1)
     (hlbl : lblOf (headL (exOf acc)) ≤ 1) (hz0 : z0Of acc ≤ 1) (hz1 : z1Of acc ≤ 1) :
     tc cStep (Nat.pair a (Nat.pair i acc)) ≤ 16 * jOf a + 5700 := by
@@ -878,22 +674,22 @@ theorem tc_cStep_le (a i acc : ℕ) (hmask : headL (msOf acc) ≤ 1)
 /-! ### Structural `PolyTime` premises -/
 
 /-- The scan count `readM (instOf n)` is `PolyTime`. -/
-theorem polyTime_count : PolyTime (fun n => readM (instOf n)) :=
+private theorem polyTime_count : PolyTime (fun n => readM (instOf n)) :=
   polyTime_comp polyTime_readM polyTime_left
 
 /-! ### The accumulator stays poly-bit (discharging `hacc`) -/
 
-theorem maskOf_le (n : ℕ) : maskOf n ≤ n :=
+private theorem maskOf_le (n : ℕ) : maskOf n ≤ n :=
   le_trans (Nat.unpair_left_le _) (Nat.unpair_right_le _)
-theorem dataOf_le (n : ℕ) : dataOf n ≤ n :=
+private theorem dataOf_le (n : ℕ) : dataOf n ≤ n :=
   le_trans (readData_le (instOf n)) (Nat.unpair_left_le n)
 
-theorem acc_decompose (x : ℕ) :
+private theorem acc_decompose (x : ℕ) :
     x = Nat.pair (msOf x) (Nat.pair (exOf x) (Nat.pair (z0Of x) (z1Of x))) := by
   simp only [msOf, exOf, z0Of, z1Of, Nat.pair_unpair]
 
 /-- Any accumulator whose suffixes are `≤ n` and whose flags are bits has bit-length `≤ 6·size n + 30`. -/
-theorem size_acc_bound (acc n : ℕ) (hms : msOf acc ≤ n) (hex : exOf acc ≤ n)
+private theorem size_acc_bound (acc n : ℕ) (hms : msOf acc ≤ n) (hex : exOf acc ≤ n)
     (hz0 : z0Of acc ≤ 1) (hz1 : z1Of acc ≤ 1) : Nat.size acc ≤ 6 * Nat.size n + 30 := by
   rw [acc_decompose acc]
   have p1 := size_pair_le (msOf acc) (Nat.pair (exOf acc) (Nat.pair (z0Of acc) (z1Of acc)))
@@ -906,7 +702,7 @@ theorem size_acc_bound (acc n : ℕ) (hms : msOf acc ≤ n) (hex : exOf acc ≤ 
   omega
 
 /-- The scan accumulator after the full run is poly-bit — `hacc` for the loop, discharged. -/
-theorem polyBounded_acc : PolyBounded
+private theorem polyBounded_acc : PolyBounded
     (fun n => Nat.size (val (prec cInit cStep) (Nat.pair n (readM (instOf n))))) := by
   refine PolyBounded.mono (fun n => ?_)
     (((PolyBounded.const 6).mul PolyBounded.size).add (PolyBounded.const 30))
@@ -917,11 +713,11 @@ theorem polyBounded_acc : PolyBounded
     (inv_z0_le_one _ _ _ _ _) (inv_z1_le_one _ _ _ _ _)
 
 /-- The base code's native cost is a constant, hence poly-bounded. -/
-theorem tc_cInit_le (n : ℕ) : tc cInit n ≤ 13 := by
+private theorem tc_cInit_le (n : ℕ) : tc cInit n ≤ 13 := by
   simp only [cInit, cMask, cData, tc_pair, tc_comp, tc_left, tc_right, tc_zero, val_left,
     val_right]
   omega
-theorem polyBounded_tc_cInit : PolyBounded (tc cInit) :=
+private theorem polyBounded_tc_cInit : PolyBounded (tc cInit) :=
   PolyBounded.mono tc_cInit_le (PolyBounded.const 13)
 
 /-- **The scan loop is `PolyTime`** — the assembled `polyTime_loop` closure. The three genuinely
@@ -952,14 +748,14 @@ to the well-formed domain. `PolyTimeOn D f` (poly-time cost + output size on `D`
 discharged from `readM_le_size`/`readK_le_size`. -/
 
 /-- Every mask/example suffix is the peeled original — the carried suffix at step `i` is `peel _ i`. -/
-theorem inv_msOf_peel (j p mask data i : ℕ) :
+private theorem inv_msOf_peel (j p mask data i : ℕ) :
     msOf ((stepFn j p)^[i] (initAcc mask data)) = peel mask i := by
   induction i with
   | zero => simp [initAcc, msOf, peel, Nat.unpair_pair]
   | succ k ih =>
       rw [Function.iterate_succ_apply', msOf_stepFn, ih]
       simp only [peel, Function.iterate_succ_apply']
-theorem inv_exOf_peel (j p mask data i : ℕ) :
+private theorem inv_exOf_peel (j p mask data i : ℕ) :
     exOf ((stepFn j p)^[i] (initAcc mask data)) = peel data i := by
   induction i with
   | zero => simp [initAcc, exOf, peel, Nat.unpair_pair]
@@ -980,7 +776,7 @@ def MaskValid (mask m : ℕ) : Prop :=
 /-- **Visited-state bit-ness.** Under binary well-formedness, at every visited example `i` the mask
 head, the feature bit at `j = jOf n`, and the label are all `≤ 1`. The mask head needs `MaskValid`, the
 feature/label need `WFBits`; the flags (handled at the call site) need only the accumulator invariant. -/
-theorem visited_bits (n i : ℕ) (hw : WFBits (instOf n))
+private theorem visited_bits (n i : ℕ) (hw : WFBits (instOf n))
     (hm : MaskValid (maskOf n) (readM (instOf n))) (hi : i < readM (instOf n)) :
     headL (msOf ((stepFn (jOf n) (pOf n))^[i] (initAcc (maskOf n) (dataOf n)))) ≤ 1 ∧
     featOf (headL (exOf ((stepFn (jOf n) (pOf n))^[i] (initAcc (maskOf n) (dataOf n)))))
@@ -1014,21 +810,21 @@ a valid literal index `j < k` (so `jOf n ≤ readK`). -/
 def PurityWF (n : ℕ) : Prop :=
   WFBits (instOf n) ∧ MaskValid (maskOf n) (readM (instOf n)) ∧ pOf n ≤ 1 ∧ jOf n ≤ readK (instOf n)
 
-theorem val_cZ0acc (acc : ℕ) : val cZ0acc acc = z0Of acc := by
+private theorem val_cZ0acc (acc : ℕ) : val cZ0acc acc = z0Of acc := by
   simp only [cZ0acc, val_comp, val_left, val_right, z0Of]
-theorem val_cZ1acc (acc : ℕ) : val cZ1acc acc = z1Of acc := by
+private theorem val_cZ1acc (acc : ℕ) : val cZ1acc acc = z1Of acc := by
   simp only [cZ1acc, val_comp, val_right, z1Of]
 
-theorem rfindFree_cFinal : RfindFree cFinal := by
+private theorem rfindFree_cFinal : RfindFree cFinal := by
   simp only [cFinal, cSawAny, cZ0acc, cZ1acc, cNot, cAnd, cOr, cIsPos, cShape0, cSwap, notCore, orCore,
     isPosCore, constCode, RfindFree, and_self]
-theorem rfindFree_cId : RfindFree cId := ⟨trivial, trivial⟩
-theorem rfindFree_cCount : RfindFree cCount := ⟨⟨trivial, trivial⟩, trivial⟩
-theorem rfindFree_cPurity : RfindFree cPurity :=
+private theorem rfindFree_cId : RfindFree cId := ⟨trivial, trivial⟩
+private theorem rfindFree_cCount : RfindFree cCount := ⟨⟨trivial, trivial⟩, trivial⟩
+private theorem rfindFree_cPurity : RfindFree cPurity :=
   ⟨rfindFree_cFinal, ⟨rfindFree_cInit, rfindFree_cStep⟩, rfindFree_cId, rfindFree_cCount⟩
 
 /-- The read-out `cFinal` is `O(1)` on a bit-flagged accumulator. -/
-theorem tc_cFinal_le (acc : ℕ) (hz0 : z0Of acc ≤ 1) (hz1 : z1Of acc ≤ 1) : tc cFinal acc ≤ 300 := by
+private theorem tc_cFinal_le (acc : ℕ) (hz0 : z0Of acc ≤ 1) (hz1 : z1Of acc ≤ 1) : tc cFinal acc ≤ 300 := by
   have h0 : tc cZ0acc acc ≤ 5 := by simp only [cZ0acc, tc_comp, tc_left, tc_right]; omega
   have h1 : tc cZ1acc acc ≤ 5 := by simp only [cZ1acc, tc_comp, tc_right]; omega
   have hz0v : val cZ0acc acc ≤ 1 := by rw [val_cZ0acc]; exact hz0
@@ -1043,7 +839,7 @@ theorem tc_cFinal_le (acc : ℕ) (hz0 : z0Of acc ≤ 1) (hz1 : z1Of acc ≤ 1) :
 /-- **The per-visited-step bound**, proved: at every visited example the step costs `≤ 16·(jOf n)+5700`
 (uniformly in `i`). Feature/label/mask bits from `WFBits`/`MaskValid` (`visited_bits`); the flags from
 the accumulator invariant. -/
-theorem hstep_visited (n : ℕ) (hw : WFBits (instOf n))
+private theorem hstep_visited (n : ℕ) (hw : WFBits (instOf n))
     (hm : MaskValid (maskOf n) (readM (instOf n))) (hp : pOf n ≤ 1) :
     ∀ i, i < readM (instOf n) →
       tc cStep (Nat.pair n (Nat.pair i (val (prec cInit cStep) (Nat.pair n i))))
@@ -1056,7 +852,7 @@ theorem hstep_visited (n : ℕ) (hw : WFBits (instOf n))
 /-- **`cPurity`'s native cost on a well-formed instance**: the base cost, the `(Bstep+1)·m` loop term
 (`tc_prec_le'` + `hstep_visited`), the shaper, and the `O(1)` read-out sum to
 `≤ (16·jOf n + 5701)·readM(instOf n) + 400`. -/
-theorem tc_cPurity_raw (n : ℕ) (hw : WFBits (instOf n))
+private theorem tc_cPurity_raw (n : ℕ) (hw : WFBits (instOf n))
     (hm : MaskValid (maskOf n) (readM (instOf n))) (hp : pOf n ≤ 1) :
     tc cPurity n ≤ (16 * jOf n + 5700 + 1) * readM (instOf n) + 400 := by
   have hpair : val (pair cId cCount) n = Nat.pair n (readM (instOf n)) := by
@@ -1076,7 +872,7 @@ theorem tc_cPurity_raw (n : ℕ) (hw : WFBits (instOf n))
 
 /-- **`cPurity` is poly-time on the well-formed domain.** The raw `(Bstep+1)·m` bound is turned poly-bit
 by `jOf n ≤ readK ≤ size n` (under `WF`) and `readM ≤ size n`, giving a quadratic in `Nat.size n`. -/
-theorem polyBoundedOn_tc_cPurity : PolyBoundedOn PurityWF (tc cPurity) := by
+private theorem polyBoundedOn_tc_cPurity : PolyBoundedOn PurityWF (tc cPurity) := by
   refine ⟨6000, 2, fun n hn => ?_⟩
   obtain ⟨hw, hm, hp, hjk⟩ := hn
   have hwf : WF (instOf n) := hw.1
@@ -1089,7 +885,7 @@ theorem polyBoundedOn_tc_cPurity : PolyBoundedOn PurityWF (tc cPurity) := by
   nlinarith [hraw, hprod]
 
 /-- The verdict is a triple of bits, so its size is `O(1)` (a constant, `k = 0`). -/
-theorem polyBoundedOn_size_purityVal :
+private theorem polyBoundedOn_size_purityVal :
     PolyBoundedOn PurityWF (fun n => Nat.size (purityVal n)) := by
   refine ⟨16, 0, fun n _ => ?_⟩
   have hi : Nat.size (bNot (bAnd (z0Of (purityAcc n)) (z1Of (purityAcc n)))) ≤ 1 :=
@@ -1123,26 +919,26 @@ regardless of the cell values — hence `cReverse` is `O(m)`-`tc`, uniformly in 
 
 /-- One reverse step on the accumulator `⟨remaining, prefix⟩`: pop the head off `remaining`, cons it
 onto `prefix`. -/
-def revStepFn (acc : ℕ) : ℕ :=
+private def revStepFn (acc : ℕ) : ℕ :=
   Nat.pair (tailL acc.unpair.1) (Nat.pair 1 (Nat.pair (headL acc.unpair.1) acc.unpair.2))
 
 /-- `remaining` field of the reverse accumulator (`acc.1`), read off the step input `⟨a,⟨i,acc⟩⟩`. -/
-def cRevRem : Code := comp left (comp right right)
+private def cRevRem : Code := comp left (comp right right)
 /-- `prefix` field of the reverse accumulator (`acc.2`). -/
-def cRevPref : Code := comp right (comp right right)
+private def cRevPref : Code := comp right (comp right right)
 /-- The reverse step code: `⟨tailL remaining, cons (headL remaining) prefix⟩`. -/
-def cRevStep : Code :=
+private def cRevStep : Code :=
   pair (comp cTail cRevRem) (pair (constCode 1) (pair (comp cHead cRevRem) cRevPref))
 
-theorem rfindFree_cRevStep : RfindFree cRevStep := by
+private theorem rfindFree_cRevStep : RfindFree cRevStep := by
   simp only [cRevStep, cRevRem, cRevPref, cHead, cTail, constCode, RfindFree, and_self]
 
-theorem val_cRevStep (a i acc : ℕ) : val cRevStep (Nat.pair a (Nat.pair i acc)) = revStepFn acc := by
+private theorem val_cRevStep (a i acc : ℕ) : val cRevStep (Nat.pair a (Nat.pair i acc)) = revStepFn acc := by
   simp only [cRevStep, cRevRem, cRevPref, val_pair, val_comp, val_left, val_right, val_cHead,
     val_cTail, val_constCode, Nat.unpair_pair, revStepFn, headL, tailL]
 
 /-- **Reverse loop = iterated step.** -/
-theorem val_cRevLoop (astart t : ℕ) :
+private theorem val_cRevLoop (astart t : ℕ) :
     val (prec (pair left right) cRevStep) (Nat.pair astart t) = revStepFn^[t] astart := by
   induction t with
   | zero =>
@@ -1151,7 +947,7 @@ theorem val_cRevLoop (astart t : ℕ) :
 
 /-- **The reverse scan realises `List.reverse`.** Running the step over an encoded list for its length
 empties `remaining` and lands `prefix = reverse ++ (initial prefix)`. -/
-theorem revStepFn_iterate (xs : List ℕ) : ∀ acc : List ℕ,
+private theorem revStepFn_iterate (xs : List ℕ) : ∀ acc : List ℕ,
     revStepFn^[xs.length] (Nat.pair (encodeList xs) (encodeList acc))
       = Nat.pair 0 (encodeList (xs.reverse ++ acc)) := by
   induction xs with
@@ -1165,13 +961,13 @@ theorem revStepFn_iterate (xs : List ℕ) : ∀ acc : List ℕ,
       rw [hstep, ih (x :: acc), List.reverse_cons, List.append_assoc, List.singleton_append]
 
 /-- Shaper: `⟨L, m⟩ ↦ ⟨L, 0⟩` — the initial reverse accumulator. -/
-def cRevAstart : Code := pair left zero
+private def cRevAstart : Code := pair left zero
 /-- Shaper: `⟨L, m⟩ ↦ m` — the loop count. -/
-def cRevCount : Code := right
+private def cRevCount : Code := right
 /-- **`cReverse`**: reverse the flag-cons list `L` given its length `m`, input packed as `⟨L, m⟩`. -/
 def cReverse : Code := comp right (comp (prec (pair left right) cRevStep) (pair cRevAstart cRevCount))
 
-theorem rfindFree_cReverse : RfindFree cReverse := by
+private theorem rfindFree_cReverse : RfindFree cReverse := by
   simp only [cReverse, cRevAstart, cRevCount, cRevStep, cRevRem, cRevPref, cHead, cTail, constCode,
     RfindFree, and_self]
 
@@ -1184,13 +980,13 @@ theorem val_cReverse (xs : List ℕ) :
     Nat.unpair_pair, val_cRevLoop, hit]
 
 /-- The reverse step is `O(1)`-`tc` (pure pointer-shuffling — no value arithmetic). -/
-theorem tc_cRevStep_le (X : ℕ) : tc cRevStep X ≤ 40 := by
+private theorem tc_cRevStep_le (X : ℕ) : tc cRevStep X ≤ 40 := by
   have hc := tc_constCode_le 1 X
   simp only [cRevStep, cRevRem, cRevPref, tc_pair, tc_comp, tc_left, tc_right, tc_cHead, tc_cTail]
   omega
 
 /-- **`cReverse` is `O(m)`-`tc`**, uniformly in the list content `L`. -/
-theorem tc_cReverse_le (L m : ℕ) : tc cReverse (Nat.pair L m) ≤ 41 * m + 40 := by
+private theorem tc_cReverse_le (L m : ℕ) : tc cReverse (Nat.pair L m) ≤ 41 * m + 40 := by
   have hstep := tc_prec_le (cf := pair left right) (cg := cRevStep) (B := 40)
     (fun x => tc_cRevStep_le x) (Nat.pair L 0) m
   have hbase : tc (pair left right) (Nat.pair L 0) = 3 := by
@@ -1210,23 +1006,23 @@ order. The output is again a length-`m` flag-cons list of bits — that structur
 /-- Pack a literal query `⟨inst, ⟨mask, ⟨j, p⟩⟩⟩` (the input shape shared by `cPurity`/`maskUpdate`). -/
 def packLit (inst mask j p : ℕ) : ℕ := Nat.pair inst (Nat.pair mask (Nat.pair j p))
 
-theorem instOf_packLit (inst mask j p : ℕ) : instOf (packLit inst mask j p) = inst := by
+private theorem instOf_packLit (inst mask j p : ℕ) : instOf (packLit inst mask j p) = inst := by
   simp only [instOf, packLit, Nat.unpair_pair]
-theorem maskOf_packLit (inst mask j p : ℕ) : maskOf (packLit inst mask j p) = mask := by
+private theorem maskOf_packLit (inst mask j p : ℕ) : maskOf (packLit inst mask j p) = mask := by
   simp only [maskOf, packLit, Nat.unpair_pair]
-theorem jOf_packLit (inst mask j p : ℕ) : jOf (packLit inst mask j p) = j := by
+private theorem jOf_packLit (inst mask j p : ℕ) : jOf (packLit inst mask j p) = j := by
   simp only [jOf, packLit, Nat.unpair_pair]
-theorem pOf_packLit (inst mask j p : ℕ) : pOf (packLit inst mask j p) = p := by
+private theorem pOf_packLit (inst mask j p : ℕ) : pOf (packLit inst mask j p) = p := by
   simp only [pOf, packLit, Nat.unpair_pair]
-theorem dataOf_packLit (inst mask j p : ℕ) : dataOf (packLit inst mask j p) = readData inst := by
+private theorem dataOf_packLit (inst mask j p : ℕ) : dataOf (packLit inst mask j p) = readData inst := by
   rw [dataOf, instOf_packLit]
 
 /-- The built (reversed working) list — the `.2.2` field of the scan accumulator. -/
-def muBuilt (acc : ℕ) : ℕ := acc.unpair.2.unpair.2
+private def muBuilt (acc : ℕ) : ℕ := acc.unpair.2.unpair.2
 
 /-- One refine-scan step: peel both suffixes, prepend the new mask bit
 `mask[i] ∧ ¬(feature-j = p)` onto the working list. -/
-def muStepFn (j p acc : ℕ) : ℕ :=
+private def muStepFn (j p acc : ℕ) : ℕ :=
   Nat.pair (tailL (msOf acc))
     (Nat.pair (tailL (exOf acc))
       (Nat.pair 1 (Nat.pair
@@ -1234,19 +1030,19 @@ def muStepFn (j p acc : ℕ) : ℕ :=
         (muBuilt acc))))
 
 /-- The new-bit gate `mask-head ∧ ¬(feature = p)` (reuses `cB`/`cEqFP` from the purity scan). -/
-def cNewBit : Code := comp cAnd (pair cB (comp cNot cEqFP))
+private def cNewBit : Code := comp cAnd (pair cB (comp cNot cEqFP))
 /-- The working-list field `acc.2.2`. -/
-def cMuBuilt : Code := comp right (comp right cAcc)
+private def cMuBuilt : Code := comp right (comp right cAcc)
 /-- The refine-scan step code. -/
-def cMuStep : Code :=
+private def cMuStep : Code :=
   pair (comp cTail cMs) (pair (comp cTail cEx) (pair (constCode 1) (pair cNewBit cMuBuilt)))
 
-theorem rfindFree_cMuStep : RfindFree cMuStep := by
+private theorem rfindFree_cMuStep : RfindFree cMuStep := by
   simp only [cMuStep, cNewBit, cMuBuilt, cB, cEqFP, cFeat, cFv, cE, cMs, cEx, cAcc, cJa, cPa, cJ, cP,
     cHead, cTail, cAnd, cOr, cNot, cEqBit, cIsPos, cShape0, cSwap, isPosCore, notCore, orCore, cPeel,
     cTailStep, constCode, RfindFree, and_self]
 
-theorem val_cMuStep (a i acc : ℕ) :
+private theorem val_cMuStep (a i acc : ℕ) :
     val cMuStep (Nat.pair a (Nat.pair i acc)) = muStepFn (jOf a) (pOf a) acc := by
   simp only [cMuStep, cNewBit, cMuBuilt, cB, cEqFP, cFeat, cFv, cE, cMs, cEx, cAcc, cJa, cPa,
     val_pair, val_comp, val_left, val_right, val_cHead, val_cTail, val_cPeel, val_cNot', val_cAnd',
@@ -1254,13 +1050,13 @@ theorem val_cMuStep (a i acc : ℕ) :
     muStepFn, muBuilt, msOf, exOf, fvOf, featOf]
 
 /-- The per-`(bit, example)` update: `bit ∧ ¬(feature-j = p)` (always a bit). -/
-def updBit (j p b e : ℕ) : ℕ := bAnd b (bNot (bEq (featOf e j) p))
-theorem updBit_le_one (j p b e : ℕ) : updBit j p b e ≤ 1 := bAnd_le_one _ _
+private def updBit (j p b e : ℕ) : ℕ := bAnd b (bNot (bEq (featOf e j) p))
+private theorem updBit_le_one (j p b e : ℕ) : updBit j p b e ≤ 1 := bAnd_le_one _ _
 
 /-- **The refine scan realises the reversed `zipWith`.** Running the step over the encoded mask/example
 lists (equal length) for `exs.length` iterations empties both suffixes and lands the working list
 `(zipWith (updBit j p) msks exs).reverse ++ (initial working list)`. -/
-theorem muStepFn_iterate (j p : ℕ) (exs : List ℕ) : ∀ (msks bacc : List ℕ),
+private theorem muStepFn_iterate (j p : ℕ) (exs : List ℕ) : ∀ (msks bacc : List ℕ),
     msks.length = exs.length →
       (muStepFn j p)^[exs.length]
           (Nat.pair (encodeList msks) (Nat.pair (encodeList exs) (encodeList bacc)))
@@ -1288,9 +1084,9 @@ theorem muStepFn_iterate (j p : ℕ) (exs : List ℕ) : ∀ (msks bacc : List �
             List.append_assoc, List.singleton_append]
 
 /-- Base code: `⟨maskOf n, ⟨dataOf n, 0⟩⟩` — full suffixes, empty working list. -/
-def cMuInit : Code := pair cMask (pair cData zero)
+private def cMuInit : Code := pair cMask (pair cData zero)
 /-- The refine scan run `readM inst` times. -/
-def cMuScan : Code := comp (prec cMuInit cMuStep) (pair cId cCount)
+private def cMuScan : Code := comp (prec cMuInit cMuStep) (pair cId cCount)
 /-- **`maskUpdate`'s code**: run the scan, extract the reversed working list, then `cReverse` it. -/
 def cMaskUpdate : Code := comp cReverse (pair (comp (comp right right) cMuScan) cCount)
 /-- Semantic `maskUpdate` on a packed input. -/
@@ -1298,7 +1094,7 @@ def maskUpdateVal (n : ℕ) : ℕ := val cMaskUpdate n
 /-- **`maskUpdate inst mask j p`** — refine the working set `mask` by literal `(j,p)`. -/
 def maskUpdate (inst mask j p : ℕ) : ℕ := maskUpdateVal (packLit inst mask j p)
 
-theorem val_cMuLoop (n t : ℕ) :
+private theorem val_cMuLoop (n t : ℕ) :
     val (prec cMuInit cMuStep) (Nat.pair n t)
       = (muStepFn (jOf n) (pOf n))^[t] (Nat.pair (maskOf n) (Nat.pair (dataOf n) 0)) := by
   induction t with
@@ -1309,7 +1105,7 @@ theorem val_cMuLoop (n t : ℕ) :
 
 /-- **`maskUpdate` correctness (encoded form).** On encoded inputs the primitive returns the encoded
 `zipWith (updBit j p)` over `msks`/`exs` — a length-`m` list of bits. -/
-theorem maskUpdate_eq_encode (n : ℕ) (msks exs : List ℕ)
+private theorem maskUpdate_eq_encode (n : ℕ) (msks exs : List ℕ)
     (hmask : maskOf n = encodeList msks) (hdata : dataOf n = encodeList exs)
     (hcount : readM (instOf n) = exs.length) (hlen : msks.length = exs.length) :
     maskUpdateVal n = encodeList (List.zipWith (updBit (jOf n) (pOf n)) msks exs) := by
@@ -1329,7 +1125,7 @@ theorem maskUpdate_eq_encode (n : ℕ) (msks exs : List ℕ)
   rw [hlenz, val_cReverse, List.reverse_reverse]
 
 /-- Every element of the refined working list is a bit. -/
-theorem zipWith_updBit_le_one (j p : ℕ) : ∀ (l1 l2 : List ℕ),
+private theorem zipWith_updBit_le_one (j p : ℕ) : ∀ (l1 l2 : List ℕ),
     ∀ x ∈ List.zipWith (updBit j p) l1 l2, x ≤ 1 := by
   intro l1
   induction l1 with
@@ -1394,19 +1190,19 @@ theorem maskUpdate_getBit (inst mask j p i : ℕ) (hw : WFBits inst)
 The scan reuses the purity accumulator shape (`msOf`/`exOf` at the same slots), so the visited-state
 bit facts and the gate cost bricks transfer verbatim; the extra `cReverse` pass is `O(m)`. -/
 
-theorem msOf_muStepFn (j p acc : ℕ) : msOf (muStepFn j p acc) = tailL (msOf acc) := by
+private theorem msOf_muStepFn (j p acc : ℕ) : msOf (muStepFn j p acc) = tailL (msOf acc) := by
   simp only [muStepFn, msOf, Nat.unpair_pair]
-theorem exOf_muStepFn (j p acc : ℕ) : exOf (muStepFn j p acc) = tailL (exOf acc) := by
+private theorem exOf_muStepFn (j p acc : ℕ) : exOf (muStepFn j p acc) = tailL (exOf acc) := by
   simp only [muStepFn, exOf, Nat.unpair_pair]
 
-theorem inv_msOf_peel_mu (j p mask data i : ℕ) :
+private theorem inv_msOf_peel_mu (j p mask data i : ℕ) :
     msOf ((muStepFn j p)^[i] (Nat.pair mask (Nat.pair data 0))) = peel mask i := by
   induction i with
   | zero => simp [msOf, peel, Nat.unpair_pair]
   | succ k ih =>
       rw [Function.iterate_succ_apply', msOf_muStepFn, ih]
       simp only [peel, Function.iterate_succ_apply']
-theorem inv_exOf_peel_mu (j p mask data i : ℕ) :
+private theorem inv_exOf_peel_mu (j p mask data i : ℕ) :
     exOf ((muStepFn j p)^[i] (Nat.pair mask (Nat.pair data 0))) = peel data i := by
   induction i with
   | zero => simp [exOf, peel, Nat.unpair_pair]
@@ -1416,7 +1212,7 @@ theorem inv_exOf_peel_mu (j p mask data i : ℕ) :
 
 /-- The `List`-model bit facts at a visited index, stated on the peeled suffixes (shared by the purity
 and refine scans, whose suffixes both evolve by `tailL`). -/
-theorem peel_bits (n i : ℕ) (hw : WFBits (instOf n))
+private theorem peel_bits (n i : ℕ) (hw : WFBits (instOf n))
     (hm : MaskValid (maskOf n) (readM (instOf n))) (hi : i < readM (instOf n)) :
     headL (peel (maskOf n) i) ≤ 1 ∧
     featOf (headL (peel (dataOf n) i)) (jOf n) ≤ 1 ∧
@@ -1432,7 +1228,7 @@ theorem peel_bits (n i : ℕ) (hw : WFBits (instOf n))
   · rw [show dataOf n = encodeList exs from hdeq, getExample_encode exs i hie]
     exact hlbl _ (List.getElem_mem hie)
 
-theorem visited_bits_mu (n i : ℕ) (hw : WFBits (instOf n))
+private theorem visited_bits_mu (n i : ℕ) (hw : WFBits (instOf n))
     (hm : MaskValid (maskOf n) (readM (instOf n))) (hi : i < readM (instOf n)) :
     headL (msOf ((muStepFn (jOf n) (pOf n))^[i]
         (Nat.pair (maskOf n) (Nat.pair (dataOf n) 0)))) ≤ 1 ∧
@@ -1444,7 +1240,7 @@ theorem visited_bits_mu (n i : ℕ) (hw : WFBits (instOf n))
 
 /-- **The per-step cost bound** for the refine scan: under bit operands (mask head, feature bit, `p`),
 each step costs `≤ 8·(jOf a) + 2400` — only the feature peel scales. -/
-theorem tc_cMuStep_le (a i acc : ℕ) (hmask : headL (msOf acc) ≤ 1)
+private theorem tc_cMuStep_le (a i acc : ℕ) (hmask : headL (msOf acc) ≤ 1)
     (hfeat : featOf (headL (exOf acc)) (jOf a) ≤ 1) (hp : pOf a ≤ 1) :
     tc cMuStep (Nat.pair a (Nat.pair i acc)) ≤ 8 * jOf a + 2400 := by
   have hms := tc_cMs_le a i acc
@@ -1463,7 +1259,7 @@ theorem tc_cMuStep_le (a i acc : ℕ) (hmask : headL (msOf acc) ≤ 1)
   omega
 
 /-- The per-visited-step bound, proved (feature/mask bits from `WFBits`/`MaskValid`). -/
-theorem hMuStep_visited (n : ℕ) (hw : WFBits (instOf n))
+private theorem hMuStep_visited (n : ℕ) (hw : WFBits (instOf n))
     (hm : MaskValid (maskOf n) (readM (instOf n))) (hp : pOf n ≤ 1) :
     ∀ i, i < readM (instOf n) →
       tc cMuStep (Nat.pair n (Nat.pair i (val (prec cMuInit cMuStep) (Nat.pair n i))))
@@ -1475,7 +1271,7 @@ theorem hMuStep_visited (n : ℕ) (hw : WFBits (instOf n))
 
 /-- **`cMaskUpdate`'s native cost on a well-formed instance**: base + the `(Bstep+1)·m` scan loop
 (`tc_prec_le'` + `hMuStep_visited`) + the `O(m)` `cReverse` pass + `O(1)` shapers. -/
-theorem tc_cMaskUpdate_raw (n : ℕ) (hw : WFBits (instOf n))
+private theorem tc_cMaskUpdate_raw (n : ℕ) (hw : WFBits (instOf n))
     (hm : MaskValid (maskOf n) (readM (instOf n))) (hp : pOf n ≤ 1) :
     tc cMaskUpdate n
       ≤ (8 * jOf n + 2400 + 1) * readM (instOf n) + 41 * readM (instOf n) + 100 := by
@@ -1520,7 +1316,7 @@ theorem tc_cMaskUpdate_raw (n : ℕ) (hw : WFBits (instOf n))
 
 /-- **`cMaskUpdate` is poly-time on the well-formed domain.** The raw `(Bstep+1)·m + O(m)` bound is
 turned poly-bit by `jOf n ≤ readK ≤ size n` and `readM ≤ size n` — a quadratic in `Nat.size n`. -/
-theorem polyBoundedOn_tc_cMaskUpdate : PolyBoundedOn PurityWF (tc cMaskUpdate) := by
+private theorem polyBoundedOn_tc_cMaskUpdate : PolyBoundedOn PurityWF (tc cMaskUpdate) := by
   refine ⟨6000, 2, fun n hn => ?_⟩
   obtain ⟨hw, hm, hp, hjk⟩ := hn
   have hwf : WF (instOf n) := hw.1
@@ -1533,15 +1329,15 @@ theorem polyBoundedOn_tc_cMaskUpdate : PolyBoundedOn PurityWF (tc cMaskUpdate) :
   nlinarith [hraw, hprod, hms]
 
 /-- `Nat.pair` is jointly monotone (not in Mathlib). -/
-theorem pair_mono {a a' b b' : ℕ} (ha : a ≤ a') (hb : b ≤ b') : Nat.pair a b ≤ Nat.pair a' b' := by
+private theorem pair_mono {a a' b b' : ℕ} (ha : a ≤ a') (hb : b ≤ b') : Nat.pair a b ≤ Nat.pair a' b' := by
   unfold Nat.pair; split_ifs <;> nlinarith [Nat.mul_le_mul ha ha, Nat.mul_le_mul hb hb]
 
 /-- The refined bit never exceeds the old mask bit. -/
-theorem updBit_le (j p b e : ℕ) : updBit j p b e ≤ b := by
+private theorem updBit_le (j p b e : ℕ) : updBit j p b e ≤ b := by
   unfold updBit bAnd; split_ifs <;> omega
 
 /-- The refined working set is `≤` the old one as a number (elementwise `≤`, `Nat.pair`-monotone). -/
-theorem encode_zipWith_updBit_le (j p : ℕ) : ∀ (msks exs : List ℕ), msks.length = exs.length →
+private theorem encode_zipWith_updBit_le (j p : ℕ) : ∀ (msks exs : List ℕ), msks.length = exs.length →
     encodeList (List.zipWith (updBit j p) msks exs) ≤ encodeList msks := by
   intro msks
   induction msks with
@@ -1557,7 +1353,7 @@ theorem encode_zipWith_updBit_le (j p : ℕ) : ∀ (msks exs : List ℕ), msks.l
           exact pair_mono (le_refl 1) (pair_mono (updBit_le j p b e) (ih es hlen'))
 
 /-- On the well-formed domain, `maskUpdate` shrinks the mask (as a number), so its output is poly-bit. -/
-theorem maskUpdateVal_le (n : ℕ) (hn : PurityWF n) : maskUpdateVal n ≤ maskOf n := by
+private theorem maskUpdateVal_le (n : ℕ) (hn : PurityWF n) : maskUpdateVal n ≤ maskOf n := by
   obtain ⟨hw, hm, _hp, _hjk⟩ := hn
   obtain ⟨_hwf, exs, hdeq, hdlen, _, _⟩ := hw
   obtain ⟨msks, hmeq, hmlen, _⟩ := hm
@@ -1566,7 +1362,7 @@ theorem maskUpdateVal_le (n : ℕ) (hn : PurityWF n) : maskUpdateVal n ≤ maskO
   rw [heq, hmeq]
   exact encode_zipWith_updBit_le (jOf n) (pOf n) msks exs (by rw [hmlen, hdlen])
 
-theorem polyBoundedOn_size_maskUpdateVal :
+private theorem polyBoundedOn_size_maskUpdateVal :
     PolyBoundedOn PurityWF (fun n => Nat.size (maskUpdateVal n)) := by
   refine ⟨1, 1, fun n hn => ?_⟩
   have hle : Nat.size (maskUpdateVal n) ≤ Nat.size n :=
@@ -1574,11 +1370,11 @@ theorem polyBoundedOn_size_maskUpdateVal :
   simp only [pow_one]
   omega
 
-theorem rfindFree_cMuInit : RfindFree cMuInit := by
+private theorem rfindFree_cMuInit : RfindFree cMuInit := by
   simp only [cMuInit, cMask, cData, RfindFree, and_self]
-theorem rfindFree_cMuScan : RfindFree cMuScan :=
+private theorem rfindFree_cMuScan : RfindFree cMuScan :=
   ⟨⟨rfindFree_cMuInit, rfindFree_cMuStep⟩, rfindFree_cId, rfindFree_cCount⟩
-theorem rfindFree_cMaskUpdate : RfindFree cMaskUpdate :=
+private theorem rfindFree_cMaskUpdate : RfindFree cMaskUpdate :=
   ⟨rfindFree_cReverse, ⟨⟨⟨trivial, trivial⟩, rfindFree_cMuScan⟩, rfindFree_cCount⟩⟩
 
 /-- **`polyTime_maskUpdate`.** Refining the working set by one literal is poly-time on the honest
@@ -1600,16 +1396,16 @@ scan freezes after the first hit (never overwrites), so the recorded literal is 
 
 /-- `cMux ⟨⟨x,y⟩, c⟩ = if c = 0 then y else x` — a value selector recursing on the bit `c`, hence
 `O(1)`-`tc` on bits regardless of the value operands `x, y`. -/
-def cMux : Code := prec right (comp left left)
+private def cMux : Code := prec right (comp left left)
 
-theorem rfindFree_cMux : RfindFree cMux := ⟨trivial, trivial, trivial⟩
+private theorem rfindFree_cMux : RfindFree cMux := ⟨trivial, trivial, trivial⟩
 
-theorem val_cMux (x y c : ℕ) : val cMux (Nat.pair (Nat.pair x y) c) = if c = 0 then y else x := by
+private theorem val_cMux (x y c : ℕ) : val cMux (Nat.pair (Nat.pair x y) c) = if c = 0 then y else x := by
   cases c with
   | zero => simp [cMux, val_prec_zero, val_right, Nat.unpair_pair]
   | succ k => simp [cMux, val_prec_succ, val_comp, val_left, Nat.unpair_pair]
 
-theorem tc_cMux_le (x y c : ℕ) : tc cMux (Nat.pair (Nat.pair x y) c) ≤ 4 * c + 2 := by
+private theorem tc_cMux_le (x y c : ℕ) : tc cMux (Nat.pair (Nat.pair x y) c) ≤ 4 * c + 2 := by
   unfold cMux
   have h := tc_prec_le (cf := right) (cg := comp left left) (B := 3)
     (fun z => by simp [tc_comp, tc_left]) (Nat.pair x y) c
@@ -1645,41 +1441,41 @@ def sawAnyLit (inst mask j p : ℕ) : ℕ := (purityVal (packLit inst mask j p))
 remaining example (`isPure ∧ sawAny`). Vacuously-pure (0-covering) literals fail this gate. -/
 def coverLit (inst mask j p : ℕ) : ℕ := bAnd (isPureLit inst mask j p) (sawAnyLit inst mask j p)
 
-theorem purityVal_fst (n : ℕ) : (purityVal n).unpair.1
+private theorem purityVal_fst (n : ℕ) : (purityVal n).unpair.1
     = bNot (bAnd (z0Of (purityAcc n)) (z1Of (purityAcc n))) := by
   simp only [purityVal, Nat.unpair_pair]
-theorem purityVal_snd (n : ℕ) : (purityVal n).unpair.2.unpair.1 = z1Of (purityAcc n) := by
+private theorem purityVal_snd (n : ℕ) : (purityVal n).unpair.2.unpair.1 = z1Of (purityAcc n) := by
   simp only [purityVal, Nat.unpair_pair]
-theorem purityVal_sawAny (n : ℕ) : (purityVal n).unpair.2.unpair.2
+private theorem purityVal_sawAny (n : ℕ) : (purityVal n).unpair.2.unpair.2
     = bOr (z0Of (purityAcc n)) (z1Of (purityAcc n)) := by
   simp only [purityVal, Nat.unpair_pair]
-theorem z1_purityAcc_le_one (n : ℕ) : z1Of (purityAcc n) ≤ 1 := by
+private theorem z1_purityAcc_le_one (n : ℕ) : z1Of (purityAcc n) ≤ 1 := by
   unfold purityAcc; exact inv_z1_le_one _ _ _ _ _
 
-theorem isPureLit_le_one (inst mask j p : ℕ) : isPureLit inst mask j p ≤ 1 := by
+private theorem isPureLit_le_one (inst mask j p : ℕ) : isPureLit inst mask j p ≤ 1 := by
   unfold isPureLit; rw [purityVal_fst]; exact bNot_le_one _
-theorem litLabel_le_one (inst mask j p : ℕ) : litLabel inst mask j p ≤ 1 := by
+private theorem litLabel_le_one (inst mask j p : ℕ) : litLabel inst mask j p ≤ 1 := by
   unfold litLabel; rw [purityVal_snd]; exact z1_purityAcc_le_one _
-theorem sawAnyLit_le_one (inst mask j p : ℕ) : sawAnyLit inst mask j p ≤ 1 := by
+private theorem sawAnyLit_le_one (inst mask j p : ℕ) : sawAnyLit inst mask j p ≤ 1 := by
   unfold sawAnyLit; rw [purityVal_sawAny]; exact bOr_le_one _ _
-theorem coverLit_le_one (inst mask j p : ℕ) : coverLit inst mask j p ≤ 1 := bAnd_le_one _ _
+private theorem coverLit_le_one (inst mask j p : ℕ) : coverLit inst mask j p ≤ 1 := bAnd_le_one _ _
 
 /-- The **folded verdict** `⟨coverLit, litLabel⟩` produced by `cFold`, kept as one opaque atom so the
 downstream combine never unification-descends into the symbolic `purityAcc` scan behind `coverLit`. -/
-def flVerdict (inst mask j p : ℕ) : ℕ := Nat.pair (coverLit inst mask j p) (litLabel inst mask j p)
-theorem flVerdict_fst (inst mask j p : ℕ) :
+private def flVerdict (inst mask j p : ℕ) : ℕ := Nat.pair (coverLit inst mask j p) (litLabel inst mask j p)
+private theorem flVerdict_fst (inst mask j p : ℕ) :
     (flVerdict inst mask j p).unpair.1 = coverLit inst mask j p := by
   simp only [flVerdict, Nat.unpair_pair]
-theorem flVerdict_snd (inst mask j p : ℕ) :
+private theorem flVerdict_snd (inst mask j p : ℕ) :
     (flVerdict inst mask j p).unpair.2 = litLabel inst mask j p := by
   simp only [flVerdict, Nat.unpair_pair]
-theorem flVerdict_le_one_fst (inst mask j p : ℕ) : (flVerdict inst mask j p).unpair.1 ≤ 1 := by
+private theorem flVerdict_le_one_fst (inst mask j p : ℕ) : (flVerdict inst mask j p).unpair.1 ≤ 1 := by
   rw [flVerdict_fst]; exact coverLit_le_one _ _ _ _
 
 /-- **The greedy step at index `i`.** Commit to `(i,0)`/`(i,1)` if not yet found and that literal is a
 **covering pure** pick (`coverLit`, prefer `p = 0`); otherwise freeze. Written in mux normal form
 (`if cond = 0 then … else …`). -/
-def flStepFn (inst mask i acc : ℕ) : ℕ :=
+private def flStepFn (inst mask i acc : ℕ) : ℕ :=
   Nat.pair (bOr (flFound acc) (bOr (coverLit inst mask i 0) (coverLit inst mask i 1)))
     (Nat.pair
       (if bAnd (bNot (flFound acc)) (bOr (coverLit inst mask i 0) (coverLit inst mask i 1)) = 0
@@ -1694,19 +1490,19 @@ def flStepFn (inst mask i acc : ℕ) : ℕ :=
                         (bNot (coverLit inst mask i 0)) = 0
                 then litLabel inst mask i 0 else litLabel inst mask i 1))))
 
-theorem flFound_step (inst mask i acc : ℕ) : flFound (flStepFn inst mask i acc)
+private theorem flFound_step (inst mask i acc : ℕ) : flFound (flStepFn inst mask i acc)
     = bOr (flFound acc) (bOr (coverLit inst mask i 0) (coverLit inst mask i 1)) := by
   simp only [flStepFn, flFound, Nat.unpair_pair]
-theorem flJ_step (inst mask i acc : ℕ) : flJ (flStepFn inst mask i acc)
+private theorem flJ_step (inst mask i acc : ℕ) : flJ (flStepFn inst mask i acc)
     = (if bAnd (bNot (flFound acc)) (bOr (coverLit inst mask i 0) (coverLit inst mask i 1)) = 0
         then flJ acc else i) := by
   simp only [flStepFn, flJ, Nat.unpair_pair]
-theorem flP_step (inst mask i acc : ℕ) : flP (flStepFn inst mask i acc)
+private theorem flP_step (inst mask i acc : ℕ) : flP (flStepFn inst mask i acc)
     = (if bAnd (bAnd (bNot (flFound acc)) (coverLit inst mask i 1)) (bNot (coverLit inst mask i 0)) = 0
         then (if bAnd (bNot (flFound acc)) (coverLit inst mask i 0) = 0 then flP acc else 0)
         else 1) := by
   simp only [flStepFn, flP, Nat.unpair_pair]
-theorem flL_step (inst mask i acc : ℕ) : flL (flStepFn inst mask i acc)
+private theorem flL_step (inst mask i acc : ℕ) : flL (flStepFn inst mask i acc)
     = (if bAnd (bNot (flFound acc)) (bOr (coverLit inst mask i 0) (coverLit inst mask i 1)) = 0
         then flL acc
         else (if bAnd (bAnd (bNot (flFound acc)) (coverLit inst mask i 1))
@@ -1719,29 +1515,29 @@ theorem flL_step (inst mask i acc : ℕ) : flL (flStepFn inst mask i acc)
 /-- `cFold ⟨isPure, ⟨label, sawAny⟩⟩ = ⟨isPure ∧ sawAny, label⟩` — collapse a 3-field purity verdict
 into the 2-field `⟨coverLit, litLabel⟩` the greedy combine consumes. Doing the covering `∧` here (not in
 `cCombine`) keeps `cPurity` an honest purity primitive and leaves `cCombine` unchanged. -/
-def cFold : Code := pair (comp cAnd (pair left (comp right right))) (comp left right)
+private def cFold : Code := pair (comp cAnd (pair left (comp right right))) (comp left right)
 
 /-! `cExpand ⟨N,⟨i,acc⟩⟩ = ⟨i, ⟨acc, ⟨⟨cover0,label0⟩, ⟨cover1,label1⟩⟩⟩⟩` — compute both purity
 verdicts ONCE (exactly two `cPurity` evaluations), fold each to its covering-pick bit, so the per-step
 cost is `2·(purity) + O(1)`. -/
 
 /-- The instance, out of the seed. -/
-def cInstN : Code := comp left left
+private def cInstN : Code := comp left left
 /-- The mask, out of the seed. -/
-def cMaskN : Code := comp right left
+private def cMaskN : Code := comp right left
 /-- The round index `i` — the feature the two candidate literals test. -/
-def cIX : Code := comp left right
+private def cIX : Code := comp left right
 /-- The accumulator, carried through unchanged. -/
-def cAccX : Code := comp right right
+private def cAccX : Code := comp right right
 /-- The purity call for the negative literal `(i, 0)`. -/
-def cPack0 : Code := pair cInstN (pair cMaskN (pair cIX zero))
+private def cPack0 : Code := pair cInstN (pair cMaskN (pair cIX zero))
 /-- The purity call for the positive literal `(i, 1)`. -/
-def cPack1 : Code := pair cInstN (pair cMaskN (pair cIX (constCode 1)))
+private def cPack1 : Code := pair cInstN (pair cMaskN (pair cIX (constCode 1)))
 /-- Both verdicts computed and folded, alongside `i` and the untouched accumulator. -/
-def cExpand : Code :=
+private def cExpand : Code :=
   pair cIX (pair cAccX (pair (comp cFold (comp cPurity cPack0)) (comp cFold (comp cPurity cPack1))))
 
-theorem val_cExpand (a i acc : ℕ) :
+private theorem val_cExpand (a i acc : ℕ) :
     val cExpand (Nat.pair a (Nat.pair i acc))
       = Nat.pair i (Nat.pair acc
           (Nat.pair (flVerdict (flInst a) (flMask a) i 0) (flVerdict (flInst a) (flMask a) i 1))) := by
@@ -1759,59 +1555,57 @@ has already ANDed purity with the covering witness, so a verdict's first field i
 bit, not bare purity — the `IsP` in the names is historical. Primed names are the updated fields. -/
 
 /-- The accumulator. -/
-def ccAcc : Code := comp left right
+private def ccAcc : Code := comp left right
 /-- The verdict for the negative literal `(i, 0)`. -/
-def ccV0 : Code := comp left (comp right right)
+private def ccV0 : Code := comp left (comp right right)
 /-- The verdict for the positive literal `(i, 1)`. -/
-def ccV1 : Code := comp right (comp right right)
+private def ccV1 : Code := comp right (comp right right)
 /-- Has a literal been committed to yet? -/
-def ccFound : Code := comp left ccAcc
+private def ccFound : Code := comp left ccAcc
 /-- The committed feature index. -/
-def ccJ : Code := comp left (comp right ccAcc)
+private def ccJ : Code := comp left (comp right ccAcc)
 /-- The committed polarity bit. -/
-def ccP : Code := comp left (comp right (comp right ccAcc))
+private def ccP : Code := comp left (comp right (comp right ccAcc))
 /-- The committed common label. -/
-def ccL : Code := comp right (comp right (comp right ccAcc))
+private def ccL : Code := comp right (comp right (comp right ccAcc))
 /-- Covering-pick bit of the `(i, 0)` verdict: `coverLit` — `(i, 0)` is a pure literal covering
 ≥ 1 still-live row. This is the verdict's *first field*, which `cFold` has already ANDed purity with
 the covering witness into, so it reads the covering-pick bit, not bare purity. -/
-def ccCover0 : Code := comp left ccV0
-@[deprecated ccCover0 (since := "2026-07-23")] alias ccIsP0 := ccCover0
+private def ccCover0 : Code := comp left ccV0
 /-- The common label `(i, 0)` would carry. -/
-def ccLab0 : Code := comp right ccV0
+private def ccLab0 : Code := comp right ccV0
 /-- Covering-pick bit of the `(i, 1)` verdict: `coverLit` — `(i, 1)` is a pure literal covering
 ≥ 1 still-live row. Its first field is the covering-pick bit (purity already ANDed with the covering
 witness by `cFold`), not bare purity. -/
-def ccCover1 : Code := comp left ccV1
-@[deprecated ccCover1 (since := "2026-07-23")] alias ccIsP1 := ccCover1
+private def ccCover1 : Code := comp left ccV1
 /-- The common label `(i, 1)` would carry. -/
-def ccLab1 : Code := comp right ccV1
+private def ccLab1 : Code := comp right ccV1
 /-- Nothing committed yet. -/
-def ccNF : Code := comp cNot ccFound
+private def ccNF : Code := comp cNot ccFound
 /-- At least one of this round's two literals is a legal pick. -/
-def ccAny : Code := comp cOr (pair ccCover0 ccCover1)
+private def ccAny : Code := comp cOr (pair ccCover0 ccCover1)
 /-- This round commits: nothing found yet AND something is available. -/
-def ccNew : Code := comp cAnd (pair ccNF ccAny)
+private def ccNew : Code := comp cAnd (pair ccNF ccAny)
 /-- Commit to `(i, 0)`. -/
-def ccC0 : Code := comp cAnd (pair ccNF ccCover0)
+private def ccC0 : Code := comp cAnd (pair ccNF ccCover0)
 /-- Commit to `(i, 1)` — only when `(i, 0)` is unavailable, which is the "prefer `p = 0`" tie-break. -/
-def ccC1 : Code := comp cAnd (pair (comp cAnd (pair ccNF ccCover1)) (comp cNot ccCover0))
+private def ccC1 : Code := comp cAnd (pair (comp cAnd (pair ccNF ccCover1)) (comp cNot ccCover0))
 /-- Updated found flag. -/
-def ccFound' : Code := comp cOr (pair ccFound ccAny)
+private def ccFound' : Code := comp cOr (pair ccFound ccAny)
 /-- Updated feature index: this round's `i` if it commits, else the one already held. -/
-def ccJ' : Code := comp cMux (pair (pair left ccJ) ccNew)
+private def ccJ' : Code := comp cMux (pair (pair left ccJ) ccNew)
 /-- Polarity pinned to `0` when `(i, 0)` is the pick; otherwise the one already held. -/
-def ccPin : Code := comp cMux (pair (pair zero ccP) ccC0)
+private def ccPin : Code := comp cMux (pair (pair zero ccP) ccC0)
 /-- Updated polarity: `1` when `(i, 1)` is the pick, else `ccPin`. -/
-def ccP' : Code := comp cMux (pair (pair (constCode 1) ccPin) ccC1)
+private def ccP' : Code := comp cMux (pair (pair (constCode 1) ccPin) ccC1)
 /-- Whichever of the two candidate labels belongs to the literal being picked. -/
-def ccChosen : Code := comp cMux (pair (pair ccLab1 ccLab0) ccC1)
+private def ccChosen : Code := comp cMux (pair (pair ccLab1 ccLab0) ccC1)
 /-- Updated label: the chosen one if this round commits, else the one already held. -/
-def ccL' : Code := comp cMux (pair (pair ccChosen ccL) ccNew)
+private def ccL' : Code := comp cMux (pair (pair ccChosen ccL) ccNew)
 /-- The updated accumulator `⟨found, ⟨j, ⟨p, label⟩⟩⟩`. -/
-def cCombine : Code := pair ccFound' (pair ccJ' (pair ccP' ccL'))
+private def cCombine : Code := pair ccFound' (pair ccJ' (pair ccP' ccL'))
 
-theorem val_cCombine (i acc v0 v1 : ℕ) :
+private theorem val_cCombine (i acc v0 v1 : ℕ) :
     val cCombine (Nat.pair i (Nat.pair acc (Nat.pair v0 v1)))
       = Nat.pair (bOr (flFound acc) (bOr v0.unpair.1 v1.unpair.1))
         (Nat.pair (if bAnd (bNot (flFound acc)) (bOr v0.unpair.1 v1.unpair.1) = 0 then flJ acc else i)
@@ -1827,9 +1621,9 @@ theorem val_cCombine (i acc v0 v1 : ℕ) :
   rfl
 
 /-- One greedy round: expand to both verdicts, then combine. -/
-def cFlStep : Code := comp cCombine cExpand
+private def cFlStep : Code := comp cCombine cExpand
 
-theorem val_cFlStep (a i acc : ℕ) :
+private theorem val_cFlStep (a i acc : ℕ) :
     val cFlStep (Nat.pair a (Nat.pair i acc)) = flStepFn (flInst a) (flMask a) i acc := by
   rw [cFlStep, val_comp, val_cExpand, val_cCombine, flStepFn]
   -- `flVerdict` stays opaque; project it with the explicit field lemmas (no `whnf` blow-up into the
@@ -1837,23 +1631,23 @@ theorem val_cFlStep (a i acc : ℕ) :
   simp only [flVerdict_fst, flVerdict_snd]
 
 /-- Base code: the constant zero accumulator `⟨0, ⟨0, ⟨0, 0⟩⟩⟩`. -/
-def cFlInit : Code := pair zero (pair zero (pair zero zero))
-theorem val_cFlInit (N : ℕ) : val cFlInit N = Nat.pair 0 (Nat.pair 0 (Nat.pair 0 0)) := by
+private def cFlInit : Code := pair zero (pair zero (pair zero zero))
+private theorem val_cFlInit (N : ℕ) : val cFlInit N = Nat.pair 0 (Nat.pair 0 (Nat.pair 0 0)) := by
   simp only [cFlInit, val_pair, val_zero]
 
 /-- The greedy scan accumulator after `t` literal-rounds. -/
-def flAcc (N t : ℕ) : ℕ := val (prec cFlInit cFlStep) (Nat.pair N t)
+private def flAcc (N t : ℕ) : ℕ := val (prec cFlInit cFlStep) (Nat.pair N t)
 
-theorem flAcc_zero (N : ℕ) : flAcc N 0 = Nat.pair 0 (Nat.pair 0 (Nat.pair 0 0)) := by
+private theorem flAcc_zero (N : ℕ) : flAcc N 0 = Nat.pair 0 (Nat.pair 0 (Nat.pair 0 0)) := by
   unfold flAcc; rw [val_prec_zero, val_cFlInit]
-theorem flAcc_succ (N t : ℕ) : flAcc N (t + 1) = flStepFn (flInst N) (flMask N) t (flAcc N t) := by
+private theorem flAcc_succ (N t : ℕ) : flAcc N (t + 1) = flStepFn (flInst N) (flMask N) t (flAcc N t) := by
   unfold flAcc; rw [val_prec_succ, val_cFlStep]
 
 /-! ### Correctness of the greedy scan -/
 
 /-- **Completeness.** After `t` rounds, `found` fires iff some literal `(i, ·)` with `i < t` is a
 covering pure pick (pure AND covering ≥1 remaining example). -/
-theorem flComplete (N t : ℕ) :
+private theorem flComplete (N t : ℕ) :
     flFound (flAcc N t) ≠ 0 ↔
       ∃ i < t, coverLit (flInst N) (flMask N) i 0 ≠ 0 ∨ coverLit (flInst N) (flMask N) i 1 ≠ 0 := by
   induction t with
@@ -1872,11 +1666,11 @@ theorem flComplete (N t : ℕ) :
         · exact Or.inl ⟨i, hlt, h⟩
         · exact Or.inr h
 
-theorem bNot_pos_of_ne {n : ℕ} (h : n ≠ 0) : bNot n = 0 := by unfold bNot; simp [h]
+private theorem bNot_pos_of_ne {n : ℕ} (h : n ≠ 0) : bNot n = 0 := by unfold bNot; simp [h]
 
 /-- **Soundness.** If `found` fires, the recorded `⟨j, p⟩` is a valid literal (`j < t`, `p` a bit), a
 **covering pure** pick, and `label` is its common label. The scan freezes after the first hit. -/
-theorem flSound (N : ℕ) : ∀ t, flFound (flAcc N t) ≠ 0 →
+private theorem flSound (N : ℕ) : ∀ t, flFound (flAcc N t) ≠ 0 →
     flJ (flAcc N t) < t ∧ flP (flAcc N t) ≤ 1 ∧
     coverLit (flInst N) (flMask N) (flJ (flAcc N t)) (flP (flAcc N t)) ≠ 0 ∧
     flL (flAcc N t) = litLabel (flInst N) (flMask N) (flJ (flAcc N t)) (flP (flAcc N t)) := by
@@ -1946,8 +1740,8 @@ theorem flSound (N : ℕ) : ∀ t, flFound (flAcc N t) ≠ 0 →
 /-! ### The assembled `findLit` and its top-level correctness -/
 
 /-- The literal count `readK (flInst N)`. -/
-def cFlCount : Code := comp left left
-theorem val_cFlCount (N : ℕ) : val cFlCount N = readK (flInst N) := by
+private def cFlCount : Code := comp left left
+private theorem val_cFlCount (N : ℕ) : val cFlCount N = readK (flInst N) := by
   simp only [cFlCount, val_comp, val_left, readK, flInst]
 /-- **`findLit`'s code**: run the greedy scan `readK inst` rounds. -/
 def cFindLit : Code := comp (prec cFlInit cFlStep) (pair cId cFlCount)
@@ -1956,7 +1750,7 @@ def cFindLit : Code := comp (prec cFlInit cFlStep) (pair cId cFlCount)
 on for the packed input `N = ⟨inst, mask⟩`. -/
 def findLitVal (N : ℕ) : ℕ := val cFindLit N
 
-theorem findLitVal_eq (N : ℕ) : findLitVal N = flAcc N (readK (flInst N)) := by
+private theorem findLitVal_eq (N : ℕ) : findLitVal N = flAcc N (readK (flInst N)) := by
   unfold findLitVal cFindLit flAcc
   rw [val_comp, val_pair, val_cId, val_cFlCount]
 
@@ -1983,7 +1777,7 @@ theorem findLit_sound (N : ℕ) (h : flFound (findLitVal N) ≠ 0) :
 instance with a valid mask genuinely **covers ≥1 remaining example** — some still-unmasked example whose
 feature `j` matches `p`. This is what makes the greedy count-decrease measure (`updBit_le`) strict, so
 `maskUpdate` zeroes ≥1 mask bit each covering round. (C2c consumes this together with `findLit_sound`.) -/
-theorem coverLit_covers (inst mask j p : ℕ) (hw : WFBits inst)
+private theorem coverLit_covers (inst mask j p : ℕ) (hw : WFBits inst)
     (hm : MaskValid mask (readM inst)) (hcov : coverLit inst mask j p ≠ 0) :
     ∃ msks exs : List ℕ, mask = encodeList msks ∧ readData inst = encodeList exs ∧
       msks.length = exs.length ∧ readM inst = exs.length ∧
@@ -2004,15 +1798,15 @@ theorem coverLit_covers (inst mask j p : ℕ) (hw : WFBits inst)
 
 /-! ### Accumulator invariants (for the cost/size bounds) -/
 
-theorem flFound_le_one (N t : ℕ) : flFound (flAcc N t) ≤ 1 := by
+private theorem flFound_le_one (N t : ℕ) : flFound (flAcc N t) ≤ 1 := by
   cases t with
   | zero => rw [flAcc_zero]; simp [flFound, Nat.unpair_pair]
   | succ k => rw [flAcc_succ, flFound_step]; exact bOr_le_one _ _
-theorem flP_le_one (N t : ℕ) : flP (flAcc N t) ≤ 1 := by
+private theorem flP_le_one (N t : ℕ) : flP (flAcc N t) ≤ 1 := by
   induction t with
   | zero => rw [flAcc_zero]; simp [flP, Nat.unpair_pair]
   | succ k ih => rw [flAcc_succ, flP_step]; split_ifs <;> omega
-theorem flL_le_one (N t : ℕ) : flL (flAcc N t) ≤ 1 := by
+private theorem flL_le_one (N t : ℕ) : flL (flAcc N t) ≤ 1 := by
   induction t with
   | zero => rw [flAcc_zero]; simp [flL, Nat.unpair_pair]
   | succ k ih =>
@@ -2021,36 +1815,36 @@ theorem flL_le_one (N t : ℕ) : flL (flAcc N t) ≤ 1 := by
       · exact ih
       · exact litLabel_le_one _ _ _ _
       · exact litLabel_le_one _ _ _ _
-theorem flJ_le (N t : ℕ) : flJ (flAcc N t) ≤ t := by
+private theorem flJ_le (N t : ℕ) : flJ (flAcc N t) ≤ t := by
   induction t with
   | zero => rw [flAcc_zero]; simp [flJ, Nat.unpair_pair]
   | succ k ih => rw [flAcc_succ, flJ_step]; split <;> omega
 
 /-! ### The per-step cost: two purity calls (`cExpand`) plus an `O(1)` combine -/
 
-theorem val_cPack0 (a i acc : ℕ) :
+private theorem val_cPack0 (a i acc : ℕ) :
     val cPack0 (Nat.pair a (Nat.pair i acc)) = packLit (flInst a) (flMask a) i 0 := by
   simp only [cPack0, cInstN, cMaskN, cIX, val_pair, val_comp, val_left, val_right, val_zero,
     Nat.unpair_pair, packLit, flInst, flMask]
-theorem val_cPack1 (a i acc : ℕ) :
+private theorem val_cPack1 (a i acc : ℕ) :
     val cPack1 (Nat.pair a (Nat.pair i acc)) = packLit (flInst a) (flMask a) i 1 := by
   simp only [cPack1, cInstN, cMaskN, cIX, val_pair, val_comp, val_left, val_right, val_constCode,
     Nat.unpair_pair, packLit, flInst, flMask]
-theorem tc_cPack0_le (a i acc : ℕ) : tc cPack0 (Nat.pair a (Nat.pair i acc)) ≤ 13 := by
+private theorem tc_cPack0_le (a i acc : ℕ) : tc cPack0 (Nat.pair a (Nat.pair i acc)) ≤ 13 := by
   simp only [cPack0, cInstN, cMaskN, cIX, tc_pair, tc_comp, tc_left, tc_right, tc_zero]; omega
-theorem tc_cPack1_le (a i acc : ℕ) : tc cPack1 (Nat.pair a (Nat.pair i acc)) ≤ 15 := by
+private theorem tc_cPack1_le (a i acc : ℕ) : tc cPack1 (Nat.pair a (Nat.pair i acc)) ≤ 15 := by
   have := tc_constCode_le 1 (Nat.pair a (Nat.pair i acc))
   simp only [cPack1, cInstN, cMaskN, cIX, tc_pair, tc_comp, tc_left, tc_right]; omega
 
 /-- The verdict fold `cFold` is `O(1)`-`tc` on a bit-flagged verdict (its two `cAnd` operands — the
 `isPure` and `sawAny` fields — are bits). -/
-theorem tc_cFold_le (V : ℕ) (h1 : V.unpair.1 ≤ 1) (h2 : V.unpair.2.unpair.2 ≤ 1) :
+private theorem tc_cFold_le (V : ℕ) (h1 : V.unpair.1 ≤ 1) (h2 : V.unpair.2.unpair.2 ≤ 1) :
     tc cFold V ≤ 250 := by
   have hand := tc_cAnd_le V.unpair.1 V.unpair.2.unpair.2
   simp only [cFold, tc_pair, tc_comp, tc_left, tc_right, val_comp, val_pair, val_left, val_right]
   omega
 
-theorem tc_cExpand_le (a i acc : ℕ) :
+private theorem tc_cExpand_le (a i acc : ℕ) :
     tc cExpand (Nat.pair a (Nat.pair i acc))
       ≤ tc cPurity (packLit (flInst a) (flMask a) i 0)
         + tc cPurity (packLit (flInst a) (flMask a) i 1) + 541 := by
@@ -2068,7 +1862,7 @@ theorem tc_cExpand_le (a i acc : ℕ) :
   omega
 
 /-- Every mux runs on a bit selector (`bAnd`/`bOr` output), so it is `O(1)`-`tc` — uniformly in `W`. -/
-theorem tc_cMux_le' (W : ℕ) : tc cMux W ≤ 4 * W.unpair.2 + 2 := by
+private theorem tc_cMux_le' (W : ℕ) : tc cMux W ≤ 4 * W.unpair.2 + 2 := by
   have h := tc_prec_le (cf := right) (cg := comp left left) (B := 3)
     (fun z => by simp [tc_comp, tc_left]) W.unpair.1 W.unpair.2
   rw [Nat.pair_unpair] at h
@@ -2076,10 +1870,10 @@ theorem tc_cMux_le' (W : ℕ) : tc cMux W ≤ 4 * W.unpair.2 + 2 := by
   unfold cMux
   omega
 
-theorem tc_cMux_bit (x y c : ℕ) (hc : c ≤ 1) : tc cMux (Nat.pair (Nat.pair x y) c) ≤ 6 := by
+private theorem tc_cMux_bit (x y c : ℕ) (hc : c ≤ 1) : tc cMux (Nat.pair (Nat.pair x y) c) ≤ 6 := by
   have := tc_cMux_le' (Nat.pair (Nat.pair x y) c); rw [Nat.unpair_pair] at this; omega
 
-theorem tc_cCombine_le (i acc v0 v1 : ℕ)
+private theorem tc_cCombine_le (i acc v0 v1 : ℕ)
     (hf : acc.unpair.1 ≤ 1) (h0 : v0.unpair.1 ≤ 1) (h1 : v1.unpair.1 ≤ 1) :
     tc cCombine (Nat.pair i (Nat.pair acc (Nat.pair v0 v1))) ≤ 4000 := by
   have bnot_acc : bNot acc.unpair.1 ≤ 1 := bNot_le_one _
@@ -2117,7 +1911,7 @@ theorem tc_cCombine_le (i acc v0 v1 : ℕ)
   omega
 
 /-- **The per-step cost**: two purity calls, the two `O(1)` verdict folds, plus the `O(1)` combine. -/
-theorem tc_cFlStep_le (a i acc : ℕ) (hf : flFound acc ≤ 1) :
+private theorem tc_cFlStep_le (a i acc : ℕ) (hf : flFound acc ≤ 1) :
     tc cFlStep (Nat.pair a (Nat.pair i acc))
       ≤ tc cPurity (packLit (flInst a) (flMask a) i 0)
         + tc cPurity (packLit (flInst a) (flMask a) i 1) + 4542 := by
@@ -2132,10 +1926,10 @@ theorem tc_cFlStep_le (a i acc : ℕ) (hf : flFound acc ≤ 1) :
   omega
 
 /-- The per-round budget: `2·(purity cost) + O(1)` = `O(m·k)`. -/
-def BstepFL (N : ℕ) : ℕ := 2 * ((16 * readK (flInst N) + 5701) * readM (flInst N) + 400) + 4542
+private def BstepFL (N : ℕ) : ℕ := 2 * ((16 * readK (flInst N) + 5701) * readM (flInst N) + 400) + 4542
 
 /-- **Per-visited-round bound.** On the well-formed domain each round costs `≤ BstepFL N`. -/
-theorem hFlStep_visited (N : ℕ) (hw : WFBits (flInst N))
+private theorem hFlStep_visited (N : ℕ) (hw : WFBits (flInst N))
     (hm : MaskValid (flMask N) (readM (flInst N))) :
     ∀ i, i < readK (flInst N) →
       tc cFlStep (Nat.pair N (Nat.pair i (val (prec cFlInit cFlStep) (Nat.pair N i))))
@@ -2157,7 +1951,7 @@ theorem hFlStep_visited (N : ℕ) (hw : WFBits (flInst N))
   omega
 
 /-- **`cFindLit`'s native cost on a well-formed instance**: base + the `(BstepFL+1)·k` scan loop. -/
-theorem tc_cFindLit_raw (N : ℕ) (hw : WFBits (flInst N))
+private theorem tc_cFindLit_raw (N : ℕ) (hw : WFBits (flInst N))
     (hm : MaskValid (flMask N) (readM (flInst N))) :
     tc cFindLit N
       ≤ tc cFlInit N + (BstepFL N + 1) * readK (flInst N) + 1 + tc (pair cId cFlCount) N + 1 := by
@@ -2173,7 +1967,7 @@ theorem tc_cFindLit_raw (N : ℕ) (hw : WFBits (flInst N))
 
 /-- **`cFindLit` is poly-time on the well-formed domain** — a cubic in `Nat.size N`
 (`k` rounds × `O(m·k)` per round). -/
-theorem polyBoundedOn_tc_cFindLit : PolyBoundedOn FindLitWF (tc cFindLit) := by
+private theorem polyBoundedOn_tc_cFindLit : PolyBoundedOn FindLitWF (tc cFindLit) := by
   refine ⟨12000, 3, fun N hN => ?_⟩
   obtain ⟨hw, hm⟩ := hN
   have hk : readK (flInst N) ≤ Nat.size N :=
@@ -2194,14 +1988,11 @@ theorem polyBoundedOn_tc_cFindLit : PolyBoundedOn FindLitWF (tc cFindLit) := by
       ≤ 12000 * (Nat.size N + 1) ^ 3 := by nlinarith [Nat.zero_le (Nat.size N)]
   omega
 
-/-- The output `⟨found, j, p, label⟩` is poly-bit: three bits and an index `j ≤ readK ≤ size N`. -/
-theorem size_le_self (m : ℕ) : Nat.size m ≤ m := Nat.size_le.mpr Nat.lt_two_pow_self
-
-theorem flAcc_decompose (x : ℕ) :
+private theorem flAcc_decompose (x : ℕ) :
     x = Nat.pair (flFound x) (Nat.pair (flJ x) (Nat.pair (flP x) (flL x))) := by
   simp only [flFound, flJ, flP, flL, Nat.pair_unpair]
 
-theorem polyBoundedOn_size_findLitVal :
+private theorem polyBoundedOn_size_findLitVal :
     PolyBoundedOn FindLitWF (fun N => Nat.size (findLitVal N)) := by
   refine ⟨40, 1, fun N hN => ?_⟩
   obtain ⟨hw, hm⟩ := hN
@@ -2231,26 +2022,26 @@ theorem polyBoundedOn_size_findLitVal :
 
 /-! ### `rfind'`-freeness and the `PolyTimeOn` capstone -/
 
-theorem rfindFree_cPack0 : RfindFree cPack0 := by
+private theorem rfindFree_cPack0 : RfindFree cPack0 := by
   simp only [cPack0, cInstN, cMaskN, cIX, RfindFree, and_self]
-theorem rfindFree_cPack1 : RfindFree cPack1 :=
+private theorem rfindFree_cPack1 : RfindFree cPack1 :=
   ⟨⟨trivial, trivial⟩, ⟨trivial, trivial⟩, ⟨trivial, trivial⟩, rfindFree_constCode 1⟩
-theorem rfindFree_cFold : RfindFree cFold := by
+private theorem rfindFree_cFold : RfindFree cFold := by
   simp only [cFold, cAnd, cOr, cNot, cIsPos, cShape0, cSwap, notCore, orCore, isPosCore, constCode,
     RfindFree, and_self]
-theorem rfindFree_cExpand : RfindFree cExpand :=
+private theorem rfindFree_cExpand : RfindFree cExpand :=
   ⟨⟨trivial, trivial⟩, ⟨trivial, trivial⟩,
     ⟨rfindFree_cFold, rfindFree_cPurity, rfindFree_cPack0⟩,
     ⟨rfindFree_cFold, rfindFree_cPurity, rfindFree_cPack1⟩⟩
-theorem rfindFree_cCombine : RfindFree cCombine := by
+private theorem rfindFree_cCombine : RfindFree cCombine := by
   simp only [cCombine, ccFound', ccJ', ccP', ccL', ccPin, ccChosen, ccNF, ccAny, ccNew, ccC0, ccC1,
     ccFound, ccJ, ccP, ccL, ccCover0, ccLab0, ccCover1, ccLab1, ccAcc, ccV0, ccV1,
     cMux, cAnd, cOr, cNot, cIsPos, cShape0, cSwap, notCore, orCore, isPosCore, constCode,
     RfindFree, and_self]
-theorem rfindFree_cFlStep : RfindFree cFlStep := ⟨rfindFree_cCombine, rfindFree_cExpand⟩
-theorem rfindFree_cFlInit : RfindFree cFlInit := by
+private theorem rfindFree_cFlStep : RfindFree cFlStep := ⟨rfindFree_cCombine, rfindFree_cExpand⟩
+private theorem rfindFree_cFlInit : RfindFree cFlInit := by
   simp only [cFlInit, RfindFree, and_self]
-theorem rfindFree_cFindLit : RfindFree cFindLit :=
+private theorem rfindFree_cFindLit : RfindFree cFindLit :=
   ⟨⟨rfindFree_cFlInit, rfindFree_cFlStep⟩, ⟨trivial, trivial⟩, ⟨trivial, trivial⟩⟩
 
 /-- **`polyTime_findLit`.** Selecting the first pure literal for the working set is poly-time on the
@@ -2289,7 +2080,7 @@ def svDL (acc : ℕ) : ℕ := acc.unpair.2.unpair.2
 
 /-- One greedy round's UPDATE (a covering literal was found): refine the mask by `(j,p)`, bump the rule
 count, and **prepend** the rule `⟨j,⟨p,label⟩⟩` to the (reversed) output list. -/
-def svUpdated (inst acc lit : ℕ) : ℕ :=
+private def svUpdated (inst acc lit : ℕ) : ℕ :=
   Nat.pair (maskUpdate inst (svMask acc) (flJ lit) (flP lit))
     (Nat.pair (svCnt acc + 1)
       (Nat.pair 1 (Nat.pair (Nat.pair (flJ lit) (Nat.pair (flP lit) (flL lit))) (svDL acc))))
@@ -2297,7 +2088,7 @@ def svUpdated (inst acc lit : ℕ) : ℕ :=
 /-- One greedy round: find the first covering pure literal for the current mask; if found, apply the
 update; else freeze (no covering literal — greedy is stuck this round). The index `i` is unused (the
 `prec` bound `m` is a round budget, not a data index). -/
-def svStepFn (inst _i acc : ℕ) : ℕ :=
+private def svStepFn (inst _i acc : ℕ) : ℕ :=
   if flFound (findLitVal (Nat.pair inst (svMask acc))) = 0 then acc
   else svUpdated inst acc (findLitVal (Nat.pair inst (svMask acc)))
 
@@ -2307,60 +2098,60 @@ def svStepFn (inst _i acc : ℕ) : ℕ :=
 the round pays for the literal scan once. -/
 
 /-- The instance. -/
-def cSinst : Code := comp left left
+private def cSinst : Code := comp left left
 /-- The accumulator. -/
-def cSacc : Code := comp right right
+private def cSacc : Code := comp right right
 /-- The working mask, out of the accumulator. -/
-def cSmask : Code := comp left cSacc
+private def cSmask : Code := comp left cSacc
 /-- Stage A assembled: the instance, the accumulator, and this round's literal. -/
-def cSvA : Code := pair cSinst (pair cSacc (comp cFindLit (pair cSinst cSmask)))
+private def cSvA : Code := pair cSinst (pair cSacc (comp cFindLit (pair cSinst cSmask)))
 
 /-! Stage B: from `⟨inst, ⟨acc, lit⟩⟩` build the new accumulator — one `maskUpdate`, then a single
 mux over the whole accumulator on whether a literal was found. The `cB*` names project the three
 components and their fields; `cBupd` is the found-branch accumulator. -/
 
 /-- The instance. -/
-def cBi : Code := left
+private def cBi : Code := left
 /-- The accumulator. -/
-def cBa : Code := comp left right
+private def cBa : Code := comp left right
 /-- This round's literal. -/
-def cBl : Code := comp right right
+private def cBl : Code := comp right right
 /-- The working mask. -/
-def cBm : Code := comp left cBa
+private def cBm : Code := comp left cBa
 /-- Was a covering literal found this round? -/
-def cBf : Code := comp left cBl
+private def cBf : Code := comp left cBl
 /-- The literal's feature index. -/
-def cBj : Code := comp left (comp right cBl)
+private def cBj : Code := comp left (comp right cBl)
 /-- The literal's polarity bit. -/
-def cBp : Code := comp left (comp right (comp right cBl))
+private def cBp : Code := comp left (comp right (comp right cBl))
 /-- The literal's common label. -/
-def cBlbl : Code := comp right (comp right (comp right cBl))
+private def cBlbl : Code := comp right (comp right (comp right cBl))
 /-- The rule count. -/
-def cBcnt : Code := comp left (comp right cBa)
+private def cBcnt : Code := comp left (comp right cBa)
 /-- The output list so far. -/
-def cBdl : Code := comp right (comp right cBa)
+private def cBdl : Code := comp right (comp right cBa)
 /-- The mask refined by the found literal — the examples it covers drop out. -/
-def cBmu : Code := comp cMaskUpdate (pair cBi (pair cBm (pair cBj cBp)))
+private def cBmu : Code := comp cMaskUpdate (pair cBi (pair cBm (pair cBj cBp)))
 /-- The emitted rule `⟨j, ⟨p, label⟩⟩`. -/
-def cBtriple : Code := pair cBj (pair cBp cBlbl)
+private def cBtriple : Code := pair cBj (pair cBp cBlbl)
 /-- The rule prepended to the output list, as a flag-cons cell. -/
-def cBcons : Code := pair (constCode 1) (pair cBtriple cBdl)
+private def cBcons : Code := pair (constCode 1) (pair cBtriple cBdl)
 /-- The bumped rule count. -/
-def cBcntsucc : Code := comp succ cBcnt
+private def cBcntsucc : Code := comp succ cBcnt
 /-- The found-branch accumulator: refined mask, bumped count, extended list. -/
-def cBupd : Code := pair cBmu (pair cBcntsucc cBcons)
+private def cBupd : Code := pair cBmu (pair cBcntsucc cBcons)
 /-- Stage B assembled: take `cBupd` if a literal was found, else freeze the accumulator. -/
-def cSvB : Code := comp cMux (pair (pair cBupd cBa) cBf)
+private def cSvB : Code := comp cMux (pair (pair cBupd cBa) cBf)
 /-- One greedy round: stage A then stage B. -/
 def cSvStep : Code := comp cSvB cSvA
 
-theorem val_cSvA (n i acc : ℕ) :
+private theorem val_cSvA (n i acc : ℕ) :
     val cSvA (Nat.pair n (Nat.pair i acc))
       = Nat.pair (svInst n) (Nat.pair acc (findLitVal (Nat.pair (svInst n) (svMask acc)))) := by
   simp only [cSvA, cSinst, cSacc, cSmask, val_pair, val_comp, val_left, val_right, svInst, svMask,
     findLitVal, Nat.unpair_pair]
 
-theorem val_cSvB (inst acc lit : ℕ) :
+private theorem val_cSvB (inst acc lit : ℕ) :
     val cSvB (Nat.pair inst (Nat.pair acc lit))
       = if flFound lit = 0 then acc else svUpdated inst acc lit := by
   rw [cSvB, val_comp,
@@ -2372,7 +2163,7 @@ theorem val_cSvB (inst acc lit : ℕ) :
           maskUpdateVal, packLit],
     val_cMux]
 
-theorem val_cSvStep (n i acc : ℕ) :
+private theorem val_cSvStep (n i acc : ℕ) :
     val cSvStep (Nat.pair n (Nat.pair i acc)) = svStepFn (svInst n) i acc := by
   rw [cSvStep, val_comp, val_cSvA, val_cSvB]; rfl
 
@@ -2380,30 +2171,30 @@ theorem val_cSvStep (n i acc : ℕ) :
 
 /-- Base code: start from the given mask with no rules emitted. -/
 def cSvInit : Code := pair right (pair zero zero)
-theorem val_cSvInit (n : ℕ) : val cSvInit n = Nat.pair (svMask0 n) (Nat.pair 0 0) := by
+private theorem val_cSvInit (n : ℕ) : val cSvInit n = Nat.pair (svMask0 n) (Nat.pair 0 0) := by
   simp only [cSvInit, val_pair, val_right, val_zero, svMask0]
 
 /-- The accumulator after `t` greedy rounds. -/
 def svAcc (n t : ℕ) : ℕ := val (prec cSvInit cSvStep) (Nat.pair n t)
 
-theorem svAcc_zero (n : ℕ) : svAcc n 0 = Nat.pair (svMask0 n) (Nat.pair 0 0) := by
+private theorem svAcc_zero (n : ℕ) : svAcc n 0 = Nat.pair (svMask0 n) (Nat.pair 0 0) := by
   unfold svAcc; rw [val_prec_zero, val_cSvInit]
-theorem svAcc_succ (n t : ℕ) : svAcc n (t + 1) = svStepFn (svInst n) t (svAcc n t) := by
+private theorem svAcc_succ (n t : ℕ) : svAcc n (t + 1) = svStepFn (svInst n) t (svAcc n t) := by
   unfold svAcc; rw [val_prec_succ, val_cSvStep]
 
 /-- The round budget `readM inst` — one round per example. -/
-def cSvCount : Code := comp cReadM left
-theorem val_cSvCount (n : ℕ) : val cSvCount n = readM (svInst n) := by
+private def cSvCount : Code := comp cReadM left
+private theorem val_cSvCount (n : ℕ) : val cSvCount n = readM (svInst n) := by
   simp only [cSvCount, val_comp, val_cReadM, val_left, svInst]
 /-- The greedy loop: `readM inst` rounds of `cSvStep` from `cSvInit`. -/
-def cSvLoop : Code := comp (prec cSvInit cSvStep) (pair cId cSvCount)
-theorem val_cSvLoop (n : ℕ) : val cSvLoop n = svAcc n (readM (svInst n)) := by
+private def cSvLoop : Code := comp (prec cSvInit cSvStep) (pair cId cSvCount)
+private theorem val_cSvLoop (n : ℕ) : val cSvLoop n = svAcc n (readM (svInst n)) := by
   rw [cSvLoop, val_comp, val_pair, val_cId, val_cSvCount]; rfl
 
 /-- The final `cReverse` (length `cnt`) turns the prepend-order list forward and repackages
 `⟨finalMask, forwardDL⟩`. -/
-def cAssemble : Code := pair left (comp cReverse (pair (comp right right) (comp left right)))
-theorem val_cAssemble (acc : ℕ) :
+private def cAssemble : Code := pair left (comp cReverse (pair (comp right right) (comp left right)))
+private theorem val_cAssemble (acc : ℕ) :
     val cAssemble acc = Nat.pair (svMask acc) (val cReverse (Nat.pair (svDL acc) (svCnt acc))) := by
   simp only [cAssemble, val_pair, val_comp, val_left, val_right, svMask, svDL, svCnt]
 
@@ -2414,7 +2205,7 @@ def cSolve : Code := comp cAssemble cSvLoop
 decision list is consistent with every example (`solve_decides`). -/
 def solveVal (n : ℕ) : ℕ := val cSolve n
 
-theorem val_cSolve (n : ℕ) :
+private theorem val_cSolve (n : ℕ) :
     solveVal n = Nat.pair (svMask (svAcc n (readM (svInst n))))
       (val cReverse (Nat.pair (svDL (svAcc n (readM (svInst n))))
         (svCnt (svAcc n (readM (svInst n)))))) := by
@@ -2429,14 +2220,14 @@ The load-bearing invariant for both the poly-time accumulator bound and C2c: the
 valid length-`m` bit-list and never grows. `maskValid_maskUpdate` gives validity on a found round;
 `maskUpdateVal_le` (via `updBit_le`) gives the shrink; the no-op round preserves both trivially. -/
 
-theorem flP_findLitVal_le_one (N : ℕ) : flP (findLitVal N) ≤ 1 := by
+private theorem flP_findLitVal_le_one (N : ℕ) : flP (findLitVal N) ≤ 1 := by
   rw [findLitVal_eq]; exact flP_le_one N _
-theorem flJ_findLitVal_le (N : ℕ) : flJ (findLitVal N) ≤ readK (flInst N) := by
+private theorem flJ_findLitVal_le (N : ℕ) : flJ (findLitVal N) ≤ readK (flInst N) := by
   rw [findLitVal_eq]; exact flJ_le N _
 
 /-- The greedy literal `findLit ⟨inst,mask⟩` gives a `PurityWF`-valid `maskUpdate` query (whether or not
 it fired: `flJ ≤ readK`, `flP ≤ 1` hold on any round). -/
-theorem purityWF_packLit_findLit (inst mask : ℕ) (hw : WFBits inst)
+private theorem purityWF_packLit_findLit (inst mask : ℕ) (hw : WFBits inst)
     (hm : MaskValid mask (readM inst)) :
     PurityWF (packLit inst mask (flJ (findLitVal (Nat.pair inst mask)))
       (flP (findLitVal (Nat.pair inst mask)))) := by
@@ -2450,28 +2241,28 @@ theorem purityWF_packLit_findLit (inst mask : ℕ) (hw : WFBits inst)
 
 /-- On the well-formed domain the greedy round **shrinks** the mask (`updBit_le` ⇒ the refined bit never
 exceeds the old): `maskUpdate` by the found literal is `≤` the current mask. -/
-theorem maskUpdate_le_of_wf (inst mask : ℕ) (hw : WFBits inst) (hm : MaskValid mask (readM inst)) :
+private theorem maskUpdate_le_of_wf (inst mask : ℕ) (hw : WFBits inst) (hm : MaskValid mask (readM inst)) :
     maskUpdate inst mask (flJ (findLitVal (Nat.pair inst mask)))
       (flP (findLitVal (Nat.pair inst mask))) ≤ mask := by
   have h := maskUpdateVal_le (packLit inst mask (flJ (findLitVal (Nat.pair inst mask)))
     (flP (findLitVal (Nat.pair inst mask)))) (purityWF_packLit_findLit inst mask hw hm)
   rwa [maskOf_packLit] at h
 
-theorem svMask_svUpdated (inst acc lit : ℕ) :
+private theorem svMask_svUpdated (inst acc lit : ℕ) :
     svMask (svUpdated inst acc lit) = maskUpdate inst (svMask acc) (flJ lit) (flP lit) := by
   simp only [svUpdated, svMask, Nat.unpair_pair]
 
-theorem svCnt_svUpdated (inst acc lit : ℕ) : svCnt (svUpdated inst acc lit) = svCnt acc + 1 := by
+private theorem svCnt_svUpdated (inst acc lit : ℕ) : svCnt (svUpdated inst acc lit) = svCnt acc + 1 := by
   simp only [svUpdated, svCnt, Nat.unpair_pair]
 
 /-- The found-round `svDL` is `cons triple oldDL` — a genuine flag-cons prepend. -/
-theorem svDL_svUpdated (inst acc lit : ℕ) :
+private theorem svDL_svUpdated (inst acc lit : ℕ) :
     svDL (svUpdated inst acc lit)
       = Nat.pair 1 (Nat.pair (Nat.pair (flJ lit) (Nat.pair (flP lit) (flL lit))) (svDL acc)) := by
   simp only [svUpdated, svDL, Nat.unpair_pair]
 
 /-- The rule count never exceeds the round budget (`≤ 1` bump per round). -/
-theorem svCnt_le (n : ℕ) : ∀ t, svCnt (svAcc n t) ≤ t := by
+private theorem svCnt_le (n : ℕ) : ∀ t, svCnt (svAcc n t) ≤ t := by
   intro t
   induction t with
   | zero => rw [svAcc_zero]; simp only [svCnt, Nat.unpair_pair, Nat.zero_le]
@@ -2484,7 +2275,7 @@ theorem svCnt_le (n : ℕ) : ∀ t, svCnt (svAcc n t) ≤ t := by
 
 /-- A rule-triple `⟨j,⟨p,l⟩⟩` with `j ≤ readk` and `p,l` bits is `≤ ⟨readk, 3⟩`. Stated over OPAQUE
 `j,p,l` (never the symbolic `findLitVal`) so `omega`/`pair_mono` never `whnf`-descend the literal scan. -/
-theorem dlTriple_le {j p l readk : ℕ} (hj : j ≤ readk) (hp : p ≤ 1) (hl : l ≤ 1) :
+private theorem dlTriple_le {j p l readk : ℕ} (hj : j ≤ readk) (hp : p ≤ 1) (hl : l ≤ 1) :
     Nat.pair j (Nat.pair p l) ≤ Nat.pair readk 3 := by
   have h3 : Nat.pair p l ≤ 3 := by
     have hm := pair_mono hp hl
@@ -2536,7 +2327,7 @@ theorem dlModel_svAcc (n : ℕ) : ∀ t, ∃ L : List ℕ,
 /-- **Obligation 4.** The working mask is `MaskValid` (a length-`m` bit-list) AND never grows, every
 round — hence at the final round too. C2c consumes this together with `findLit`'s covering-soundness
 (`coverLit_covers`) and the shrink measure (`updBit_le`) for its "finalMask all-zero iff consistent". -/
-theorem maskValid_svAcc (n : ℕ) (hw : WFBits (svInst n))
+private theorem maskValid_svAcc (n : ℕ) (hw : WFBits (svInst n))
     (hm : MaskValid (svMask0 n) (readM (svInst n))) :
     ∀ t, MaskValid (svMask (svAcc n t)) (readM (svInst n)) ∧ svMask (svAcc n t) ≤ svMask0 n := by
   intro t
@@ -2556,11 +2347,11 @@ theorem maskValid_svAcc (n : ℕ) (hw : WFBits (svInst n))
         le_trans (maskUpdate_le_of_wf _ _ hw ihv) ihle⟩
 
 /-- The final mask (the first field of `solve`'s output) is `MaskValid` on the well-formed domain. -/
-theorem maskValid_solve_finalMask (n : ℕ) (hn : SolveWF n) :
+private theorem maskValid_solve_finalMask (n : ℕ) (hn : SolveWF n) :
     MaskValid (svMask (svAcc n (readM (svInst n)))) (readM (svInst n)) :=
   (maskValid_svAcc n hn.1 hn.2 (readM (svInst n))).1
 
-theorem solveVal_fst (n : ℕ) : (solveVal n).unpair.1 = svMask (svAcc n (readM (svInst n))) := by
+private theorem solveVal_fst (n : ℕ) : (solveVal n).unpair.1 = svMask (svAcc n (readM (svInst n))) := by
   rw [val_cSolve]; simp only [Nat.unpair_pair]
 
 /-- **`MaskValid` of `solve`'s output mask** — the C2c-facing packaging. -/
@@ -2574,7 +2365,7 @@ theorem maskValid_solve (n : ℕ) (hn : SolveWF n) :
 are `O(1)` pointer-shuffles. `findLit`/`maskUpdate` are kept OPAQUE atoms (their `val`/`tc` hide
 symbolic scans) so `omega` never `whnf`-descends into them. -/
 
-theorem tc_cSvA_le (n i acc : ℕ) :
+private theorem tc_cSvA_le (n i acc : ℕ) :
     tc cSvA (Nat.pair n (Nat.pair i acc))
       ≤ tc cFindLit (Nat.pair (svInst n) (svMask acc)) + 40 := by
   have hval : val (pair cSinst cSmask) (Nat.pair n (Nat.pair i acc))
@@ -2591,7 +2382,7 @@ theorem tc_cSvA_le (n i acc : ℕ) :
     simp only [cSacc, tc_comp, tc_right]; omega
   rw [cSvA, tc_pair, tc_pair]; omega
 
-theorem tc_cSvB_le (inst acc lit : ℕ) (hf : flFound lit ≤ 1) :
+private theorem tc_cSvB_le (inst acc lit : ℕ) (hf : flFound lit ≤ 1) :
     tc cSvB (Nat.pair inst (Nat.pair acc lit))
       ≤ tc cMaskUpdate (packLit inst (svMask acc) (flJ lit) (flP lit)) + 300 := by
   have hbf : (val (pair (pair cBupd cBa) cBf) (Nat.pair inst (Nat.pair acc lit))).unpair.2
@@ -2631,13 +2422,13 @@ The output would be super-polynomial were `svCnt` free; it is not. Two facts clo
 
 /-- `Nat.pair` dominates the square of its right argument: `r² ≤ Nat.pair e r` (the pairing squares
 the max, and `r ≤ max e r`). -/
-theorem sq_le_pair_right (e r : ℕ) : r * r ≤ Nat.pair e r := by
+private theorem sq_le_pair_right (e r : ℕ) : r * r ≤ Nat.pair e r := by
   unfold Nat.pair; split_ifs with h
   · nlinarith
   · nlinarith [Nat.le_of_not_lt h]
 
 /-- A flag-cons cell dominates the FOURTH power of its tail: `r⁴ ≤ cons e r` (two nested squarings). -/
-theorem cons_ge_quad (e r : ℕ) : r * r * (r * r) ≤ Nat.pair 1 (Nat.pair e r) := by
+private theorem cons_ge_quad (e r : ℕ) : r * r * (r * r) ≤ Nat.pair 1 (Nat.pair e r) := by
   have h1 : Nat.pair e r * Nat.pair e r ≤ Nat.pair 1 (Nat.pair e r) := sq_le_pair_right 1 _
   have h2 : r * r ≤ Nat.pair e r := sq_le_pair_right e r
   calc r * r * (r * r) ≤ Nat.pair e r * Nat.pair e r := Nat.mul_le_mul h2 h2
@@ -2645,7 +2436,7 @@ theorem cons_ge_quad (e r : ℕ) : r * r * (r * r) ≤ Nat.pair 1 (Nat.pair e r)
 
 /-- Any flag-cons cell has value `≥ 2` (`pair 1 y ≥ 2`), so a genuine list value is `0` or `≥ 2` —
 never `1`. This rules out the sole exception to the `×2`-per-cell `Nat.size` growth. -/
-theorem two_le_pair_one (y : ℕ) : 2 ≤ Nat.pair 1 y := by
+private theorem two_le_pair_one (y : ℕ) : 2 ≤ Nat.pair 1 y := by
   unfold Nat.pair; split_ifs with h
   · nlinarith [h]
   · omega
@@ -2653,7 +2444,7 @@ theorem two_le_pair_one (y : ℕ) : 2 ≤ Nat.pair 1 y := by
 /-- **The exp-size growth step.** When the tail is a genuine list value (`0` or `≥ 2`), a flag-cons cell
 at least DOUBLES `Nat.size` (`+1`): `2·size r + 1 ≤ size (cons e r)`. The `r = 1` exception (where the
 squaring `1² = 1` stalls) cannot occur for a real list tail. -/
-theorem size_cons_ge (e r : ℕ) (hr : r = 0 ∨ 2 ≤ r) :
+private theorem size_cons_ge (e r : ℕ) (hr : r = 0 ∨ 2 ≤ r) :
     2 * Nat.size r + 1 ≤ Nat.size (Nat.pair 1 (Nat.pair e r)) := by
   rcases hr with hr | hr
   · subst hr
@@ -2677,11 +2468,11 @@ theorem size_cons_ge (e r : ℕ) (hr : r = 0 ∨ 2 ≤ r) :
 
 /-- **Exp-size LOWER bound (the instance pays for its length).** A length-`k` encoded list has
 `Nat.size ≥ k`-bits doubling per cell: `2^k ≤ size (encodeList xs) + 1`. This is what caps `svCnt`. -/
-theorem encodeList_zero_or_two_le : ∀ xs : List ℕ, encodeList xs = 0 ∨ 2 ≤ encodeList xs
+private theorem encodeList_zero_or_two_le : ∀ xs : List ℕ, encodeList xs = 0 ∨ 2 ≤ encodeList xs
   | [] => Or.inl rfl
   | (_ :: _) => Or.inr (two_le_pair_one _)
 
-theorem two_pow_length_le : ∀ xs : List ℕ, 2 ^ xs.length ≤ Nat.size (encodeList xs) + 1
+private theorem two_pow_length_le : ∀ xs : List ℕ, 2 ^ xs.length ≤ Nat.size (encodeList xs) + 1
   | [] => by simp [encodeList]
   | (x :: xs) => by
       have ih := two_pow_length_le xs
@@ -2693,7 +2484,7 @@ theorem two_pow_length_le : ∀ xs : List ℕ, 2 ^ xs.length ≤ Nat.size (encod
 /-- **Exp-size UPPER bound.** A length-`k` encoded list with every element `≤ V` has
 `Nat.size (encodeList xs) + (4·size V + 8) ≤ (4·size V + 8)·4^k` (the `+C` slack closes the induction:
 each cell at most quadruples `Nat.size`, via two `size_pair_le` steps). -/
-theorem size_encodeList_le (V : ℕ) : ∀ xs : List ℕ, (∀ e ∈ xs, e ≤ V) →
+private theorem size_encodeList_le (V : ℕ) : ∀ xs : List ℕ, (∀ e ∈ xs, e ≤ V) →
     Nat.size (encodeList xs) + (4 * Nat.size V + 8) ≤ (4 * Nat.size V + 8) * 4 ^ xs.length
   | [], _ => by simp [encodeList]
   | (x :: xs), h => by
@@ -2710,7 +2501,7 @@ theorem size_encodeList_le (V : ℕ) : ∀ xs : List ℕ, (∀ e ∈ xs, e ≤ V
 /-- **The instance PAYS for its length.** `2^(readM inst) ≤ Nat.size inst + 1` under binary
 well-formedness — the `readM inst` examples are stored in the (exp-size) flag-cons `readData`, so the
 input's bit-length already dominates `2^(readM)`. This is what caps `svCnt` exponentially. -/
-theorem two_pow_readM_le (inst : ℕ) (hw : WFBits inst) : 2 ^ readM inst ≤ Nat.size inst + 1 := by
+private theorem two_pow_readM_le (inst : ℕ) (hw : WFBits inst) : 2 ^ readM inst ≤ Nat.size inst + 1 := by
   obtain ⟨_hwf, exs, hdeq, hdlen, _, _⟩ := hw
   have h1 : 2 ^ exs.length ≤ Nat.size (encodeList exs) + 1 := two_pow_length_le exs
   rw [hdlen, ← hdeq] at h1
@@ -2722,7 +2513,7 @@ well-formed domain. The output DL is the reverse of the `dlModel` `List` — len
 element an `O(Nat.size n)`-bit triple. Its `Nat.size` is exponential in the length (`size_encodeList_le`
 gives `≤ (4·size V+8)·4^(svCnt)`), but `4^(svCnt) ≤ 4^(readM) = (2^readM)² ≤ (size n + 1)²` by the
 exp-lower bound `two_pow_readM_le`, so the whole output is a cubic in `Nat.size n`. -/
-theorem polyBoundedOn_size_solveVal :
+private theorem polyBoundedOn_size_solveVal :
     PolyBoundedOn SolveWF (fun n => Nat.size (solveVal n)) := by
   refine ⟨66, 3, fun n hn => ?_⟩
   obtain ⟨hw, hm0⟩ := hn
@@ -2788,7 +2579,7 @@ per-round budget is uniform over the visited rounds because the working mask sta
 fixed at the instance's. -/
 
 /-- The final read-out (`cReverse` of the built list) costs `O(svCnt)`. -/
-theorem tc_cAssemble_le (acc : ℕ) : tc cAssemble acc ≤ 41 * svCnt acc + 50 := by
+private theorem tc_cAssemble_le (acc : ℕ) : tc cAssemble acc ≤ 41 * svCnt acc + 50 := by
   have hval : val (pair (comp right right) (comp left right)) acc
       = Nat.pair (svDL acc) (svCnt acc) := by
     simp only [val_pair, val_comp, val_left, val_right, svDL, svCnt]
@@ -2800,7 +2591,7 @@ theorem tc_cAssemble_le (acc : ℕ) : tc cAssemble acc ≤ 41 * svCnt acc + 50 :
 
 /-- **The greedy round's native cost** = one `maskUpdate` + one `findLit` + `O(1)` (mux/pointer work).
 The `maskUpdate` is on the greedy literal's `packLit` query; `findLit` on the current-mask query. -/
-theorem tc_cSvStep_le (n i acc : ℕ) :
+private theorem tc_cSvStep_le (n i acc : ℕ) :
     tc cSvStep (Nat.pair n (Nat.pair i acc))
       ≤ tc cMaskUpdate (packLit (svInst n) (svMask acc)
           (flJ (findLitVal (Nat.pair (svInst n) (svMask acc))))
@@ -2824,7 +2615,7 @@ def Bsv (inst : ℕ) : ℕ := BsvMask inst + BsvFind inst + 341
 /-- **The round's `maskUpdate` cost is uniformly `≤ BsvMask (svInst n)`** on the visited rounds: the
 `packLit` query is `PurityWF` (`purityWF_packLit_findLit`, from the `MaskValid` invariant), and the
 found literal index `flJ ≤ readK`. -/
-theorem tc_cMaskUpdate_round (n i : ℕ) (hw : WFBits (svInst n))
+private theorem tc_cMaskUpdate_round (n i : ℕ) (hw : WFBits (svInst n))
     (hm : MaskValid (svMask (svAcc n i)) (readM (svInst n))) :
     tc cMaskUpdate (packLit (svInst n) (svMask (svAcc n i))
         (flJ (findLitVal (Nat.pair (svInst n) (svMask (svAcc n i)))))
@@ -2845,7 +2636,7 @@ theorem tc_cMaskUpdate_round (n i : ℕ) (hw : WFBits (svInst n))
 /-- **The round's `findLit` cost is uniformly `≤ BsvFind (svInst n)`** on the visited rounds: the
 current-mask query is `FindLitWF` (from the `MaskValid` invariant), so `tc_cFindLit_raw` applies with
 `readK`/`readM` fixed at the instance's. -/
-theorem tc_cFindLit_round (n i : ℕ) (hw : WFBits (svInst n))
+private theorem tc_cFindLit_round (n i : ℕ) (hw : WFBits (svInst n))
     (hm : MaskValid (svMask (svAcc n i)) (readM (svInst n))) :
     tc cFindLit (Nat.pair (svInst n) (svMask (svAcc n i))) ≤ BsvFind (svInst n) := by
   have hfi : flInst (Nat.pair (svInst n) (svMask (svAcc n i))) = svInst n := by
@@ -2867,7 +2658,7 @@ theorem tc_cFindLit_round (n i : ℕ) (hw : WFBits (svInst n))
 /-- **The per-visited-round bound.** On the well-formed domain every round `i < readM (svInst n)` costs
 `≤ Bsv (svInst n)`, uniformly — the `MaskValid` invariant (`maskValid_svAcc`) keeps each round's queries
 well-formed with `readK`/`readM` pinned to the instance's. -/
-theorem hSvStep_visited (n : ℕ) (hw : WFBits (svInst n))
+private theorem hSvStep_visited (n : ℕ) (hw : WFBits (svInst n))
     (hm0 : MaskValid (svMask0 n) (readM (svInst n))) :
     ∀ i, i < readM (svInst n) →
       tc cSvStep (Nat.pair n (Nat.pair i (val (prec cSvInit cSvStep) (Nat.pair n i))))
@@ -2910,7 +2701,7 @@ theorem tc_cSolve_raw (n : ℕ) (hw : WFBits (svInst n))
 
 /-- **`cSolve` is poly-time on the well-formed domain** — a quartic in `Nat.size n` (`k` rounds ×
 `O(m·k²)` per round). The raw `(Bsv+42)·m` bound is turned poly-bit by `readK,readM ≤ size n`. -/
-theorem polyBoundedOn_tc_cSolve : PolyBoundedOn SolveWF (tc cSolve) := by
+private theorem polyBoundedOn_tc_cSolve : PolyBoundedOn SolveWF (tc cSolve) := by
   refine ⟨19777, 4, fun n hn => ?_⟩
   obtain ⟨hw, hm0⟩ := hn
   have hwf : WF (svInst n) := hw.1
@@ -2927,21 +2718,21 @@ theorem polyBoundedOn_tc_cSolve : PolyBoundedOn SolveWF (tc cSolve) := by
 
 /-! ### `rfind'`-freeness of the `solve` code (structural — every atom is a bounded loop) -/
 
-theorem rfindFree_cSvA : RfindFree cSvA := by
+private theorem rfindFree_cSvA : RfindFree cSvA := by
   simp only [cSvA, cSinst, cSacc, cSmask, RfindFree, rfindFree_cFindLit, and_self]
-theorem rfindFree_cSvB : RfindFree cSvB := by
+private theorem rfindFree_cSvB : RfindFree cSvB := by
   simp only [cSvB, cBupd, cBa, cBf, cBmu, cBi, cBm, cBj, cBp, cBcnt, cBcntsucc, cBcons, cBtriple,
     cBdl, cBlbl, cBl, RfindFree, rfindFree_cMaskUpdate, rfindFree_cMux, constCode, and_self]
-theorem rfindFree_cSvStep : RfindFree cSvStep := ⟨rfindFree_cSvB, rfindFree_cSvA⟩
-theorem rfindFree_cSvInit : RfindFree cSvInit := by
+private theorem rfindFree_cSvStep : RfindFree cSvStep := ⟨rfindFree_cSvB, rfindFree_cSvA⟩
+private theorem rfindFree_cSvInit : RfindFree cSvInit := by
   simp only [cSvInit, RfindFree, and_self]
-theorem rfindFree_cSvCount : RfindFree cSvCount := by
+private theorem rfindFree_cSvCount : RfindFree cSvCount := by
   simp only [cSvCount, cReadM, RfindFree, and_self]
-theorem rfindFree_cSvLoop : RfindFree cSvLoop :=
+private theorem rfindFree_cSvLoop : RfindFree cSvLoop :=
   ⟨⟨rfindFree_cSvInit, rfindFree_cSvStep⟩, rfindFree_cId, rfindFree_cSvCount⟩
-theorem rfindFree_cAssemble : RfindFree cAssemble := by
+private theorem rfindFree_cAssemble : RfindFree cAssemble := by
   simp only [cAssemble, RfindFree, rfindFree_cReverse, and_self]
-theorem rfindFree_cSolve : RfindFree cSolve := ⟨rfindFree_cAssemble, rfindFree_cSvLoop⟩
+private theorem rfindFree_cSolve : RfindFree cSolve := ⟨rfindFree_cAssemble, rfindFree_cSvLoop⟩
 
 /-- **`polyTime_solve`.** The greedy 1-DL consistency solver is poly-time on the honest well-formed
 domain `SolveWF` — `O(m²·k²)` native cost, output a poly-bit decision list. No `PolyBounded`
@@ -2969,10 +2760,10 @@ def ruleL (r : ℕ) : ℕ := r.unpair.2.unpair.2
 
 /-- Field projections of a literal triple, over VARIABLE fields — apply by `rw` to avoid `simp`'s
 `Nat.unpair_pair` scanning into (and `whnf`-descending) a symbolic `findLitVal` field. -/
-theorem ruleJ_pair (a b : ℕ) : ruleJ (Nat.pair a b) = a := by simp only [ruleJ, Nat.unpair_pair]
-theorem ruleP_pair (a p l : ℕ) : ruleP (Nat.pair a (Nat.pair p l)) = p := by
+private theorem ruleJ_pair (a b : ℕ) : ruleJ (Nat.pair a b) = a := by simp only [ruleJ, Nat.unpair_pair]
+private theorem ruleP_pair (a p l : ℕ) : ruleP (Nat.pair a (Nat.pair p l)) = p := by
   simp only [ruleP, Nat.unpair_pair]
-theorem ruleL_pair (a p l : ℕ) : ruleL (Nat.pair a (Nat.pair p l)) = l := by
+private theorem ruleL_pair (a p l : ℕ) : ruleL (Nat.pair a (Nat.pair p l)) = l := by
   simp only [ruleL, Nat.unpair_pair]
 
 /-- **1-DL evaluation** (first-match). `evalDLn rules default e` = the label of the first rule that
@@ -2983,7 +2774,7 @@ def evalDLn : List ℕ → ℕ → ℕ → ℕ
   | r :: rs, d, e => if bEq (featOf e (ruleJ r)) (ruleP r) = 0 then evalDLn rs d e else ruleL r
 
 /-- Some rule of `D` fires on `e`. -/
-def firesN (D : List ℕ) (e : ℕ) : Prop := ∃ r ∈ D, bEq (featOf e (ruleJ r)) (ruleP r) ≠ 0
+private def firesN (D : List ℕ) (e : ℕ) : Prop := ∃ r ∈ D, bEq (featOf e (ruleJ r)) (ruleP r) ≠ 0
 
 /-- **Consistency.** Every example is classified to its own label by the DL. -/
 def Consistent (rules : List ℕ) (d : ℕ) (exs : List ℕ) : Prop :=
@@ -2998,14 +2789,14 @@ def ExistsConsistentDL (inst : ℕ) (exs : List ℕ) : Prop :=
 
 /-- **The append/fold law.** Scanning `D ++ E` = scan `D`, falling through to `evalDLn E` as its
 default (the first firing rule wins). -/
-theorem evalDLn_append (D E : List ℕ) (d e : ℕ) :
+private theorem evalDLn_append (D E : List ℕ) (d e : ℕ) :
     evalDLn (D ++ E) d e = evalDLn D (evalDLn E d e) e := by
   induction D with
   | nil => rfl
   | cons r rs ih => simp only [List.cons_append, evalDLn, ih]
 
 /-- No firing rule ⇒ evaluation falls to the default. -/
-theorem evalDLn_not_fires (D : List ℕ) (d e : ℕ)
+private theorem evalDLn_not_fires (D : List ℕ) (d e : ℕ)
     (h : ∀ r ∈ D, bEq (featOf e (ruleJ r)) (ruleP r) = 0) : evalDLn D d e = d := by
   induction D with
   | nil => rfl
@@ -3014,7 +2805,7 @@ theorem evalDLn_not_fires (D : List ℕ) (d e : ℕ)
       exact ih (fun r' hr' => h r' (List.mem_cons_of_mem _ hr'))
 
 /-- A firing rule makes evaluation default-independent. -/
-theorem evalDLn_fires_const (D : List ℕ) (d1 d2 e : ℕ) (h : firesN D e) :
+private theorem evalDLn_fires_const (D : List ℕ) (d1 d2 e : ℕ) (h : firesN D e) :
     evalDLn D d1 e = evalDLn D d2 e := by
   induction D with
   | nil => obtain ⟨r, hr, _⟩ := h; simp at hr
@@ -3032,7 +2823,7 @@ theorem evalDLn_fires_const (D : List ℕ) (d1 d2 e : ℕ) (h : firesN D e) :
 /-- **Semantic ⇒ `coverLit`.** A literal `(j,p)` that covers ≥1 remaining example and is pure (no
 covered-0/covered-1 split) has `coverLit ≠ 0` (so `findLit` will fire). Via `purity_isPure_iff`/
 `purity_sawAny` on the `packLit` query. -/
-theorem coverLit_of_semantic (inst mask j p : ℕ) (msks exs : List ℕ)
+private theorem coverLit_of_semantic (inst mask j p : ℕ) (msks exs : List ℕ)
     (hmeq : mask = encodeList msks) (hdeq : readData inst = encodeList exs)
     (hcount : readM inst = exs.length) (hlen : msks.length = exs.length)
     (hcov : ∃ be ∈ msks.zip exs, Covered j p be)
@@ -3055,7 +2846,7 @@ theorem coverLit_of_semantic (inst mask j p : ℕ) (msks exs : List ℕ)
 
 /-- **`coverLit` ⇒ every covered example carries the recorded `litLabel`.** The purity split means all
 covered remaining examples share one label, which is exactly `litLabel` (= `commonLabel`). -/
-theorem covered_lbl_eq_litLabel (inst mask j p : ℕ) (msks exs : List ℕ)
+private theorem covered_lbl_eq_litLabel (inst mask j p : ℕ) (msks exs : List ℕ)
     (hmeq : mask = encodeList msks) (hdeq : readData inst = encodeList exs)
     (hcount : readM inst = exs.length) (hlen : msks.length = exs.length)
     (hlbl1 : ∀ e ∈ exs, lblOf e ≤ 1)
@@ -3087,14 +2878,14 @@ theorem covered_lbl_eq_litLabel (inst mask j p : ℕ) (msks exs : List ℕ)
 /-! ### Engine Lemma 1 — PROGRESS -/
 
 /-- `bEq a a = 1` (reflexivity of the bit-equality gate). -/
-theorem bEq_self (a : ℕ) : bEq a a = 1 := by unfold bEq; split_ifs <;> simp_all
+private theorem bEq_self (a : ℕ) : bEq a a = 1 := by unfold bEq; split_ifs <;> simp_all
 /-- On bits, `bEq ≠ 0` is genuine equality. -/
-theorem bEq_ne_zero_bits (a b : ℕ) (ha : a ≤ 1) (hb : b ≤ 1) : bEq a b ≠ 0 ↔ a = b := by
+private theorem bEq_ne_zero_bits (a b : ℕ) (ha : a ≤ 1) (hb : b ≤ 1) : bEq a b ≠ 0 ↔ a = b := by
   unfold bEq; split_ifs with h1 h2 h2 <;> omega
 
 /-- **First satisfying element (list order).** If some element of `l` satisfies `P`, then `l` splits as
 `pre ++ x :: suf` with `P x` and no element of `pre` satisfying `P` — the FIRST satisfier. -/
-theorem exists_first_split {α} (P : α → Prop) :
+private theorem exists_first_split {α} (P : α → Prop) :
     ∀ (l : List α), (∃ x ∈ l, P x) →
       ∃ (pre : List α) (x : α) (suf : List α), l = pre ++ x :: suf ∧ P x ∧ ∀ y ∈ pre, ¬ P y := by
   intro l
@@ -3187,7 +2978,7 @@ rule of `D`. The firing-step is factored as `corrInvD_fire` with the literal `(j
 tactic ever `whnf`-descends the symbolic `findLitVal` (the opaque-verdict convention: folded verdicts stay symbolic behind an opaque literal). -/
 
 /-- The per-round correctness invariant on `(forward DL D, working mask M)`. -/
-def CorrInvD (inst : ℕ) (D : List ℕ) (M : ℕ) : Prop :=
+private def CorrInvD (inst : ℕ) (D : List ℕ) (M : ℕ) : Prop :=
   ∀ i, i < readM inst →
     (headL (peel M i) = 0 →
       firesN D (headL (peel (readData inst) i)) ∧
@@ -3196,7 +2987,7 @@ def CorrInvD (inst : ℕ) (D : List ℕ) (M : ℕ) : Prop :=
 
 /-- **The firing-round step.** Appending the greedy round's covering-pure rule `⟨j,⟨p,l⟩⟩` and refining
 the mask preserves `CorrInvD`. Abstract `j,p,l` (the caller supplies `flJ/flP/flL` of the literal). -/
-theorem corrInvD_fire (inst : ℕ) (hw : WFBits inst) (M : ℕ) (hm : MaskValid M (readM inst))
+private theorem corrInvD_fire (inst : ℕ) (hw : WFBits inst) (M : ℕ) (hm : MaskValid M (readM inst))
     (j p l : ℕ) (hcov : coverLit inst M j p ≠ 0) (hl : l = litLabel inst M j p)
     (D : List ℕ) (hinv : CorrInvD inst D M) :
     CorrInvD inst (D ++ [Nat.pair j (Nat.pair p l)]) (maskUpdate inst M j p) := by
@@ -3274,7 +3065,7 @@ theorem corrInvD_fire (inst : ℕ) (hw : WFBits inst) (M : ℕ) (hm : MaskValid 
 the working mask `svMask (svAcc n t)` satisfy `CorrInvD` — provided the loop STARTED from the all-ones
 mask (every example initially remaining). Induction: no-op rounds carry it, firing rounds apply
 `corrInvD_fire`. -/
-theorem corrInv (n : ℕ) (hw : WFBits (svInst n))
+private theorem corrInv (n : ℕ) (hw : WFBits (svInst n))
     (hm0 : MaskValid (svMask0 n) (readM (svInst n)))
     (hone : svMask0 n = encodeList (List.replicate (readM (svInst n)) 1)) :
     ∀ t, ∃ D : List ℕ, svDL (svAcc n t) = encodeList D.reverse ∧
@@ -3362,13 +3153,13 @@ From the all-ones mask (`activeCount = m`), after `m` rounds the count is `0`, i
 converse is Engine Lemma 2 (`output_consistent`). Packaged as `solve_decides`. -/
 
 /-- `Nat.pair` is injective in both arguments (read off by `unpair`). -/
-theorem pair_inj {a b c d : ℕ} (h : Nat.pair a b = Nat.pair c d) : a = c ∧ b = d := by
+private theorem pair_inj {a b c d : ℕ} (h : Nat.pair a b = Nat.pair c d) : a = c ∧ b = d := by
   have h' := congrArg Nat.unpair h
   rwa [Nat.unpair_pair, Nat.unpair_pair, Prod.mk.injEq] at h'
 
 /-- `encodeList` is injective (flag-cons cells are `Nat.pair`-rigid), so the well-formed example list is
 unique — lets us transport `WFBits`'s feature/label facts onto any `readData = encodeList exs`. -/
-theorem encodeList_inj : ∀ a b : List ℕ, encodeList a = encodeList b → a = b := by
+private theorem encodeList_inj : ∀ a b : List ℕ, encodeList a = encodeList b → a = b := by
   intro a
   induction a with
   | nil =>
@@ -3398,13 +3189,13 @@ theorem encodeList_inj : ∀ a b : List ℕ, encodeList a = encodeList b → a =
 def activeCount (M m : ℕ) : ℕ := ∑ i ∈ Finset.range m, headL (peel M i)
 
 /-- Zero active count ⇒ the mask is empty on every visited slot. -/
-theorem allZero_of_activeCount_zero (M m : ℕ) (h : activeCount M m = 0) :
+private theorem allZero_of_activeCount_zero (M m : ℕ) (h : activeCount M m = 0) :
     ∀ i, i < m → headL (peel M i) = 0 := by
   intro i hi
   exact (Finset.sum_eq_zero_iff.mp h) i (Finset.mem_range.mpr hi)
 
 /-- The initial (all-ones) mask has full active count `m`. -/
-theorem activeCount_all_ones (n : ℕ)
+private theorem activeCount_all_ones (n : ℕ)
     (hone : svMask0 n = encodeList (List.replicate (readM (svInst n)) 1)) :
     activeCount (svMask (svAcc n 0)) (readM (svInst n)) = readM (svInst n) := by
   unfold activeCount
@@ -3419,7 +3210,7 @@ theorem activeCount_all_ones (n : ℕ)
   simp
 
 /-- **SHRINK.** A firing round zeroes ≥1 active bit, so `activeCount` strictly decreases. -/
-theorem activeCount_fire_lt (n t : ℕ) (hw : WFBits (svInst n))
+private theorem activeCount_fire_lt (n t : ℕ) (hw : WFBits (svInst n))
     (hm0 : MaskValid (svMask0 n) (readM (svInst n)))
     (hfire : flFound (findLitVal (Nat.pair (svInst n) (svMask (svAcc n t)))) ≠ 0) :
     activeCount (svMask (svAcc n (t + 1))) (readM (svInst n))
@@ -3479,7 +3270,7 @@ theorem activeCount_fire_lt (n t : ℕ) (hw : WFBits (svInst n))
     omega
 
 /-- An empty mask cannot fire: no active example ⇒ no covering literal ⇒ `findLit` returns `found = 0`. -/
-theorem not_fire_of_allZero (n t : ℕ) (hw : WFBits (svInst n))
+private theorem not_fire_of_allZero (n t : ℕ) (hw : WFBits (svInst n))
     (hm0 : MaskValid (svMask0 n) (readM (svInst n)))
     (hz : ∀ i, i < readM (svInst n) → headL (peel (svMask (svAcc n t)) i) = 0) :
     flFound (findLitVal (Nat.pair (svInst n) (svMask (svAcc n t)))) = 0 := by
@@ -3511,7 +3302,7 @@ theorem not_fire_of_allZero (n t : ℕ) (hw : WFBits (svInst n))
 
 /-- **PROGRESS.** While some example is still active, a consistent 1-DL forces a covering-pure literal, so
 the round fires. Bridges `progress` (which yields a bit `p ≤ 1`) to `findLit_found_iff`. -/
-theorem fire_of_active (n t : ℕ) (hw : WFBits (svInst n)) (hk : 0 < readK (svInst n))
+private theorem fire_of_active (n t : ℕ) (hw : WFBits (svInst n)) (hk : 0 < readK (svInst n))
     (hm0 : MaskValid (svMask0 n) (readM (svInst n)))
     (exs : List ℕ) (hdeq : readData (svInst n) = encodeList exs)
     (hdlen : exs.length = readM (svInst n))

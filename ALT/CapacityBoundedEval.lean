@@ -5,7 +5,7 @@ Authors: Mykola Palamarchuk
 -/
 import ALT.TimeCost
 import ALT.SearchSpace
-import ALT.CheckerScratch
+import ALT.CheckerWorkspace
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -48,10 +48,10 @@ honestly — the answer it forms is inside its `max` — so `size_valW_le` is un
 ## The grade arithmetic
 Reading `S` as a capacity grade, the laws compute the grade of a composite from the grades of its
 parts: composition is graded by `max S S'` and pairing by `2 * S`, the factor `2` being the price of
-Cantor square pairing (`CheckerScratch.size_pair_le`, where the constant is attained). Grade closure
-is then immediate where the two grades agree: **a realizer within grade `S` fed a value produced
-within grade `S` runs within the `S`-bit workspace** (`spaceCost_comp_within`) — the "runs within
-`{0,1}^{|s_work|}`" shape §4.5 asks for, with no growth across composition.
+Cantor square pairing (`CodeSizeArith.size_pair_le_max`, where the constant is attained). Grade
+closure is then immediate where the two grades agree: **a realizer within grade `S` fed a value
+produced within grade `S` runs within the `S`-bit workspace** (`spaceCost_comp_within`) — the
+"runs within `{0,1}^{|s_work|}`" shape §4.5 asks for, with no growth across composition.
 
 No grade *predicate* and no graded representation is introduced here: these are flat bound laws
 about `spaceCost`. Packaging grades into a structure belongs with the graded category itself, and is
@@ -199,7 +199,7 @@ theorem spaceCost_comp_le {f g : Code} {n S S' : ℕ} (hg : RfindFree g)
 /-- **The pairing law.** If both components run within `S` on `n`, then `pair f g` runs within
 `2 * S`. The factor `2` is not slack in the argument but the price of the packing: `Nat.pair` is
 Cantor square pairing, whose result can be twice as wide as its wider component
-(`CheckerScratch.size_pair_le`, with the constant attained at `Nat.pair 1 0`). The two
+(`CodeSizeArith.size_pair_le_max`, with the constant attained at `Nat.pair 1 0`). The two
 sub-workspaces themselves contribute only `S`; the doubling is entirely the cost of *holding the
 pair*. -/
 theorem spaceCost_pair_le {f g : Code} {n S : ℕ} (hf : RfindFree f) (hg : RfindFree g)
@@ -207,7 +207,7 @@ theorem spaceCost_pair_le {f g : Code} {n S : ℕ} (hf : RfindFree f) (hg : Rfin
     spaceCost (pair f g) n ≤ 2 * S := by
   rw [spaceCost_pair]
   refine max_le (max_le (by omega) (by omega)) ?_
-  have hp := CheckerScratch.size_pair_le (val f n) (val g n)
+  have hp := CodeSizeArith.size_pair_le_max (val f n) (val g n)
   have hmax : max (Nat.size (val f n)) (Nat.size (val g n)) ≤ S :=
     max_le (le_trans (size_val_le_spaceCost hf n) hfn)
       (le_trans (size_val_le_spaceCost hg n) hgn)

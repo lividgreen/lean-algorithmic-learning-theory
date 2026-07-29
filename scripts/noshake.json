@@ -57,6 +57,9 @@
     "ALT.ParityCounterexample": [
       "Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics"
     ],
+    "ALT.ParityWalk": [
+      "Mathlib.Probability.Independence.ZeroOne"
+    ],
     "ALT.PersistenceCapacity": [
       "Mathlib.Data.Finite.Perm",
       "Mathlib.Data.List.GetD",

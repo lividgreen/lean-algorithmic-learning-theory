@@ -3,6 +3,7 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
+import ALT.Code.SizeArith
 import ALT.TimeCost
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.Data.Nat.Size
@@ -37,6 +38,7 @@ namespace TimeCost
 
 open Nat.Partrec (Code)
 open Nat.Partrec.Code
+open CodeSizeArith
 
 /-! ## `val` of the base codes (for the base `PolyTime` witnesses) -/
 
@@ -45,7 +47,7 @@ theorem val_succ (n : ℕ) : val succ n = n + 1 := rfl
 theorem val_left (n : ℕ) : val left n = n.unpair.1 := rfl
 theorem val_right (n : ℕ) : val right n = n.unpair.2 := rfl
 
-/-! ## Two `Nat.size` facts the output-size bounds need -/
+/-! ## The `Nat.size` fact the output-size bounds need beyond `ALT.Code.SizeArith` -/
 
 /-- `Nat.size (n+1) ≤ Nat.size n + 1`: incrementing lengthens by at most one bit. -/
 theorem size_succ_le (n : ℕ) : Nat.size (n + 1) ≤ Nat.size n + 1 := by
@@ -54,29 +56,6 @@ theorem size_succ_le (n : ℕ) : Nat.size (n + 1) ≤ Nat.size n + 1 := by
   have hpos : 0 < 2 ^ Nat.size n := by positivity
   calc n + 1 ≤ 2 ^ Nat.size n := h
     _ < 2 ^ (Nat.size n + 1) := by rw [pow_succ]; omega
-
-/-- `Nat.size (Nat.pair a b) ≤ 2·Nat.size a + 2·Nat.size b + 2`: the pairing's output bit-length is
-linear in the inputs' bit-lengths (so pairing preserves poly output size). -/
-theorem size_pair_le (a b : ℕ) :
-    Nat.size (Nat.pair a b) ≤ 2 * Nat.size a + 2 * Nat.size b + 2 := by
-  rw [Nat.size_le]
-  have ha : a < 2 ^ Nat.size a := Nat.lt_size_self a
-  have hb : b < 2 ^ Nat.size b := Nat.lt_size_self b
-  have hpair : Nat.pair a b ≤ (a + b + 1) ^ 2 := by
-    unfold Nat.pair; split_ifs <;> nlinarith
-  have hab : a + b + 1 < 2 ^ (Nat.size a + Nat.size b + 1) := by
-    have e1 : (2 : ℕ) ^ Nat.size a ≤ 2 ^ (Nat.size a + Nat.size b) :=
-      Nat.pow_le_pow_right (by norm_num) (Nat.le_add_right _ _)
-    have e2 : (2 : ℕ) ^ Nat.size b ≤ 2 ^ (Nat.size a + Nat.size b) :=
-      Nat.pow_le_pow_right (by norm_num) (Nat.le_add_left _ _)
-    have e3 : (2 : ℕ) ^ (Nat.size a + Nat.size b + 1)
-        = 2 ^ (Nat.size a + Nat.size b) + 2 ^ (Nat.size a + Nat.size b) := by
-      rw [pow_succ]; ring
-    omega
-  calc Nat.pair a b ≤ (a + b + 1) ^ 2 := hpair
-    _ < (2 ^ (Nat.size a + Nat.size b + 1)) ^ 2 := by
-        exact Nat.pow_lt_pow_left hab (by norm_num)
-    _ = 2 ^ (2 * Nat.size a + 2 * Nat.size b + 2) := by rw [← pow_mul]; ring_nf
 
 /-! ## `PolyBounded` — the poly-in-input-bit-length function algebra -/
 

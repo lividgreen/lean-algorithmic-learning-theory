@@ -55,6 +55,7 @@ namespace TimeCost
 
 open Nat.Partrec (Code)
 open Nat.Partrec.Code
+open CodeEvalLaws
 
 /-! ## The probe-workspace accumulator -/
 

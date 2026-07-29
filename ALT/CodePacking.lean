@@ -32,42 +32,43 @@ open Nat.Partrec (Code)
 open Nat.Partrec.Code
 open TimeCost
 open CodeArith
+open CodeSizeArith
 
 /-! ## Reading a configuration -/
 
 /-- The configuration's mode. -/
-def cCfMode : Code := left
+private def cCfMode : Code := left
 
-@[simp] theorem val_cCfMode (s : ℕ) : val cCfMode s = BoundedInterp.cfMode s := rfl
+@[simp] private theorem val_cCfMode (s : ℕ) : val cCfMode s = BoundedInterp.cfMode s := rfl
 
 /-- The configuration's current object. -/
-def cCfCur : Code := comp left right
+private def cCfCur : Code := comp left right
 
-@[simp] theorem val_cCfCur (s : ℕ) : val cCfCur s = BoundedInterp.cfCur s := rfl
+@[simp] private theorem val_cCfCur (s : ℕ) : val cCfCur s = BoundedInterp.cfCur s := rfl
 
 /-- The configuration's stack. -/
-def cCfStk : Code := comp right right
+private def cCfStk : Code := comp right right
 
-@[simp] theorem val_cCfStk (s : ℕ) : val cCfStk s = BoundedInterp.cfStk s := rfl
+@[simp] private theorem val_cCfStk (s : ℕ) : val cCfStk s = BoundedInterp.cfStk s := rfl
 
-theorem rfindFree_cCfMode : RfindFree cCfMode := trivial
-theorem rfindFree_cCfCur : RfindFree cCfCur := ⟨trivial, trivial⟩
-theorem rfindFree_cCfStk : RfindFree cCfStk := ⟨trivial, trivial⟩
+private theorem rfindFree_cCfMode : RfindFree cCfMode := trivial
+private theorem rfindFree_cCfCur : RfindFree cCfCur := ⟨trivial, trivial⟩
+private theorem rfindFree_cCfStk : RfindFree cCfStk := ⟨trivial, trivial⟩
 
 /-! ## Reading a frame -/
 
 /-- A frame's tag. -/
-def cFrTag : Code := left
+private def cFrTag : Code := left
 
-@[simp] theorem val_cFrTag (f : ℕ) : val cFrTag f = BoundedInterp.frTag f := rfl
+@[simp] private theorem val_cFrTag (f : ℕ) : val cFrTag f = BoundedInterp.frTag f := rfl
 
 /-- A frame's payload. -/
-def cFrPay : Code := right
+private def cFrPay : Code := right
 
-@[simp] theorem val_cFrPay (f : ℕ) : val cFrPay f = BoundedInterp.frPay f := rfl
+@[simp] private theorem val_cFrPay (f : ℕ) : val cFrPay f = BoundedInterp.frPay f := rfl
 
-theorem rfindFree_cFrTag : RfindFree cFrTag := trivial
-theorem rfindFree_cFrPay : RfindFree cFrPay := trivial
+private theorem rfindFree_cFrTag : RfindFree cFrTag := trivial
+private theorem rfindFree_cFrPay : RfindFree cFrPay := trivial
 
 /-! ## Building a configuration
 
@@ -76,33 +77,33 @@ a returning configuration from `⟨v, k⟩`, a descending one from `⟨c, ⟨n, 
 `⟨tag, payload⟩`. -/
 
 /-- A frame, from `⟨tag, payload⟩` — the identity, since a frame *is* that pair. -/
-def cFrame : Code := cId
+private def cFrame : Code := cId
 
-@[simp] theorem val_cFrame (tg pay : ℕ) :
+@[simp] private theorem val_cFrame (tg pay : ℕ) :
     val cFrame (Nat.pair tg pay) = BoundedInterp.frame tg pay := by
   rw [cFrame, val_cId, BoundedInterp.frame]
 
-theorem rfindFree_cFrame : RfindFree cFrame := rfindFree_cId
+private theorem rfindFree_cFrame : RfindFree cFrame := rfindFree_cId
 
 /-- A returning configuration, from `⟨v, k⟩`. -/
-def cRet : Code := pair (constCode 1) cId
+private def cRet : Code := pair (constCode 1) cId
 
-@[simp] theorem val_cRet (v k : ℕ) : val cRet (Nat.pair v k) = BoundedInterp.ret v k := by
+@[simp] private theorem val_cRet (v k : ℕ) : val cRet (Nat.pair v k) = BoundedInterp.ret v k := by
   rw [cRet, val_pair, val_constCode, val_cId, BoundedInterp.ret, BoundedInterp.config]
 
-theorem rfindFree_cRet : RfindFree cRet := ⟨rfindFree_constCode 1, rfindFree_cId⟩
+private theorem rfindFree_cRet : RfindFree cRet := ⟨rfindFree_constCode 1, rfindFree_cId⟩
 
 /-- A descending configuration, from `⟨c, ⟨n, k⟩⟩`. -/
-def cDescend : Code :=
+private def cDescend : Code :=
   pair zero (pair (pair left (comp left right)) (comp right right))
 
-@[simp] theorem val_cDescend (c n k : ℕ) :
+@[simp] private theorem val_cDescend (c n k : ℕ) :
     val cDescend (Nat.pair c (Nat.pair n k)) = BoundedInterp.descend c n k := by
   rw [cDescend, val_pair, val_pair, val_pair, val_comp, val_comp, val_zero', val_left',
     val_left', val_right', val_right', Nat.unpair_pair, Nat.unpair_pair,
     BoundedInterp.descend, BoundedInterp.config]
 
-theorem rfindFree_cDescend : RfindFree cDescend :=
+private theorem rfindFree_cDescend : RfindFree cDescend :=
   ⟨trivial, ⟨trivial, trivial, trivial⟩, trivial, trivial⟩
 
 /-! ## The halt value
@@ -112,11 +113,11 @@ The halt *test* compares the mode and the stack against constants and so belongs
 arithmetic layer, not here. -/
 
 /-- The answer of a halted configuration. -/
-def cHaltVal : Code := cCfCur
+private def cHaltVal : Code := cCfCur
 
-@[simp] theorem val_cHaltVal (s : ℕ) : val cHaltVal s = BoundedInterp.haltVal s := rfl
+@[simp] private theorem val_cHaltVal (s : ℕ) : val cHaltVal s = BoundedInterp.haltVal s := rfl
 
-theorem rfindFree_cHaltVal : RfindFree cHaltVal := rfindFree_cCfCur
+private theorem rfindFree_cHaltVal : RfindFree cHaltVal := rfindFree_cCfCur
 
 /-! ## The stack cell's packing
 
@@ -126,24 +127,24 @@ remainder to undo them. Every code below is a composition of the arithmetic laye
 projections above, and every value law is the corresponding `BoundedInterp` definition. -/
 
 /-- The width a frame occupies in a cell. -/
-def cFrameBits : Code := cSize
+private def cFrameBits : Code := cSize
 
-@[simp] theorem val_cFrameBits (f : ℕ) : val cFrameBits f = BoundedInterp.frameBits f := by
+@[simp] private theorem val_cFrameBits (f : ℕ) : val cFrameBits f = BoundedInterp.frameBits f := by
   rw [cFrameBits, val_cSize, BoundedInterp.frameBits]
 
-theorem rfindFree_cFrameBits : RfindFree cFrameBits := rfindFree_cSize
+private theorem rfindFree_cFrameBits : RfindFree cFrameBits := rfindFree_cSize
 
 /-- `2 ^ (frameBits f)`, from `⟨f, k⟩`. -/
-def cP0 : Code := comp cPow2 (comp cFrameBits left)
+private def cP0 : Code := comp cPow2 (comp cFrameBits left)
 
 /-- `2 ^ (frameBits f + 1)`, from `⟨f, k⟩`. -/
-def cP1 : Code := comp cPow2 (comp succ (comp cFrameBits left))
+private def cP1 : Code := comp cPow2 (comp succ (comp cFrameBits left))
 
 /-- `2 ^ (2 * frameBits f + 1)`, from `⟨f, k⟩`. -/
-def cP2 : Code := comp cPow2 (comp succ (comp cDbl (comp cFrameBits left)))
+private def cP2 : Code := comp cPow2 (comp succ (comp cDbl (comp cFrameBits left)))
 
 /-- A stack cell, from `⟨f, k⟩`. -/
-def cStkCons : Code :=
+private def cStkCons : Code :=
   comp succ (comp cDbl
     (comp cAdd (pair
       (comp cAdd (pair
@@ -151,22 +152,22 @@ def cStkCons : Code :=
         (comp cMul (pair left cP1))))
       (comp cMul (pair right cP2)))))
 
-@[simp] theorem val_cStkCons (f k : ℕ) :
+@[simp] private theorem val_cStkCons (f k : ℕ) :
     val cStkCons (Nat.pair f k) = BoundedInterp.stkCons f k := by
   simp only [cStkCons, cP0, cP1, cP2, val_comp, val_pair, val_left', val_right', val_succ',
     val_cDbl, val_cAdd, val_cSub, val_cMul, val_cPow2, val_cFrameBits, val_constCode,
     Nat.unpair_pair, BoundedInterp.stkCons, BoundedInterp.frameBits]
 
-theorem rfindFree_cP0 : RfindFree cP0 :=
+private theorem rfindFree_cP0 : RfindFree cP0 :=
   ⟨rfindFree_cPow2, rfindFree_cFrameBits, trivial⟩
 
-theorem rfindFree_cP1 : RfindFree cP1 :=
+private theorem rfindFree_cP1 : RfindFree cP1 :=
   ⟨rfindFree_cPow2, trivial, rfindFree_cFrameBits, trivial⟩
 
-theorem rfindFree_cP2 : RfindFree cP2 :=
+private theorem rfindFree_cP2 : RfindFree cP2 :=
   ⟨rfindFree_cPow2, trivial, rfindFree_cDbl, rfindFree_cFrameBits, trivial⟩
 
-theorem rfindFree_cStkCons : RfindFree cStkCons :=
+private theorem rfindFree_cStkCons : RfindFree cStkCons :=
   ⟨trivial, rfindFree_cDbl,
     rfindFree_cAdd,
     ⟨rfindFree_cAdd, ⟨rfindFree_cSub, rfindFree_cP0, rfindFree_constCode 1⟩,
@@ -174,12 +175,12 @@ theorem rfindFree_cStkCons : RfindFree cStkCons :=
     rfindFree_cMul, trivial, rfindFree_cP2⟩
 
 /-- A cell with its flag bit removed. -/
-def cStkBody : Code := comp cDiv (pair cId (constCode 2))
+private def cStkBody : Code := comp cDiv (pair cId (constCode 2))
 
-@[simp] theorem val_cStkBody (s : ℕ) : val cStkBody s = BoundedInterp.stkBody s := by
+@[simp] private theorem val_cStkBody (s : ℕ) : val cStkBody s = BoundedInterp.stkBody s := by
   rw [cStkBody, val_comp, val_pair, val_cId, val_constCode, val_cDiv, BoundedInterp.stkBody]
 
-theorem rfindFree_cStkBody : RfindFree cStkBody :=
+private theorem rfindFree_cStkBody : RfindFree cStkBody :=
   ⟨rfindFree_cDiv, rfindFree_cId, rfindFree_constCode 2⟩
 
 /-! ### The header's length
@@ -189,15 +190,15 @@ The fold raises its accumulator while the bottom `acc + 1` bits are all ones, wh
 `min (trailOnes n) m`, exactly as the bit-length fold does. -/
 
 /-- `2 ^ (acc + 1)` inside the header fold. -/
-def cHdrPow : Code := comp cPow2 (comp succ cAcc)
+private def cHdrPow : Code := comp cPow2 (comp succ cAcc)
 
 /-- The header fold's step: raise the accumulator while the bottom bits are all ones. -/
-def trailStep : Code :=
+private def trailStep : Code :=
   comp cIte (pair
     (comp cEq (pair (comp cMod (pair left cHdrPow)) (comp cSub (pair cHdrPow (constCode 1)))))
     (pair (comp succ cAcc) cAcc))
 
-theorem val_trailStep (a y m : ℕ) :
+private theorem val_trailStep (a y m : ℕ) :
     val trailStep (Nat.pair a (Nat.pair y m))
       = if a % 2 ^ (m + 1) = 2 ^ (m + 1) - 1 then m + 1 else m := by
   simp only [trailStep, cHdrPow, val_comp, val_pair, val_left', val_succ', val_cAcc, val_cPow2,
@@ -205,9 +206,9 @@ theorem val_trailStep (a y m : ℕ) :
   by_cases h : a % 2 ^ (m + 1) = 2 ^ (m + 1) - 1 <;> simp [h]
 
 /-- The header fold, run `m` times from zero. -/
-def trailCore : Code := prec zero trailStep
+private def trailCore : Code := prec zero trailStep
 
-theorem val_trailCore (n : ℕ) : ∀ m,
+private theorem val_trailCore (n : ℕ) : ∀ m,
     val trailCore (Nat.pair n m) = min (BoundedInterp.trailOnes n) m := by
   intro m
   induction m with
@@ -232,7 +233,7 @@ theorem val_trailCore (n : ℕ) : ∀ m,
         omega
 
 /-- The header's length never exceeds the numeral it reads. -/
-theorem trailOnes_le (n : ℕ) : BoundedInterp.trailOnes n ≤ n := by
+private theorem trailOnes_le (n : ℕ) : BoundedInterp.trailOnes n ≤ n := by
   rcases Nat.eq_zero_or_pos (BoundedInterp.trailOnes n) with h | h
   · omega
   · have hlt : BoundedInterp.trailOnes n - 1 < BoundedInterp.trailOnes n := by omega
@@ -243,67 +244,67 @@ theorem trailOnes_le (n : ℕ) : BoundedInterp.trailOnes n ≤ n := by
     omega
 
 /-- The header's length as a one-argument code. -/
-def cTrailOnes : Code := comp trailCore (pair cId cId)
+private def cTrailOnes : Code := comp trailCore (pair cId cId)
 
-@[simp] theorem val_cTrailOnes (n : ℕ) : val cTrailOnes n = BoundedInterp.trailOnes n := by
+@[simp] private theorem val_cTrailOnes (n : ℕ) : val cTrailOnes n = BoundedInterp.trailOnes n := by
   rw [cTrailOnes, val_comp, val_pair, val_cId, val_trailCore]
   have := trailOnes_le n
   omega
 
-theorem rfindFree_cHdrPow : RfindFree cHdrPow := ⟨rfindFree_cPow2, trivial, rfindFree_cAcc⟩
+private theorem rfindFree_cHdrPow : RfindFree cHdrPow := ⟨rfindFree_cPow2, trivial, rfindFree_cAcc⟩
 
-theorem rfindFree_trailStep : RfindFree trailStep :=
+private theorem rfindFree_trailStep : RfindFree trailStep :=
   ⟨rfindFree_cIte,
     ⟨rfindFree_cEq, ⟨rfindFree_cMod, trivial, rfindFree_cHdrPow⟩,
       rfindFree_cSub, rfindFree_cHdrPow, rfindFree_constCode 1⟩,
     ⟨trivial, rfindFree_cAcc⟩, rfindFree_cAcc⟩
 
-theorem rfindFree_trailCore : RfindFree trailCore := ⟨trivial, rfindFree_trailStep⟩
+private theorem rfindFree_trailCore : RfindFree trailCore := ⟨trivial, rfindFree_trailStep⟩
 
-theorem rfindFree_cTrailOnes : RfindFree cTrailOnes :=
+private theorem rfindFree_cTrailOnes : RfindFree cTrailOnes :=
   ⟨rfindFree_trailCore, rfindFree_cId, rfindFree_cId⟩
 
 /-! ### Reading a cell -/
 
 /-- The frame width a cell declares. -/
-def cStkLen : Code := comp cTrailOnes cStkBody
+private def cStkLen : Code := comp cTrailOnes cStkBody
 
-@[simp] theorem val_cStkLen (s : ℕ) : val cStkLen s = BoundedInterp.stkLen s := by
+@[simp] private theorem val_cStkLen (s : ℕ) : val cStkLen s = BoundedInterp.stkLen s := by
   rw [cStkLen, val_comp, val_cStkBody, val_cTrailOnes, BoundedInterp.stkLen]
 
-theorem rfindFree_cStkLen : RfindFree cStkLen := ⟨rfindFree_cTrailOnes, rfindFree_cStkBody⟩
+private theorem rfindFree_cStkLen : RfindFree cStkLen := ⟨rfindFree_cTrailOnes, rfindFree_cStkBody⟩
 
 /-- The tail of a stack cell. -/
-def cStkTail : Code :=
+private def cStkTail : Code :=
   comp cDiv (pair cStkBody (comp cPow2 (comp succ (comp cDbl cStkLen))))
 
-@[simp] theorem val_cStkTail (s : ℕ) : val cStkTail s = BoundedInterp.stkTail s := by
+@[simp] private theorem val_cStkTail (s : ℕ) : val cStkTail s = BoundedInterp.stkTail s := by
   rw [cStkTail, val_comp, val_pair, val_cStkBody, val_comp, val_comp, val_comp, val_succ',
     val_cDbl, val_cStkLen, val_cPow2, val_cDiv, BoundedInterp.stkTail]
 
-theorem rfindFree_cStkTail : RfindFree cStkTail :=
+private theorem rfindFree_cStkTail : RfindFree cStkTail :=
   ⟨rfindFree_cDiv, rfindFree_cStkBody, rfindFree_cPow2, trivial, rfindFree_cDbl,
     rfindFree_cStkLen⟩
 
 /-- The frame of a stack cell. -/
-def cStkHead : Code :=
+private def cStkHead : Code :=
   comp cMod (pair (comp cDiv (pair cStkBody (comp cPow2 (comp succ cStkLen))))
     (comp cPow2 cStkLen))
 
-@[simp] theorem val_cStkHead (s : ℕ) : val cStkHead s = BoundedInterp.stkHead s := by
+@[simp] private theorem val_cStkHead (s : ℕ) : val cStkHead s = BoundedInterp.stkHead s := by
   rw [cStkHead, val_comp, val_pair, val_comp, val_pair, val_cStkBody, val_comp, val_comp,
     val_succ', val_cStkLen, val_cPow2, val_cDiv, val_comp, val_cStkLen, val_cPow2, val_cMod,
     BoundedInterp.stkHead]
 
-theorem rfindFree_cStkHead : RfindFree cStkHead :=
+private theorem rfindFree_cStkHead : RfindFree cStkHead :=
   ⟨rfindFree_cMod,
     ⟨rfindFree_cDiv, rfindFree_cStkBody, rfindFree_cPow2, trivial, rfindFree_cStkLen⟩,
     rfindFree_cPow2, rfindFree_cStkLen⟩
 
 /-- The cell test: does this numeral re-pack to itself? -/
-def cStkIsCons : Code := comp cEq (pair (comp cStkCons (pair cStkHead cStkTail)) cId)
+private def cStkIsCons : Code := comp cEq (pair (comp cStkCons (pair cStkHead cStkTail)) cId)
 
-@[simp] theorem val_cStkIsCons (s : ℕ) :
+@[simp] private theorem val_cStkIsCons (s : ℕ) :
     val cStkIsCons s = if BoundedInterp.stkIsCons s then 1 else 0 := by
   rw [cStkIsCons, val_comp, val_pair, val_comp, val_pair, val_cStkHead, val_cStkTail,
     val_cStkCons, val_cId, val_cEq, BoundedInterp.stkIsCons]
@@ -311,17 +312,17 @@ def cStkIsCons : Code := comp cEq (pair (comp cStkCons (pair cStkHead cStkTail))
   · rw [if_pos h]; simp [h]
   · rw [if_neg h]; simp [h]
 
-theorem rfindFree_cStkIsCons : RfindFree cStkIsCons :=
+private theorem rfindFree_cStkIsCons : RfindFree cStkIsCons :=
   ⟨rfindFree_cEq, ⟨rfindFree_cStkCons, rfindFree_cStkHead, rfindFree_cStkTail⟩, rfindFree_cId⟩
 
 /-! ### The halt test -/
 
 /-- Has the machine finished? -/
-def cIsHalt : Code :=
+private def cIsHalt : Code :=
   comp OneDL.cAnd (pair (comp cEq (pair cCfMode (constCode 1)))
     (comp cEq (pair cCfStk (constCode 0))))
 
-@[simp] theorem val_cIsHalt (s : ℕ) :
+@[simp] private theorem val_cIsHalt (s : ℕ) :
     val cIsHalt s = if BoundedInterp.isHalt s then 1 else 0 := by
   rw [cIsHalt, val_comp, val_pair, val_comp, val_comp, val_pair, val_pair, val_cCfMode,
     val_cCfStk, val_constCode, val_constCode, val_cEq, val_cEq, OneDL.val_cAnd,
@@ -329,7 +330,7 @@ def cIsHalt : Code :=
   by_cases h1 : BoundedInterp.cfMode s = 1 <;> by_cases h2 : BoundedInterp.cfStk s = 0 <;>
     simp [h1, h2]
 
-theorem rfindFree_cIsHalt : RfindFree cIsHalt :=
+private theorem rfindFree_cIsHalt : RfindFree cIsHalt :=
   ⟨OneDL.rfindFree_cAnd,
     ⟨rfindFree_cEq, rfindFree_cCfMode, rfindFree_constCode 1⟩,
     rfindFree_cEq, rfindFree_cCfStk, rfindFree_constCode 0⟩
@@ -353,7 +354,7 @@ determined by `n % 4` and the children's numerals are the two halves of `n / 4`:
 Mathlib's decoder branches on the low two bits through `Nat.bodd` and `Nat.div2`; the content of the
 lemma is that those are the same two bits `n % 4` names. -/
 
-theorem ofNat_dispatch (n : ℕ) :
+private theorem ofNat_dispatch (n : ℕ) :
     Denumerable.ofNat Code (n + 4) =
       (if n % 4 = 0 then
         Code.pair (Denumerable.ofNat Code (n / 4).unpair.1)
@@ -395,25 +396,25 @@ Below four the numeral names its constructor outright, so these complete the tab
 `ofNat_dispatch` starts. Together the five are the whole of what a realization needs to know about
 decoding: which constructor, and where its children's numerals are. -/
 
-@[simp] theorem ofNat_zero : Denumerable.ofNat Code 0 = Code.zero := by
+@[simp] private theorem ofNat_zero : Denumerable.ofNat Code 0 = Code.zero := by
   have h : Denumerable.ofNat Code 0 = ofNatCode 0 := rfl
   rw [h, ofNatCode]
 
-@[simp] theorem ofNat_one : Denumerable.ofNat Code 1 = Code.succ := by
+@[simp] private theorem ofNat_one : Denumerable.ofNat Code 1 = Code.succ := by
   have h : Denumerable.ofNat Code 1 = ofNatCode 1 := rfl
   rw [h, ofNatCode]
 
-@[simp] theorem ofNat_two : Denumerable.ofNat Code 2 = Code.left := by
+@[simp] private theorem ofNat_two : Denumerable.ofNat Code 2 = Code.left := by
   have h : Denumerable.ofNat Code 2 = ofNatCode 2 := rfl
   rw [h, ofNatCode]
 
-@[simp] theorem ofNat_three : Denumerable.ofNat Code 3 = Code.right := by
+@[simp] private theorem ofNat_three : Denumerable.ofNat Code 3 = Code.right := by
   have h : Denumerable.ofNat Code 3 = ofNatCode 3 := rfl
   rw [h, ofNatCode]
 
 /-- A child's numeral reads back exactly: the realization never needs to decode further than the
 tag, because the children are already numerals. -/
-theorem encode_child (j : ℕ) : Encodable.encode (Denumerable.ofNat Code j) = j :=
+private theorem encode_child (j : ℕ) : Encodable.encode (Denumerable.ofNat Code j) = j :=
   Denumerable.encode_ofNat j
 
 /-! ## The descending step, arithmetically
@@ -424,7 +425,7 @@ agree. Splitting the work this way applies the seam **once** rather than once pe
 left for the realization is a selection tree over the arithmetic layer, with no decoding in it. -/
 
 /-- The descending step, with the constructor read off the numeral instead of decoded. -/
-def stepDescendArith (c n k : ℕ) : ℕ :=
+private def stepDescendArith (c n k : ℕ) : ℕ :=
   if c = 0 then BoundedInterp.ret 0 k
   else if c = 1 then BoundedInterp.ret (n + 1) k
   else if c = 2 then BoundedInterp.ret n.unpair.1 k
@@ -446,7 +447,7 @@ def stepDescendArith (c n k : ℕ) : ℕ :=
 /-- **The arithmetic dispatch is the constructor dispatch.** Every branch of the descending step is
 selected by the same numeral arithmetic the realization can perform, and the children it passes on
 are already the numerals it has. -/
-theorem stepDescendArith_eq (c n k : ℕ) :
+private theorem stepDescendArith_eq (c n k : ℕ) :
     stepDescendArith c n k = BoundedInterp.stepDescend c n k := by
   match c with
   | 0 => simp [stepDescendArith, BoundedInterp.stepDescend]
@@ -486,97 +487,98 @@ turned the constructor dispatch into numeral arithmetic, so what is left is eigh
 equality tests on the numeral and on its tag. -/
 
 /-- Selection: run `x` when the guard is nonzero, `y` when it is zero. -/
-def cSel (b x y : Code) : Code := comp cIte (pair b (pair x y))
+private def cSel (b x y : Code) : Code := comp cIte (pair b (pair x y))
 
-@[simp] theorem val_cSel (b x y : Code) (v : ℕ) :
+@[simp] private theorem val_cSel (b x y : Code) (v : ℕ) :
     val (cSel b x y) v = if val b v = 0 then val y v else val x v := by
   rw [cSel, val_comp, val_pair, val_pair, val_cIte]
 
-theorem rfindFree_cSel {b x y : Code} (hb : RfindFree b) (hx : RfindFree x) (hy : RfindFree y) :
+private theorem rfindFree_cSel {b x y : Code}
+    (hb : RfindFree b) (hx : RfindFree x) (hy : RfindFree y) :
     RfindFree (cSel b x y) := ⟨rfindFree_cIte, hb, hx, hy⟩
 
 /-- The guard "this code's value is the constant `j`". -/
-def cEqK (j : ℕ) (x : Code) : Code := comp cEq (pair x (constCode j))
+private def cEqK (j : ℕ) (x : Code) : Code := comp cEq (pair x (constCode j))
 
-@[simp] theorem val_cEqK (j : ℕ) (x : Code) (v : ℕ) :
+@[simp] private theorem val_cEqK (j : ℕ) (x : Code) (v : ℕ) :
     val (cEqK j x) v = if val x v = j then 1 else 0 := by
   rw [cEqK, val_comp, val_pair, val_constCode, val_cEq]
 
-theorem rfindFree_cEqK (j : ℕ) {x : Code} (hx : RfindFree x) : RfindFree (cEqK j x) :=
+private theorem rfindFree_cEqK (j : ℕ) {x : Code} (hx : RfindFree x) : RfindFree (cEqK j x) :=
   ⟨rfindFree_cEq, hx, rfindFree_constCode j⟩
 
 /-! ### The descending step's slots, read from `⟨c, ⟨n, k⟩⟩` -/
 
-/-- The code numeral. -/ def dC : Code := left
-/-- The input. -/ def dN : Code := comp left right
-/-- The stack. -/ def dK : Code := comp right right
+/-- The code numeral. -/ private def dC : Code := left
+/-- The input. -/ private def dN : Code := comp left right
+/-- The stack. -/ private def dK : Code := comp right right
 /-- The numeral above the four leaves. -/
-def dM : Code := comp cSub (pair dC (constCode 4))
+private def dM : Code := comp cSub (pair dC (constCode 4))
 /-- The children's packed numeral. -/
-def dP : Code := comp cDiv (pair dM (constCode 4))
+private def dP : Code := comp cDiv (pair dM (constCode 4))
 /-- The constructor tag. -/
-def dT : Code := comp cMod (pair dM (constCode 4))
-/-- The first child's numeral. -/ def dP1 : Code := comp left dP
-/-- The second child's numeral. -/ def dP2 : Code := comp right dP
-/-- The input's first component. -/ def dN1 : Code := comp left dN
-/-- The input's second component. -/ def dN2 : Code := comp right dN
+private def dT : Code := comp cMod (pair dM (constCode 4))
+/-- The first child's numeral. -/ private def dP1 : Code := comp left dP
+/-- The second child's numeral. -/ private def dP2 : Code := comp right dP
+/-- The input's first component. -/ private def dN1 : Code := comp left dN
+/-- The input's second component. -/ private def dN2 : Code := comp right dN
 
-@[simp] theorem val_dC (c n k : ℕ) : val dC (Nat.pair c (Nat.pair n k)) = c := by
+@[simp] private theorem val_dC (c n k : ℕ) : val dC (Nat.pair c (Nat.pair n k)) = c := by
   rw [dC, val_left', Nat.unpair_pair]
 
-@[simp] theorem val_dN (c n k : ℕ) : val dN (Nat.pair c (Nat.pair n k)) = n := by
+@[simp] private theorem val_dN (c n k : ℕ) : val dN (Nat.pair c (Nat.pair n k)) = n := by
   rw [dN, val_comp, val_right', val_left', Nat.unpair_pair, Nat.unpair_pair]
 
-@[simp] theorem val_dK (c n k : ℕ) : val dK (Nat.pair c (Nat.pair n k)) = k := by
+@[simp] private theorem val_dK (c n k : ℕ) : val dK (Nat.pair c (Nat.pair n k)) = k := by
   rw [dK, val_comp, val_right', val_right', Nat.unpair_pair, Nat.unpair_pair]
 
-@[simp] theorem val_dM (c n k : ℕ) : val dM (Nat.pair c (Nat.pair n k)) = c - 4 := by
+@[simp] private theorem val_dM (c n k : ℕ) : val dM (Nat.pair c (Nat.pair n k)) = c - 4 := by
   rw [dM, val_comp, val_pair, val_dC, val_constCode, val_cSub]
 
-@[simp] theorem val_dP (c n k : ℕ) : val dP (Nat.pair c (Nat.pair n k)) = (c - 4) / 4 := by
+@[simp] private theorem val_dP (c n k : ℕ) : val dP (Nat.pair c (Nat.pair n k)) = (c - 4) / 4 := by
   rw [dP, val_comp, val_pair, val_dM, val_constCode, val_cDiv]
 
-@[simp] theorem val_dT (c n k : ℕ) : val dT (Nat.pair c (Nat.pair n k)) = (c - 4) % 4 := by
+@[simp] private theorem val_dT (c n k : ℕ) : val dT (Nat.pair c (Nat.pair n k)) = (c - 4) % 4 := by
   rw [dT, val_comp, val_pair, val_dM, val_constCode, val_cMod]
 
-@[simp] theorem val_dP1 (c n k : ℕ) :
+@[simp] private theorem val_dP1 (c n k : ℕ) :
     val dP1 (Nat.pair c (Nat.pair n k)) = ((c - 4) / 4).unpair.1 := by
   rw [dP1, val_comp, val_dP, val_left']
 
-@[simp] theorem val_dP2 (c n k : ℕ) :
+@[simp] private theorem val_dP2 (c n k : ℕ) :
     val dP2 (Nat.pair c (Nat.pair n k)) = ((c - 4) / 4).unpair.2 := by
   rw [dP2, val_comp, val_dP, val_right']
 
-@[simp] theorem val_dN1 (c n k : ℕ) : val dN1 (Nat.pair c (Nat.pair n k)) = n.unpair.1 := by
+@[simp] private theorem val_dN1 (c n k : ℕ) : val dN1 (Nat.pair c (Nat.pair n k)) = n.unpair.1 := by
   rw [dN1, val_comp, val_dN, val_left']
 
-@[simp] theorem val_dN2 (c n k : ℕ) : val dN2 (Nat.pair c (Nat.pair n k)) = n.unpair.2 := by
+@[simp] private theorem val_dN2 (c n k : ℕ) : val dN2 (Nat.pair c (Nat.pair n k)) = n.unpair.2 := by
   rw [dN2, val_comp, val_dN, val_right']
 
 /-! ### The eight branches -/
 
-/-- `zero`'s branch. -/ def dB0 : Code := comp cRet (pair (constCode 0) dK)
-/-- `succ`'s branch. -/ def dB1 : Code := comp cRet (pair (comp succ dN) dK)
-/-- `left`'s branch. -/ def dB2 : Code := comp cRet (pair dN1 dK)
-/-- `right`'s branch. -/ def dB3 : Code := comp cRet (pair dN2 dK)
+/-- `zero`'s branch. -/ private def dB0 : Code := comp cRet (pair (constCode 0) dK)
+/-- `succ`'s branch. -/ private def dB1 : Code := comp cRet (pair (comp succ dN) dK)
+/-- `left`'s branch. -/ private def dB2 : Code := comp cRet (pair dN1 dK)
+/-- `right`'s branch. -/ private def dB3 : Code := comp cRet (pair dN2 dK)
 
 /-- `pair`'s branch. -/
-def dBpair : Code :=
+private def dBpair : Code :=
   comp cDescend (pair dP1 (pair dN
     (comp cStkCons (pair (pair (constCode 0) (pair dP2 dN)) dK))))
 
 /-- `prec`'s branch. -/
-def dBprec : Code :=
+private def dBprec : Code :=
   comp cDescend (pair dP1 (pair dN1
     (comp cStkCons (pair (pair (constCode 3)
       (pair dP2 (pair dN1 (pair (constCode 0) dN2)))) dK))))
 
 /-- `comp`'s branch. -/
-def dBcomp : Code :=
+private def dBcomp : Code :=
   comp cDescend (pair dP2 (pair dN (comp cStkCons (pair (pair (constCode 2) dP1) dK))))
 
 /-- `rfind'`'s branch. -/
-def dBrfind : Code :=
+private def dBrfind : Code :=
   comp cDescend (pair dP (pair dN (comp cStkCons (pair (pair (constCode 4) (pair dP dN)) dK))))
 
 /-! ### Each branch's value, computed once
@@ -584,23 +586,23 @@ def dBrfind : Code :=
 Reducing the branches separately keeps the tree's proof to a case analysis over already-reduced
 arms; folding them all into one simp call runs the elaborator out of heartbeats. -/
 
-@[simp] theorem val_dB0 (c n k : ℕ) :
+@[simp] private theorem val_dB0 (c n k : ℕ) :
     val dB0 (Nat.pair c (Nat.pair n k)) = BoundedInterp.ret 0 k := by
   rw [dB0, val_comp, val_pair, val_constCode, val_dK, val_cRet]
 
-@[simp] theorem val_dB1 (c n k : ℕ) :
+@[simp] private theorem val_dB1 (c n k : ℕ) :
     val dB1 (Nat.pair c (Nat.pair n k)) = BoundedInterp.ret (n + 1) k := by
   rw [dB1, val_comp, val_pair, val_comp, val_succ', val_dN, val_dK, val_cRet]
 
-@[simp] theorem val_dB2 (c n k : ℕ) :
+@[simp] private theorem val_dB2 (c n k : ℕ) :
     val dB2 (Nat.pair c (Nat.pair n k)) = BoundedInterp.ret n.unpair.1 k := by
   rw [dB2, val_comp, val_pair, val_dN1, val_dK, val_cRet]
 
-@[simp] theorem val_dB3 (c n k : ℕ) :
+@[simp] private theorem val_dB3 (c n k : ℕ) :
     val dB3 (Nat.pair c (Nat.pair n k)) = BoundedInterp.ret n.unpair.2 k := by
   rw [dB3, val_comp, val_pair, val_dN2, val_dK, val_cRet]
 
-@[simp] theorem val_dBpair (c n k : ℕ) :
+@[simp] private theorem val_dBpair (c n k : ℕ) :
     val dBpair (Nat.pair c (Nat.pair n k)) =
       BoundedInterp.descend ((c - 4) / 4).unpair.1 n
         (BoundedInterp.stkCons (BoundedInterp.frame 0 (Nat.pair ((c - 4) / 4).unpair.2 n)) k) := by
@@ -608,7 +610,7 @@ arms; folding them all into one simp call runs the elaborator out of heartbeats.
     val_constCode, val_dP1, val_dP2, val_dN, val_dK, val_cStkCons, val_cDescend,
     BoundedInterp.frame]
 
-@[simp] theorem val_dBprec (c n k : ℕ) :
+@[simp] private theorem val_dBprec (c n k : ℕ) :
     val dBprec (Nat.pair c (Nat.pair n k)) =
       BoundedInterp.descend ((c - 4) / 4).unpair.1 n.unpair.1
         (BoundedInterp.stkCons (BoundedInterp.frame 3 (Nat.pair ((c - 4) / 4).unpair.2
@@ -617,14 +619,14 @@ arms; folding them all into one simp call runs the elaborator out of heartbeats.
     val_pair, val_constCode, val_constCode, val_dP1, val_dP2, val_dN1, val_dN2, val_dK,
     val_cStkCons, val_cDescend, BoundedInterp.frame]
 
-@[simp] theorem val_dBcomp (c n k : ℕ) :
+@[simp] private theorem val_dBcomp (c n k : ℕ) :
     val dBcomp (Nat.pair c (Nat.pair n k)) =
       BoundedInterp.descend ((c - 4) / 4).unpair.2 n
         (BoundedInterp.stkCons (BoundedInterp.frame 2 ((c - 4) / 4).unpair.1) k) := by
   rw [dBcomp, val_comp, val_pair, val_pair, val_comp, val_pair, val_pair, val_constCode,
     val_dP1, val_dP2, val_dN, val_dK, val_cStkCons, val_cDescend, BoundedInterp.frame]
 
-@[simp] theorem val_dBrfind (c n k : ℕ) :
+@[simp] private theorem val_dBrfind (c n k : ℕ) :
     val dBrfind (Nat.pair c (Nat.pair n k)) =
       BoundedInterp.descend ((c - 4) / 4) n
         (BoundedInterp.stkCons
@@ -632,44 +634,44 @@ arms; folding them all into one simp call runs the elaborator out of heartbeats.
   rw [dBrfind, val_comp, val_pair, val_pair, val_comp, val_pair, val_pair, val_pair,
     val_constCode, val_dP, val_dN, val_dK, val_cStkCons, val_cDescend, BoundedInterp.frame]
 
-theorem rfindFree_dC : RfindFree dC := trivial
-theorem rfindFree_dN : RfindFree dN := ⟨trivial, trivial⟩
-theorem rfindFree_dK : RfindFree dK := ⟨trivial, trivial⟩
-theorem rfindFree_dM : RfindFree dM :=
+private theorem rfindFree_dC : RfindFree dC := trivial
+private theorem rfindFree_dN : RfindFree dN := ⟨trivial, trivial⟩
+private theorem rfindFree_dK : RfindFree dK := ⟨trivial, trivial⟩
+private theorem rfindFree_dM : RfindFree dM :=
   ⟨rfindFree_cSub, rfindFree_dC, rfindFree_constCode 4⟩
-theorem rfindFree_dP : RfindFree dP := ⟨rfindFree_cDiv, rfindFree_dM, rfindFree_constCode 4⟩
-theorem rfindFree_dT : RfindFree dT := ⟨rfindFree_cMod, rfindFree_dM, rfindFree_constCode 4⟩
-theorem rfindFree_dP1 : RfindFree dP1 := ⟨trivial, rfindFree_dP⟩
-theorem rfindFree_dP2 : RfindFree dP2 := ⟨trivial, rfindFree_dP⟩
-theorem rfindFree_dN1 : RfindFree dN1 := ⟨trivial, rfindFree_dN⟩
-theorem rfindFree_dN2 : RfindFree dN2 := ⟨trivial, rfindFree_dN⟩
+private theorem rfindFree_dP : RfindFree dP := ⟨rfindFree_cDiv, rfindFree_dM, rfindFree_constCode 4⟩
+private theorem rfindFree_dT : RfindFree dT := ⟨rfindFree_cMod, rfindFree_dM, rfindFree_constCode 4⟩
+private theorem rfindFree_dP1 : RfindFree dP1 := ⟨trivial, rfindFree_dP⟩
+private theorem rfindFree_dP2 : RfindFree dP2 := ⟨trivial, rfindFree_dP⟩
+private theorem rfindFree_dN1 : RfindFree dN1 := ⟨trivial, rfindFree_dN⟩
+private theorem rfindFree_dN2 : RfindFree dN2 := ⟨trivial, rfindFree_dN⟩
 
-theorem rfindFree_dB0 : RfindFree dB0 :=
+private theorem rfindFree_dB0 : RfindFree dB0 :=
   ⟨rfindFree_cRet, rfindFree_constCode 0, rfindFree_dK⟩
-theorem rfindFree_dB1 : RfindFree dB1 :=
+private theorem rfindFree_dB1 : RfindFree dB1 :=
   ⟨rfindFree_cRet, ⟨trivial, rfindFree_dN⟩, rfindFree_dK⟩
-theorem rfindFree_dB2 : RfindFree dB2 := ⟨rfindFree_cRet, rfindFree_dN1, rfindFree_dK⟩
-theorem rfindFree_dB3 : RfindFree dB3 := ⟨rfindFree_cRet, rfindFree_dN2, rfindFree_dK⟩
-theorem rfindFree_dBpair : RfindFree dBpair :=
+private theorem rfindFree_dB2 : RfindFree dB2 := ⟨rfindFree_cRet, rfindFree_dN1, rfindFree_dK⟩
+private theorem rfindFree_dB3 : RfindFree dB3 := ⟨rfindFree_cRet, rfindFree_dN2, rfindFree_dK⟩
+private theorem rfindFree_dBpair : RfindFree dBpair :=
   ⟨rfindFree_cDescend, rfindFree_dP1, rfindFree_dN,
     rfindFree_cStkCons, ⟨rfindFree_constCode 0, rfindFree_dP2, rfindFree_dN⟩, rfindFree_dK⟩
-theorem rfindFree_dBprec : RfindFree dBprec :=
+private theorem rfindFree_dBprec : RfindFree dBprec :=
   ⟨rfindFree_cDescend, rfindFree_dP1, rfindFree_dN1,
     rfindFree_cStkCons,
     ⟨rfindFree_constCode 3, rfindFree_dP2, rfindFree_dN1,
       rfindFree_constCode 0, rfindFree_dN2⟩,
     rfindFree_dK⟩
-theorem rfindFree_dBcomp : RfindFree dBcomp :=
+private theorem rfindFree_dBcomp : RfindFree dBcomp :=
   ⟨rfindFree_cDescend, rfindFree_dP2, rfindFree_dN,
     rfindFree_cStkCons, ⟨rfindFree_constCode 2, rfindFree_dP1⟩, rfindFree_dK⟩
-theorem rfindFree_dBrfind : RfindFree dBrfind :=
+private theorem rfindFree_dBrfind : RfindFree dBrfind :=
   ⟨rfindFree_cDescend, rfindFree_dP, rfindFree_dN,
     rfindFree_cStkCons, ⟨rfindFree_constCode 4, rfindFree_dP, rfindFree_dN⟩, rfindFree_dK⟩
 
 attribute [local irreducible] dB0 dB1 dB2 dB3 dBpair dBprec dBcomp dBrfind
 
 /-- **The descending step as a code.** -/
-def stepDescendU : Code :=
+private def stepDescendU : Code :=
   cSel (cEqK 0 dC) dB0
     (cSel (cEqK 1 dC) dB1
       (cSel (cEqK 2 dC) dB2
@@ -678,7 +680,7 @@ def stepDescendU : Code :=
             (cSel (cEqK 1 dT) dBprec
               (cSel (cEqK 2 dT) dBcomp dBrfind))))))
 
-theorem val_stepDescendU (c n k : ℕ) :
+private theorem val_stepDescendU (c n k : ℕ) :
     val stepDescendU (Nat.pair c (Nat.pair n k)) = stepDescendArith c n k := by
   simp only [stepDescendU, val_cSel, val_cEqK, val_dC, val_dT, val_dB0, val_dB1, val_dB2,
     val_dB3, val_dBpair, val_dBprec, val_dBcomp, val_dBrfind, stepDescendArith]
@@ -698,7 +700,7 @@ theorem val_stepDescendU (c n k : ℕ) :
               · simp [h0, h1, h2, h3, t2]
               · simp [h0, h1, h2, h3, t0, t1, t2]
 
-theorem rfindFree_stepDescendU : RfindFree stepDescendU :=
+private theorem rfindFree_stepDescendU : RfindFree stepDescendU :=
   rfindFree_cSel (rfindFree_cEqK 0 rfindFree_dC) rfindFree_dB0
     (rfindFree_cSel (rfindFree_cEqK 1 rfindFree_dC) rfindFree_dB1
       (rfindFree_cSel (rfindFree_cEqK 2 rfindFree_dC) rfindFree_dB2
@@ -710,7 +712,7 @@ theorem rfindFree_stepDescendU : RfindFree stepDescendU :=
 
 /-- **The brief's law, as a corollary.** Composing the realization with the arithmetic dispatch's
 agreement gives the descending step directly. -/
-theorem val_stepDescendU_eq (c n k : ℕ) :
+private theorem val_stepDescendU_eq (c n k : ℕ) :
     val stepDescendU (Nat.pair c (Nat.pair n k)) = BoundedInterp.stepDescend c n k := by
   rw [val_stepDescendU, stepDescendArith_eq]
 
@@ -722,7 +724,7 @@ so no seam. `stepReturnArith` writes the same dispatch as explicit tag compariso
 and the search's "found" test at tag 4) carry over unchanged. -/
 
 /-- The returning step, with the tag dispatch written as numeral comparisons. -/
-def stepReturnArith (v f k : ℕ) : ℕ :=
+private def stepReturnArith (v f k : ℕ) : ℕ :=
   if f.unpair.1 = 0 then
     BoundedInterp.descend (BoundedInterp.frPay f).unpair.1 (BoundedInterp.frPay f).unpair.2
       (BoundedInterp.stkCons (BoundedInterp.frame 1 v) k)
@@ -753,7 +755,7 @@ def stepReturnArith (v f k : ℕ) : ℕ :=
 
 /-- **The tag dispatch is the frame dispatch.** No seam is involved — the tag is an accessor — so
 this is the pure case analysis, one branch per frame plus the stuck default. -/
-theorem stepReturnArith_eq (v f k : ℕ) :
+private theorem stepReturnArith_eq (v f k : ℕ) :
     stepReturnArith v f k = BoundedInterp.stepReturn v f k := by
   unfold stepReturnArith
   rw [BoundedInterp.stepReturn, BoundedInterp.frTag]
@@ -768,121 +770,123 @@ their own selections. Same recipe as the descending step: per-branch `@[simp]` v
 explicit `rw`, the wide branch codes made `local irreducible` so the tree's proof never descends
 into them. The input is `⟨v, ⟨f, k⟩⟩`. -/
 
-/-- The returned value. -/ def rV : Code := left
-/-- The top frame. -/ def rF : Code := comp left right
-/-- The stack tail. -/ def rK : Code := comp right right
-/-- The frame's tag. -/ def rTag : Code := comp left rF
-/-- The frame's payload. -/ def rPay : Code := comp right rF
+/-- The returned value. -/ private def rV : Code := left
+/-- The top frame. -/ private def rF : Code := comp left right
+/-- The stack tail. -/ private def rK : Code := comp right right
+/-- The frame's tag. -/ private def rTag : Code := comp left rF
+/-- The frame's payload. -/ private def rPay : Code := comp right rF
 /-! Payload slots. The digits after `rPay` spell the projection path into the frame's payload, read
 left to right: `1` takes a pair's first component, `2` its second. So `rPay221` is "second, second,
 first". Each is built from the slot one digit shorter, and its value on `⟨v, ⟨f, k⟩⟩` is the
 matching `unpair` chain on `f.unpair.2` (`val_rPay1` and below). -/
 
-/-- The payload's first component. -/ def rPay1 : Code := comp left rPay
-/-- The payload's second component. -/ def rPay2 : Code := comp right rPay
-/-- First component of `rPay2`. -/ def rPay21 : Code := comp left rPay2
-/-- Second component of `rPay2`. -/ def rPay22 : Code := comp right rPay2
-/-- First component of `rPay22`. -/ def rPay221 : Code := comp left rPay22
-/-- Second component of `rPay22`. -/ def rPay222 : Code := comp right rPay22
+/-- The payload's first component. -/ private def rPay1 : Code := comp left rPay
+/-- The payload's second component. -/ private def rPay2 : Code := comp right rPay
+/-- First component of `rPay2`. -/ private def rPay21 : Code := comp left rPay2
+/-- Second component of `rPay2`. -/ private def rPay22 : Code := comp right rPay2
+/-- First component of `rPay22`. -/ private def rPay221 : Code := comp left rPay22
+/-- Second component of `rPay22`. -/ private def rPay222 : Code := comp right rPay22
 
-@[simp] theorem val_rV (v f k : ℕ) : val rV (Nat.pair v (Nat.pair f k)) = v := by
+@[simp] private theorem val_rV (v f k : ℕ) : val rV (Nat.pair v (Nat.pair f k)) = v := by
   rw [rV, val_left', Nat.unpair_pair]
 
-@[simp] theorem val_rF (v f k : ℕ) : val rF (Nat.pair v (Nat.pair f k)) = f := by
+@[simp] private theorem val_rF (v f k : ℕ) : val rF (Nat.pair v (Nat.pair f k)) = f := by
   rw [rF, val_comp, val_right', val_left', Nat.unpair_pair, Nat.unpair_pair]
 
-@[simp] theorem val_rK (v f k : ℕ) : val rK (Nat.pair v (Nat.pair f k)) = k := by
+@[simp] private theorem val_rK (v f k : ℕ) : val rK (Nat.pair v (Nat.pair f k)) = k := by
   rw [rK, val_comp, val_right', val_right', Nat.unpair_pair, Nat.unpair_pair]
 
-@[simp] theorem val_rTag (v f k : ℕ) : val rTag (Nat.pair v (Nat.pair f k)) = f.unpair.1 := by
+@[simp]
+private theorem val_rTag (v f k : ℕ) : val rTag (Nat.pair v (Nat.pair f k)) = f.unpair.1 := by
   rw [rTag, val_comp, val_left', val_rF]
 
-@[simp] theorem val_rPay (v f k : ℕ) : val rPay (Nat.pair v (Nat.pair f k)) = f.unpair.2 := by
+@[simp]
+private theorem val_rPay (v f k : ℕ) : val rPay (Nat.pair v (Nat.pair f k)) = f.unpair.2 := by
   rw [rPay, val_comp, val_right', val_rF]
 
-@[simp] theorem val_rPay1 (v f k : ℕ) :
+@[simp] private theorem val_rPay1 (v f k : ℕ) :
     val rPay1 (Nat.pair v (Nat.pair f k)) = f.unpair.2.unpair.1 := by
   rw [rPay1, val_comp, val_left', val_rPay]
 
-@[simp] theorem val_rPay2 (v f k : ℕ) :
+@[simp] private theorem val_rPay2 (v f k : ℕ) :
     val rPay2 (Nat.pair v (Nat.pair f k)) = f.unpair.2.unpair.2 := by
   rw [rPay2, val_comp, val_right', val_rPay]
 
-@[simp] theorem val_rPay21 (v f k : ℕ) :
+@[simp] private theorem val_rPay21 (v f k : ℕ) :
     val rPay21 (Nat.pair v (Nat.pair f k)) = f.unpair.2.unpair.2.unpair.1 := by
   rw [rPay21, val_comp, val_left', val_rPay2]
 
-@[simp] theorem val_rPay22 (v f k : ℕ) :
+@[simp] private theorem val_rPay22 (v f k : ℕ) :
     val rPay22 (Nat.pair v (Nat.pair f k)) = f.unpair.2.unpair.2.unpair.2 := by
   rw [rPay22, val_comp, val_right', val_rPay2]
 
-@[simp] theorem val_rPay221 (v f k : ℕ) :
+@[simp] private theorem val_rPay221 (v f k : ℕ) :
     val rPay221 (Nat.pair v (Nat.pair f k)) = f.unpair.2.unpair.2.unpair.2.unpair.1 := by
   rw [rPay221, val_comp, val_left', val_rPay22]
 
-@[simp] theorem val_rPay222 (v f k : ℕ) :
+@[simp] private theorem val_rPay222 (v f k : ℕ) :
     val rPay222 (Nat.pair v (Nat.pair f k)) = f.unpair.2.unpair.2.unpair.2.unpair.2 := by
   rw [rPay222, val_comp, val_right', val_rPay22]
 
-theorem rfindFree_rV : RfindFree rV := trivial
-theorem rfindFree_rF : RfindFree rF := ⟨trivial, trivial⟩
-theorem rfindFree_rK : RfindFree rK := ⟨trivial, trivial⟩
-theorem rfindFree_rTag : RfindFree rTag := ⟨trivial, rfindFree_rF⟩
-theorem rfindFree_rPay : RfindFree rPay := ⟨trivial, rfindFree_rF⟩
-theorem rfindFree_rPay1 : RfindFree rPay1 := ⟨trivial, rfindFree_rPay⟩
-theorem rfindFree_rPay2 : RfindFree rPay2 := ⟨trivial, rfindFree_rPay⟩
-theorem rfindFree_rPay21 : RfindFree rPay21 := ⟨trivial, rfindFree_rPay2⟩
-theorem rfindFree_rPay22 : RfindFree rPay22 := ⟨trivial, rfindFree_rPay2⟩
-theorem rfindFree_rPay221 : RfindFree rPay221 := ⟨trivial, rfindFree_rPay22⟩
-theorem rfindFree_rPay222 : RfindFree rPay222 := ⟨trivial, rfindFree_rPay22⟩
+private theorem rfindFree_rV : RfindFree rV := trivial
+private theorem rfindFree_rF : RfindFree rF := ⟨trivial, trivial⟩
+private theorem rfindFree_rK : RfindFree rK := ⟨trivial, trivial⟩
+private theorem rfindFree_rTag : RfindFree rTag := ⟨trivial, rfindFree_rF⟩
+private theorem rfindFree_rPay : RfindFree rPay := ⟨trivial, rfindFree_rF⟩
+private theorem rfindFree_rPay1 : RfindFree rPay1 := ⟨trivial, rfindFree_rPay⟩
+private theorem rfindFree_rPay2 : RfindFree rPay2 := ⟨trivial, rfindFree_rPay⟩
+private theorem rfindFree_rPay21 : RfindFree rPay21 := ⟨trivial, rfindFree_rPay2⟩
+private theorem rfindFree_rPay22 : RfindFree rPay22 := ⟨trivial, rfindFree_rPay2⟩
+private theorem rfindFree_rPay221 : RfindFree rPay221 := ⟨trivial, rfindFree_rPay22⟩
+private theorem rfindFree_rPay222 : RfindFree rPay222 := ⟨trivial, rfindFree_rPay22⟩
 
 /-! ### The frames' branches -/
 
 /-- Tag 0 — a pair's left value. -/
-def rB0 : Code :=
+private def rB0 : Code :=
   comp cDescend (pair rPay1 (pair rPay2
     (comp cStkCons (pair (pair (constCode 1) rV) rK))))
 
 /-- Tag 1 — a pair's right value. -/
-def rB1 : Code := comp cRet (pair (pair rPay rV) rK)
+private def rB1 : Code := comp cRet (pair (pair rPay rV) rK)
 
 /-- Tag 2 — a composition's inner value. -/
-def rB2 : Code := comp cDescend (pair rPay (pair rV rK))
+private def rB2 : Code := comp cDescend (pair rPay (pair rV rK))
 
 /-- Tag 3's else — the loop takes another turn. -/
-def rB3loop : Code :=
+private def rB3loop : Code :=
   comp cDescend (pair rPay1 (pair (pair rPay21 (pair rPay221 rV))
     (comp cStkCons (pair (pair (constCode 3)
       (pair rPay1 (pair rPay21
         (pair (comp succ rPay221) (comp cPred rPay222))))) rK))))
 
 /-- Tag 4's else — the search probes again. -/
-def rB4search : Code :=
+private def rB4search : Code :=
   comp cDescend (pair rPay1 (pair (pair rPay21 (comp succ rPay22))
     (comp cStkCons (pair (pair (constCode 4)
       (pair rPay1 (pair rPay21 (comp succ rPay22)))) rK))))
 
 /-- The default — a stuck frame. -/
-def rBdef : Code := comp cRet (pair rV (comp cStkCons (pair rF rK)))
+private def rBdef : Code := comp cRet (pair rV (comp cStkCons (pair rF rK)))
 
 /-! ### Each frame branch's value -/
 
-@[simp] theorem val_rB0 (v f k : ℕ) :
+@[simp] private theorem val_rB0 (v f k : ℕ) :
     val rB0 (Nat.pair v (Nat.pair f k)) =
       BoundedInterp.descend f.unpair.2.unpair.1 f.unpair.2.unpair.2
         (BoundedInterp.stkCons (BoundedInterp.frame 1 v) k) := by
   rw [rB0, val_comp, val_pair, val_pair, val_comp, val_pair, val_pair, val_constCode,
     val_rPay1, val_rPay2, val_rV, val_rK, val_cStkCons, val_cDescend, BoundedInterp.frame]
 
-@[simp] theorem val_rB1 (v f k : ℕ) :
+@[simp] private theorem val_rB1 (v f k : ℕ) :
     val rB1 (Nat.pair v (Nat.pair f k)) = BoundedInterp.ret (Nat.pair f.unpair.2 v) k := by
   rw [rB1, val_comp, val_pair, val_pair, val_rPay, val_rV, val_rK, val_cRet]
 
-@[simp] theorem val_rB2 (v f k : ℕ) :
+@[simp] private theorem val_rB2 (v f k : ℕ) :
     val rB2 (Nat.pair v (Nat.pair f k)) = BoundedInterp.descend f.unpair.2 v k := by
   rw [rB2, val_comp, val_pair, val_pair, val_rPay, val_rV, val_rK, val_cDescend]
 
-@[simp] theorem val_rB3loop (v f k : ℕ) :
+@[simp] private theorem val_rB3loop (v f k : ℕ) :
     val rB3loop (Nat.pair v (Nat.pair f k)) =
       BoundedInterp.descend f.unpair.2.unpair.1
         (Nat.pair f.unpair.2.unpair.2.unpair.1
@@ -895,7 +899,7 @@ def rBdef : Code := comp cRet (pair rV (comp cStkCons (pair rF rK)))
     val_rPay21, val_rPay221, val_rPay222, val_rV, val_rK, val_cStkCons, val_cDescend,
     BoundedInterp.frame]
 
-@[simp] theorem val_rB4search (v f k : ℕ) :
+@[simp] private theorem val_rB4search (v f k : ℕ) :
     val rB4search (Nat.pair v (Nat.pair f k)) =
       BoundedInterp.descend f.unpair.2.unpair.1
         (Nat.pair f.unpair.2.unpair.2.unpair.1 (f.unpair.2.unpair.2.unpair.2 + 1))
@@ -904,22 +908,22 @@ def rBdef : Code := comp cRet (pair rV (comp cStkCons (pair rF rK)))
   simp only [rB4search, val_comp, val_pair, val_constCode, val_succ', val_rPay1, val_rPay21,
     val_rPay22, val_rK, val_cStkCons, val_cDescend, BoundedInterp.frame]
 
-@[simp] theorem val_rBdef (v f k : ℕ) :
+@[simp] private theorem val_rBdef (v f k : ℕ) :
     val rBdef (Nat.pair v (Nat.pair f k)) = BoundedInterp.ret v (BoundedInterp.stkCons f k) := by
   rw [rBdef, val_comp, val_pair, val_comp, val_pair, val_rV, val_rF, val_rK, val_cStkCons,
     val_cRet]
 
-theorem rfindFree_rB0 : RfindFree rB0 :=
+private theorem rfindFree_rB0 : RfindFree rB0 :=
   ⟨rfindFree_cDescend, rfindFree_rPay1, rfindFree_rPay2,
     rfindFree_cStkCons, ⟨rfindFree_constCode 1, rfindFree_rV⟩, rfindFree_rK⟩
 
-theorem rfindFree_rB1 : RfindFree rB1 :=
+private theorem rfindFree_rB1 : RfindFree rB1 :=
   ⟨rfindFree_cRet, ⟨rfindFree_rPay, rfindFree_rV⟩, rfindFree_rK⟩
 
-theorem rfindFree_rB2 : RfindFree rB2 :=
+private theorem rfindFree_rB2 : RfindFree rB2 :=
   ⟨rfindFree_cDescend, rfindFree_rPay, rfindFree_rV, rfindFree_rK⟩
 
-theorem rfindFree_rB3loop : RfindFree rB3loop :=
+private theorem rfindFree_rB3loop : RfindFree rB3loop :=
   ⟨rfindFree_cDescend, rfindFree_rPay1,
     ⟨rfindFree_rPay21, rfindFree_rPay221, rfindFree_rV⟩,
     rfindFree_cStkCons,
@@ -927,14 +931,14 @@ theorem rfindFree_rB3loop : RfindFree rB3loop :=
       ⟨trivial, rfindFree_rPay221⟩, rfindFree_cPred, rfindFree_rPay222⟩,
     rfindFree_rK⟩
 
-theorem rfindFree_rB4search : RfindFree rB4search :=
+private theorem rfindFree_rB4search : RfindFree rB4search :=
   ⟨rfindFree_cDescend, rfindFree_rPay1,
     ⟨rfindFree_rPay21, trivial, rfindFree_rPay22⟩,
     rfindFree_cStkCons,
     ⟨rfindFree_constCode 4, rfindFree_rPay1, rfindFree_rPay21, trivial, rfindFree_rPay22⟩,
     rfindFree_rK⟩
 
-theorem rfindFree_rBdef : RfindFree rBdef :=
+private theorem rfindFree_rBdef : RfindFree rBdef :=
   ⟨rfindFree_cRet, rfindFree_rV, rfindFree_cStkCons, rfindFree_rF, rfindFree_rK⟩
 
 attribute [local irreducible] rB0 rB1 rB2 rB3loop rB4search rBdef
@@ -942,9 +946,9 @@ attribute [local irreducible] rB0 rB1 rB2 rB3loop rB4search rBdef
 /-! ### The two inner selections, then the tag tree -/
 
 /-- Tag 3's branch: the loop, done or turning. -/
-def rB3 : Code := cSel (cEqK 0 rPay222) (comp cRet (pair rV rK)) rB3loop
+private def rB3 : Code := cSel (cEqK 0 rPay222) (comp cRet (pair rV rK)) rB3loop
 
-@[simp] theorem val_rB3 (v f k : ℕ) :
+@[simp] private theorem val_rB3 (v f k : ℕ) :
     val rB3 (Nat.pair v (Nat.pair f k)) =
       (if f.unpair.2.unpair.2.unpair.2.unpair.2 = 0 then BoundedInterp.ret v k
        else val rB3loop (Nat.pair v (Nat.pair f k))) := by
@@ -953,9 +957,9 @@ def rB3 : Code := cSel (cEqK 0 rPay222) (comp cRet (pair rV rK)) rB3loop
     simp only [h, reduceCtorEq, if_true, if_false]
 
 /-- Tag 4's branch: the search, found or probing. -/
-def rB4 : Code := cSel (cEqK 0 rV) (comp cRet (pair rPay22 rK)) rB4search
+private def rB4 : Code := cSel (cEqK 0 rV) (comp cRet (pair rPay22 rK)) rB4search
 
-@[simp] theorem val_rB4 (v f k : ℕ) :
+@[simp] private theorem val_rB4 (v f k : ℕ) :
     val rB4 (Nat.pair v (Nat.pair f k)) =
       (if v = 0 then BoundedInterp.ret f.unpair.2.unpair.2.unpair.2 k
        else val rB4search (Nat.pair v (Nat.pair f k))) := by
@@ -963,25 +967,25 @@ def rB4 : Code := cSel (cEqK 0 rV) (comp cRet (pair rPay22 rK)) rB4search
   by_cases h : v = 0 <;>
     simp only [h, reduceCtorEq, if_true, if_false]
 
-theorem rfindFree_rB3 : RfindFree rB3 :=
+private theorem rfindFree_rB3 : RfindFree rB3 :=
   rfindFree_cSel (rfindFree_cEqK 0 rfindFree_rPay222)
     ⟨rfindFree_cRet, rfindFree_rV, rfindFree_rK⟩ rfindFree_rB3loop
 
-theorem rfindFree_rB4 : RfindFree rB4 :=
+private theorem rfindFree_rB4 : RfindFree rB4 :=
   rfindFree_cSel (rfindFree_cEqK 0 rfindFree_rV)
     ⟨rfindFree_cRet, rfindFree_rPay22, rfindFree_rK⟩ rfindFree_rB4search
 
 attribute [local irreducible] rB3 rB4
 
 /-- **The returning step as a code.** -/
-def stepReturnU : Code :=
+private def stepReturnU : Code :=
   cSel (cEqK 0 rTag) rB0
     (cSel (cEqK 1 rTag) rB1
       (cSel (cEqK 2 rTag) rB2
         (cSel (cEqK 3 rTag) rB3
           (cSel (cEqK 4 rTag) rB4 rBdef))))
 
-theorem val_stepReturnU (v f k : ℕ) :
+private theorem val_stepReturnU (v f k : ℕ) :
     val stepReturnU (Nat.pair v (Nat.pair f k)) = stepReturnArith v f k := by
   simp only [stepReturnU, val_cSel, val_cEqK, val_rTag, val_rB0, val_rB1, val_rB2, val_rB3,
     val_rB4, val_rB3loop, val_rB4search, val_rBdef, stepReturnArith, BoundedInterp.frPay]
@@ -997,7 +1001,7 @@ theorem val_stepReturnU (v f k : ℕ) :
           · simp only [h4, Nat.reduceEqDiff, reduceIte]
           · simp only [h0, h1, h2, h3, h4, reduceIte]
 
-theorem rfindFree_stepReturnU : RfindFree stepReturnU :=
+private theorem rfindFree_stepReturnU : RfindFree stepReturnU :=
   rfindFree_cSel (rfindFree_cEqK 0 rfindFree_rTag) rfindFree_rB0
     (rfindFree_cSel (rfindFree_cEqK 1 rfindFree_rTag) rfindFree_rB1
       (rfindFree_cSel (rfindFree_cEqK 2 rfindFree_rTag) rfindFree_rB2
@@ -1005,7 +1009,7 @@ theorem rfindFree_stepReturnU : RfindFree stepReturnU :=
           (rfindFree_cSel (rfindFree_cEqK 4 rfindFree_rTag) rfindFree_rB4 rfindFree_rBdef))))
 
 /-- **The brief's law, as a corollary.** -/
-theorem val_stepReturnU_eq (v f k : ℕ) :
+private theorem val_stepReturnU_eq (v f k : ℕ) :
     val stepReturnU (Nat.pair v (Nat.pair f k)) = BoundedInterp.stepReturn v f k := by
   rw [val_stepReturnU, stepReturnArith_eq]
 
@@ -1015,51 +1019,51 @@ Three outer tests and two group codes. The capstone's proof is a five-way compos
 cell test, and the two group laws — rather than a walk over sixteen leaves; that reduction is what
 splitting the step into `stepDescendU` and `stepReturnU` bought. -/
 
-/-- The current object's first component. -/ def uCur1 : Code := comp left cCfCur
-/-- The current object's second component. -/ def uCur2 : Code := comp right cCfCur
-/-- The stack's top frame. -/ def uHead : Code := comp cStkHead cCfStk
-/-- The stack's tail. -/ def uTail : Code := comp cStkTail cCfStk
+/-- The current object's first component. -/ private def uCur1 : Code := comp left cCfCur
+/-- The current object's second component. -/ private def uCur2 : Code := comp right cCfCur
+/-- The stack's top frame. -/ private def uHead : Code := comp cStkHead cCfStk
+/-- The stack's tail. -/ private def uTail : Code := comp cStkTail cCfStk
 
-@[simp] theorem val_uCur1 (s : ℕ) : val uCur1 s = (BoundedInterp.cfCur s).unpair.1 := by
+@[simp] private theorem val_uCur1 (s : ℕ) : val uCur1 s = (BoundedInterp.cfCur s).unpair.1 := by
   rw [uCur1, val_comp, val_left', val_cCfCur]
 
-@[simp] theorem val_uCur2 (s : ℕ) : val uCur2 s = (BoundedInterp.cfCur s).unpair.2 := by
+@[simp] private theorem val_uCur2 (s : ℕ) : val uCur2 s = (BoundedInterp.cfCur s).unpair.2 := by
   rw [uCur2, val_comp, val_right', val_cCfCur]
 
-@[simp] theorem val_uHead (s : ℕ) :
+@[simp] private theorem val_uHead (s : ℕ) :
     val uHead s = BoundedInterp.stkHead (BoundedInterp.cfStk s) := by
   rw [uHead, val_comp, val_cCfStk, val_cStkHead]
 
-@[simp] theorem val_uTail (s : ℕ) :
+@[simp] private theorem val_uTail (s : ℕ) :
     val uTail s = BoundedInterp.stkTail (BoundedInterp.cfStk s) := by
   rw [uTail, val_comp, val_cCfStk, val_cStkTail]
 
 /-- The descending arm, fed the step's three slots. -/
-def uDescend : Code := comp stepDescendU (pair uCur1 (pair uCur2 cCfStk))
+private def uDescend : Code := comp stepDescendU (pair uCur1 (pair uCur2 cCfStk))
 
 /-- The returning arm, fed the value, the top frame and the tail. -/
-def uReturn : Code := comp stepReturnU (pair cCfCur (pair uHead uTail))
+private def uReturn : Code := comp stepReturnU (pair cCfCur (pair uHead uTail))
 
-@[simp] theorem val_uDescend (s : ℕ) :
+@[simp] private theorem val_uDescend (s : ℕ) :
     val uDescend s = BoundedInterp.stepDescend (BoundedInterp.cfCur s).unpair.1
       (BoundedInterp.cfCur s).unpair.2 (BoundedInterp.cfStk s) := by
   rw [uDescend, val_comp, val_pair, val_pair, val_uCur1, val_uCur2, val_cCfStk,
     val_stepDescendU_eq]
 
-@[simp] theorem val_uReturn (s : ℕ) :
+@[simp] private theorem val_uReturn (s : ℕ) :
     val uReturn s = BoundedInterp.stepReturn (BoundedInterp.cfCur s)
       (BoundedInterp.stkHead (BoundedInterp.cfStk s))
       (BoundedInterp.stkTail (BoundedInterp.cfStk s)) := by
   rw [uReturn, val_comp, val_pair, val_pair, val_cCfCur, val_uHead, val_uTail,
     val_stepReturnU_eq]
 
-theorem rfindFree_uCur1 : RfindFree uCur1 := ⟨trivial, rfindFree_cCfCur⟩
-theorem rfindFree_uCur2 : RfindFree uCur2 := ⟨trivial, rfindFree_cCfCur⟩
-theorem rfindFree_uHead : RfindFree uHead := ⟨rfindFree_cStkHead, rfindFree_cCfStk⟩
-theorem rfindFree_uTail : RfindFree uTail := ⟨rfindFree_cStkTail, rfindFree_cCfStk⟩
-theorem rfindFree_uDescend : RfindFree uDescend :=
+private theorem rfindFree_uCur1 : RfindFree uCur1 := ⟨trivial, rfindFree_cCfCur⟩
+private theorem rfindFree_uCur2 : RfindFree uCur2 := ⟨trivial, rfindFree_cCfCur⟩
+private theorem rfindFree_uHead : RfindFree uHead := ⟨rfindFree_cStkHead, rfindFree_cCfStk⟩
+private theorem rfindFree_uTail : RfindFree uTail := ⟨rfindFree_cStkTail, rfindFree_cCfStk⟩
+private theorem rfindFree_uDescend : RfindFree uDescend :=
   ⟨rfindFree_stepDescendU, rfindFree_uCur1, rfindFree_uCur2, rfindFree_cCfStk⟩
-theorem rfindFree_uReturn : RfindFree uReturn :=
+private theorem rfindFree_uReturn : RfindFree uReturn :=
   ⟨rfindFree_stepReturnU, rfindFree_cCfCur, rfindFree_uHead, rfindFree_uTail⟩
 
 attribute [local irreducible] uDescend uReturn
@@ -1106,25 +1110,25 @@ def SpaceIO (c : Code) (K : ℕ) : Prop :=
   ∀ x, spaceCost c x ≤ max (Nat.size x) (Nat.size (val c x)) + K
 
 /-- A code whose output is never wider than its input. -/
-def Shrinking (c : Code) : Prop := ∀ x, Nat.size (val c x) ≤ Nat.size x
+private def Shrinking (c : Code) : Prop := ∀ x, Nat.size (val c x) ≤ Nat.size x
 
-theorem shrinking_left : Shrinking left := fun x =>
+private theorem shrinking_left : Shrinking left := fun x =>
   Nat.size_le_size (Nat.unpair_left_le x)
 
-theorem shrinking_right : Shrinking right := fun x =>
+private theorem shrinking_right : Shrinking right := fun x =>
   Nat.size_le_size (Nat.unpair_right_le x)
 
-theorem spaceIO_left : SpaceIO left 0 := fun x => by
+private theorem spaceIO_left : SpaceIO left 0 := fun x => by
   rw [spaceCost_left, val_left']
   omega
 
-theorem spaceIO_right : SpaceIO right 0 := fun x => by
+private theorem spaceIO_right : SpaceIO right 0 := fun x => by
   rw [spaceCost_right, val_right']
   omega
 
 /-- **Composition preserves the shape when the inner code shrinks.** The intermediate is then no
 wider than the input, so it is already inside the bound. -/
-theorem spaceIO_comp {f g : Code} {Kf Kg : ℕ}
+private theorem spaceIO_comp {f g : Code} {Kf Kg : ℕ}
     (hf : SpaceIO f Kf) (hg : SpaceIO g Kg) (hsg : Shrinking g) :
     SpaceIO (comp f g) (max Kf Kg) := by
   intro x
@@ -1134,7 +1138,7 @@ theorem spaceIO_comp {f g : Code} {Kf Kg : ℕ}
   have h3 := hsg x
   omega
 
-theorem shrinking_comp {f g : Code} (hf : Shrinking f) (hg : Shrinking g) :
+private theorem shrinking_comp {f g : Code} (hf : Shrinking f) (hg : Shrinking g) :
     Shrinking (comp f g) := by
   intro x
   rw [val_comp]
@@ -1145,25 +1149,26 @@ theorem shrinking_comp {f g : Code} (hf : Shrinking f) (hg : Shrinking g) :
 Every configuration and frame accessor is a composition of `left` and `right`, so each shrinks and
 each meets the shape with no constant at all. -/
 
-theorem shrinking_cCfMode : Shrinking cCfMode := shrinking_left
-theorem shrinking_cCfCur : Shrinking cCfCur := shrinking_comp shrinking_left shrinking_right
-theorem shrinking_cCfStk : Shrinking cCfStk := shrinking_comp shrinking_right shrinking_right
-theorem shrinking_cFrTag : Shrinking cFrTag := shrinking_left
-theorem shrinking_cFrPay : Shrinking cFrPay := shrinking_right
+private theorem shrinking_cCfMode : Shrinking cCfMode := shrinking_left
+private theorem shrinking_cCfCur : Shrinking cCfCur := shrinking_comp shrinking_left shrinking_right
+private theorem shrinking_cCfStk : Shrinking cCfStk :=
+  shrinking_comp shrinking_right shrinking_right
+private theorem shrinking_cFrTag : Shrinking cFrTag := shrinking_left
+private theorem shrinking_cFrPay : Shrinking cFrPay := shrinking_right
 
-theorem spaceIO_cCfMode : SpaceIO cCfMode 0 := spaceIO_left
-theorem spaceIO_cFrTag : SpaceIO cFrTag 0 := spaceIO_left
-theorem spaceIO_cFrPay : SpaceIO cFrPay 0 := spaceIO_right
+private theorem spaceIO_cCfMode : SpaceIO cCfMode 0 := spaceIO_left
+private theorem spaceIO_cFrTag : SpaceIO cFrTag 0 := spaceIO_left
+private theorem spaceIO_cFrPay : SpaceIO cFrPay 0 := spaceIO_right
 
-theorem spaceIO_cCfCur : SpaceIO cCfCur 0 := by
+private theorem spaceIO_cCfCur : SpaceIO cCfCur 0 := by
   have h := spaceIO_comp spaceIO_left spaceIO_right shrinking_right
   simpa [cCfCur] using h
 
-theorem spaceIO_cCfStk : SpaceIO cCfStk 0 := by
+private theorem spaceIO_cCfStk : SpaceIO cCfStk 0 := by
   have h := spaceIO_comp spaceIO_right spaceIO_right shrinking_right
   simpa [cCfStk] using h
 
-theorem spaceIO_cHaltVal : SpaceIO cHaltVal 0 := spaceIO_cCfCur
+private theorem spaceIO_cHaltVal : SpaceIO cHaltVal 0 := spaceIO_cCfCur
 
 /-! ### Where the shape breaks: forming a pair
 
@@ -1228,23 +1233,23 @@ widths *is* the workspace bound. For the codes that only take a configuration ap
 together, every value touched is a piece either of the input or of the output — so the shape holds
 with no constant. -/
 
-@[simp] theorem spaceCost_cId (v : ℕ) : spaceCost cId v = Nat.size v := by
+@[simp] private theorem spaceCost_cId (v : ℕ) : spaceCost cId v = Nat.size v := by
   rw [cId, spaceCost_pair, spaceCost_left, spaceCost_right, val_left', val_right',
     Nat.pair_unpair]
   have h1 : Nat.size v.unpair.1 ≤ Nat.size v := Nat.size_le_size (Nat.unpair_left_le v)
   have h2 : Nat.size v.unpair.2 ≤ Nat.size v := Nat.size_le_size (Nat.unpair_right_le v)
   omega
 
-theorem spaceIO_cId : SpaceIO cId 0 := by
+private theorem spaceIO_cId : SpaceIO cId 0 := by
   intro x
   rw [spaceCost_cId, val_cId]
   omega
 
-theorem shrinking_cId : Shrinking cId := by
+private theorem shrinking_cId : Shrinking cId := by
   intro x
   rw [val_cId]
 
-theorem spaceCost_constCode (c v : ℕ) :
+private theorem spaceCost_constCode (c v : ℕ) :
     spaceCost (constCode c) v ≤ max (Nat.size v) (Nat.size c) := by
   induction c with
   | zero => rw [constCode, spaceCost_zero]
@@ -1261,7 +1266,7 @@ private theorem size_le_of_pair_right (a b : ℕ) : Nat.size b ≤ Nat.size (Nat
   Nat.size_le_size (Nat.right_le_pair a b)
 
 /-- **A returning configuration is built within its own width.** -/
-theorem spaceIO_cRet : SpaceIO cRet 0 := by
+private theorem spaceIO_cRet : SpaceIO cRet 0 := by
   intro x
   simp only [cRet, spaceCost_pair, val_pair, val_constCode, val_cId]
   have hc := spaceCost_constCode 1 x
@@ -1282,7 +1287,7 @@ descending code on whatever its slots happen to hold. Those runs compute nonsens
 it from pieces of the input, so their widths are still bounded in terms of the input's; the bound
 survives, and the constant has to cover them. -/
 
-theorem spaceCost_cSel_ge (b x y : Code) (n : ℕ) :
+private theorem spaceCost_cSel_ge (b x y : Code) (n : ℕ) :
     max (spaceCost x n) (spaceCost y n) ≤ spaceCost (cSel b x y) n := by
   rw [cSel, spaceCost_comp]
   refine le_trans ?_ (le_max_left (spaceCost (pair b (pair x y)) n) _)
@@ -1297,14 +1302,14 @@ theorem spaceCost_cSel_ge (b x y : Code) (n : ℕ) :
 Both projections a fold's step uses read their whole input, so each costs exactly the input's width
 and nothing more — the first place a value bound is exact rather than estimated. -/
 
-theorem spaceCost_cAcc (I : ℕ) : spaceCost cAcc I = Nat.size I := by
+private theorem spaceCost_cAcc (I : ℕ) : spaceCost cAcc I = Nat.size I := by
   rw [cAcc, spaceCost_comp, spaceCost_right, spaceCost_right, val_right']
   have h1 : Nat.size I.unpair.2 ≤ Nat.size I := Nat.size_le_size (Nat.unpair_right_le I)
   have h2 : Nat.size I.unpair.2.unpair.2 ≤ Nat.size I.unpair.2 :=
     Nat.size_le_size (Nat.unpair_right_le _)
   omega
 
-theorem spaceCost_cCtr (I : ℕ) : spaceCost cCtr I = Nat.size I := by
+private theorem spaceCost_cCtr (I : ℕ) : spaceCost cCtr I = Nat.size I := by
   rw [cCtr, spaceCost_comp, spaceCost_right, spaceCost_left, val_right']
   have h1 : Nat.size I.unpair.2 ≤ Nat.size I := Nat.size_le_size (Nat.unpair_right_le I)
   have h2 : Nat.size I.unpair.2.unpair.1 ≤ Nat.size I.unpair.2 :=
@@ -1312,22 +1317,6 @@ theorem spaceCost_cCtr (I : ℕ) : spaceCost cCtr I = Nat.size I := by
   omega
 
 /-! ### Width arithmetic for the folds -/
-
-private theorem size_pair_le' (x y : ℕ) :
-    Nat.size (Nat.pair x y) ≤ 2 * max (Nat.size x) (Nat.size y) := by
-  set M := max (Nat.size x) (Nat.size y) with hM
-  have hx : x < 2 ^ M :=
-    Nat.lt_of_lt_of_le (Nat.lt_size_self x)
-      (Nat.pow_le_pow_right (by norm_num) (le_max_left _ _))
-  have hy : y < 2 ^ M :=
-    Nat.lt_of_lt_of_le (Nat.lt_size_self y)
-      (Nat.pow_le_pow_right (by norm_num) (le_max_right _ _))
-  rw [Nat.size_le]
-  have hpow : (2 : ℕ) ^ (2 * M) = 2 ^ M * 2 ^ M := by rw [two_mul, pow_add]
-  rw [hpow, Nat.pair]
-  split
-  · next h => nlinarith
-  · next h => nlinarith
 
 private theorem size_add_le (a b : ℕ) :
     Nat.size (a + b) ≤ max (Nat.size a) (Nat.size b) + 1 := by
@@ -1347,7 +1336,7 @@ that triple, so the widest value the fold touches is four times the wider operan
 for the carry. That factor of four is a property of how the fold's step reads its argument, not of
 how big the numbers are — the same four will appear in every fold below. -/
 
-theorem spaceCost_cAdd (x y : ℕ) :
+private theorem spaceCost_cAdd (x y : ℕ) :
     spaceCost cAdd (Nat.pair x y) ≤ 4 * max (Nat.size x) (Nat.size y) + 8 := by
   simp only [cAdd]
   induction y with
@@ -1366,10 +1355,10 @@ theorem spaceCost_cAdd (x y : ℕ) :
         have hacc1 : Nat.size (x + m + 1) ≤ max (Nat.size (x + m)) (Nat.size 1) + 1 :=
           size_add_le (x + m) 1
         have hinner : Nat.size (Nat.pair m (x + m))
-            ≤ 2 * max (Nat.size m) (Nat.size (x + m)) := size_pair_le' m (x + m)
+            ≤ 2 * max (Nat.size m) (Nat.size (x + m)) := size_pair_le_max m (x + m)
         have houter : Nat.size (Nat.pair x (Nat.pair m (x + m)))
             ≤ 2 * max (Nat.size x) (Nat.size (Nat.pair m (x + m))) :=
-          size_pair_le' x (Nat.pair m (x + m))
+          size_pair_le_max x (Nat.pair m (x + m))
         have hs1 : Nat.size (1 : ℕ) = 1 := by decide
         omega
       omega
@@ -1380,16 +1369,16 @@ Subtraction counts predecessors, so its bound rests on the predecessor's, which 
 re-shaping code that hands a one-argument value to a fold. Each layer adds a pairing, and each
 pairing doubles — the same accounting as addition, one level deeper. -/
 
-theorem spaceCost_cShape0 (v : ℕ) : spaceCost OneDL.cShape0 v ≤ 2 * Nat.size v := by
+private theorem spaceCost_cShape0 (v : ℕ) : spaceCost OneDL.cShape0 v ≤ 2 * Nat.size v := by
   simp only [OneDL.cShape0, spaceCost_pair, spaceCost_zero, spaceCost_left, spaceCost_right,
     val_zero', val_pair, val_left', val_right', Nat.pair_unpair]
   have h1 : Nat.size v.unpair.1 ≤ Nat.size v := Nat.size_le_size (Nat.unpair_left_le v)
   have h2 : Nat.size v.unpair.2 ≤ Nat.size v := Nat.size_le_size (Nat.unpair_right_le v)
-  have h3 : Nat.size (Nat.pair 0 v) ≤ 2 * max (Nat.size 0) (Nat.size v) := size_pair_le' 0 v
+  have h3 : Nat.size (Nat.pair 0 v) ≤ 2 * max (Nat.size 0) (Nat.size v) := size_pair_le_max 0 v
   have h0 : Nat.size (0 : ℕ) = 0 := by decide
   omega
 
-theorem spaceCost_cPredCore (a n : ℕ) :
+private theorem spaceCost_cPredCore (a n : ℕ) :
     spaceCost cPredCore (Nat.pair a n) ≤ 4 * max (Nat.size a) (Nat.size n) + 4 := by
   simp only [cPredCore]
   induction n with
@@ -1404,20 +1393,20 @@ theorem spaceCost_cPredCore (a n : ℕ) :
       have hmono : Nat.size m ≤ Nat.size (m + 1) := Nat.size_le_size (by omega)
       have hpm : Nat.size (m - 1) ≤ Nat.size m := Nat.size_le_size (by omega)
       have hinner : Nat.size (Nat.pair m (m - 1)) ≤ 2 * max (Nat.size m) (Nat.size (m - 1)) :=
-        size_pair_le' m (m - 1)
+        size_pair_le_max m (m - 1)
       have houter : Nat.size (Nat.pair a (Nat.pair m (m - 1)))
           ≤ 2 * max (Nat.size a) (Nat.size (Nat.pair m (m - 1))) :=
-        size_pair_le' a (Nat.pair m (m - 1))
+        size_pair_le_max a (Nat.pair m (m - 1))
       omega
 
-theorem spaceCost_cPred (v : ℕ) : spaceCost cPred v ≤ 4 * Nat.size v + 4 := by
+private theorem spaceCost_cPred (v : ℕ) : spaceCost cPred v ≤ 4 * Nat.size v + 4 := by
   rw [cPred, spaceCost_comp, OneDL.val_cShape0]
   have h1 := spaceCost_cShape0 v
   have h2 := spaceCost_cPredCore 0 v
   have h0 : Nat.size (0 : ℕ) = 0 := by decide
   omega
 
-theorem spaceCost_cSub (x y : ℕ) :
+private theorem spaceCost_cSub (x y : ℕ) :
     spaceCost cSub (Nat.pair x y) ≤ 8 * max (Nat.size x) (Nat.size y) + 16 := by
   simp only [cSub]
   induction y with
@@ -1432,10 +1421,10 @@ theorem spaceCost_cSub (x y : ℕ) :
       have hsub : Nat.size (x - m) ≤ Nat.size x := Nat.size_le_size (by omega)
       have hp := spaceCost_cPred (x - m)
       have hinner : Nat.size (Nat.pair m (x - m)) ≤ 2 * max (Nat.size m) (Nat.size (x - m)) :=
-        size_pair_le' m (x - m)
+        size_pair_le_max m (x - m)
       have houter : Nat.size (Nat.pair x (Nat.pair m (x - m)))
           ≤ 2 * max (Nat.size x) (Nat.size (Nat.pair m (x - m))) :=
-        size_pair_le' x (Nat.pair m (x - m))
+        size_pair_le_max x (Nat.pair m (x - m))
       omega
 
 /-! ### Multiplication
@@ -1452,7 +1441,7 @@ private theorem size_mul_le (a b : ℕ) : Nat.size (a * b) ≤ Nat.size a + Nat.
   have hpb : (0 : ℕ) < 2 ^ Nat.size b := by positivity
   nlinarith
 
-theorem spaceCost_cMul (x y : ℕ) :
+private theorem spaceCost_cMul (x y : ℕ) :
     spaceCost cMul (Nat.pair x y) ≤ 8 * (Nat.size x + Nat.size y) + 16 := by
   simp only [cMul]
   induction y with
@@ -1469,12 +1458,12 @@ theorem spaceCost_cMul (x y : ℕ) :
       have hmono : Nat.size m ≤ Nat.size (m + 1) := Nat.size_le_size (by omega)
       have hprod : Nat.size (x * m) ≤ Nat.size x + Nat.size m := size_mul_le x m
       have hinner : Nat.size (Nat.pair m (x * m)) ≤ 2 * max (Nat.size m) (Nat.size (x * m)) :=
-        size_pair_le' m (x * m)
+        size_pair_le_max m (x * m)
       have houter : Nat.size (Nat.pair x (Nat.pair m (x * m)))
           ≤ 2 * max (Nat.size x) (Nat.size (Nat.pair m (x * m))) :=
-        size_pair_le' x (Nat.pair m (x * m))
+        size_pair_le_max x (Nat.pair m (x * m))
       have hxp : Nat.size (Nat.pair x (x * m)) ≤ 2 * max (Nat.size x) (Nat.size (x * m)) :=
-        size_pair_le' x (x * m)
+        size_pair_le_max x (x * m)
       have hadd := spaceCost_cAdd x (x * m)
       have hl1 : Nat.size (Nat.pair x (Nat.pair m (x * m))).unpair.1
           ≤ Nat.size (Nat.pair x (Nat.pair m (x * m))) :=
@@ -1495,13 +1484,13 @@ its input's *width*: the honest statement is in terms of the exponent's *value*.
 weakness — every call site in the packing layer applies `cPow2` to a width (`frameBits f`, or a
 shift exponent built from it), so the value-shaped bound is exactly what composes there. -/
 
-theorem spaceCost_cDbl (v : ℕ) : spaceCost cDbl v ≤ 4 * Nat.size v + 8 := by
+private theorem spaceCost_cDbl (v : ℕ) : spaceCost cDbl v ≤ 4 * Nat.size v + 8 := by
   rw [cDbl, spaceCost_comp, spaceCost_pair, spaceCost_cId, val_pair, val_cId]
-  have hp : Nat.size (Nat.pair v v) ≤ 2 * max (Nat.size v) (Nat.size v) := size_pair_le' v v
+  have hp : Nat.size (Nat.pair v v) ≤ 2 * max (Nat.size v) (Nat.size v) := size_pair_le_max v v
   have ha := spaceCost_cAdd v v
   omega
 
-theorem spaceCost_cPow2Core (a n : ℕ) :
+private theorem spaceCost_cPow2Core (a n : ℕ) :
     spaceCost cPow2Core (Nat.pair a n) ≤ 4 * max (Nat.size a) (n + 1) + 8 := by
   simp only [cPow2Core]
   induction n with
@@ -1519,13 +1508,13 @@ theorem spaceCost_cPow2Core (a n : ℕ) :
       have hdb := spaceCost_cDbl (2 ^ m)
       have hms : Nat.size m ≤ m + 1 := le_trans (Nat.size_le.2 Nat.lt_two_pow_self) (by omega)
       have hinner : Nat.size (Nat.pair m (2 ^ m)) ≤ 2 * max (Nat.size m) (Nat.size (2 ^ m)) :=
-        size_pair_le' m (2 ^ m)
+        size_pair_le_max m (2 ^ m)
       have houter : Nat.size (Nat.pair a (Nat.pair m (2 ^ m)))
           ≤ 2 * max (Nat.size a) (Nat.size (Nat.pair m (2 ^ m))) :=
-        size_pair_le' a (Nat.pair m (2 ^ m))
+        size_pair_le_max a (Nat.pair m (2 ^ m))
       omega
 
-theorem spaceCost_cPow2 (v : ℕ) : spaceCost cPow2 v ≤ 4 * v + 12 := by
+private theorem spaceCost_cPow2 (v : ℕ) : spaceCost cPow2 v ≤ 4 * v + 12 := by
   rw [cPow2, spaceCost_comp, OneDL.val_cShape0]
   have h1 := spaceCost_cShape0 v
   have h2 := spaceCost_cPow2Core 0 v
@@ -1538,16 +1527,16 @@ theorem spaceCost_cPow2 (v : ℕ) : spaceCost cPow2 v ≤ 4 * v + 12 := by
 The Boolean layer's folds carry a `{0,1}` accumulator, so their step inputs are narrow: the width
 comes entirely from the argument being tested, two pairings deep as before. -/
 
-theorem spaceCost_cSwap (v : ℕ) : spaceCost OneDL.cSwap v ≤ 2 * Nat.size v := by
+private theorem spaceCost_cSwap (v : ℕ) : spaceCost OneDL.cSwap v ≤ 2 * Nat.size v := by
   simp only [OneDL.cSwap, spaceCost_pair, spaceCost_left, spaceCost_right, val_left', val_right']
   have h1 : Nat.size v.unpair.1 ≤ Nat.size v := Nat.size_le_size (Nat.unpair_left_le v)
   have h2 : Nat.size v.unpair.2 ≤ Nat.size v := Nat.size_le_size (Nat.unpair_right_le v)
   have h3 : Nat.size (Nat.pair v.unpair.2 v.unpair.1)
       ≤ 2 * max (Nat.size v.unpair.2) (Nat.size v.unpair.1) :=
-    size_pair_le' _ _
+    size_pair_le_max _ _
   omega
 
-theorem spaceCost_isPosCore (a n : ℕ) :
+private theorem spaceCost_isPosCore (a n : ℕ) :
     spaceCost OneDL.isPosCore (Nat.pair a n) ≤ 4 * max (Nat.size a) (Nat.size n) + 8 := by
   simp only [OneDL.isPosCore]
   induction n with
@@ -1567,23 +1556,23 @@ theorem spaceCost_isPosCore (a n : ℕ) :
         (Nat.pair a (Nat.pair m (val (prec zero (constCode 1)) (Nat.pair a m))))
       have hinner : Nat.size (Nat.pair m (val (prec zero (constCode 1)) (Nat.pair a m)))
           ≤ 2 * max (Nat.size m)
-              (Nat.size (val (prec zero (constCode 1)) (Nat.pair a m))) := size_pair_le' _ _
+              (Nat.size (val (prec zero (constCode 1)) (Nat.pair a m))) := size_pair_le_max _ _
       have houter : Nat.size (Nat.pair a
             (Nat.pair m (val (prec zero (constCode 1)) (Nat.pair a m))))
           ≤ 2 * max (Nat.size a)
               (Nat.size (Nat.pair m (val (prec zero (constCode 1)) (Nat.pair a m)))) :=
-        size_pair_le' _ _
+        size_pair_le_max _ _
       have h1 : Nat.size (1 : ℕ) = 1 := by decide
       omega
 
-theorem spaceCost_cIsPos (v : ℕ) : spaceCost OneDL.cIsPos v ≤ 4 * Nat.size v + 8 := by
+private theorem spaceCost_cIsPos (v : ℕ) : spaceCost OneDL.cIsPos v ≤ 4 * Nat.size v + 8 := by
   rw [OneDL.cIsPos, spaceCost_comp, OneDL.val_cShape0]
   have h1 := spaceCost_cShape0 v
   have h2 := spaceCost_isPosCore 0 v
   have h0 : Nat.size (0 : ℕ) = 0 := by decide
   omega
 
-theorem spaceCost_notCore (a n : ℕ) :
+private theorem spaceCost_notCore (a n : ℕ) :
     spaceCost OneDL.notCore (Nat.pair a n) ≤ 4 * max (Nat.size a) (Nat.size n) + 8 := by
   simp only [OneDL.notCore]
   induction n with
@@ -1602,16 +1591,16 @@ theorem spaceCost_notCore (a n : ℕ) :
       have hmono : Nat.size m ≤ Nat.size (m + 1) := Nat.size_le_size (by omega)
       have hinner : Nat.size (Nat.pair m (val (prec (constCode 1) zero) (Nat.pair a m)))
           ≤ 2 * max (Nat.size m)
-              (Nat.size (val (prec (constCode 1) zero) (Nat.pair a m))) := size_pair_le' _ _
+              (Nat.size (val (prec (constCode 1) zero) (Nat.pair a m))) := size_pair_le_max _ _
       have houter : Nat.size (Nat.pair a
             (Nat.pair m (val (prec (constCode 1) zero) (Nat.pair a m))))
           ≤ 2 * max (Nat.size a)
               (Nat.size (Nat.pair m (val (prec (constCode 1) zero) (Nat.pair a m)))) :=
-        size_pair_le' _ _
+        size_pair_le_max _ _
       have h0 : Nat.size (0 : ℕ) = 0 := by decide
       omega
 
-theorem spaceCost_cNot (v : ℕ) : spaceCost OneDL.cNot v ≤ 4 * Nat.size v + 8 := by
+private theorem spaceCost_cNot (v : ℕ) : spaceCost OneDL.cNot v ≤ 4 * Nat.size v + 8 := by
   rw [OneDL.cNot, spaceCost_comp, OneDL.val_cShape0]
   have h1 := spaceCost_cShape0 v
   have h2 := spaceCost_notCore 0 v
@@ -1619,7 +1608,7 @@ theorem spaceCost_cNot (v : ℕ) : spaceCost OneDL.cNot v ≤ 4 * Nat.size v + 8
   omega
 
 /-- Comparison is subtraction followed by a zero test, so it costs what subtraction costs. -/
-theorem spaceCost_cLe (x y : ℕ) :
+private theorem spaceCost_cLe (x y : ℕ) :
     spaceCost cLe (Nat.pair x y) ≤ 8 * max (Nat.size x) (Nat.size y) + 16 := by
   rw [cLe, spaceCost_comp, val_cSub]
   have h1 := spaceCost_cSub x y
@@ -1637,7 +1626,7 @@ private theorem size_pair_bit {a b : ℕ} (ha : a ≤ 1) (hb : b ≤ 1) :
     Nat.size (Nat.pair a b) ≤ 2 := by
   interval_cases a <;> interval_cases b <;> decide
 
-theorem val_orCore_le_one (a m : ℕ) : val OneDL.orCore (Nat.pair a m) ≤ 1 := by
+private theorem val_orCore_le_one (a m : ℕ) : val OneDL.orCore (Nat.pair a m) ≤ 1 := by
   cases m with
   | zero =>
       simp only [OneDL.orCore]
@@ -1647,7 +1636,7 @@ theorem val_orCore_le_one (a m : ℕ) : val OneDL.orCore (Nat.pair a m) ≤ 1 :=
       simp only [OneDL.orCore]
       rw [val_prec_succ, val_constCode]
 
-theorem spaceCost_orCore (a n : ℕ) :
+private theorem spaceCost_orCore (a n : ℕ) :
     spaceCost OneDL.orCore (Nat.pair a n) ≤ 4 * max (Nat.size a) (Nat.size n) + 16 := by
   simp only [OneDL.orCore]
   induction n with
@@ -1668,16 +1657,16 @@ theorem spaceCost_orCore (a n : ℕ) :
             (val (prec OneDL.cIsPos (constCode 1)) (Nat.pair a m)))
           ≤ 2 * max (Nat.size m)
               (Nat.size (val (prec OneDL.cIsPos (constCode 1)) (Nat.pair a m))) :=
-        size_pair_le' _ _
+        size_pair_le_max _ _
       have houter : Nat.size (Nat.pair a (Nat.pair m
             (val (prec OneDL.cIsPos (constCode 1)) (Nat.pair a m))))
           ≤ 2 * max (Nat.size a) (Nat.size (Nat.pair m
               (val (prec OneDL.cIsPos (constCode 1)) (Nat.pair a m)))) :=
-        size_pair_le' _ _
+        size_pair_le_max _ _
       have h1 : Nat.size (1 : ℕ) = 1 := by decide
       omega
 
-theorem spaceCost_cOr (v : ℕ) : spaceCost OneDL.cOr v ≤ 4 * Nat.size v + 16 := by
+private theorem spaceCost_cOr (v : ℕ) : spaceCost OneDL.cOr v ≤ 4 * Nat.size v + 16 := by
   have hsw : val OneDL.cSwap v = Nat.pair v.unpair.2 v.unpair.1 := by
     conv_lhs => rw [← Nat.pair_unpair v]
     rw [OneDL.val_cSwap]
@@ -1688,7 +1677,7 @@ theorem spaceCost_cOr (v : ℕ) : spaceCost OneDL.cOr v ≤ 4 * Nat.size v + 16 
   have hr : Nat.size v.unpair.2 ≤ Nat.size v := Nat.size_le_size (Nat.unpair_right_le v)
   omega
 
-theorem spaceCost_cAnd (v : ℕ) : spaceCost OneDL.cAnd v ≤ 4 * Nat.size v + 40 := by
+private theorem spaceCost_cAnd (v : ℕ) : spaceCost OneDL.cAnd v ≤ 4 * Nat.size v + 40 := by
   have hl : Nat.size v.unpair.1 ≤ Nat.size v := Nat.size_le_size (Nat.unpair_left_le v)
   have hr : Nat.size v.unpair.2 ≤ Nat.size v := Nat.size_le_size (Nat.unpair_right_le v)
   -- the two negated projections, and the tiny pair they form
@@ -1723,13 +1712,13 @@ theorem spaceCost_cAnd (v : ℕ) : spaceCost OneDL.cAnd v ≤ 4 * Nat.size v + 4
       (val OneDL.cNot v.unpair.2))) ≤ 1 := le_trans (Nat.size_le_size hbor) (by decide)
   omega
 
-theorem spaceCost_cEq (x y : ℕ) :
+private theorem spaceCost_cEq (x y : ℕ) :
     spaceCost cEq (Nat.pair x y) ≤ 8 * max (Nat.size x) (Nat.size y) + 64 := by
   have hsw : val OneDL.cSwap (Nat.pair x y) = Nat.pair y x := OneDL.val_cSwap x y
   have hle1 := spaceCost_cLe x y
   have hle2 := spaceCost_cLe y x
   have hsw0 := spaceCost_cSwap (Nat.pair x y)
-  have hpv : Nat.size (Nat.pair x y) ≤ 2 * max (Nat.size x) (Nat.size y) := size_pair_le' x y
+  have hpv : Nat.size (Nat.pair x y) ≤ 2 * max (Nat.size x) (Nat.size y) := size_pair_le_max x y
   have hb1 : val cLe (Nat.pair x y) ≤ 1 := by
     rw [val_cLe]; split <;> decide
   have hb2 : val cLe (Nat.pair y x) ≤ 1 := by
@@ -1753,10 +1742,10 @@ theorem spaceCost_cEq (x y : ℕ) :
 are charged — the arithmetic counterpart of `cSel`'s strictness. The indicators are bits, so each
 product is no wider than its arm. -/
 
-theorem val_cCtr' (v : ℕ) : val cCtr v = v.unpair.2.unpair.1 := by
+private theorem val_cCtr' (v : ℕ) : val cCtr v = v.unpair.2.unpair.1 := by
   rw [cCtr, val_comp, val_right', val_left']
 
-theorem val_cAcc' (v : ℕ) : val cAcc v = v.unpair.2.unpair.2 := by
+private theorem val_cAcc' (v : ℕ) : val cAcc v = v.unpair.2.unpair.2 := by
   rw [cAcc, val_comp, val_right', val_right']
 
 private theorem mul_bit_le {a b : ℕ} (ha : a ≤ 1) : a * b ≤ b := by
@@ -1764,7 +1753,7 @@ private theorem mul_bit_le {a b : ℕ} (ha : a ≤ 1) : a * b ≤ b := by
 
 attribute [local irreducible] cAdd cMul cSub cPred cPow2 OneDL.cIsPos OneDL.cNot
 
-theorem spaceCost_cIte (v : ℕ) : spaceCost cIte v ≤ 8 * Nat.size v + 32 := by
+private theorem spaceCost_cIte (v : ℕ) : spaceCost cIte v ≤ 8 * Nat.size v + 32 := by
   have hb : Nat.size v.unpair.1 ≤ Nat.size v := Nat.size_le_size (Nat.unpair_left_le v)
   have hr : Nat.size v.unpair.2 ≤ Nat.size v := Nat.size_le_size (Nat.unpair_right_le v)
   have ht : Nat.size v.unpair.2.unpair.1 ≤ Nat.size v :=
@@ -1783,7 +1772,7 @@ theorem spaceCost_cIte (v : ℕ) : spaceCost cIte v ≤ 8 * Nat.size v + 32 := b
       val_pair, val_left', val_cCtr']
     have h1 := spaceCost_cIsPos v.unpair.1
     have h2 := spaceCost_cMul (val OneDL.cIsPos v.unpair.1) v.unpair.2.unpair.1
-    have hp := size_pair_le' (val OneDL.cIsPos v.unpair.1) v.unpair.2.unpair.1
+    have hp := size_pair_le_max (val OneDL.cIsPos v.unpair.1) v.unpair.2.unpair.1
     omega
   have hB : spaceCost (comp cMul (pair (comp OneDL.cNot left) cAcc)) v
       ≤ 8 * Nat.size v + 24 := by
@@ -1791,7 +1780,7 @@ theorem spaceCost_cIte (v : ℕ) : spaceCost cIte v ≤ 8 * Nat.size v + 32 := b
       val_pair, val_left', val_cAcc']
     have h1 := spaceCost_cNot v.unpair.1
     have h2 := spaceCost_cMul (val OneDL.cNot v.unpair.1) v.unpair.2.unpair.2
-    have hp := size_pair_le' (val OneDL.cNot v.unpair.1) v.unpair.2.unpair.2
+    have hp := size_pair_le_max (val OneDL.cNot v.unpair.1) v.unpair.2.unpair.2
     omega
   have hprodA : Nat.size (val OneDL.cIsPos v.unpair.1 * v.unpair.2.unpair.1) ≤ Nat.size v :=
     le_trans (Nat.size_le_size (mul_bit_le hip)) ht
@@ -1814,7 +1803,7 @@ theorem spaceCost_cIte (v : ℕ) : spaceCost cIte v ≤ 8 * Nat.size v + 32 := b
   rw [hred]
   have hadd := spaceCost_cAdd (val OneDL.cIsPos v.unpair.1 * v.unpair.2.unpair.1)
     (val OneDL.cNot v.unpair.1 * v.unpair.2.unpair.2)
-  have hpp := size_pair_le' (val OneDL.cIsPos v.unpair.1 * v.unpair.2.unpair.1)
+  have hpp := size_pair_le_max (val OneDL.cIsPos v.unpair.1 * v.unpair.2.unpair.1)
     (val OneDL.cNot v.unpair.1 * v.unpair.2.unpair.2)
   omega
 
@@ -1829,18 +1818,16 @@ the whole**, so it is *applied* rather than unfolded — an outer application ne
 one, and a walk down a code is a walk down a proof term of the same shape. This is the recipe that
 worked for selection, as infrastructure.
 
-A guard-rail for widths comes with it: state size facts through `size n ≤ n` where a zero case
-exists. The `max`-form route (`size (m+1) ≤ max (size m) (size 1) + 1`) is unprovable at zero. -/
+A guard-rail for widths comes with it: state size facts through `size n ≤ n` (`size_le_self`,
+from `ALT.Code.SizeArith`) where a zero case exists. The `max`-form route
+(`size (m+1) ≤ max (size m) (size 1) + 1`) is unprovable at zero. -/
 
-/-- Widths never exceed the value. Safe at zero, unlike the `max`-form bounds. -/
-theorem size_le_self (n : ℕ) : Nat.size n ≤ n := Nat.size_le.2 Nat.lt_two_pow_self
-
-theorem size_succ_le {m B : ℕ} (h : m ≤ B) : Nat.size (m + 1) ≤ B + 1 :=
+private theorem size_succ_le {m B : ℕ} (h : m ≤ B) : Nat.size (m + 1) ≤ B + 1 :=
   le_trans (size_le_self (m + 1)) (by omega)
 
 /-- Widths of a successor, against a bound on the *value*. Safe at zero, where the `max`-form
 route (`Nat.size (m+1) ≤ max (Nat.size m) 1 + 1`) is not available. -/
-theorem size_succ_le_size {m n : ℕ} (h : m ≤ n) : Nat.size (m + 1) ≤ Nat.size n + 1 := by
+private theorem size_succ_le_size {m n : ℕ} (h : m ≤ n) : Nat.size (m + 1) ≤ Nat.size n + 1 := by
   refine Nat.size_le.2 ?_
   have h1 : n < 2 ^ Nat.size n := Nat.lt_size_self n
   have h2 : (2 : ℕ) ^ Nat.size n < 2 ^ (Nat.size n + 1) :=
@@ -1848,35 +1835,35 @@ theorem size_succ_le_size {m n : ℕ} (h : m ≤ n) : Nat.size (m + 1) ≤ Nat.s
   omega
 
 /-- **Composition, bound form.** -/
-theorem spaceCost_comp_bound {f g : Code} {n B : ℕ}
+private theorem spaceCost_comp_bound {f g : Code} {n B : ℕ}
     (hg : spaceCost g n ≤ B) (hf : spaceCost f (val g n) ≤ B) :
     spaceCost (comp f g) n ≤ B := by
   rw [spaceCost_comp]; omega
 
 /-- **Pairing, bound form.** The third hypothesis is the width of the pair actually formed — the
 only place a `pair` node can cost more than its parts. -/
-theorem spaceCost_pair_bound {f g : Code} {n B : ℕ}
+private theorem spaceCost_pair_bound {f g : Code} {n B : ℕ}
     (hf : spaceCost f n ≤ B) (hg : spaceCost g n ≤ B)
     (hv : Nat.size (Nat.pair (val f n) (val g n)) ≤ B) :
     spaceCost (pair f g) n ≤ B := by
   rw [spaceCost_pair]; omega
 
-theorem spaceCost_left_bound {n B : ℕ} (h : Nat.size n ≤ B) : spaceCost left n ≤ B := by
+private theorem spaceCost_left_bound {n B : ℕ} (h : Nat.size n ≤ B) : spaceCost left n ≤ B := by
   rw [spaceCost_left]
   have := Nat.size_le_size (Nat.unpair_left_le n)
   omega
 
-theorem spaceCost_right_bound {n B : ℕ} (h : Nat.size n ≤ B) : spaceCost right n ≤ B := by
+private theorem spaceCost_right_bound {n B : ℕ} (h : Nat.size n ≤ B) : spaceCost right n ≤ B := by
   rw [spaceCost_right]
   have := Nat.size_le_size (Nat.unpair_right_le n)
   omega
 
-theorem spaceCost_zero_bound {n B : ℕ} (h : Nat.size n ≤ B) : spaceCost zero n ≤ B := by
+private theorem spaceCost_zero_bound {n B : ℕ} (h : Nat.size n ≤ B) : spaceCost zero n ≤ B := by
   rw [spaceCost_zero]
   have h0 : Nat.size (0 : ℕ) = 0 := by decide
   omega
 
-theorem spaceCost_succ_bound {n B : ℕ} (h1 : Nat.size n ≤ B) (h2 : Nat.size (n + 1) ≤ B) :
+private theorem spaceCost_succ_bound {n B : ℕ} (h1 : Nat.size n ≤ B) (h2 : Nat.size (n + 1) ≤ B) :
     spaceCost succ n ≤ B := by
   rw [spaceCost_succ]; omega
 
@@ -1887,7 +1874,7 @@ more than its guard once the counter's width fits the budget. Given the guard's 
 that the guard evaluates to a single bit, and that `16` copies of the arms' pair width (plus
 slack) still fit `B`, this discharges the two arms, the guard-and-arms pair width, and the final
 `cIte` charge in one application — no composite is ever rewritten by its parts. -/
-theorem spaceCost_iteAdvance_bound {G : Code} {I B : ℕ}
+private theorem spaceCost_iteAdvance_bound {G : Code} {I B : ℕ}
     (hGcost : spaceCost G I ≤ B)
     (hGbit : Nat.size (val G I) ≤ 1)
     (hI : Nat.size I ≤ B)
@@ -1907,12 +1894,12 @@ theorem spaceCost_iteAdvance_bound {G : Code} {I B : ℕ}
     rw [hSucc]; omega
   · -- the width of the guard-and-arms pair
     rw [val_pair, hSucc]
-    have := size_pair_le' (val G I) (Nat.pair (val cAcc I + 1) (val cAcc I))
+    have := size_pair_le_max (val G I) (Nat.pair (val cAcc I + 1) (val cAcc I))
     omega
   · -- the selection charge, priced against the pair the arms form
     rw [val_pair, val_pair, hSucc]
     have := spaceCost_cIte (Nat.pair (val G I) (Nat.pair (val cAcc I + 1) (val cAcc I)))
-    have := size_pair_le' (val G I) (Nat.pair (val cAcc I + 1) (val cAcc I))
+    have := size_pair_le_max (val G I) (Nat.pair (val cAcc I + 1) (val cAcc I))
     omega
 
 /-! ### The bit-length fold
@@ -1923,15 +1910,15 @@ discharged in a single `spaceCost_iteAdvance_bound` — the combinator every cou
 shares. The hypothesis `m ≤ Nat.size a` is what keeps the exponentiation affordable — `cPow2`
 costs linearly in its *argument*, so the fold's counter must stay inside the answer's width. -/
 
-theorem spaceCost_sizeStep (a y m : ℕ) (hm : m ≤ Nat.size a) :
+private theorem spaceCost_sizeStep (a y m : ℕ) (hm : m ≤ Nat.size a) :
     spaceCost sizeStep (Nat.pair a (Nat.pair y m))
       ≤ 32 * max (Nat.size a) (Nat.size y) + 128 := by
   -- widths: the counter stays inside the answer's, via the `size n ≤ n` route (safe at zero)
   have hsm : Nat.size m ≤ Nat.size a := le_trans (size_le_self m) hm
   have hsm1 : Nat.size (m + 1) ≤ Nat.size a + 1 := size_succ_le hm
   have hI : Nat.size (Nat.pair a (Nat.pair y m)) ≤ 4 * max (Nat.size a) (Nat.size y) := by
-    have h1 := size_pair_le' a (Nat.pair y m)
-    have h2 := size_pair_le' y m
+    have h1 := size_pair_le_max a (Nat.pair y m)
+    have h2 := size_pair_le_max y m
     omega
   -- the values the step forms, each named once so no outer step re-expands an inner one
   have hA : val cAcc (Nat.pair a (Nat.pair y m)) = m := val_cAcc a y m
@@ -1956,7 +1943,7 @@ theorem spaceCost_sizeStep (a y m : ℕ) (hm : m ≤ Nat.size a) :
         omega
     · exact spaceCost_left_bound (by omega)
     · rw [hPow, hL]
-      have h := size_pair_le' (2 ^ m) a
+      have h := size_pair_le_max (2 ^ m) a
       rw [size_two_pow] at h
       omega
     · rw [hInner]
@@ -1965,14 +1952,14 @@ theorem spaceCost_sizeStep (a y m : ℕ) (hm : m ≤ Nat.size a) :
       omega
   · -- the counter's width still fits the budget
     rw [hA]
-    have := size_pair_le' (m + 1) m
+    have := size_pair_le_max (m + 1) m
     omega
 
 /-- The fold itself. The generic `prec` bound does not apply here: it offers only a *width* bound
 on the accumulator, while exponentiation is priced by its argument's *value*. The induction below
 supplies the missing fact — the accumulator is `min (Nat.size n) j`, so it never leaves the
 answer's width. -/
-theorem spaceCost_sizeCore (n : ℕ) : ∀ m,
+private theorem spaceCost_sizeCore (n : ℕ) : ∀ m,
     spaceCost sizeCore (Nat.pair n m) ≤ 32 * max (Nat.size n) (Nat.size m) + 128 := by
   have hz : spaceCost sizeCore (Nat.pair n 0) = spaceCost zero n :=
     spaceCost_prec_zero zero sizeStep n
@@ -1993,14 +1980,14 @@ theorem spaceCost_sizeCore (n : ℕ) : ∀ m,
       omega
 
 /-- **Bit-length runs in workspace linear in its own argument's width.** -/
-theorem spaceCost_cSize (v : ℕ) : spaceCost cSize v ≤ 32 * Nat.size v + 128 := by
+private theorem spaceCost_cSize (v : ℕ) : spaceCost cSize v ≤ 32 * Nat.size v + 128 := by
   have hv : val (pair cId cId) v = Nat.pair v v := by rw [val_pair, val_cId]
   rw [cSize]
   refine spaceCost_comp_bound (spaceCost_pair_bound ?_ ?_ ?_) ?_
   · rw [spaceCost_cId]; omega
   · rw [spaceCost_cId]; omega
   · rw [val_cId]
-    have := size_pair_le' v v
+    have := size_pair_le_max v v
     omega
   · rw [hv]
     have := spaceCost_sizeCore v v
@@ -2012,16 +1999,16 @@ Same walk, one level deeper: the guard is a conjunction of two tests, one of whi
 accumulator hypothesis `m ≤ n` is what bounds the product's width — the quotient never exceeds the
 dividend, so the trial multiple stays inside the input's width plus one. -/
 
-theorem spaceCost_divStep (n d y m : ℕ) (hm : m ≤ n) :
+private theorem spaceCost_divStep (n d y m : ℕ) (hm : m ≤ n) :
     spaceCost divStep (Nat.pair (Nat.pair n d) (Nat.pair y m))
       ≤ 32 * max (max (Nat.size n) (Nat.size d)) (Nat.size y) + 128 := by
   have hsm : Nat.size m ≤ Nat.size n := Nat.size_le_size hm
   have hsm1 : Nat.size (m + 1) ≤ Nat.size n + 1 := size_succ_le_size hm
-  have hArg : Nat.size (Nat.pair n d) ≤ 2 * max (Nat.size n) (Nat.size d) := size_pair_le' n d
+  have hArg : Nat.size (Nat.pair n d) ≤ 2 * max (Nat.size n) (Nat.size d) := size_pair_le_max n d
   have hI : Nat.size (Nat.pair (Nat.pair n d) (Nat.pair y m))
       ≤ 4 * max (max (Nat.size n) (Nat.size d)) (Nat.size y) := by
-    have h1 := size_pair_le' (Nat.pair n d) (Nat.pair y m)
-    have h2 := size_pair_le' y m
+    have h1 := size_pair_le_max (Nat.pair n d) (Nat.pair y m)
+    have h2 := size_pair_le_max y m
     omega
   -- the values, each named once
   have hN : val cArgN (Nat.pair (Nat.pair n d) (Nat.pair y m)) = n := val_cArgN n d y m
@@ -2068,7 +2055,7 @@ theorem spaceCost_divStep (n d y m : ℕ) (hm : m ≤ n) :
         · refine spaceCost_comp_bound (spaceCost_left_bound (by omega)) ?_
           rw [hL]; exact spaceCost_right_bound (by omega)
         · rw [hSucc, hD]
-          have := size_pair_le' (m + 1) d
+          have := size_pair_le_max (m + 1) d
           omega
         · rw [hRpair]
           have := spaceCost_cMul (m + 1) d
@@ -2076,14 +2063,14 @@ theorem spaceCost_divStep (n d y m : ℕ) (hm : m ≤ n) :
       · refine spaceCost_comp_bound (spaceCost_left_bound (by omega)) ?_
         rw [hL]; exact spaceCost_left_bound (by omega)
       · rw [hR, hN]
-        have := size_pair_le' ((m + 1) * d) n
+        have := size_pair_le_max ((m + 1) * d) n
         omega
       · rw [val_pair, hR, hN]
         have := spaceCost_cLe ((m + 1) * d) n
         omega
     · have h1 := size_le_self _ |>.trans hPle
       have h2 := size_le_self _ |>.trans hQle
-      have h3 := size_pair_le' (val (comp OneDL.cIsPos cArgD)
+      have h3 := size_pair_le_max (val (comp OneDL.cIsPos cArgD)
         (Nat.pair (Nat.pair n d) (Nat.pair y m)))
         (val (comp cLe (pair (comp cMul (pair (comp succ cAcc) cArgD)) cArgN))
         (Nat.pair (Nat.pair n d) (Nat.pair y m)))
@@ -2091,7 +2078,7 @@ theorem spaceCost_divStep (n d y m : ℕ) (hm : m ≤ n) :
     · rw [val_pair]
       have h1 := size_le_self _ |>.trans hPle
       have h2 := size_le_self _ |>.trans hQle
-      have h3 := size_pair_le' (val (comp OneDL.cIsPos cArgD)
+      have h3 := size_pair_le_max (val (comp OneDL.cIsPos cArgD)
         (Nat.pair (Nat.pair n d) (Nat.pair y m)))
         (val (comp cLe (pair (comp cMul (pair (comp succ cAcc) cArgD)) cArgN))
         (Nat.pair (Nat.pair n d) (Nat.pair y m)))
@@ -2102,12 +2089,12 @@ theorem spaceCost_divStep (n d y m : ℕ) (hm : m ≤ n) :
       omega
   · -- the counter's width still fits the budget
     rw [hA]
-    have := size_pair_le' (m + 1) m
+    have := size_pair_le_max (m + 1) m
     omega
 
 /-- The division fold. As with the bit-length fold, the accumulator's *value* is what has to be
 tracked — it is `min (n / d) j`, hence never above the dividend. -/
-theorem spaceCost_divCore (n d : ℕ) : ∀ m,
+private theorem spaceCost_divCore (n d : ℕ) : ∀ m,
     spaceCost divCore (Nat.pair (Nat.pair n d) m)
       ≤ 32 * max (max (Nat.size n) (Nat.size d)) (Nat.size m) + 128 := by
   have hz : spaceCost divCore (Nat.pair (Nat.pair n d) 0) = spaceCost zero (Nat.pair n d) :=
@@ -2117,7 +2104,7 @@ theorem spaceCost_divCore (n d : ℕ) : ∀ m,
           (spaceCost divStep (Nat.pair (Nat.pair n d)
             (Nat.pair j (val divCore (Nat.pair (Nat.pair n d) j))))) :=
     fun j => spaceCost_prec_succ zero divStep (Nat.pair n d) j
-  have hArg : Nat.size (Nat.pair n d) ≤ 2 * max (Nat.size n) (Nat.size d) := size_pair_le' n d
+  have hArg : Nat.size (Nat.pair n d) ≤ 2 * max (Nat.size n) (Nat.size d) := size_pair_le_max n d
   intro m
   induction m with
   | zero =>
@@ -2132,9 +2119,9 @@ theorem spaceCost_divCore (n d : ℕ) : ∀ m,
       omega
 
 /-- **Division runs in workspace linear in its arguments' widths.** -/
-theorem spaceCost_cDiv (n d : ℕ) :
+private theorem spaceCost_cDiv (n d : ℕ) :
     spaceCost cDiv (Nat.pair n d) ≤ 32 * max (Nat.size n) (Nat.size d) + 128 := by
-  have hArg : Nat.size (Nat.pair n d) ≤ 2 * max (Nat.size n) (Nat.size d) := size_pair_le' n d
+  have hArg : Nat.size (Nat.pair n d) ≤ 2 * max (Nat.size n) (Nat.size d) := size_pair_le_max n d
   have hL : val left (Nat.pair n d) = n := by rw [val_left', Nat.unpair_pair]
   have hv : val (pair cId left) (Nat.pair n d) = Nat.pair (Nat.pair n d) n := by
     rw [val_pair, val_cId, hL]
@@ -2143,16 +2130,16 @@ theorem spaceCost_cDiv (n d : ℕ) :
   · rw [spaceCost_cId]; omega
   · exact spaceCost_left_bound (by omega)
   · rw [val_cId, hL]
-    have := size_pair_le' (Nat.pair n d) n
+    have := size_pair_le_max (Nat.pair n d) n
     omega
   · rw [hv]
     have := spaceCost_divCore n d n
     omega
 
 /-- **Remainder runs in workspace linear in its arguments' widths.** -/
-theorem spaceCost_cMod (n d : ℕ) :
+private theorem spaceCost_cMod (n d : ℕ) :
     spaceCost cMod (Nat.pair n d) ≤ 32 * max (Nat.size n) (Nat.size d) + 128 := by
-  have hArg : Nat.size (Nat.pair n d) ≤ 2 * max (Nat.size n) (Nat.size d) := size_pair_le' n d
+  have hArg : Nat.size (Nat.pair n d) ≤ 2 * max (Nat.size n) (Nat.size d) := size_pair_le_max n d
   have hL : val left (Nat.pair n d) = n := by rw [val_left', Nat.unpair_pair]
   have hR : val right (Nat.pair n d) = d := by rw [val_right', Nat.unpair_pair]
   have hQ : Nat.size (n / d) ≤ Nat.size n := Nat.size_le_size (Nat.div_le_self n d)
@@ -2170,13 +2157,13 @@ theorem spaceCost_cMod (n d : ℕ) :
     · have := spaceCost_cDiv n d
       omega
     · rw [hR, val_cDiv]
-      have := size_pair_le' d (n / d)
+      have := size_pair_le_max d (n / d)
       omega
     · rw [hMulPair]
       have := spaceCost_cMul d (n / d)
       omega
   · rw [hL, hMul]
-    have := size_pair_le' n (d * (n / d))
+    have := size_pair_le_max n (d * (n / d))
     omega
   · rw [val_pair, hL, hMul]
     have := spaceCost_cSub n (d * (n / d))
@@ -2189,37 +2176,37 @@ composition the step runs, and every one of its parts is charged. The three shif
 a bit-length call, so bit-length's own bound is what dominates — which is why the constant below is
 the same `32` that bit-length pays, rather than a product of the nesting depth. -/
 
-theorem size_two_mul_succ_le (S : ℕ) : Nat.size (2 * S + 1) ≤ Nat.size S + 1 := by
+private theorem size_two_mul_succ_le (S : ℕ) : Nat.size (2 * S + 1) ≤ Nat.size S + 1 := by
   refine Nat.size_le.2 ?_
   have h := Nat.lt_size_self S
   have hp : (2 : ℕ) ^ (Nat.size S + 1) = 2 * 2 ^ Nat.size S := by rw [pow_succ]; ring
   omega
 
-@[simp] theorem val_cFrameBits_left (f k : ℕ) :
+@[simp] private theorem val_cFrameBits_left (f k : ℕ) :
     val (comp cFrameBits left) (Nat.pair f k) = Nat.size f := by
   rw [val_comp, val_left', Nat.unpair_pair, val_cFrameBits]
   rfl
 
-theorem spaceCost_cFrameBits_left (f k : ℕ) :
+private theorem spaceCost_cFrameBits_left (f k : ℕ) :
     spaceCost (comp cFrameBits left) (Nat.pair f k)
       ≤ 32 * max (Nat.size f) (Nat.size k) + 128 := by
-  have hI : Nat.size (Nat.pair f k) ≤ 2 * max (Nat.size f) (Nat.size k) := size_pair_le' f k
+  have hI : Nat.size (Nat.pair f k) ≤ 2 * max (Nat.size f) (Nat.size k) := size_pair_le_max f k
   refine spaceCost_comp_bound (spaceCost_left_bound (by omega)) ?_
   rw [val_left', Nat.unpair_pair, cFrameBits]
   change spaceCost cSize f ≤ _
   have := spaceCost_cSize f
   omega
 
-@[simp] theorem val_cP0 (f k : ℕ) : val cP0 (Nat.pair f k) = 2 ^ Nat.size f := by
+@[simp] private theorem val_cP0 (f k : ℕ) : val cP0 (Nat.pair f k) = 2 ^ Nat.size f := by
   rw [cP0, val_comp, val_cFrameBits_left, val_cPow2]
 
-@[simp] theorem val_cP1 (f k : ℕ) : val cP1 (Nat.pair f k) = 2 ^ (Nat.size f + 1) := by
+@[simp] private theorem val_cP1 (f k : ℕ) : val cP1 (Nat.pair f k) = 2 ^ (Nat.size f + 1) := by
   rw [cP1, val_comp, val_comp, val_cFrameBits_left, val_succ', val_cPow2]
 
-@[simp] theorem val_cP2 (f k : ℕ) : val cP2 (Nat.pair f k) = 2 ^ (2 * Nat.size f + 1) := by
+@[simp] private theorem val_cP2 (f k : ℕ) : val cP2 (Nat.pair f k) = 2 ^ (2 * Nat.size f + 1) := by
   rw [cP2, val_comp, val_comp, val_comp, val_cFrameBits_left, val_cDbl, val_succ', val_cPow2]
 
-theorem spaceCost_cP0 (f k : ℕ) :
+private theorem spaceCost_cP0 (f k : ℕ) :
     spaceCost cP0 (Nat.pair f k) ≤ 32 * max (Nat.size f) (Nat.size k) + 128 := by
   rw [cP0]
   refine spaceCost_comp_bound (spaceCost_cFrameBits_left f k) ?_
@@ -2228,7 +2215,7 @@ theorem spaceCost_cP0 (f k : ℕ) :
   have hM : Nat.size f ≤ max (Nat.size f) (Nat.size k) := le_max_left _ _
   omega
 
-theorem spaceCost_cP1 (f k : ℕ) :
+private theorem spaceCost_cP1 (f k : ℕ) :
     spaceCost cP1 (Nat.pair f k) ≤ 32 * max (Nat.size f) (Nat.size k) + 128 := by
   have hM : Nat.size f ≤ max (Nat.size f) (Nat.size k) := le_max_left _ _
   have hsf : Nat.size (Nat.size f) ≤ Nat.size f := size_le_self _
@@ -2243,7 +2230,7 @@ theorem spaceCost_cP1 (f k : ℕ) :
     have := spaceCost_cPow2 (Nat.size f + 1)
     omega
 
-theorem spaceCost_cP2 (f k : ℕ) :
+private theorem spaceCost_cP2 (f k : ℕ) :
     spaceCost cP2 (Nat.pair f k) ≤ 32 * max (Nat.size f) (Nat.size k) + 128 := by
   have hM : Nat.size f ≤ max (Nat.size f) (Nat.size k) := le_max_left _ _
   have hsf : Nat.size (Nat.size f) ≤ Nat.size f := size_le_self _
@@ -2265,11 +2252,11 @@ theorem spaceCost_cP2 (f k : ℕ) :
     omega
 
 /-- **Building a stack cell runs in workspace linear in the frame's and tail's widths.** -/
-theorem spaceCost_cStkCons (f k : ℕ) :
+private theorem spaceCost_cStkCons (f k : ℕ) :
     spaceCost cStkCons (Nat.pair f k) ≤ 32 * max (Nat.size f) (Nat.size k) + 128 := by
   have hM1 : Nat.size f ≤ max (Nat.size f) (Nat.size k) := le_max_left _ _
   have hM2 : Nat.size k ≤ max (Nat.size f) (Nat.size k) := le_max_right _ _
-  have hI : Nat.size (Nat.pair f k) ≤ 2 * max (Nat.size f) (Nat.size k) := size_pair_le' f k
+  have hI : Nat.size (Nat.pair f k) ≤ 2 * max (Nat.size f) (Nat.size k) := size_pair_le_max f k
   have hL : val left (Nat.pair f k) = f := by rw [val_left', Nat.unpair_pair]
   have hR : val right (Nat.pair f k) = k := by rw [val_right', Nat.unpair_pair]
   -- the widths of the three shifted numerals
@@ -2325,7 +2312,7 @@ theorem spaceCost_cStkCons (f k : ℕ) :
         have h1 : Nat.size (1 : ℕ) = 1 := by decide
         omega
       · rw [val_cP0, val_constCode]
-        have := size_pair_le' (2 ^ Nat.size f) 1
+        have := size_pair_le_max (2 ^ Nat.size f) 1
         have h1 : Nat.size (1 : ℕ) = 1 := by decide
         omega
       · rw [val_pair, val_cP0, val_constCode]
@@ -2337,13 +2324,13 @@ theorem spaceCost_cStkCons (f k : ℕ) :
       · exact spaceCost_left_bound (by omega)
       · exact spaceCost_cP1 f k
       · rw [hL, val_cP1]
-        have := size_pair_le' f (2 ^ (Nat.size f + 1))
+        have := size_pair_le_max f (2 ^ (Nat.size f + 1))
         omega
       · rw [val_pair, hL, val_cP1]
         have := spaceCost_cMul f (2 ^ (Nat.size f + 1))
         omega
     · rw [hvA1, hvB1]
-      have := size_pair_le' (2 ^ Nat.size f - 1) (f * 2 ^ (Nat.size f + 1))
+      have := size_pair_le_max (2 ^ Nat.size f - 1) (f * 2 ^ (Nat.size f + 1))
       omega
     · rw [val_pair, hvA1, hvB1]
       have := spaceCost_cAdd (2 ^ Nat.size f - 1) (f * 2 ^ (Nat.size f + 1))
@@ -2353,13 +2340,13 @@ theorem spaceCost_cStkCons (f k : ℕ) :
     · exact spaceCost_right_bound (by omega)
     · exact spaceCost_cP2 f k
     · rw [hR, val_cP2]
-      have := size_pair_le' k (2 ^ (2 * Nat.size f + 1))
+      have := size_pair_le_max k (2 ^ (2 * Nat.size f + 1))
       omega
     · rw [val_pair, hR, val_cP2]
       have := spaceCost_cMul k (2 ^ (2 * Nat.size f + 1))
       omega
   · rw [hvA2, hvB2]
-    have := size_pair_le' (2 ^ Nat.size f - 1 + f * 2 ^ (Nat.size f + 1))
+    have := size_pair_le_max (2 ^ Nat.size f - 1 + f * 2 ^ (Nat.size f + 1))
       (k * 2 ^ (2 * Nat.size f + 1))
     omega
   · rw [val_pair, hvA2, hvB2]
@@ -2374,9 +2361,9 @@ theorem spaceCost_cStkCons (f k : ℕ) :
     exact spaceCost_succ_bound (by omega) (by omega)
 
 /-- Stripping the flag bit. -/
-theorem spaceCost_cStkBody (s : ℕ) : spaceCost cStkBody s ≤ 32 * Nat.size s + 192 := by
+private theorem spaceCost_cStkBody (s : ℕ) : spaceCost cStkBody s ≤ 32 * Nat.size s + 192 := by
   have h2 : Nat.size (2 : ℕ) = 2 := by decide
-  have hp : Nat.size (Nat.pair s 2) ≤ 2 * max (Nat.size s) (Nat.size 2) := size_pair_le' s 2
+  have hp : Nat.size (Nat.pair s 2) ≤ 2 * max (Nat.size s) (Nat.size 2) := size_pair_le_max s 2
   rw [cStkBody]
   refine spaceCost_comp_bound (spaceCost_pair_bound ?_ ?_ ?_) ?_
   · rw [spaceCost_cId]; omega
@@ -2390,7 +2377,7 @@ theorem spaceCost_cStkBody (s : ℕ) : spaceCost cStkBody s ≤ 32 * Nat.size s 
 /-- **The header is no longer than the numeral carrying it.** The header fold's accumulator is
 priced by its *value* — it drives an exponentiation — so the walk needs this in place of the
 cruder bound by the numeral itself. -/
-theorem trailOnes_le_size (n : ℕ) : BoundedInterp.trailOnes n ≤ Nat.size n := by
+private theorem trailOnes_le_size (n : ℕ) : BoundedInterp.trailOnes n ≤ Nat.size n := by
   rcases Nat.eq_zero_or_pos (BoundedInterp.trailOnes n) with h | h
   · omega
   · have hb := (BoundedInterp.trailOnes_lt_iff n (BoundedInterp.trailOnes n - 1)).1 (by omega)
@@ -2403,7 +2390,7 @@ theorem trailOnes_le_size (n : ℕ) : BoundedInterp.trailOnes n ≤ Nat.size n :
     rw [size_two_pow] at hsz
     omega
 
-theorem spaceCost_trailStep (a y m : ℕ) (hm : m ≤ Nat.size a) :
+private theorem spaceCost_trailStep (a y m : ℕ) (hm : m ≤ Nat.size a) :
     spaceCost trailStep (Nat.pair a (Nat.pair y m))
       ≤ 32 * max (Nat.size a) (Nat.size y) + 256 := by
   have hsm : Nat.size m ≤ Nat.size a := le_trans (Nat.size_le_size hm) (size_le_self _)
@@ -2411,8 +2398,8 @@ theorem spaceCost_trailStep (a y m : ℕ) (hm : m ≤ Nat.size a) :
     le_trans (size_succ_le_size hm) (by have := size_le_self (Nat.size a); omega)
   have hI : Nat.size (Nat.pair a (Nat.pair y m))
       ≤ 4 * max (Nat.size a) (Nat.size y) := by
-    have h1 := size_pair_le' a (Nat.pair y m)
-    have h2 := size_pair_le' y m
+    have h1 := size_pair_le_max a (Nat.pair y m)
+    have h2 := size_pair_le_max y m
     omega
   have hpow : Nat.size (2 ^ (m + 1)) = m + 2 := size_two_pow (m + 1)
   have hmodsz : Nat.size (a % 2 ^ (m + 1)) ≤ Nat.size a := Nat.size_le_size (Nat.mod_le _ _)
@@ -2455,7 +2442,7 @@ theorem spaceCost_trailStep (a y m : ℕ) (hm : m ≤ Nat.size a) :
       · exact spaceCost_left_bound (by omega)
       · exact hHdrCost
       · rw [hL, hHdr]
-        have := size_pair_le' a (2 ^ (m + 1))
+        have := size_pair_le_max a (2 ^ (m + 1))
         omega
       · rw [val_pair, hL, hHdr]
         have := spaceCost_cMod a (2 ^ (m + 1))
@@ -2465,23 +2452,23 @@ theorem spaceCost_trailStep (a y m : ℕ) (hm : m ≤ Nat.size a) :
       · have := spaceCost_constCode 1 (Nat.pair a (Nat.pair y m))
         omega
       · rw [hHdr, val_constCode]
-        have := size_pair_le' (2 ^ (m + 1)) 1
+        have := size_pair_le_max (2 ^ (m + 1)) 1
         omega
       · rw [val_pair, hHdr, val_constCode]
         have := spaceCost_cSub (2 ^ (m + 1)) 1
         omega
     · rw [hMod, hSub]
-      have := size_pair_le' (a % 2 ^ (m + 1)) (2 ^ (m + 1) - 1)
+      have := size_pair_le_max (a % 2 ^ (m + 1)) (2 ^ (m + 1) - 1)
       omega
     · rw [val_pair, hMod, hSub]
       have := spaceCost_cEq (a % 2 ^ (m + 1)) (2 ^ (m + 1) - 1)
       omega
   · -- the counter's width still fits the budget
     rw [hA]
-    have := size_pair_le' (m + 1) m
+    have := size_pair_le_max (m + 1) m
     omega
 
-theorem spaceCost_trailCore (n : ℕ) : ∀ m,
+private theorem spaceCost_trailCore (n : ℕ) : ∀ m,
     spaceCost trailCore (Nat.pair n m) ≤ 32 * max (Nat.size n) (Nat.size m) + 256 := by
   have hz : spaceCost trailCore (Nat.pair n 0) = spaceCost zero n :=
     spaceCost_prec_zero zero trailStep n
@@ -2504,7 +2491,7 @@ theorem spaceCost_trailCore (n : ℕ) : ∀ m,
       omega
 
 /-- **Reading the header's length runs in workspace linear in the cell's width.** -/
-theorem spaceCost_cTrailOnes (n : ℕ) :
+private theorem spaceCost_cTrailOnes (n : ℕ) :
     spaceCost cTrailOnes n ≤ 32 * Nat.size n + 256 := by
   have hv : val (pair cId cId) n = Nat.pair n n := by rw [val_pair, val_cId]
   rw [cTrailOnes]
@@ -2512,7 +2499,7 @@ theorem spaceCost_cTrailOnes (n : ℕ) :
   · rw [spaceCost_cId]; omega
   · rw [spaceCost_cId]; omega
   · rw [val_cId]
-    have := size_pair_le' n n
+    have := size_pair_le_max n n
     omega
   · rw [hv]
     have := spaceCost_trailCore n n
@@ -2524,18 +2511,18 @@ The readers pay twice what building one does: undoing the frame's shift needs th
 `2 ^ (2 * stkLen s + 1)`, which on a numeral that is not a well-formed cell can be about twice as
 wide as the numeral itself. That doubling is real, so it is carried rather than assumed away. -/
 
-theorem stkLen_le_size (s : ℕ) : BoundedInterp.stkLen s ≤ Nat.size s := by
+private theorem stkLen_le_size (s : ℕ) : BoundedInterp.stkLen s ≤ Nat.size s := by
   have hbody : BoundedInterp.stkBody s ≤ s := by
     rw [BoundedInterp.stkBody]; exact Nat.div_le_self s 2
   rw [BoundedInterp.stkLen]
   exact le_trans (trailOnes_le_size _) (Nat.size_le_size hbody)
 
-theorem size_stkBody_le (s : ℕ) : Nat.size (BoundedInterp.stkBody s) ≤ Nat.size s := by
+private theorem size_stkBody_le (s : ℕ) : Nat.size (BoundedInterp.stkBody s) ≤ Nat.size s := by
   refine Nat.size_le_size ?_
   rw [BoundedInterp.stkBody]; exact Nat.div_le_self s 2
 
 /-- **The declared frame width is read in workspace linear in the cell's width.** -/
-theorem spaceCost_cStkLen (s : ℕ) : spaceCost cStkLen s ≤ 32 * Nat.size s + 256 := by
+private theorem spaceCost_cStkLen (s : ℕ) : spaceCost cStkLen s ≤ 32 * Nat.size s + 256 := by
   have hb := size_stkBody_le s
   rw [cStkLen]
   refine spaceCost_comp_bound ?_ ?_
@@ -2546,7 +2533,7 @@ theorem spaceCost_cStkLen (s : ℕ) : spaceCost cStkLen s ≤ 32 * Nat.size s + 
     omega
 
 /-- **The tail is read in workspace linear in the cell's width.** -/
-theorem spaceCost_cStkTail (s : ℕ) : spaceCost cStkTail s ≤ 64 * Nat.size s + 256 := by
+private theorem spaceCost_cStkTail (s : ℕ) : spaceCost cStkTail s ≤ 64 * Nat.size s + 256 := by
   have hb := size_stkBody_le s
   have hL := stkLen_le_size s
   have hLs : Nat.size (BoundedInterp.stkLen s) ≤ Nat.size s :=
@@ -2578,14 +2565,14 @@ theorem spaceCost_cStkTail (s : ℕ) : spaceCost cStkTail s ≤ 64 * Nat.size s 
       have := spaceCost_cPow2 (2 * BoundedInterp.stkLen s + 1)
       omega
   · rw [val_cStkBody, hvShift]
-    have := size_pair_le' (BoundedInterp.stkBody s) (2 ^ (2 * BoundedInterp.stkLen s + 1))
+    have := size_pair_le_max (BoundedInterp.stkBody s) (2 ^ (2 * BoundedInterp.stkLen s + 1))
     omega
   · rw [val_pair, val_cStkBody, hvShift]
     have := spaceCost_cDiv (BoundedInterp.stkBody s) (2 ^ (2 * BoundedInterp.stkLen s + 1))
     omega
 
 /-- **The frame is read in workspace linear in the cell's width.** -/
-theorem spaceCost_cStkHead (s : ℕ) : spaceCost cStkHead s ≤ 64 * Nat.size s + 256 := by
+private theorem spaceCost_cStkHead (s : ℕ) : spaceCost cStkHead s ≤ 64 * Nat.size s + 256 := by
   have hb := size_stkBody_le s
   have hL := stkLen_le_size s
   have hLs : Nat.size (BoundedInterp.stkLen s) ≤ Nat.size s :=
@@ -2622,7 +2609,7 @@ theorem spaceCost_cStkHead (s : ℕ) : spaceCost cStkHead s ≤ 64 * Nat.size s 
         have := spaceCost_cPow2 (BoundedInterp.stkLen s + 1)
         omega
     · rw [val_cStkBody, hvShift]
-      have := size_pair_le' (BoundedInterp.stkBody s) (2 ^ (BoundedInterp.stkLen s + 1))
+      have := size_pair_le_max (BoundedInterp.stkBody s) (2 ^ (BoundedInterp.stkLen s + 1))
       omega
     · rw [val_pair, val_cStkBody, hvShift]
       have := spaceCost_cDiv (BoundedInterp.stkBody s) (2 ^ (BoundedInterp.stkLen s + 1))
@@ -2634,7 +2621,7 @@ theorem spaceCost_cStkHead (s : ℕ) : spaceCost cStkHead s ≤ 64 * Nat.size s 
       have := spaceCost_cPow2 (BoundedInterp.stkLen s)
       omega
   · rw [hvDiv, hvMask]
-    have := size_pair_le' (BoundedInterp.stkBody s / 2 ^ (BoundedInterp.stkLen s + 1))
+    have := size_pair_le_max (BoundedInterp.stkBody s / 2 ^ (BoundedInterp.stkLen s + 1))
       (2 ^ BoundedInterp.stkLen s)
     omega
   · rw [val_pair, hvDiv, hvMask]
@@ -2645,7 +2632,7 @@ theorem spaceCost_cStkHead (s : ℕ) : spaceCost cStkHead s ≤ 64 * Nat.size s 
 /-- **A cell is only a constant factor wider than what it packs.** The frame is stored twice over
 — once as the unary header's length, once as its own bits — so three times the wider part, plus a
 fixed margin, is the honest figure. -/
-theorem size_stkCons_le (f k : ℕ) :
+private theorem size_stkCons_le (f k : ℕ) :
     Nat.size (BoundedInterp.stkCons f k) ≤ 3 * max (Nat.size f) (Nat.size k) + 5 := by
   have hM1 : Nat.size f ≤ max (Nat.size f) (Nat.size k) := le_max_left _ _
   have hM2 : Nat.size k ≤ max (Nat.size f) (Nat.size k) := le_max_right _ _
@@ -2667,18 +2654,18 @@ theorem size_stkCons_le (f k : ℕ) :
   rw [BoundedInterp.stkCons, BoundedInterp.frameBits]
   omega
 
-theorem stkHead_le (s : ℕ) : BoundedInterp.stkHead s ≤ s := by
+private theorem stkHead_le (s : ℕ) : BoundedInterp.stkHead s ≤ s := by
   rw [BoundedInterp.stkHead]
   refine le_trans (Nat.mod_le _ _) (le_trans (Nat.div_le_self _ _) ?_)
   rw [BoundedInterp.stkBody]; exact Nat.div_le_self s 2
 
-theorem stkTail_le (s : ℕ) : BoundedInterp.stkTail s ≤ s := by
+private theorem stkTail_le (s : ℕ) : BoundedInterp.stkTail s ≤ s := by
   rw [BoundedInterp.stkTail]
   refine le_trans (Nat.div_le_self _ _) ?_
   rw [BoundedInterp.stkBody]; exact Nat.div_le_self s 2
 
 /-- **The cell test runs in workspace linear in the numeral's width.** -/
-theorem spaceCost_cStkIsCons (s : ℕ) : spaceCost cStkIsCons s ≤ 64 * Nat.size s + 256 := by
+private theorem spaceCost_cStkIsCons (s : ℕ) : spaceCost cStkIsCons s ≤ 64 * Nat.size s + 256 := by
   have hh : Nat.size (BoundedInterp.stkHead s) ≤ Nat.size s := Nat.size_le_size (stkHead_le s)
   have ht : Nat.size (BoundedInterp.stkTail s) ≤ Nat.size s := Nat.size_le_size (stkTail_le s)
   have hc := size_stkCons_le (BoundedInterp.stkHead s) (BoundedInterp.stkTail s)
@@ -2696,14 +2683,14 @@ theorem spaceCost_cStkIsCons (s : ℕ) : spaceCost cStkIsCons s ≤ 64 * Nat.siz
     · have := spaceCost_cStkTail s
       omega
     · rw [val_cStkHead, val_cStkTail]
-      have := size_pair_le' (BoundedInterp.stkHead s) (BoundedInterp.stkTail s)
+      have := size_pair_le_max (BoundedInterp.stkHead s) (BoundedInterp.stkTail s)
       omega
     · rw [hvPair]
       have := spaceCost_cStkCons (BoundedInterp.stkHead s) (BoundedInterp.stkTail s)
       omega
   · rw [spaceCost_cId]; omega
   · rw [hvCons, val_cId]
-    have := size_pair_le' (BoundedInterp.stkCons (BoundedInterp.stkHead s)
+    have := size_pair_le_max (BoundedInterp.stkCons (BoundedInterp.stkHead s)
       (BoundedInterp.stkTail s)) s
     omega
   · rw [val_pair, hvCons, val_cId]
@@ -2712,7 +2699,7 @@ theorem spaceCost_cStkIsCons (s : ℕ) : spaceCost cStkIsCons s ≤ 64 * Nat.siz
     omega
 
 /-- **The halt test runs in workspace linear in the configuration's width.** -/
-theorem spaceCost_cIsHalt (s : ℕ) : spaceCost cIsHalt s ≤ 8 * Nat.size s + 128 := by
+private theorem spaceCost_cIsHalt (s : ℕ) : spaceCost cIsHalt s ≤ 8 * Nat.size s + 128 := by
   have hmode : Nat.size (BoundedInterp.cfMode s) ≤ Nat.size s :=
     Nat.size_le_size (Nat.unpair_left_le s)
   have hstk : Nat.size (BoundedInterp.cfStk s) ≤ Nat.size s := by
@@ -2739,7 +2726,7 @@ theorem spaceCost_cIsHalt (s : ℕ) : spaceCost cIsHalt s ≤ 8 * Nat.size s + 1
     · have := spaceCost_constCode 1 s
       omega
     · rw [val_cCfMode, val_constCode]
-      have := size_pair_le' (BoundedInterp.cfMode s) 1
+      have := size_pair_le_max (BoundedInterp.cfMode s) 1
       omega
     · rw [val_pair, val_cCfMode, val_constCode]
       have := spaceCost_cEq (BoundedInterp.cfMode s) 1
@@ -2751,16 +2738,16 @@ theorem spaceCost_cIsHalt (s : ℕ) : spaceCost cIsHalt s ≤ 8 * Nat.size s + 1
     · have := spaceCost_constCode 0 s
       omega
     · rw [val_cCfStk, val_constCode]
-      have := size_pair_le' (BoundedInterp.cfStk s) 0
+      have := size_pair_le_max (BoundedInterp.cfStk s) 0
       omega
     · rw [val_pair, val_cCfStk, val_constCode]
       have := spaceCost_cEq (BoundedInterp.cfStk s) 0
       omega
-  · have := size_pair_le' (val (comp cEq (pair cCfMode (constCode 1))) s)
+  · have := size_pair_le_max (val (comp cEq (pair cCfMode (constCode 1))) s)
       (val (comp cEq (pair cCfStk (constCode 0))) s)
     omega
   · rw [val_pair]
-    have h1 := size_pair_le' (val (comp cEq (pair cCfMode (constCode 1))) s)
+    have h1 := size_pair_le_max (val (comp cEq (pair cCfMode (constCode 1))) s)
       (val (comp cEq (pair cCfStk (constCode 0))) s)
     have h2 := spaceCost_cAnd (Nat.pair (val (comp cEq (pair cCfMode (constCode 1))) s)
       (val (comp cEq (pair cCfStk (constCode 0))) s))
@@ -2781,18 +2768,18 @@ the width, and a nest of pairings would then double it at every level for no rea
 two apart is what holds the coefficients down. -/
 
 /-- Workspace `cc * size I + dc`, and output width `cw * size I + dw`. -/
-def GrowBound (g : Code) (cc dc cw dw : ℕ) : Prop :=
+private def GrowBound (g : Code) (cc dc cw dw : ℕ) : Prop :=
   ∀ I, spaceCost g I ≤ cc * Nat.size I + dc ∧ Nat.size (val g I) ≤ cw * Nat.size I + dw
 
 namespace GrowBound
 
-theorem cost {g : Code} {cc dc cw dw : ℕ} (h : GrowBound g cc dc cw dw) (I : ℕ) :
+private theorem cost {g : Code} {cc dc cw dw : ℕ} (h : GrowBound g cc dc cw dw) (I : ℕ) :
     spaceCost g I ≤ cc * Nat.size I + dc := (h I).1
 
-theorem width {g : Code} {cc dc cw dw : ℕ} (h : GrowBound g cc dc cw dw) (I : ℕ) :
+private theorem width {g : Code} {cc dc cw dw : ℕ} (h : GrowBound g cc dc cw dw) (I : ℕ) :
     Nat.size (val g I) ≤ cw * Nat.size I + dw := (h I).2
 
-theorem mono {g : Code} {cc dc cw dw cc' dc' cw' dw' : ℕ} (h : GrowBound g cc dc cw dw)
+private theorem mono {g : Code} {cc dc cw dw cc' dc' cw' dw' : ℕ} (h : GrowBound g cc dc cw dw)
     (h1 : cc ≤ cc') (h2 : dc ≤ dc') (h3 : cw ≤ cw') (h4 : dw ≤ dw') :
     GrowBound g cc' dc' cw' dw' := by
   intro I
@@ -2806,7 +2793,7 @@ end GrowBound
 
 /-- Composition: the outer code's coefficients apply to the inner code's *output* width, and the
 cost is the larger of the two stages. -/
-theorem growBound_comp {f g : Code} {cc₁ dc₁ cw₁ dw₁ cc₂ dc₂ cw₂ dw₂ : ℕ}
+private theorem growBound_comp {f g : Code} {cc₁ dc₁ cw₁ dw₁ cc₂ dc₂ cw₂ dw₂ : ℕ}
     (hg : GrowBound g cc₁ dc₁ cw₁ dw₁) (hf : GrowBound f cc₂ dc₂ cw₂ dw₂) :
     GrowBound (comp f g) (max cc₁ (cc₂ * cw₁)) (max dc₁ (cc₂ * dw₁ + dc₂))
       (cw₂ * cw₁) (cw₂ * dw₁ + dw₂) := by
@@ -2843,7 +2830,7 @@ theorem growBound_comp {f g : Code} {cc₁ dc₁ cw₁ dw₁ cc₂ dc₂ cw₂ d
 
 /-- Pairing: the width doubles, and the cost is the larger of the parts' costs and the width of the
 pair actually formed. -/
-theorem growBound_pair {f g : Code} {cc₁ dc₁ cw₁ dw₁ cc₂ dc₂ cw₂ dw₂ : ℕ}
+private theorem growBound_pair {f g : Code} {cc₁ dc₁ cw₁ dw₁ cc₂ dc₂ cw₂ dw₂ : ℕ}
     (hf : GrowBound f cc₁ dc₁ cw₁ dw₁) (hg : GrowBound g cc₂ dc₂ cw₂ dw₂) :
     GrowBound (pair f g) (max (max cc₁ cc₂) (2 * max cw₁ cw₂))
       (max (max dc₁ dc₂) (2 * max dw₁ dw₂)) (2 * max cw₁ cw₂) (2 * max dw₁ dw₂) := by
@@ -2852,7 +2839,7 @@ theorem growBound_pair {f g : Code} {cc₁ dc₁ cw₁ dw₁ cc₂ dc₂ cw₂ d
   have hf2 := hf.width I
   have hg1 := hg.cost I
   have hg2 := hg.width I
-  have hp := size_pair_le' (val f I) (val g I)
+  have hp := size_pair_le_max (val f I) (val g I)
   have b1 : cw₁ * Nat.size I ≤ max cw₁ cw₂ * Nat.size I :=
     Nat.mul_le_mul (le_max_left _ _) (le_refl _)
   have b2 : cw₂ * Nat.size I ≤ max cw₁ cw₂ * Nat.size I :=
@@ -2882,32 +2869,33 @@ theorem growBound_pair {f g : Code} {cc₁ dc₁ cw₁ dw₁ cc₂ dc₂ cw₂ d
 
 /-! ### The leaves -/
 
-theorem growBound_left : GrowBound left 1 0 1 0 := by
+private theorem growBound_left : GrowBound left 1 0 1 0 := by
   intro I
   have h := Nat.size_le_size (Nat.unpair_left_le I)
   exact ⟨by rw [spaceCost_left]; omega, by rw [val_left']; omega⟩
 
-theorem growBound_right : GrowBound right 1 0 1 0 := by
+private theorem growBound_right : GrowBound right 1 0 1 0 := by
   intro I
   have h := Nat.size_le_size (Nat.unpair_right_le I)
   exact ⟨by rw [spaceCost_right]; omega, by rw [val_right']; omega⟩
 
-theorem growBound_zero : GrowBound zero 1 0 0 0 := by
+private theorem growBound_zero : GrowBound zero 1 0 0 0 := by
   intro I
   have h0 : Nat.size (0 : ℕ) = 0 := by decide
   exact ⟨by rw [spaceCost_zero]; omega, by rw [val_zero']; omega⟩
 
-theorem growBound_succ : GrowBound succ 1 1 1 1 := by
+private theorem growBound_succ : GrowBound succ 1 1 1 1 := by
   intro I
   have h := size_succ_le_size (le_refl I)
   have hs := size_le_self I
   exact ⟨by rw [spaceCost_succ]; omega, by rw [val_succ']; omega⟩
 
-theorem growBound_cId : GrowBound cId 1 0 1 0 := by
+private theorem growBound_cId : GrowBound cId 1 0 1 0 := by
   intro I
   exact ⟨by rw [spaceCost_cId]; omega, by rw [val_cId]; omega⟩
 
-theorem growBound_constCode (j : ℕ) : GrowBound (constCode j) 1 (Nat.size j) 0 (Nat.size j) := by
+private theorem growBound_constCode (j : ℕ) :
+    GrowBound (constCode j) 1 (Nat.size j) 0 (Nat.size j) := by
   intro I
   have := spaceCost_constCode j I
   exact ⟨by omega, by rw [val_constCode]; omega⟩
@@ -2918,18 +2906,18 @@ Each entry pairs a workspace bound already proved above with a width fact. The w
 cheap half — most of these codes return something no wider than what they were given — and keeping
 them out of the cost column is exactly what stops the coefficients compounding. -/
 
-theorem left_le_pair (x y : ℕ) : x ≤ Nat.pair x y := by
+private theorem left_le_pair (x y : ℕ) : x ≤ Nat.pair x y := by
   have := Nat.unpair_left_le (Nat.pair x y); rwa [Nat.unpair_pair] at this
 
-theorem right_le_pair (x y : ℕ) : y ≤ Nat.pair x y := by
+private theorem right_le_pair (x y : ℕ) : y ≤ Nat.pair x y := by
   have := Nat.unpair_right_le (Nat.pair x y); rwa [Nat.unpair_pair] at this
 
 /-- A constant's width, given as a numeral rather than as `Nat.size` of one. -/
-theorem growBound_constCode' (j b : ℕ) (h : Nat.size j ≤ b) :
+private theorem growBound_constCode' (j b : ℕ) (h : Nat.size j ≤ b) :
     GrowBound (constCode j) 1 b 0 b :=
   (growBound_constCode j).mono (le_refl _) h (le_refl _) h
 
-theorem growBound_cSub : GrowBound cSub 8 16 1 0 := by
+private theorem growBound_cSub : GrowBound cSub 8 16 1 0 := by
   intro I
   obtain ⟨x, y, rfl⟩ : ∃ x y, I = Nat.pair x y :=
     ⟨I.unpair.1, I.unpair.2, (Nat.pair_unpair I).symm⟩
@@ -2939,7 +2927,7 @@ theorem growBound_cSub : GrowBound cSub 8 16 1 0 := by
   rw [val_cSub]
   exact le_trans (Nat.size_le_size (Nat.sub_le x y)) (by omega)
 
-theorem growBound_cDiv : GrowBound cDiv 32 128 1 0 := by
+private theorem growBound_cDiv : GrowBound cDiv 32 128 1 0 := by
   intro I
   obtain ⟨x, y, rfl⟩ : ∃ x y, I = Nat.pair x y :=
     ⟨I.unpair.1, I.unpair.2, (Nat.pair_unpair I).symm⟩
@@ -2949,7 +2937,7 @@ theorem growBound_cDiv : GrowBound cDiv 32 128 1 0 := by
   rw [val_cDiv]
   exact le_trans (Nat.size_le_size (Nat.div_le_self x y)) (by omega)
 
-theorem growBound_cMod : GrowBound cMod 32 128 1 0 := by
+private theorem growBound_cMod : GrowBound cMod 32 128 1 0 := by
   intro I
   obtain ⟨x, y, rfl⟩ : ∃ x y, I = Nat.pair x y :=
     ⟨I.unpair.1, I.unpair.2, (Nat.pair_unpair I).symm⟩
@@ -2959,7 +2947,7 @@ theorem growBound_cMod : GrowBound cMod 32 128 1 0 := by
   rw [val_cMod]
   exact le_trans (Nat.size_le_size (Nat.mod_le x y)) (by omega)
 
-theorem growBound_cEq : GrowBound cEq 8 64 0 1 := by
+private theorem growBound_cEq : GrowBound cEq 8 64 0 1 := by
   intro I
   obtain ⟨x, y, rfl⟩ : ∃ x y, I = Nat.pair x y :=
     ⟨I.unpair.1, I.unpair.2, (Nat.pair_unpair I).symm⟩
@@ -2969,14 +2957,14 @@ theorem growBound_cEq : GrowBound cEq 8 64 0 1 := by
   rw [val_cEq]
   split <;> simp
 
-theorem growBound_cSize : GrowBound cSize 32 128 1 0 := by
+private theorem growBound_cSize : GrowBound cSize 32 128 1 0 := by
   intro I
   refine ⟨by have := spaceCost_cSize I; omega, ?_⟩
   rw [val_cSize]
   have := Nat.size_le_size (size_le_self I)
   omega
 
-theorem growBound_cStkCons : GrowBound cStkCons 32 128 3 5 := by
+private theorem growBound_cStkCons : GrowBound cStkCons 32 128 3 5 := by
   intro I
   obtain ⟨f, k, rfl⟩ : ∃ f k, I = Nat.pair f k :=
     ⟨I.unpair.1, I.unpair.2, (Nat.pair_unpair I).symm⟩
@@ -2987,7 +2975,7 @@ theorem growBound_cStkCons : GrowBound cStkCons 32 128 3 5 := by
   have := size_stkCons_le f k
   omega
 
-theorem growBound_cIte : GrowBound cIte 8 32 1 0 := by
+private theorem growBound_cIte : GrowBound cIte 8 32 1 0 := by
   intro I
   obtain ⟨b, r, rfl⟩ : ∃ b r, I = Nat.pair b r :=
     ⟨I.unpair.1, I.unpair.2, (Nat.pair_unpair I).symm⟩
@@ -3001,27 +2989,27 @@ theorem growBound_cIte : GrowBound cIte 8 32 1 0 := by
   rw [val_cIte]
   split <;> omega
 
-theorem growBound_cStkHead : GrowBound cStkHead 64 256 1 0 := by
+private theorem growBound_cStkHead : GrowBound cStkHead 64 256 1 0 := by
   intro I
   refine ⟨by have := spaceCost_cStkHead I; omega, ?_⟩
   rw [val_cStkHead]
   have := Nat.size_le_size (stkHead_le I)
   omega
 
-theorem growBound_cStkTail : GrowBound cStkTail 64 256 1 0 := by
+private theorem growBound_cStkTail : GrowBound cStkTail 64 256 1 0 := by
   intro I
   refine ⟨by have := spaceCost_cStkTail I; omega, ?_⟩
   rw [val_cStkTail]
   have := Nat.size_le_size (stkTail_le I)
   omega
 
-theorem growBound_cStkIsCons : GrowBound cStkIsCons 64 256 0 1 := by
+private theorem growBound_cStkIsCons : GrowBound cStkIsCons 64 256 0 1 := by
   intro I
   refine ⟨by have := spaceCost_cStkIsCons I; omega, ?_⟩
   rw [val_cStkIsCons]
   split <;> simp
 
-theorem growBound_cIsHalt : GrowBound cIsHalt 8 128 0 1 := by
+private theorem growBound_cIsHalt : GrowBound cIsHalt 8 128 0 1 := by
   intro I
   refine ⟨by have := spaceCost_cIsHalt I; omega, ?_⟩
   rw [val_cIsHalt]
@@ -3029,11 +3017,11 @@ theorem growBound_cIsHalt : GrowBound cIsHalt 8 128 0 1 := by
 
 /-- The returning constructor and the descending one are pure pair-trees over leaves, so the
 algebra alone settles them. -/
-theorem growBound_cRet : GrowBound cRet 2 2 2 2 := by
+private theorem growBound_cRet : GrowBound cRet 2 2 2 2 := by
   rw [cRet]
   exact growBound_pair (growBound_constCode' 1 1 (by decide)) growBound_cId
 
-theorem growBound_cDescend : GrowBound cDescend 8 0 8 0 := by
+private theorem growBound_cDescend : GrowBound cDescend 8 0 8 0 := by
   rw [cDescend]
   exact growBound_pair growBound_zero
     (growBound_pair (growBound_pair growBound_left (growBound_comp growBound_right growBound_left))
@@ -3047,50 +3035,51 @@ subtraction and division that split a code numeral into its tag and children, bu
 something no wider than the input, which is what the branches above them need. -/
 
 /-- Improve a growth bound's width column, leaving its cost column alone. -/
-theorem GrowBound.tightenWidth {g : Code} {cc dc cw dw cw' dw' : ℕ}
+private theorem GrowBound.tightenWidth {g : Code} {cc dc cw dw cw' dw' : ℕ}
     (h : GrowBound g cc dc cw dw)
     (hw : ∀ I, Nat.size (val g I) ≤ cw' * Nat.size I + dw') : GrowBound g cc dc cw' dw' :=
   fun I => ⟨h.cost I, hw I⟩
 
 /-- A projection composed onto a projection is again one. -/
-theorem growBound_projComp {f g : Code} (hg : GrowBound g 1 0 1 0) (hf : GrowBound f 1 0 1 0) :
+private theorem growBound_projComp {f g : Code}
+    (hg : GrowBound g 1 0 1 0) (hf : GrowBound f 1 0 1 0) :
     GrowBound (comp f g) 1 0 1 0 :=
   (growBound_comp hg hf).mono (by norm_num) (by norm_num) (by norm_num) (by norm_num)
 
-theorem growBound_dC : GrowBound dC 1 0 1 0 := by rw [dC]; exact growBound_left
-theorem growBound_dN : GrowBound dN 1 0 1 0 := by
+private theorem growBound_dC : GrowBound dC 1 0 1 0 := by rw [dC]; exact growBound_left
+private theorem growBound_dN : GrowBound dN 1 0 1 0 := by
   rw [dN]; exact growBound_projComp growBound_right growBound_left
-theorem growBound_dK : GrowBound dK 1 0 1 0 := by
+private theorem growBound_dK : GrowBound dK 1 0 1 0 := by
   rw [dK]; exact growBound_projComp growBound_right growBound_right
-theorem growBound_dN1 : GrowBound dN1 1 0 1 0 := by
+private theorem growBound_dN1 : GrowBound dN1 1 0 1 0 := by
   rw [dN1]; exact growBound_projComp growBound_dN growBound_left
-theorem growBound_dN2 : GrowBound dN2 1 0 1 0 := by
+private theorem growBound_dN2 : GrowBound dN2 1 0 1 0 := by
   rw [dN2]; exact growBound_projComp growBound_dN growBound_right
 
-theorem growBound_rV : GrowBound rV 1 0 1 0 := by rw [rV]; exact growBound_left
-theorem growBound_rF : GrowBound rF 1 0 1 0 := by
+private theorem growBound_rV : GrowBound rV 1 0 1 0 := by rw [rV]; exact growBound_left
+private theorem growBound_rF : GrowBound rF 1 0 1 0 := by
   rw [rF]; exact growBound_projComp growBound_right growBound_left
-theorem growBound_rK : GrowBound rK 1 0 1 0 := by
+private theorem growBound_rK : GrowBound rK 1 0 1 0 := by
   rw [rK]; exact growBound_projComp growBound_right growBound_right
-theorem growBound_rTag : GrowBound rTag 1 0 1 0 := by
+private theorem growBound_rTag : GrowBound rTag 1 0 1 0 := by
   rw [rTag]; exact growBound_projComp growBound_rF growBound_left
-theorem growBound_rPay : GrowBound rPay 1 0 1 0 := by
+private theorem growBound_rPay : GrowBound rPay 1 0 1 0 := by
   rw [rPay]; exact growBound_projComp growBound_rF growBound_right
-theorem growBound_rPay1 : GrowBound rPay1 1 0 1 0 := by
+private theorem growBound_rPay1 : GrowBound rPay1 1 0 1 0 := by
   rw [rPay1]; exact growBound_projComp growBound_rPay growBound_left
-theorem growBound_rPay2 : GrowBound rPay2 1 0 1 0 := by
+private theorem growBound_rPay2 : GrowBound rPay2 1 0 1 0 := by
   rw [rPay2]; exact growBound_projComp growBound_rPay growBound_right
-theorem growBound_rPay21 : GrowBound rPay21 1 0 1 0 := by
+private theorem growBound_rPay21 : GrowBound rPay21 1 0 1 0 := by
   rw [rPay21]; exact growBound_projComp growBound_rPay2 growBound_left
-theorem growBound_rPay22 : GrowBound rPay22 1 0 1 0 := by
+private theorem growBound_rPay22 : GrowBound rPay22 1 0 1 0 := by
   rw [rPay22]; exact growBound_projComp growBound_rPay2 growBound_right
-theorem growBound_rPay221 : GrowBound rPay221 1 0 1 0 := by
+private theorem growBound_rPay221 : GrowBound rPay221 1 0 1 0 := by
   rw [rPay221]; exact growBound_projComp growBound_rPay22 growBound_left
-theorem growBound_rPay222 : GrowBound rPay222 1 0 1 0 := by
+private theorem growBound_rPay222 : GrowBound rPay222 1 0 1 0 := by
   rw [rPay222]; exact growBound_projComp growBound_rPay22 growBound_right
 
 /-- Splitting off the four leaf codes. -/
-theorem growBound_dM : GrowBound dM 16 64 1 0 := by
+private theorem growBound_dM : GrowBound dM 16 64 1 0 := by
   refine GrowBound.tightenWidth (?_ : GrowBound dM 16 64 2 6) ?_
   · rw [dM, dC]
     exact (growBound_comp
@@ -3103,7 +3092,7 @@ theorem growBound_dM : GrowBound dM 16 64 1 0 := by
     omega
 
 /-- The children's packed numeral. -/
-theorem growBound_dP : GrowBound dP 64 320 1 0 := by
+private theorem growBound_dP : GrowBound dP 64 320 1 0 := by
   refine GrowBound.tightenWidth (?_ : GrowBound dP 64 320 2 6) ?_
   · rw [dP]
     exact (growBound_comp
@@ -3117,7 +3106,7 @@ theorem growBound_dP : GrowBound dP 64 320 1 0 := by
     omega
 
 /-- The constructor tag. -/
-theorem growBound_dT : GrowBound dT 64 320 1 0 := by
+private theorem growBound_dT : GrowBound dT 64 320 1 0 := by
   refine GrowBound.tightenWidth (?_ : GrowBound dT 64 320 2 6) ?_
   · rw [dT]
     exact (growBound_comp
@@ -3130,12 +3119,12 @@ theorem growBound_dT : GrowBound dT 64 320 1 0 := by
     have := Nat.size_le_size h1
     omega
 
-theorem growBound_dP1 : GrowBound dP1 64 320 1 0 := by
+private theorem growBound_dP1 : GrowBound dP1 64 320 1 0 := by
   rw [dP1]
   exact (growBound_comp growBound_dP growBound_left).mono
     (by norm_num) (by norm_num) (by norm_num) (by norm_num)
 
-theorem growBound_dP2 : GrowBound dP2 64 320 1 0 := by
+private theorem growBound_dP2 : GrowBound dP2 64 320 1 0 := by
   rw [dP2]
   exact (growBound_comp growBound_dP growBound_right).mono
     (by norm_num) (by norm_num) (by norm_num) (by norm_num)
@@ -3149,7 +3138,7 @@ common pair of columns, which is what the selection laws consume.
 The common figures are set by `prec`'s descending branch and by the loop's returning branch, the
 two deepest: both build a stack cell over a payload that is itself four pairings deep. -/
 
-theorem growBound_cPred : GrowBound cPred 4 4 1 0 := by
+private theorem growBound_cPred : GrowBound cPred 4 4 1 0 := by
   intro I
   refine ⟨by have := spaceCost_cPred I; omega, ?_⟩
   rw [val_cPred]
@@ -3157,31 +3146,31 @@ theorem growBound_cPred : GrowBound cPred 4 4 1 0 := by
   omega
 
 /-- The common columns every branch is brought to. -/
-abbrev branchC : ℕ := 4096
+private abbrev branchC : ℕ := 4096
 
-theorem growBound_dB0 : GrowBound dB0 branchC branchC branchC branchC := by
+private theorem growBound_dB0 : GrowBound dB0 branchC branchC branchC branchC := by
   rw [dB0]
   exact (growBound_comp
     (growBound_pair (growBound_constCode' 0 0 (by decide)) growBound_dK)
     growBound_cRet).mono (by norm_num) (by norm_num) (by norm_num) (by norm_num)
 
-theorem growBound_dB1 : GrowBound dB1 branchC branchC branchC branchC := by
+private theorem growBound_dB1 : GrowBound dB1 branchC branchC branchC branchC := by
   rw [dB1]
   exact (growBound_comp
     (growBound_pair (growBound_comp growBound_dN growBound_succ) growBound_dK)
     growBound_cRet).mono (by norm_num) (by norm_num) (by norm_num) (by norm_num)
 
-theorem growBound_dB2 : GrowBound dB2 branchC branchC branchC branchC := by
+private theorem growBound_dB2 : GrowBound dB2 branchC branchC branchC branchC := by
   rw [dB2]
   exact (growBound_comp (growBound_pair growBound_dN1 growBound_dK)
     growBound_cRet).mono (by norm_num) (by norm_num) (by norm_num) (by norm_num)
 
-theorem growBound_dB3 : GrowBound dB3 branchC branchC branchC branchC := by
+private theorem growBound_dB3 : GrowBound dB3 branchC branchC branchC branchC := by
   rw [dB3]
   exact (growBound_comp (growBound_pair growBound_dN2 growBound_dK)
     growBound_cRet).mono (by norm_num) (by norm_num) (by norm_num) (by norm_num)
 
-theorem growBound_dBpair : GrowBound dBpair branchC branchC branchC branchC := by
+private theorem growBound_dBpair : GrowBound dBpair branchC branchC branchC branchC := by
   rw [dBpair]
   exact (growBound_comp
     (growBound_pair growBound_dP1
@@ -3194,7 +3183,7 @@ theorem growBound_dBpair : GrowBound dBpair branchC branchC branchC branchC := b
           growBound_cStkCons)))
     growBound_cDescend).mono (by norm_num) (by norm_num) (by norm_num) (by norm_num)
 
-theorem growBound_dBprec : GrowBound dBprec branchC branchC branchC branchC := by
+private theorem growBound_dBprec : GrowBound dBprec branchC branchC branchC branchC := by
   rw [dBprec]
   exact (growBound_comp
     (growBound_pair growBound_dP1
@@ -3209,7 +3198,7 @@ theorem growBound_dBprec : GrowBound dBprec branchC branchC branchC branchC := b
           growBound_cStkCons)))
     growBound_cDescend).mono (by norm_num) (by norm_num) (by norm_num) (by norm_num)
 
-theorem growBound_dBcomp : GrowBound dBcomp branchC branchC branchC branchC := by
+private theorem growBound_dBcomp : GrowBound dBcomp branchC branchC branchC branchC := by
   rw [dBcomp]
   exact (growBound_comp
     (growBound_pair growBound_dP2
@@ -3221,7 +3210,7 @@ theorem growBound_dBcomp : GrowBound dBcomp branchC branchC branchC branchC := b
           growBound_cStkCons)))
     growBound_cDescend).mono (by norm_num) (by norm_num) (by norm_num) (by norm_num)
 
-theorem growBound_dBrfind : GrowBound dBrfind branchC branchC branchC branchC := by
+private theorem growBound_dBrfind : GrowBound dBrfind branchC branchC branchC branchC := by
   rw [dBrfind]
   exact (growBound_comp
     (growBound_pair growBound_dP
@@ -3234,7 +3223,7 @@ theorem growBound_dBrfind : GrowBound dBrfind branchC branchC branchC branchC :=
           growBound_cStkCons)))
     growBound_cDescend).mono (by norm_num) (by norm_num) (by norm_num) (by norm_num)
 
-theorem growBound_rB0 : GrowBound rB0 branchC branchC branchC branchC := by
+private theorem growBound_rB0 : GrowBound rB0 branchC branchC branchC branchC := by
   rw [rB0]
   exact (growBound_comp
     (growBound_pair growBound_rPay1
@@ -3246,19 +3235,19 @@ theorem growBound_rB0 : GrowBound rB0 branchC branchC branchC branchC := by
           growBound_cStkCons)))
     growBound_cDescend).mono (by norm_num) (by norm_num) (by norm_num) (by norm_num)
 
-theorem growBound_rB1 : GrowBound rB1 branchC branchC branchC branchC := by
+private theorem growBound_rB1 : GrowBound rB1 branchC branchC branchC branchC := by
   rw [rB1]
   exact (growBound_comp
     (growBound_pair (growBound_pair growBound_rPay growBound_rV) growBound_rK)
     growBound_cRet).mono (by norm_num) (by norm_num) (by norm_num) (by norm_num)
 
-theorem growBound_rB2 : GrowBound rB2 branchC branchC branchC branchC := by
+private theorem growBound_rB2 : GrowBound rB2 branchC branchC branchC branchC := by
   rw [rB2]
   exact (growBound_comp
     (growBound_pair growBound_rPay (growBound_pair growBound_rV growBound_rK))
     growBound_cDescend).mono (by norm_num) (by norm_num) (by norm_num) (by norm_num)
 
-theorem growBound_rB3loop : GrowBound rB3loop branchC branchC branchC branchC := by
+private theorem growBound_rB3loop : GrowBound rB3loop branchC branchC branchC branchC := by
   rw [rB3loop]
   exact (growBound_comp
     (growBound_pair growBound_rPay1
@@ -3275,7 +3264,7 @@ theorem growBound_rB3loop : GrowBound rB3loop branchC branchC branchC branchC :=
           growBound_cStkCons)))
     growBound_cDescend).mono (by norm_num) (by norm_num) (by norm_num) (by norm_num)
 
-theorem growBound_rB4search : GrowBound rB4search branchC branchC branchC branchC := by
+private theorem growBound_rB4search : GrowBound rB4search branchC branchC branchC branchC := by
   rw [rB4search]
   exact (growBound_comp
     (growBound_pair growBound_rPay1
@@ -3291,7 +3280,7 @@ theorem growBound_rB4search : GrowBound rB4search branchC branchC branchC branch
           growBound_cStkCons)))
     growBound_cDescend).mono (by norm_num) (by norm_num) (by norm_num) (by norm_num)
 
-theorem growBound_rBdef : GrowBound rBdef branchC branchC branchC branchC := by
+private theorem growBound_rBdef : GrowBound rBdef branchC branchC branchC branchC := by
   rw [rBdef]
   exact (growBound_comp
     (growBound_pair growBound_rV
@@ -3304,7 +3293,7 @@ Selection in growth-bound form. The point of the law is visible in the arithmeti
 columns pass through unchanged, so the cost columns stop climbing after the first selection and the
 seven nested ones cost exactly what one does. Both arms are charged at every level. -/
 
-theorem growBound_cSel {b x y : Code} {ccb dcb cc dc cw dw : ℕ}
+private theorem growBound_cSel {b x y : Code} {ccb dcb cc dc cw dw : ℕ}
     (hb : GrowBound b ccb dcb 0 1)
     (hx : GrowBound x cc dc cw dw) (hy : GrowBound y cc dc cw dw) :
     GrowBound (cSel b x y) (max (max ccb cc) (32 * cw))
@@ -3316,8 +3305,8 @@ theorem growBound_cSel {b x y : Code} {ccb dcb cc dc cw dw : ℕ}
   have hx2 := hx.width I
   have hy1 := hy.cost I
   have hy2 := hy.width I
-  have hp1 := size_pair_le' (val x I) (val y I)
-  have hp2 := size_pair_le' (val b I) (Nat.pair (val x I) (val y I))
+  have hp1 := size_pair_le_max (val x I) (val y I)
+  have hp2 := size_pair_le_max (val b I) (Nat.pair (val x I) (val y I))
   have hcite := spaceCost_cIte (Nat.pair (val b I) (Nat.pair (val x I) (val y I)))
   have e32 : 32 * cw * Nat.size I = 32 * (cw * Nat.size I) := by ring
   have m1 : ccb * Nat.size I ≤ max (max ccb cc) (32 * cw) * Nat.size I :=
@@ -3345,24 +3334,24 @@ price of the test the selection performs on the triple it forms; it does not cli
 `treeC` is the workspace coefficient and `treeD` the workspace constant of `GrowBound` — a tree
 costs `treeC * size I + treeD`. Its output width stays at the arms' `branchC`, since a selection
 returns one of its arms unchanged. -/
-abbrev treeC : ℕ := 131072
+private abbrev treeC : ℕ := 131072
 
 /-- The additive workspace constant of a selection tree; see `treeC`. -/
-abbrev treeD : ℕ := 131120
+private abbrev treeD : ℕ := 131120
 
-theorem GrowBound.toTree {g : Code} (h : GrowBound g branchC branchC branchC branchC) :
+private theorem GrowBound.toTree {g : Code} (h : GrowBound g branchC branchC branchC branchC) :
     GrowBound g treeC treeD branchC branchC :=
   h.mono (by norm_num) (by norm_num) (by norm_num) (by norm_num)
 
 /-- One level of a selection tree: the conclusion re-enters as the hypothesis above it. -/
-theorem growBound_selStep {b x y : Code} (hb : GrowBound b branchC branchC 0 1)
+private theorem growBound_selStep {b x y : Code} (hb : GrowBound b branchC branchC 0 1)
     (hx : GrowBound x treeC treeD branchC branchC)
     (hy : GrowBound y treeC treeD branchC branchC) :
     GrowBound (cSel b x y) treeC treeD branchC branchC :=
   (growBound_cSel hb hx hy).mono (by norm_num) (by norm_num) (by norm_num) (by norm_num)
 
 /-- An equality test against a small constant, on a slot that does not grow its argument. -/
-theorem growBound_guard {x : Code} {ccx dcx : ℕ} (hx : GrowBound x ccx dcx 1 0)
+private theorem growBound_guard {x : Code} {ccx dcx : ℕ} (hx : GrowBound x ccx dcx 1 0)
     (hcc : ccx ≤ branchC) (hdc : dcx ≤ branchC) (j : ℕ) (hj : Nat.size j ≤ 3) :
     GrowBound (cEqK j x) branchC branchC 0 1 := by
   have hx' : GrowBound x branchC branchC 1 0 := hx.mono hcc hdc (le_refl _) (le_refl _)
@@ -3370,7 +3359,7 @@ theorem growBound_guard {x : Code} {ccx dcx : ℕ} (hx : GrowBound x ccx dcx 1 0
   exact (growBound_comp (growBound_pair hx' (growBound_constCode' j 3 hj))
     growBound_cEq).mono (by norm_num) (by norm_num) (by norm_num) (by norm_num)
 
-theorem growBound_stepDescendU : GrowBound stepDescendU treeC treeD branchC branchC := by
+private theorem growBound_stepDescendU : GrowBound stepDescendU treeC treeD branchC branchC := by
   rw [stepDescendU]
   exact growBound_selStep (growBound_guard growBound_dC (by norm_num) (by norm_num) 0 (by decide))
     growBound_dB0.toTree
@@ -3390,7 +3379,7 @@ theorem growBound_stepDescendU : GrowBound stepDescendU treeC treeD branchC bran
                 (growBound_guard growBound_dT (by norm_num) (by norm_num) 2 (by decide))
                 growBound_dBcomp.toTree growBound_dBrfind.toTree))))))
 
-theorem growBound_rB3 : GrowBound rB3 treeC treeD branchC branchC := by
+private theorem growBound_rB3 : GrowBound rB3 treeC treeD branchC branchC := by
   rw [rB3]
   refine growBound_selStep
     (growBound_guard growBound_rPay222 (by norm_num) (by norm_num) 0 (by decide)) ?_
@@ -3398,7 +3387,7 @@ theorem growBound_rB3 : GrowBound rB3 treeC treeD branchC branchC := by
   exact ((growBound_comp (growBound_pair growBound_rV growBound_rK)
     growBound_cRet).mono (by norm_num) (by norm_num) (by norm_num) (by norm_num)).toTree
 
-theorem growBound_rB4 : GrowBound rB4 treeC treeD branchC branchC := by
+private theorem growBound_rB4 : GrowBound rB4 treeC treeD branchC branchC := by
   rw [rB4]
   refine growBound_selStep
     (growBound_guard growBound_rV (by norm_num) (by norm_num) 0 (by decide)) ?_
@@ -3406,7 +3395,7 @@ theorem growBound_rB4 : GrowBound rB4 treeC treeD branchC branchC := by
   exact ((growBound_comp (growBound_pair growBound_rPay22 growBound_rK)
     growBound_cRet).mono (by norm_num) (by norm_num) (by norm_num) (by norm_num)).toTree
 
-theorem growBound_stepReturnU : GrowBound stepReturnU treeC treeD branchC branchC := by
+private theorem growBound_stepReturnU : GrowBound stepReturnU treeC treeD branchC branchC := by
   rw [stepReturnU]
   exact growBound_selStep
     (growBound_guard growBound_rTag (by norm_num) (by norm_num) 0 (by decide))
@@ -3426,22 +3415,23 @@ theorem growBound_stepReturnU : GrowBound stepReturnU treeC treeD branchC branch
 
 The configuration's accessors, the two arms, and the outer selection tree. -/
 
-theorem growBound_cCfMode : GrowBound cCfMode 1 0 1 0 := by rw [cCfMode]; exact growBound_left
-theorem growBound_cCfCur : GrowBound cCfCur 1 0 1 0 := by
+private theorem growBound_cCfMode : GrowBound cCfMode 1 0 1 0 := by
+  rw [cCfMode]; exact growBound_left
+private theorem growBound_cCfCur : GrowBound cCfCur 1 0 1 0 := by
   rw [cCfCur]; exact growBound_projComp growBound_right growBound_left
-theorem growBound_cCfStk : GrowBound cCfStk 1 0 1 0 := by
+private theorem growBound_cCfStk : GrowBound cCfStk 1 0 1 0 := by
   rw [cCfStk]; exact growBound_projComp growBound_right growBound_right
-theorem growBound_uCur1 : GrowBound uCur1 1 0 1 0 := by
+private theorem growBound_uCur1 : GrowBound uCur1 1 0 1 0 := by
   rw [uCur1]; exact growBound_projComp growBound_cCfCur growBound_left
-theorem growBound_uCur2 : GrowBound uCur2 1 0 1 0 := by
+private theorem growBound_uCur2 : GrowBound uCur2 1 0 1 0 := by
   rw [uCur2]; exact growBound_projComp growBound_cCfCur growBound_right
 
-theorem growBound_uHead : GrowBound uHead 64 256 1 0 := by
+private theorem growBound_uHead : GrowBound uHead 64 256 1 0 := by
   rw [uHead]
   exact (growBound_comp growBound_cCfStk growBound_cStkHead).mono
     (by norm_num) (by norm_num) (by norm_num) (by norm_num)
 
-theorem growBound_uTail : GrowBound uTail 64 256 1 0 := by
+private theorem growBound_uTail : GrowBound uTail 64 256 1 0 := by
   rw [uTail]
   exact (growBound_comp growBound_cCfStk growBound_cStkTail).mono
     (by norm_num) (by norm_num) (by norm_num) (by norm_num)
@@ -3451,30 +3441,30 @@ to, so that a step's bound composes with the next without the coefficients climb
 `stepC * size I + stepD`, output width `stepW * size I + stepE`. -/
 
 /-- The step's workspace coefficient. -/
-abbrev stepC : ℕ := 524288
+private abbrev stepC : ℕ := 524288
 
 /-- The step's additive workspace constant. -/
-abbrev stepD : ℕ := 131120
+private abbrev stepD : ℕ := 131120
 
 /-- The step's output-width coefficient. -/
-abbrev stepW : ℕ := 16384
+private abbrev stepW : ℕ := 16384
 
 /-- The step's additive output-width constant. -/
-abbrev stepE : ℕ := 4096
+private abbrev stepE : ℕ := 4096
 
-theorem growBound_uDescend : GrowBound uDescend stepC stepD stepW stepE := by
+private theorem growBound_uDescend : GrowBound uDescend stepC stepD stepW stepE := by
   rw [uDescend]
   exact (growBound_comp
     (growBound_pair growBound_uCur1 (growBound_pair growBound_uCur2 growBound_cCfStk))
     growBound_stepDescendU).mono (by norm_num) (by norm_num) (by norm_num) (by norm_num)
 
-theorem growBound_uReturn : GrowBound uReturn stepC stepD stepW stepE := by
+private theorem growBound_uReturn : GrowBound uReturn stepC stepD stepW stepE := by
   rw [uReturn]
   exact (growBound_comp
     (growBound_pair growBound_cCfCur (growBound_pair growBound_uHead growBound_uTail))
     growBound_stepReturnU).mono (by norm_num) (by norm_num) (by norm_num) (by norm_num)
 
-theorem growBound_stepU : GrowBound stepU stepC stepD stepW stepE := by
+private theorem growBound_stepU : GrowBound stepU stepC stepD stepW stepE := by
   have hId : GrowBound cId stepC stepD stepW stepE :=
     growBound_cId.mono (by norm_num) (by norm_num) (by norm_num) (by norm_num)
   have hCons : GrowBound (comp cStkIsCons cCfStk) 64 256 0 1 :=
@@ -3528,13 +3518,13 @@ being strict; there is no laziness discount anywhere in this development. -/
 
 /-- **A selection costs no more than its widest arm**, provided the budget covers the test the
 selection itself performs on the triple it forms. -/
-theorem spaceCost_cSel_bound {b x y : Code} {I B W : ℕ}
+private theorem spaceCost_cSel_bound {b x y : Code} {I B W : ℕ}
     (hb : spaceCost b I ≤ B) (hx : spaceCost x I ≤ B) (hy : spaceCost y I ≤ B)
     (hwb : Nat.size (val b I) ≤ W) (hwx : Nat.size (val x I) ≤ W) (hwy : Nat.size (val y I) ≤ W)
     (hfit : 32 * W + 32 ≤ B) :
     spaceCost (cSel b x y) I ≤ B := by
-  have hp1 := size_pair_le' (val x I) (val y I)
-  have hp2 := size_pair_le' (val b I) (Nat.pair (val x I) (val y I))
+  have hp1 := size_pair_le_max (val x I) (val y I)
+  have hp2 := size_pair_le_max (val b I) (Nat.pair (val x I) (val y I))
   rw [cSel]
   refine spaceCost_comp_bound
     (spaceCost_pair_bound hb (spaceCost_pair_bound hx hy (by omega)) ?_) ?_
@@ -3545,7 +3535,7 @@ theorem spaceCost_cSel_bound {b x y : Code} {I B W : ℕ}
 
 /-- **A selection returns an arm unchanged**, so its output stays inside the arms' width. This is
 what keeps nesting free. -/
-theorem size_val_cSel_le {b x y : Code} {I W : ℕ}
+private theorem size_val_cSel_le {b x y : Code} {I W : ℕ}
     (hwx : Nat.size (val x I) ≤ W) (hwy : Nat.size (val y I) ≤ W) :
     Nat.size (val (cSel b x y) I) ≤ W := by
   rw [val_cSel]
@@ -3574,17 +3564,17 @@ node touches. What *is* absent, and is the point, is any dependence of the leadi
 the run has gone. -/
 
 /-- The initial configuration, from `⟨p, x⟩`. -/
-def cInit : Code := pair zero (pair cId (constCode 0))
+private def cInit : Code := pair zero (pair cId (constCode 0))
 
-@[simp] theorem val_cInit (p x : ℕ) :
+@[simp] private theorem val_cInit (p x : ℕ) :
     val cInit (Nat.pair p x) = BoundedInterp.initConfig p x := by
   rw [cInit, val_pair, val_pair, val_zero', val_cId, val_constCode,
     BoundedInterp.initConfig, BoundedInterp.descend, BoundedInterp.config]
 
-theorem rfindFree_cInit : RfindFree cInit :=
+private theorem rfindFree_cInit : RfindFree cInit :=
   ⟨trivial, rfindFree_cId, rfindFree_constCode 0⟩
 
-theorem growBound_cInit : GrowBound cInit 4 0 4 0 := by
+private theorem growBound_cInit : GrowBound cInit 4 0 4 0 := by
   rw [cInit]
   exact (growBound_pair growBound_zero
     (growBound_pair growBound_cId (growBound_constCode' 0 0 (by decide)))).mono
@@ -3593,7 +3583,8 @@ theorem growBound_cInit : GrowBound cInit 4 0 4 0 := by
 /-- **The run**: iterate the step, from the initial configuration, a stated number of times. -/
 def runU : Code := prec cInit (comp stepU cAcc)
 
-theorem rfindFree_runU : RfindFree runU := ⟨rfindFree_cInit, rfindFree_stepU, rfindFree_cAcc⟩
+private theorem rfindFree_runU : RfindFree runU :=
+  ⟨rfindFree_cInit, rfindFree_stepU, rfindFree_cAcc⟩
 
 /-- **The run computes the mathematical layer's iterate.** -/
 theorem val_runU (p x : ℕ) : ∀ τ,
@@ -3664,9 +3655,9 @@ theorem spaceCost_runU_le (p x W : ℕ) : ∀ τ,
       have hspine : Nat.size (Nat.pair (Nat.pair p x)
           (Nat.pair j (BoundedInterp.stepUFn^[j] (BoundedInterp.initConfig p x))))
             ≤ 4 * Nat.size (Nat.pair p x) + 4 * Nat.size j + 4 * W := by
-        have h1 := size_pair_le' (Nat.pair p x)
+        have h1 := size_pair_le_max (Nat.pair p x)
           (Nat.pair j (BoundedInterp.stepUFn^[j] (BoundedInterp.initConfig p x)))
-        have h2 := size_pair_le' j
+        have h2 := size_pair_le_max j
           (BoundedInterp.stepUFn^[j] (BoundedInterp.initConfig p x))
         omega
       have hcomp : spaceCost (comp stepU cAcc)

@@ -32,6 +32,33 @@ A **lens family** `ℓ : ℕ → X → M` is a time-indexed decoder subject to n
 not locality, not simplicity, not computability. That is what makes the capacity theorem an
 ABSOLUTE bound rather than a statement about some class of observers.
 
+## The capacity names
+
+The capacity objects transliterate the notation of [Persistence] §5, one letter per qualifier and
+always in the order `C`, `b`, `H`, `u`, `e`.
+
+* `C` **capacity** at budget `b` — `Cb` is `C_b` ([Persistence] §5, Definition 5.1): the largest
+  model carried by a family whose every frame costs at most `b` bits, counted in labels.
+* `H` **entropic** — `CbH` is `C_b^H` ([Persistence] §5, Definition 5.4): the same supremum in the
+  honest currency, the carried entropy of the reference frame — its relabelling-class size — rather
+  than `Cb`'s plain label count. A reading with many labels but few distinguishable ones is priced
+  by what it distinguishes, not by how it is written down.
+* `u` **uniform** — `CbHu` is `C_b^{H,u}`: one program of `b` bits computes the whole family,
+  instead of each frame being paid for separately. An observer that *owns* its reading rather than
+  renting it.
+* `e` **general endofunction world** — `CbHe`, `CbHue`: the update is not assumed invertible, so the
+  entropy is carried on the recurrent core, the only part of the state space persistence constrains.
+
+`CbH` and `CbHe` are ONE definition rendered at two generalities, and so are `CbHu` and `CbHue` —
+not four notions. [Persistence] §2.1 already admits an arbitrary endofunction and its Definition 2.2
+already values carried entropy on the recurrent core; over a permutation world, where the world *is*
+its own core, the `e`-free forms are those same objects, and that is the setting the counting
+theorems of [Persistence] §7 are stated in. `CbHe_perm` and `CbHue_perm` check the agreement.
+
+Longer qualifiers ride on the same stem as words: `CbHeOn` values the reading on a given region,
+`CbHev` allows a transient before it settles, and `CbH_upTo` / `CbHu_upTo` truncate both conditions
+at a finite horizon.
+
 ## Main results
 
 * `core_bijOn` — the update restricts to a bijection on the **recurrent core** `⋂ t, U^[t] '' univ`
@@ -174,7 +201,7 @@ tabulate) was the development's last named hypothesis; it is now discharged as a
 
 namespace PersistenceCapacity
 
-open Decoupling
+open Decoupling CodeEvalLaws
 
 variable {X ι V M : Type*}
 
@@ -204,22 +231,22 @@ theorem core_eq_omegaLimit (U : X → X) : core U = omegaLimit U Set.univ := rfl
 
 /-- The whole memory is `U`-closed — the hypothesis under which the core inherits every ω-limit
 fact below. -/
-theorem univ_closed (U : X → X) : ∀ s ∈ (Set.univ : Set X), U s ∈ Set.univ :=
+private theorem univ_closed (U : X → X) : ∀ s ∈ (Set.univ : Set X), U s ∈ Set.univ :=
   fun _ _ => Set.mem_univ _
 
 /-- One step of the image chain: `U^[t+1] '' B = U '' (U^[t] '' B)`. -/
-theorem image_iterate_succ (U : X → X) (B : Set X) (t : ℕ) :
+private theorem image_iterate_succ (U : X → X) (B : Set X) (t : ℕ) :
     (U^[t + 1]) '' B = U '' ((U^[t]) '' B) := by
   rw [← Set.image_comp, ← Function.iterate_succ']
 
 /-- The image chain of a `U`-closed set decreases. -/
-theorem image_iterate_subset (U : X → X) {B : Set X}
+private theorem image_iterate_subset (U : X → X) {B : Set X}
     (hB : ∀ s ∈ B, U s ∈ B) (t : ℕ) : (U^[t + 1]) '' B ⊆ (U^[t]) '' B := by
   rintro _ ⟨b, hb, rfl⟩
   exact ⟨U b, hB b hb, (Function.iterate_succ_apply U t b).symm⟩
 
 /-- The image chain of a `U`-closed set is antitone. -/
-theorem image_iterate_antitone (U : X → X) {B : Set X}
+private theorem image_iterate_antitone (U : X → X) {B : Set X}
     (hB : ∀ s ∈ B, U s ∈ B) {m n : ℕ} (h : m ≤ n) : (U^[n]) '' B ⊆ (U^[m]) '' B := by
   induction n, h using Nat.le_induction with
   | base => exact subset_rfl
@@ -268,13 +295,13 @@ theorem exists_image_stable_le [Finite X] (U : X → X) {B : Set X}
 
 /-- The image chain of a `U`-closed set stabilizes — `exists_image_stable_le` forgetting the
 bound. -/
-theorem exists_image_stable [Finite X] (U : X → X) {B : Set X}
+private theorem exists_image_stable [Finite X] (U : X → X) {B : Set X}
     (hB : ∀ s ∈ B, U s ∈ B) : ∃ N : ℕ, ∀ t, N ≤ t → (U^[t]) '' B = (U^[N]) '' B :=
   let ⟨N, _, h⟩ := exists_image_stable_le U hB
   ⟨N, h⟩
 
 /-- Past the stabilization index the ω-limit set **is** the image. -/
-theorem omegaLimit_eq_image [Finite X] (U : X → X) {B : Set X}
+private theorem omegaLimit_eq_image [Finite X] (U : X → X) {B : Set X}
     (hB : ∀ s ∈ B, U s ∈ B) {N : ℕ} (hN : ∀ t, N ≤ t → (U^[t]) '' B = (U^[N]) '' B) :
     omegaLimit U B = (U^[N]) '' B := by
   refine Set.Subset.antisymm (Set.iInter_subset _ N) fun x hx => ?_
@@ -284,19 +311,19 @@ theorem omegaLimit_eq_image [Finite X] (U : X → X) {B : Set X}
   · rw [hN t h]; exact hx
 
 /-- The ω-limit set sits inside its basin (the `t = 0` component of the intersection). -/
-theorem omegaLimit_subset (U : X → X) (B : Set X) : omegaLimit U B ⊆ B := by
+private theorem omegaLimit_subset (U : X → X) (B : Set X) : omegaLimit U B ⊆ B := by
   intro x hx
   have := Set.mem_iInter.mp hx 0
   simpa using this
 
 /-- Every state of a `U`-closed `B` lands in the ω-limit set after finitely many steps. -/
-theorem mem_omegaLimit_iterate [Finite X] (U : X → X) {B : Set X}
+private theorem mem_omegaLimit_iterate [Finite X] (U : X → X) {B : Set X}
     (hB : ∀ s ∈ B, U s ∈ B) : ∃ N : ℕ, ∀ s ∈ B, (U^[N]) s ∈ omegaLimit U B := by
   obtain ⟨N, hN⟩ := exists_image_stable U hB
   exact ⟨N, fun s hs => by rw [omegaLimit_eq_image U hB hN]; exact ⟨s, hs, rfl⟩⟩
 
 /-- The ω-limit set is invariant: `U` maps it ONTO itself. -/
-theorem image_omegaLimit [Finite X] (U : X → X) {B : Set X}
+private theorem image_omegaLimit [Finite X] (U : X → X) {B : Set X}
     (hB : ∀ s ∈ B, U s ∈ B) : U '' omegaLimit U B = omegaLimit U B := by
   obtain ⟨N, hN⟩ := exists_image_stable U hB
   rw [omegaLimit_eq_image U hB hN, ← image_iterate_succ, hN (N + 1) (by omega)]
@@ -312,7 +339,7 @@ theorem omegaLimit_bijOn [Finite X] (U : X → X) {B : Set X}
   · rw [himg]; exact hx
 
 /-- A bijection of a set iterates to a bijection of that set. -/
-theorem bijOn_iterate {U : X → X} {s : Set X} (h : Set.BijOn U s s) (n : ℕ) :
+private theorem bijOn_iterate {U : X → X} {s : Set X} (h : Set.BijOn U s s) (n : ℕ) :
     Set.BijOn (U^[n]) s s := by
   induction n with
   | zero => simpa using Set.bijOn_id s
@@ -340,7 +367,7 @@ theorem iterate_mem_core [Finite X] (U : X → X) {t : ℕ} (ht : Nat.card X ≤
   exact ⟨s, Set.mem_univ _, rfl⟩
 
 /-- The core is the stabilized image of the whole memory. -/
-theorem core_eq_image [Finite X] (U : X → X) :
+private theorem core_eq_image [Finite X] (U : X → X) :
     ∃ N : ℕ, core U = (U^[N]) '' Set.univ ∧
       ∀ t, N ≤ t → (U^[t]) '' Set.univ = (U^[N]) '' Set.univ :=
   let ⟨N, hN⟩ := exists_image_stable U (univ_closed U)
@@ -362,12 +389,12 @@ def Carries (U : X → X) (ℓ : Lens X M) : Prop :=
   Function.Surjective (ℓ 0) ∧ ∀ t s, ℓ t (U^[t] s) = ℓ 0 s
 
 /-- Persistence for all time is persistence up to every horizon. -/
-theorem Carries.carriesUpTo {U : X → X} {ℓ : Lens X M} (h : Carries U ℓ) (T : ℕ) :
+private theorem Carries.carriesUpTo {U : X → X} {ℓ : Lens X M} (h : Carries U ℓ) (T : ℕ) :
     CarriesUpTo U ℓ T := ⟨h.1, fun t _ s => h.2 t s⟩
 
 /-- The `⇒` half in one line: `ℓ 0` is constant on the fibres of `U^[T]`, so it factors through the
 `T`-step image. -/
-theorem const_on_fibres {U : X → X} {ℓ : Lens X M} {T : ℕ} (h : CarriesUpTo U ℓ T)
+private theorem const_on_fibres {U : X → X} {ℓ : Lens X M} {T : ℕ} (h : CarriesUpTo U ℓ T)
     {s t : X} (hst : U^[T] s = U^[T] t) : ℓ 0 s = ℓ 0 t := by
   rw [← h.2 T le_rfl s, ← h.2 T le_rfl t, hst]
 
@@ -375,7 +402,7 @@ theorem const_on_fibres {U : X → X} {ℓ : Lens X M} {T : ℕ} (h : CarriesUpT
 lens family persisting `T` steps carries a model no larger than the `T`-step image of the world —
 whatever the lens. Reading persistence at `t = T` makes `ℓ T` a surjection from that image onto the
 model, and a surjection cannot leave the target bigger than the source. -/
-theorem capacity_horizon_le_ncard [Finite X] [Fintype M] {U : X → X}
+private theorem capacity_horizon_le_ncard [Finite X] [Fintype M] {U : X → X}
     {ℓ : Lens X M} {T : ℕ} (h : CarriesUpTo U ℓ T) :
     Fintype.card M ≤ ((U^[T]) '' Set.univ).ncard := by
   have hsurj : Function.Surjective fun x : ↥((U^[T]) '' Set.univ) => ℓ T x.1 := by
@@ -430,7 +457,7 @@ theorem capacity_core [Finite X] [Fintype M]
 
 /-- Inverting the update along the core: `U^[t]` is undone by iterating `U`'s inverse on the
 core. -/
-theorem invFunOn_iterate_left [Finite X] [Nonempty (X)]
+private theorem invFunOn_iterate_left [Finite X] [Nonempty (X)]
     (U : X → X) {x : X} (hx : x ∈ core U) (t : ℕ) :
     (Function.invFunOn U (core U))^[t] (U^[t] x) = x := by
   have hbij := core_bijOn U
@@ -504,11 +531,11 @@ from an update that need not be reversible anywhere else. -/
 noncomputable def corePerm [Finite X] (U : X → X) : Equiv.Perm ↥(core U) :=
   Set.BijOn.equiv U (core_bijOn U)
 
-@[simp] theorem corePerm_apply [Finite X] (U : X → X) (x : ↥(core U)) :
+@[simp] private theorem corePerm_apply [Finite X] (U : X → X) (x : ↥(core U)) :
     ((corePerm U x : X)) = U x := rfl
 
 /-- The core permutation's powers are the world's iterates, read on the core. -/
-theorem corePerm_pow_apply [Finite X] (U : X → X) (t : ℕ) (x : ↥(core U)) :
+private theorem corePerm_pow_apply [Finite X] (U : X → X) (t : ℕ) (x : ↥(core U)) :
     (((corePerm U ^ t) x : X)) = U^[t] x := by
   induction t generalizing x with
   | zero => rfl
@@ -523,17 +550,17 @@ noncomputable def omegaPerm [Finite X] (U : X → X) {B : Set X} (hB : ∀ s ∈
     Equiv.Perm ↥(omegaLimit U B) :=
   Set.BijOn.equiv U (omegaLimit_bijOn U hB)
 
-@[simp] theorem omegaPerm_apply [Finite X] (U : X → X) {B : Set X} (hB : ∀ s ∈ B, U s ∈ B)
+@[simp] private theorem omegaPerm_apply [Finite X] (U : X → X) {B : Set X} (hB : ∀ s ∈ B, U s ∈ B)
     (x : ↥(omegaLimit U B)) : ((omegaPerm U hB x : X)) = U x := rfl
 
 /-- The recurrent core is the attractor of the whole world, and its permutation is that
 attractor's. -/
-theorem corePerm_eq_omegaPerm [Finite X] (U : X → X) :
+private theorem corePerm_eq_omegaPerm [Finite X] (U : X → X) :
     corePerm U = omegaPerm U (univ_closed U) := rfl
 
 /-- The attractor permutation's powers are the world's iterates, read on the attractor. -/
-theorem omegaPerm_pow_apply [Finite X] (U : X → X) {B : Set X} (hB : ∀ s ∈ B, U s ∈ B) (t : ℕ)
-    (x : ↥(omegaLimit U B)) : (((omegaPerm U hB ^ t) x : X)) = U^[t] x := by
+private theorem omegaPerm_pow_apply [Finite X] (U : X → X) {B : Set X} (hB : ∀ s ∈ B, U s ∈ B)
+    (t : ℕ) (x : ↥(omegaLimit U B)) : (((omegaPerm U hB ^ t) x : X)) = U^[t] x := by
   induction t generalizing x with
   | zero => rfl
   | succ t ih =>
@@ -544,7 +571,8 @@ constrains, and the part [Persistence] §2, Definition 2.2 measures the carried 
 `Set.restrict` at `core U`; the ω-limit sections below use `Set.restrict` directly. -/
 def coreLens (U : X → X) (f : X → M) : ↥(core U) → M := fun x => f x
 
-theorem coreLens_eq_restrict (U : X → X) (f : X → M) : coreLens U f = (core U).restrict f := rfl
+private theorem coreLens_eq_restrict (U : X → X) (f : X → M) :
+    coreLens U f = (core U).restrict f := rfl
 
 /-- **Every frame is the reference frame, transported by the recurrent rule** — the endofunction
 analogue of `permCarries_frame_eq`, and the fact [Persistence] §2, Definition 2.2 appeals to when it
@@ -583,7 +611,7 @@ theorem carries_frame_eqOn_core [Finite X] [Nonempty X] {U : X → X} {ℓ : Len
 def Fix (U : Mem ι V → Mem ι V) : Set ι := {a | ∀ s, U s a = s a}
 
 /-- `U` is read-only on `Fix U` (`Decoupling.Fixes`), by definition. -/
-theorem fixes_fix (U : Mem ι V → Mem ι V) : Fixes U (Fix U) := fun _ _ ha => ha _
+private theorem fixes_fix (U : Mem ι V → Mem ι V) : Fixes U (Fix U) := fun _ _ ha => ha _
 
 /-- **The static capacity never exceeds the moving one** ([Decoupling] §3.5(i)). The number of
 models storable at fixed addresses, `|V| ^ |Fix U|`, is at most `|core U|`, because restriction from
@@ -745,13 +773,14 @@ open AdditiveComplexity KolmogorovComplexity Nat.Partrec Nat.Partrec.Code
 def idx (v : ℕ) (L : List ℕ) : ℕ :=
   L.rec 0 fun b _ IH => if b = v then 0 else IH + 1
 
-@[simp] theorem idx_nil (v : ℕ) : idx v [] = 0 := rfl
+@[simp] private theorem idx_nil (v : ℕ) : idx v [] = 0 := rfl
 
-@[simp] theorem idx_cons (v b : ℕ) (L : List ℕ) :
+@[simp] private theorem idx_cons (v b : ℕ) (L : List ℕ) :
     idx v (b :: L) = if b = v then 0 else idx v L + 1 := rfl
 
 /-- Table inversion is correct on a duplicate-free table: the index of the `i`-th entry is `i`. -/
-theorem idx_getElem : ∀ {L : List ℕ}, L.Nodup → ∀ {i : ℕ} (hi : i < L.length), idx L[i] L = i
+private theorem idx_getElem :
+    ∀ {L : List ℕ}, L.Nodup → ∀ {i : ℕ} (hi : i < L.length), idx L[i] L = i
   | [], _, i, hi => absurd hi (by simp)
   | b :: T, _, 0, _ => by simp
   | b :: T, hL, (k + 1), hk => by
@@ -762,7 +791,7 @@ theorem idx_getElem : ∀ {L : List ℕ}, L.Nodup → ∀ {i : ℕ} (hi : i < L.
       simpa [hne] using hrec
 
 /-- Table inversion on an injective tabulation over `Fin n`. -/
-theorem idx_map_finRange {n : ℕ} (f : Fin n → ℕ) (hf : Function.Injective f) (j : Fin n) :
+private theorem idx_map_finRange {n : ℕ} (f : Fin n → ℕ) (hf : Function.Injective f) (j : Fin n) :
     idx (f j) ((List.finRange n).map f) = (j : ℕ) := by
   have hnodup : ((List.finRange n).map f).Nodup :=
     (List.nodup_finRange n).map hf
@@ -779,14 +808,14 @@ def invcomp (p : ℕ) : ℕ :=
     (((Encodable.decode (α := List ℕ) p.unpair.1).getD []).map fun v =>
       idx v ((Encodable.decode (α := List ℕ) p.unpair.2).getD []))
 
-theorem primrec_idx : Primrec fun p : ℕ × List ℕ => idx p.1 p.2 := by
+private theorem primrec_idx : Primrec fun p : ℕ × List ℕ => idx p.1 p.2 := by
   have h : Primrec₂ fun (p : ℕ × List ℕ) (t : ℕ × List ℕ × ℕ) =>
       if t.1 = p.1 then 0 else t.2.2 + 1 :=
     Primrec.ite (Primrec.eq.comp (Primrec.fst.comp Primrec.snd) (Primrec.fst.comp Primrec.fst))
       (Primrec.const 0) (Primrec.succ.comp (Primrec.snd.comp (Primrec.snd.comp Primrec.snd)))
   exact Primrec.list_rec Primrec.snd (Primrec.const 0) h
 
-theorem primrec_invcomp : Primrec invcomp := by
+private theorem primrec_invcomp : Primrec invcomp := by
   have hdec1 : Primrec fun p : ℕ => (Encodable.decode (α := List ℕ) p.unpair.1).getD [] :=
     Primrec.option_getD.comp (Primrec.decode.comp (Primrec.fst.comp Primrec.unpair))
       (Primrec.const [])
@@ -798,24 +827,16 @@ theorem primrec_invcomp : Primrec invcomp := by
     primrec_idx.comp (Primrec.pair Primrec.snd (hdec2.comp Primrec.fst))
   exact Primrec.encode.comp (Primrec.list_map hdec1 hg)
 
-theorem partrec_invcomp : Nat.Partrec invcomp :=
+private theorem partrec_invcomp : Nat.Partrec invcomp :=
   Partrec.nat_iff.mp primrec_invcomp.to_comp.partrec
 
 /-- The invert-and-compose program as a single fixed `Code`: its length `elen icode` is the whole
 constant in `ledger_K`, and it depends on nothing else. -/
 noncomputable def icode : Code := Classical.choose (exists_code.mp partrec_invcomp)
 
-theorem eval_icode (p : ℕ) : icode.eval p = Part.some (invcomp p) := by
+private theorem eval_icode (p : ℕ) : icode.eval p = Part.some (invcomp p) := by
   have h := congrFun (Classical.choose_spec (exists_code.mp partrec_invcomp)) p
   simpa [icode] using h
-
-/-- If `b` outputs `v` on input `j`, then `comp a b` runs `a` on `v` (the `comp` eval law is
-definitional). -/
-private theorem eval_comp_some {a b : Code} {j v : ℕ} (hv : eval b j = Part.some v) :
-    eval (comp a b) j = eval a v := by
-  change eval b j >>= eval a = eval a v
-  rw [hv]
-  exact Part.bind_some v (eval a)
 
 /-- The observer's frame `t`, **tabulated**: the model index each core state is read as, listed
 along an enumeration `eC` of the core. -/
@@ -831,7 +852,7 @@ noncomputable def worldTable [Finite ι] [Finite V] {n : ℕ} (U : Mem ι V → 
       (core_bijOn U).mapsTo (eC.symm i).2⟩ : Fin n) : ℕ)
 
 /-- The fixed program recovers the world's table from the observer's first two frames. -/
-theorem invcomp_frameTables [Finite ι] [Finite V] [Fintype M] {U : Mem ι V → Mem ι V}
+private theorem invcomp_frameTables [Finite ι] [Finite V] [Fintype M] {U : Mem ι V → Mem ι V}
     {ℓ : Lens (Mem ι V) M} (h : Carries U ℓ) (hmax : Fintype.card M = Nat.card (core U))
     {n : ℕ} (eC : ↥(core U) ≃ Fin n) (eM : M ≃ Fin n) :
     invcomp (Nat.pair (Encodable.encode (frameTable U ℓ 0 eC eM))
@@ -900,7 +921,7 @@ def Settles (U : Mem ι V → Mem ι V) (decode : Mem ι V → M) (s : Mem ι V)
   ∃ T, ∀ k ≥ T, decode (U^[k] s) = decode (U^[T] s)
 
 /-- Every state of the ω-limit set is periodic: it lies on a limit cycle. -/
-theorem exists_period [Finite X] (U : X → X) {B : Set X}
+private theorem exists_period [Finite X] (U : X → X) {B : Set X}
     (hB : ∀ s ∈ B, U s ∈ B) {s : X} (hs : s ∈ omegaLimit U B) :
     ∃ p, 1 ≤ p ∧ U^[p] s = s := by
   have hbij := omegaLimit_bijOn U hB
@@ -920,7 +941,7 @@ theorem exists_period [Finite X] (U : X → X) {B : Set X}
   · exact key j i h hEq'.symm
 
 /-- Iterating a `U`-closed set's ω-limit stays inside it. -/
-theorem iterate_mem_omegaLimit [Finite X] (U : X → X) {B : Set X} (hB : ∀ s ∈ B, U s ∈ B)
+private theorem iterate_mem_omegaLimit [Finite X] (U : X → X) {B : Set X} (hB : ∀ s ∈ B, U s ∈ B)
     {s : X} (hs : s ∈ omegaLimit U B) (k : ℕ) : U^[k] s ∈ omegaLimit U B :=
   (omegaLimit_bijOn U hB).mapsTo.iterate k hs
 
@@ -989,7 +1010,7 @@ def majWorld : Mem (Fin 3) Bool → Mem (Fin 3) Bool :=
 the world has settled. -/
 def majBit (s : Mem (Fin 3) Bool) : Bool := (s 0 && s 1) || (s 1 && s 2) || (s 0 && s 2)
 
-theorem majWorld_apply (s : Mem (Fin 3) Bool) : majWorld s = fun _ => majBit s := rfl
+private theorem majWorld_apply (s : Mem (Fin 3) Bool) : majWorld s = fun _ => majBit s := rfl
 
 /-- **The recurrent core of the majority world is the consensus set**: the states whose three copies
 agree. One step lands in it, and `majWorld` is the identity there. -/
@@ -1138,11 +1159,11 @@ def orbitSetoid (U : Mem ι V → Mem ι V) : Setoid (Mem ι V) :=
   Relation.EqvGen.setoid fun s t => t = U s
 
 /-- One step relates a state to its successor. -/
-theorem orbitRel_step (U : Mem ι V → Mem ι V) (s : Mem ι V) : orbitRel U s (U s) :=
+private theorem orbitRel_step (U : Mem ι V → Mem ι V) (s : Mem ι V) : orbitRel U s (U s) :=
   Relation.EqvGen.rel _ _ rfl
 
 /-- Every state is related to all of its iterates: the orbit lies in one component. -/
-theorem orbitRel_iterate (U : Mem ι V → Mem ι V) (s : Mem ι V) (k : ℕ) :
+private theorem orbitRel_iterate (U : Mem ι V → Mem ι V) (s : Mem ι V) (k : ℕ) :
     orbitRel U s (U^[k] s) := by
   induction k with
   | zero => exact Relation.EqvGen.refl _
@@ -1290,13 +1311,13 @@ noncomputable def Cb {n : ℕ} (U : Mem ι V → Mem ι V) (eC : ↥(core U) ≃
 
 /-- Nothing carried at any budget exceeds the core (Proposition 3.5 applied to the underlying
 unbudgeted family). -/
-theorem budgetedSizes_le {n : ℕ} {U : Mem ι V → Mem ι V} {eC : ↥(core U) ≃ Fin n} {b m : ℕ}
+private theorem budgetedSizes_le {n : ℕ} {U : Mem ι V → Mem ι V} {eC : ↥(core U) ≃ Fin n} {b m : ℕ}
     (hm : m ∈ BudgetedSizes U eC b) : m ≤ Nat.card ↥(core U) := by
   obtain ⟨ℓ, hcar, -⟩ := hm
   simpa using capacity_core hcar
 
-theorem bddAbove_budgetedSizes {n : ℕ} (U : Mem ι V → Mem ι V) (eC : ↥(core U) ≃ Fin n) (b : ℕ) :
-    BddAbove (BudgetedSizes U eC b) :=
+private theorem bddAbove_budgetedSizes {n : ℕ} (U : Mem ι V → Mem ι V) (eC : ↥(core U) ≃ Fin n)
+    (b : ℕ) : BddAbove (BudgetedSizes U eC b) :=
   ⟨Nat.card ↥(core U), fun _ hm => budgetedSizes_le hm⟩
 
 /-- **The upper half of the sandwich** ([Persistence] §5, Proposition 5.2): no budget buys more than
@@ -1401,11 +1422,11 @@ variable {n m : ℕ}
 /-- Permutations act on lenses by relabelling the domain: `U • ℓ` reads the cell `U⁻¹ x` where `ℓ`
 read `x`. This is the action under which the canonical family of Proposition 3.5 moves its
 frames. -/
-theorem smul_lens_apply {α : Type*} (U : Perm α) (ℓ : α → Fin m) (x : α) :
+private theorem smul_lens_apply {α : Type*} (U : Perm α) (ℓ : α → Fin m) (x : α) :
     (U • ℓ) x = ℓ (U⁻¹ x) := rfl
 
 /-- A permutation stabilizes a lens exactly when it preserves the lens's fibers. -/
-theorem mem_stabilizer_lens {α : Type*} {U : Perm α} {ℓ : α → Fin m} :
+private theorem mem_stabilizer_lens {α : Type*} {U : Perm α} {ℓ : α → Fin m} :
     U ∈ stabilizer (Perm α) ℓ ↔ ∀ x, ℓ (U x) = ℓ x := by
   constructor
   · intro h x
@@ -1421,7 +1442,7 @@ theorem mem_stabilizer_lens {α : Type*} {U : Perm α} {ℓ : α → Fin m} :
 /-- **The stabilizer of a lens is the product of the symmetric groups of its fibers**
 ([Persistence] §7, Lemma 7.1). A fiber-preserving permutation is exactly a choice of one permutation
 per fiber: forward, restrict; backward, assemble along the fibration of `Fin n` by `ℓ`. -/
-noncomputable def stabEquivPi {α : Type*} (ℓ : α → Fin m) :
+private noncomputable def stabEquivPi {α : Type*} (ℓ : α → Fin m) :
     ↥(stabilizer (Perm α) ℓ) ≃ ∀ i : Fin m, Perm {x : α // ℓ x = i} where
   toFun U := fun i => Equiv.Perm.subtypePerm U.1 (fun x => by
     rw [mem_stabilizer_lens.mp U.2 x])
@@ -1437,7 +1458,7 @@ noncomputable def stabEquivPi {α : Type*} (ℓ : α → Fin m) :
     rfl
 
 /-- The fibers, as the paper writes them: `{x // ℓ x = i}` is the preimage `ℓ ⁻¹' {i}`. -/
-theorem card_fiber_eq {α : Type*} (ℓ : α → Fin m) (i : Fin m) :
+private theorem card_fiber_eq {α : Type*} (ℓ : α → Fin m) (i : Fin m) :
     Nat.card {x : α // ℓ x = i} = (ℓ ⁻¹' {i}).ncard :=
   Nat.card_coe_set_eq (ℓ ⁻¹' {i})
 
@@ -1533,7 +1554,7 @@ theorem exists_balanced (hm : 0 < m) (hdvd : m ∣ n) : ∃ ℓ : Fin n → Fin 
         rw [Nat.add_comm, Nat.add_mul_div_right _ _ hm, Nat.div_eq_of_lt i.2, Nat.zero_add] }
   rw [Nat.card_congr e, Nat.card_eq_fintype_card, Fintype.card_fin]
 
-theorem prod_fiber_balanced {ℓ : Fin n → Fin m} (h : Balanced ℓ) :
+private theorem prod_fiber_balanced {ℓ : Fin n → Fin m} (h : Balanced ℓ) :
     ∏ i : Fin m, (Nat.card {x : Fin n // ℓ x = i})! = ((n / m)!) ^ m := by
   rw [Finset.prod_congr rfl fun i (_ : i ∈ Finset.univ) => by rw [h i]]
   simp
@@ -1552,7 +1573,7 @@ def lensTable (ℓ : Fin n → Fin m) : List ℕ := (List.finRange n).map fun i 
 /-- The encoded tabulation. `KE (lensCode ℓ)` is the frame's price, in the sense of `ledger_K`. -/
 def lensCode (ℓ : Fin n → Fin m) : ℕ := Encodable.encode (lensTable ℓ)
 
-theorem lensCode_injective : Function.Injective (lensCode (n := n) (m := m)) := by
+private theorem lensCode_injective : Function.Injective (lensCode (n := n) (m := m)) := by
   intro ℓ ℓ' h
   have h2 : lensTable ℓ = lensTable ℓ' := Encodable.encode_injective h
   funext x
@@ -1696,7 +1717,7 @@ theorem collapse_generic (ℓ₀ : Fin n → Fin m) (b : ℕ) :
 Corollary 7.4's union over lenses of *different* label counts needs: `lensCode` is injective across
 codomains once restricted to surjective lenses, even though `lensTable` stores only the values, not
 `m`. -/
-theorem toFinset_lensTable_of_surjective {ℓ : Fin n → Fin m} (hs : Function.Surjective ℓ) :
+private theorem toFinset_lensTable_of_surjective {ℓ : Fin n → Fin m} (hs : Function.Surjective ℓ) :
     (lensTable ℓ).toFinset = Finset.range m := by
   ext v
   simp only [List.mem_toFinset, lensTable, List.mem_map, List.mem_finRange, true_and,
@@ -1902,14 +1923,14 @@ noncomputable def CbH (U : Perm (Fin n)) (b : ℕ) : ℕ := sSup (BudgetedEntrop
 lenses reachable from one another by permutations, so its size is at most `n !`
 (`card_orbit_mul_prod_fiber`, the fiber product being at least one). This is what makes the
 supremum well-defined. -/
-theorem budgetedEntropies_le {U : Perm (Fin n)} {b N : ℕ} (h : N ∈ BudgetedEntropies U b) :
+private theorem budgetedEntropies_le {U : Perm (Fin n)} {b N : ℕ} (h : N ∈ BudgetedEntropies U b) :
     N ≤ n ! := by
   obtain ⟨k, ℓ, -, -, rfl⟩ := h
   have hprod : 0 < ∏ i : Fin k, (Nat.card {x : Fin n // ℓ 0 x = i})! :=
     Finset.prod_pos fun i _ => Nat.factorial_pos _
   exact card_orbit_mul_prod_fiber (ℓ 0) ▸ Nat.le_mul_of_pos_right _ hprod
 
-theorem bddAbove_budgetedEntropies (U : Perm (Fin n)) (b : ℕ) :
+private theorem bddAbove_budgetedEntropies (U : Perm (Fin n)) (b : ℕ) :
     BddAbove (BudgetedEntropies U b) :=
   ⟨n !, fun _ h => budgetedEntropies_le h⟩
 
@@ -1988,19 +2009,19 @@ noncomputable def markingLens {r : ℕ} (x : Fin r → Fin n) (i : Fin n) : Fin 
   if h : ∃ j, x j = i then h.choose.succ else 0
 
 /-- A marked point is read as its own label. -/
-theorem markingLens_mark {r : ℕ} {x : Fin r → Fin n} (hx : Function.Injective x) (j : Fin r) :
-    markingLens x (x j) = j.succ := by
+private theorem markingLens_mark {r : ℕ} {x : Fin r → Fin n} (hx : Function.Injective x)
+    (j : Fin r) : markingLens x (x j) = j.succ := by
   have h : ∃ j', x j' = x j := ⟨j, rfl⟩
   rw [markingLens, dif_pos h]
   exact congrArg Fin.succ (hx h.choose_spec)
 
 /-- An unmarked point is read as `0`. -/
-theorem markingLens_unmark {r : ℕ} {x : Fin r → Fin n} {i : Fin n} (h : ¬∃ j, x j = i) :
+private theorem markingLens_unmark {r : ℕ} {x : Fin r → Fin n} {i : Fin n} (h : ¬∃ j, x j = i) :
     markingLens x i = 0 := by
   rw [markingLens, dif_neg h]
 
 /-- Only the marked points carry labels: reading `j + 1` identifies the state as `x j`. -/
-theorem markingLens_eq_succ_iff {r : ℕ} {x : Fin r → Fin n} (hx : Function.Injective x)
+private theorem markingLens_eq_succ_iff {r : ℕ} {x : Fin r → Fin n} (hx : Function.Injective x)
     {i : Fin n} {j : Fin r} : markingLens x i = j.succ ↔ x j = i := by
   constructor
   · intro h
@@ -2014,7 +2035,7 @@ theorem markingLens_eq_succ_iff {r : ℕ} {x : Fin r → Fin n} (hx : Function.I
     exact markingLens_mark hx j
 
 /-- The `0`-fiber of the marking lens is everything unmarked: `n − r` states. -/
-theorem card_fiber_marking_zero {r : ℕ} {x : Fin r → Fin n} (hx : Function.Injective x) :
+private theorem card_fiber_marking_zero {r : ℕ} {x : Fin r → Fin n} (hx : Function.Injective x) :
     Nat.card {i : Fin n // markingLens x i = 0} = n - r := by
   classical
   have hset : ∀ i : Fin n, markingLens x i = 0 ↔ i ∉ Set.range x := by
@@ -2034,7 +2055,7 @@ theorem card_fiber_marking_zero {r : ℕ} {x : Fin r → Fin n} (hx : Function.I
 
 /-- The marking lens is **surjective** as soon as one point is left unmarked: the marks supply the
 labels `1, …, r`, and the `n − r` unmarked states supply `0`. -/
-theorem markingLens_surjective {r : ℕ} {x : Fin r → Fin n} (hx : Function.Injective x)
+private theorem markingLens_surjective {r : ℕ} {x : Fin r → Fin n} (hx : Function.Injective x)
     (hrn : r < n) : Function.Surjective (markingLens x) := by
   intro l
   induction l using Fin.cases with
@@ -2046,7 +2067,7 @@ theorem markingLens_surjective {r : ℕ} {x : Fin r → Fin n} (hx : Function.In
   | succ j => exact ⟨x j, markingLens_mark hx j⟩
 
 /-- Each label `j + 1` is carried by exactly one state — the mark `x j`. -/
-theorem card_fiber_marking_succ {r : ℕ} {x : Fin r → Fin n} (hx : Function.Injective x)
+private theorem card_fiber_marking_succ {r : ℕ} {x : Fin r → Fin n} (hx : Function.Injective x)
     (j : Fin r) : Nat.card {i : Fin n // markingLens x i = j.succ} = 1 := by
   rw [Nat.card_eq_one_iff_unique]
   refine ⟨⟨fun a b => ?_⟩, ⟨⟨x j, markingLens_mark hx j⟩⟩⟩
@@ -2161,7 +2182,8 @@ bit-length is `r · ⌈log₂ n⌉`, against the `2 ^ r` of an `Encodable` list 
 def packMarks {r : ℕ} (x : Fin r → Fin n) : ℕ := ∑ j ∈ Finset.range r, markDigit x j * n ^ j
 
 /-- Every digit is a position, hence `< n`. -/
-theorem markDigit_lt {r : ℕ} (hn : 0 < n) (x : Fin r → Fin n) (j : ℕ) : markDigit x j < n := by
+private theorem markDigit_lt {r : ℕ} (hn : 0 < n) (x : Fin r → Fin n) (j : ℕ) :
+    markDigit x j < n := by
   unfold markDigit; split
   · exact (x _).2
   · exact hn
@@ -2220,7 +2242,7 @@ theorem digit_packMarks (hn : 0 < n) {r : ℕ} (x : Fin r → Fin n) (k : Fin r)
   rw [dif_pos k.2]
 
 /-- The packing fits in `r` base-`n` digits. -/
-theorem packMarks_lt (hn : 0 < n) {r : ℕ} (x : Fin r → Fin n) : packMarks x < n ^ r :=
+private theorem packMarks_lt (hn : 0 < n) {r : ℕ} (x : Fin r → Fin n) : packMarks x < n ^ r :=
   sum_digits_lt _ (markDigit_lt hn x) r
 
 /-- **The packing costs `r · Nat.size n` bits** — linear in `r`, against the `Encodable` list
@@ -2241,7 +2263,8 @@ private theorem pair_lt_sq (a b : ℕ) : Nat.pair a b < (a + b + 1) ^ 2 := by
 /-- **Pairing costs a constant factor in bits**: `Nat.pair` squares the value, hence doubles the
 bit-length, up to an additive constant. The bookkeeping that keeps the packed program
 logarithmic. -/
-theorem size_pair_le (a b : ℕ) : Nat.size (Nat.pair a b) ≤ 2 * (Nat.size a + Nat.size b) + 2 := by
+private theorem size_pair_le (a b : ℕ) :
+    Nat.size (Nat.pair a b) ≤ 2 * (Nat.size a + Nat.size b) + 2 := by
   have hs : Nat.size (a + b + 1) ≤ Nat.size a + Nat.size b + 1 := by
     rw [Nat.size_le]
     have ha := Nat.lt_size_self a
@@ -2262,27 +2285,27 @@ theorem size_pair_le (a b : ℕ) : Nat.size (Nat.pair a b) ≤ 2 * (Nat.size a +
         apply Nat.pow_le_pow_right (by norm_num); omega
 
 /-- The `j`-th base-`n` digit of `v`, at the level the builder works: plain arithmetic on `ℕ`. -/
-def digitAt (n v j : ℕ) : ℕ := v / n ^ j % n
+private def digitAt (n v j : ℕ) : ℕ := v / n ^ j % n
 
 /-- The label the marking lens assigns to state `i`, read off the packed marks: the index of the
 mark sitting at `i`, plus one, or `0` if none does. The sum is a bounded search — under injectivity
 at most one term survives. -/
-def markVal (n r v i : ℕ) : ℕ :=
+private def markVal (n r v i : ℕ) : ℕ :=
   ((List.range r).map fun j => if digitAt n v j = i then j + 1 else 0).sum
 
 /-- **The tabulation, rebuilt from the packed program `⟨n, r, v⟩`** — ONE fixed function of a single
 natural number, carrying no dependence on `n`, `r`, or the marks. -/
-def markTableFn (a : ℕ) : ℕ :=
+private def markTableFn (a : ℕ) : ℕ :=
   Encodable.encode ((List.range a.unpair.1).map
     (markVal a.unpair.1 a.unpair.2.unpair.1 a.unpair.2.unpair.2))
 
-theorem markVal_eq_sum (n r v i : ℕ) :
+private theorem markVal_eq_sum (n r v i : ℕ) :
     markVal n r v i = ∑ j ∈ Finset.range r, (if digitAt n v j = i then j + 1 else 0) := by
   rw [markVal]; simp [Finset.sum, Multiset.range]
 
 /-- **The builder reads the marking lens back off the numeral.** Injectivity is what collapses the
 bounded search to a single term: at most one mark sits at any given state. -/
-theorem markVal_eq (hn : 0 < n) {r : ℕ} {x : Fin r → Fin n} (hx : Function.Injective x)
+private theorem markVal_eq (hn : 0 < n) {r : ℕ} {x : Fin r → Fin n} (hx : Function.Injective x)
     (i : Fin n) : markVal n r (packMarks x) (i : ℕ) = (markingLens x i : ℕ) := by
   rw [markVal_eq_sum]
   -- the test at index `j < r` fires exactly when the `j`-th mark sits at `i`
@@ -2321,7 +2344,8 @@ theorem markVal_eq (hn : 0 < n) {r : ℕ} {x : Fin r → Fin n} (hx : Function.I
 
 /-- **The builder is correct**: on the packed program `⟨n, r, packMarks x⟩` it outputs exactly the
 marking lens's encoded tabulation — the very number whose `KE` is the frame's price. -/
-theorem markTableFn_eq (hn : 0 < n) {r : ℕ} {x : Fin r → Fin n} (hx : Function.Injective x) :
+private theorem markTableFn_eq (hn : 0 < n) {r : ℕ} {x : Fin r → Fin n}
+    (hx : Function.Injective x) :
     markTableFn (Nat.pair n (Nat.pair r (packMarks x))) = lensCode (markingLens x) := by
   rw [markTableFn, lensCode, lensTable]
   simp only [Nat.unpair_pair]
@@ -2332,7 +2356,7 @@ theorem markTableFn_eq (hn : 0 < n) {r : ℕ} {x : Fin r → Fin n} (hx : Functi
 
 /-- Summing a primitive-recursive list of naturals is primitive recursive (`List.sum` as a
 `foldr`). -/
-theorem primrec_list_sum {α : Type*} [Primcodable α] {f : α → List ℕ} (hf : Primrec f) :
+private theorem primrec_list_sum {α : Type*} [Primcodable α] {f : α → List ℕ} (hf : Primrec f) :
     Primrec fun a => (f a).sum :=
   (Primrec.list_foldr hf (Primrec.const 0)
       (Primrec.nat_add.comp (Primrec.fst.comp Primrec.snd)
@@ -2341,7 +2365,7 @@ theorem primrec_list_sum {α : Type*} [Primcodable α] {f : α → List ℕ} (hf
 
 /-- **The builder is primitive recursive.** Digit extraction is `/`, `^`, `%`; the mark's index is a
 bounded search over `List.range r`; the tabulation is a `List.map` over `List.range n`. -/
-theorem primrec_markTableFn : Primrec markTableFn := by
+private theorem primrec_markTableFn : Primrec markTableFn := by
   have hN : Primrec fun a : ℕ => a.unpair.1 := Primrec.fst.comp Primrec.unpair
   have hRV : Primrec fun a : ℕ => a.unpair.2 := Primrec.snd.comp Primrec.unpair
   have hR : Primrec fun a : ℕ => a.unpair.2.unpair.1 := Primrec.fst.comp (Primrec.unpair.comp hRV)
@@ -2367,7 +2391,7 @@ theorem primrec_markTableFn : Primrec markTableFn := by
       (Primrec.list_map (Primrec.list_range.comp (hR.comp Primrec.fst)) hinner)).to₂
   exact Primrec.encode.comp (Primrec.list_map (Primrec.list_range.comp hN) hmarkVal)
 
-theorem partrec_markTableFn : Nat.Partrec (fun a : ℕ => (markTableFn a : ℕ)) :=
+private theorem partrec_markTableFn : Nat.Partrec (fun a : ℕ => (markTableFn a : ℕ)) :=
   _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_markTableFn).partrec
 
 /-- **The fixed table-builder code.** Extracted from universality, it takes no parameters: one
@@ -2377,7 +2401,7 @@ noncomputable def markBuilder : Nat.Partrec.Code :=
   Classical.choose (Nat.Partrec.Code.exists_code.mp partrec_markTableFn)
 
 /-- The builder's evaluation law. -/
-theorem eval_markBuilder (a : ℕ) :
+private theorem eval_markBuilder (a : ℕ) :
     Nat.Partrec.Code.eval markBuilder a = Part.some (markTableFn a) := by
   have h := congrFun (Classical.choose_spec
     (Nat.Partrec.Code.exists_code.mp partrec_markTableFn)) a
@@ -2475,7 +2499,7 @@ def UniformBudget (ℓ : ℕ → Fin n → Fin m) (b : ℕ) : Prop :=
   ∃ c : Nat.Partrec.Code, elen c ≤ b ∧ ∀ t, c.eval t = Part.some (lensCode (ℓ t))
 
 /-- A larger budget affords no less: the same program witnesses it. -/
-theorem UniformBudget.mono {ℓ : ℕ → Fin n → Fin m} {b₁ b₂ : ℕ} (h : UniformBudget ℓ b₁)
+private theorem UniformBudget.mono {ℓ : ℕ → Fin n → Fin m} {b₁ b₂ : ℕ} (h : UniformBudget ℓ b₁)
     (hb : b₁ ≤ b₂) : UniformBudget ℓ b₂ :=
   let ⟨c, hlen, heval⟩ := h
   ⟨c, hlen.trans hb, heval⟩
@@ -2499,8 +2523,8 @@ theorem uniformBudget_frame_cost {ℓ : ℕ → Fin n → Fin m} {b : ℕ} (h : 
 are themselves constants — `Nat.size t ≤ 1` — so the reduction's `O (log t)` degenerates to `O (1)`
 on exactly the frames the collapse reads. No horizon appears, and none can: the bound is uniform in
 everything. -/
-theorem uniformBudget_early_cost {ℓ : ℕ → Fin n → Fin m} {b : ℕ} (h : UniformBudget ℓ b) {t : ℕ}
-    (ht : t ≤ 1) : KE (lensCode (ℓ t)) ≤ b + (33 + 2 * elen dbl) := by
+private theorem uniformBudget_early_cost {ℓ : ℕ → Fin n → Fin m} {b : ℕ} (h : UniformBudget ℓ b)
+    {t : ℕ} (ht : t ≤ 1) : KE (lensCode (ℓ t)) ≤ b + (33 + 2 * elen dbl) := by
   have hc := uniformBudget_frame_cost h t
   have hs : Nat.size t ≤ 1 := by
     rcases Nat.le_one_iff_eq_zero_or_eq_one.mp ht with rfl | rfl <;> simp
@@ -2522,14 +2546,14 @@ noncomputable def CbHu (U : Perm (Fin n)) (b : ℕ) : ℕ := sSup (UniformBudget
 
 /-- No reading distinguishes more than the world has to offer (`budgetedEntropies_le`'s argument,
 verbatim: the budget plays no part). -/
-theorem uniformBudgetedEntropies_le {U : Perm (Fin n)} {b N : ℕ}
+private theorem uniformBudgetedEntropies_le {U : Perm (Fin n)} {b N : ℕ}
     (h : N ∈ UniformBudgetedEntropies U b) : N ≤ n ! := by
   obtain ⟨k, ℓ, -, -, rfl⟩ := h
   have hprod : 0 < ∏ i : Fin k, (Nat.card {x : Fin n // ℓ 0 x = i})! :=
     Finset.prod_pos fun i _ => Nat.factorial_pos _
   exact card_orbit_mul_prod_fiber (ℓ 0) ▸ Nat.le_mul_of_pos_right _ hprod
 
-theorem bddAbove_uniformBudgetedEntropies (U : Perm (Fin n)) (b : ℕ) :
+private theorem bddAbove_uniformBudgetedEntropies (U : Perm (Fin n)) (b : ℕ) :
     BddAbove (UniformBudgetedEntropies U b) :=
   ⟨n !, fun _ h => uniformBudgetedEntropies_le h⟩
 
@@ -2632,7 +2656,7 @@ theorem getD_map_finRange (g : Fin n → ℕ) (j : Fin n) :
 /-- **Table transport is composition with `U⁻¹`**: one step of `ownStep` against the world's own
 table is exactly one step of the canonical family. Injectivity of `U` is what makes `idx` invert the
 table (`idx_map_finRange`). -/
-theorem ownStep_lensTable (U : Perm (Fin n)) (ℓ : Fin n → Fin m) :
+private theorem ownStep_lensTable (U : Perm (Fin n)) (ℓ : Fin n → Fin m) :
     ownStep (lensTable ⇑U) (lensTable ℓ) = lensTable (ℓ ∘ ⇑U⁻¹) := by
   have hfinj : Function.Injective (fun j : Fin n => ((U j : Fin n) : ℕ)) :=
     Fin.val_injective.comp U.injective
@@ -2672,7 +2696,7 @@ def ownTableFn (a : ℕ) : ℕ :=
       a.unpair.2
       ((Encodable.decode (α := List ℕ) a.unpair.1.unpair.1).getD []))
 
-theorem primrec_ownStep : Primrec₂ ownStep := by
+private theorem primrec_ownStep : Primrec₂ ownStep := by
   have hg : Primrec₂ fun (q : List ℕ × List ℕ) (i : ℕ) => q.2.getD (idx i q.1) 0 :=
     ((Primrec.list_getD 0).comp (Primrec.snd.comp Primrec.fst)
       (primrec_idx.comp (Primrec.pair Primrec.snd (Primrec.fst.comp Primrec.fst)))).to₂
@@ -2687,7 +2711,8 @@ private theorem natRec_iterate {α : Type*} (f : α → α) (x : α) : ∀ t : �
     rw [Function.iterate_succ_apply']
     exact congrArg f (natRec_iterate f x t)
 
-theorem primrec_ownIter : Primrec₂ fun (q : List ℕ × List ℕ) (t : ℕ) => ownIter q.1 t q.2 := by
+private theorem primrec_ownIter :
+    Primrec₂ fun (q : List ℕ × List ℕ) (t : ℕ) => ownIter q.1 t q.2 := by
   have hg : Primrec₂ fun (q : List ℕ × List ℕ) (p : ℕ × List ℕ) => ownStep q.1 p.2 :=
     (primrec_ownStep.comp (Primrec.fst.comp Primrec.fst)
       (Primrec.snd.comp Primrec.snd)).to₂
@@ -2697,7 +2722,7 @@ theorem primrec_ownIter : Primrec₂ fun (q : List ℕ × List ℕ) (t : ℕ) =>
 /-- **The owner's builder is primitive recursive.** Decoding is `Primrec.decode`, transport is a
 `List.map` over `List.range` composed with the ledger's table inversion, and the iteration is
 `Nat.rec`. -/
-theorem primrec_ownTableFn : Primrec ownTableFn := by
+private theorem primrec_ownTableFn : Primrec ownTableFn := by
   have hLP : Primrec fun a : ℕ => a.unpair.1 := Primrec.fst.comp Primrec.unpair
   have hdecL : Primrec fun a : ℕ =>
       (Encodable.decode (α := List ℕ) a.unpair.1.unpair.1).getD [] :=
@@ -2711,7 +2736,7 @@ theorem primrec_ownTableFn : Primrec ownTableFn := by
   exact Primrec.encode.comp
     (primrec_ownIter.comp (Primrec.pair hdecP hdecL) hT)
 
-theorem partrec_ownTableFn : Nat.Partrec (fun a : ℕ => (ownTableFn a : ℕ)) :=
+private theorem partrec_ownTableFn : Nat.Partrec (fun a : ℕ => (ownTableFn a : ℕ)) :=
   _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_ownTableFn).partrec
 
 /-- **The fixed iterate-compose builder code.** One program, independent of the world, the reading,
@@ -2720,7 +2745,7 @@ noncomputable def ownBuilder : Nat.Partrec.Code :=
   Classical.choose (Nat.Partrec.Code.exists_code.mp partrec_ownTableFn)
 
 /-- The builder's evaluation law. -/
-theorem eval_ownBuilder (a : ℕ) :
+private theorem eval_ownBuilder (a : ℕ) :
     Nat.Partrec.Code.eval ownBuilder a = Part.some (ownTableFn a) := by
   have h := congrFun (Classical.choose_spec
     (Nat.Partrec.Code.exists_code.mp partrec_ownTableFn)) a
@@ -2733,7 +2758,7 @@ theorem decode_lensCode (ℓ : Fin n → Fin m) :
 
 /-- **The builder is correct**: on `⟨⟨ℓ₀'s table, U's table⟩, t⟩` it outputs frame `t`'s encoded
 tabulation. -/
-theorem ownTableFn_eq (U : Perm (Fin n)) (ℓ₀ : Fin n → Fin m) (t : ℕ) :
+private theorem ownTableFn_eq (U : Perm (Fin n)) (ℓ₀ : Fin n → Fin m) (t : ℕ) :
     ownTableFn (Nat.pair (Nat.pair (lensCode ℓ₀) (lensCode ⇑U)) t)
       = lensCode ((U ^ t) • ℓ₀) := by
   rw [ownTableFn]
@@ -2831,19 +2856,19 @@ noncomputable def lcgWorld (a m : ℕ) (h : Nat.Coprime a m) : Perm (Fin m) :=
       exact Fin.ext h3))
 
 /-- The world's rule, read off: the state `x` steps to `a · x mod m`. -/
-@[simp] theorem lcgWorld_apply (a m : ℕ) (h : Nat.Coprime a m) (x : Fin m) :
+@[simp] private theorem lcgWorld_apply (a m : ℕ) (h : Nat.Coprime a m) (x : Fin m) :
     ((lcgWorld a m h x : Fin m) : ℕ) = a * (x : ℕ) % m := rfl
 
 /-- **The world's table, rebuilt from the packed rule `⟨a, m⟩`** — ONE fixed function of a single
 natural number, carrying no dependence on `a` or `m`: tabulate `i ↦ a · i mod m` over `List.range m`
 by plain digit arithmetic. This is the `markBuilder` idiom, and the source of the `O (1)` in the
 price below. -/
-def lcgTableFn (p : ℕ) : ℕ :=
+private def lcgTableFn (p : ℕ) : ℕ :=
   Encodable.encode ((List.range p.unpair.2).map fun i => p.unpair.1 * i % p.unpair.2)
 
 /-- **The builder is primitive recursive.** The table is a `List.map` of one multiplication and one
 remainder over `List.range m`. -/
-theorem primrec_lcgTableFn : Primrec lcgTableFn := by
+private theorem primrec_lcgTableFn : Primrec lcgTableFn := by
   have hA : Primrec fun p : ℕ => p.unpair.1 := Primrec.fst.comp Primrec.unpair
   have hM : Primrec fun p : ℕ => p.unpair.2 := Primrec.snd.comp Primrec.unpair
   have hinner : Primrec₂ fun (p : ℕ) (i : ℕ) => p.unpair.1 * i % p.unpair.2 :=
@@ -2854,7 +2879,7 @@ theorem primrec_lcgTableFn : Primrec lcgTableFn := by
 
 /-- **The builder is correct**: on the packed rule `⟨a, m⟩` it outputs exactly the world's encoded
 tabulation — the very number whose `KE` is the world's price. -/
-theorem lcgTableFn_eq (a m : ℕ) (h : Nat.Coprime a m) :
+private theorem lcgTableFn_eq (a m : ℕ) (h : Nat.Coprime a m) :
     lcgTableFn (Nat.pair a m) = lensCode ⇑(lcgWorld a m h) := by
   rw [lcgTableFn, lensCode, lensTable]
   simp only [Nat.unpair_pair]
@@ -2863,7 +2888,7 @@ theorem lcgTableFn_eq (a m : ℕ) (h : Nat.Coprime a m) :
   rw [← hfr, List.map_map]
   exact List.map_congr_left fun i _ => (lcgWorld_apply a m h i).symm
 
-theorem partrec_lcgTableFn : Nat.Partrec (fun p : ℕ => (lcgTableFn p : ℕ)) :=
+private theorem partrec_lcgTableFn : Nat.Partrec (fun p : ℕ => (lcgTableFn p : ℕ)) :=
   _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_lcgTableFn).partrec
 
 /-- **The fixed congruential-world builder code.** One program, independent of `a` and `m`. -/
@@ -2871,7 +2896,7 @@ noncomputable def lcgBuilder : Nat.Partrec.Code :=
   Classical.choose (Nat.Partrec.Code.exists_code.mp partrec_lcgTableFn)
 
 /-- The builder's evaluation law. -/
-theorem eval_lcgBuilder (p : ℕ) :
+private theorem eval_lcgBuilder (p : ℕ) :
     Nat.Partrec.Code.eval lcgBuilder p = Part.some (lcgTableFn p) := by
   have h := congrFun (Classical.choose_spec
     (Nat.Partrec.Code.exists_code.mp partrec_lcgTableFn)) p
@@ -3016,12 +3041,12 @@ def idFromTableFn (a : ℕ) : ℕ :=
 
 /-- The rebuild is correct: from *any* frame's table over `Fin n` — the world's own included — it
 recovers the identity frame's table. -/
-theorem idFromTableFn_eq (ℓ : Fin n → Fin m) :
+private theorem idFromTableFn_eq (ℓ : Fin n → Fin m) :
     idFromTableFn (lensCode ℓ) = lensCode (id : Fin n → Fin n) := by
   rw [idFromTableFn, decode_lensCode, lensCode_id, lensTable]
   simp
 
-theorem primrec_idFromTableFn : Primrec idFromTableFn := by
+private theorem primrec_idFromTableFn : Primrec idFromTableFn := by
   have hdec : Primrec fun a : ℕ => (Encodable.decode (α := List ℕ) a).getD [] :=
     Primrec.option_getD.comp Primrec.decode (Primrec.const [])
   exact Primrec.encode.comp (Primrec.list_range.comp (Primrec.list_length.comp hdec))
@@ -3032,7 +3057,7 @@ and of `n` — `ownTableFn`'s table transport with the reading supplied for free
 def faithTableFn (p : ℕ) : ℕ :=
   ownTableFn (Nat.pair (Nat.pair (idFromTableFn p.unpair.1) p.unpair.1) p.unpair.2)
 
-theorem primrec_faithTableFn : Primrec faithTableFn := by
+private theorem primrec_faithTableFn : Primrec faithTableFn := by
   have hA : Primrec fun p : ℕ => p.unpair.1 := Primrec.fst.comp Primrec.unpair
   have hT : Primrec fun p : ℕ => p.unpair.2 := Primrec.snd.comp Primrec.unpair
   exact primrec_ownTableFn.comp
@@ -3054,11 +3079,11 @@ theorem faithTableFn_eq (U : Perm (Fin n)) (t : ℕ) :
 — `(U ^ t)⁻¹ ((U ^ t) x) = x` — and the reference frame is the identity, which resolves every state.
 This is `permCarries_smul` at `ℓ₀ = id`, spelled without the action (see the note on `arrowAction`
 above). -/
-theorem permCarries_inv (U : Perm (Fin n)) : PermCarries U (fun t => ⇑((U ^ t)⁻¹)) := by
+private theorem permCarries_inv (U : Perm (Fin n)) : PermCarries U (fun t => ⇑((U ^ t)⁻¹)) := by
   refine ⟨?_, fun t x => ?_⟩ <;> simp [Function.surjective_id]
 
 /-- The faithful family's reference frame is **bijective**: it is the identity. -/
-theorem bijective_faithful_frame (U : Perm (Fin n)) :
+private theorem bijective_faithful_frame (U : Perm (Fin n)) :
     Function.Bijective (⇑((U ^ 0)⁻¹) : Fin n → Fin n) := by
   simp
 
@@ -3070,7 +3095,7 @@ theorem CbHu_ge_of_uniform {U : Perm (Fin n)} {k b : ℕ} {ℓ : ℕ → Fin n �
     Nat.card ↥(orbit (Perm (Fin n)) (ℓ 0)) ≤ CbHu U b :=
   le_csSup (bddAbove_uniformBudgetedEntropies U b) ⟨k, ℓ, hcar, hbud, rfl⟩
 
-theorem partrec_faithTableFn : Nat.Partrec (fun p : ℕ => (faithTableFn p : ℕ)) :=
+private theorem partrec_faithTableFn : Nat.Partrec (fun p : ℕ => (faithTableFn p : ℕ)) :=
   _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_faithTableFn).partrec
 
 /-- **The fixed faithful-family builder code.** One program, independent of everything. -/
@@ -3078,7 +3103,7 @@ noncomputable def faithBuilder : Nat.Partrec.Code :=
   Classical.choose (Nat.Partrec.Code.exists_code.mp partrec_faithTableFn)
 
 /-- The builder's evaluation law. -/
-theorem eval_faithBuilder (p : ℕ) :
+private theorem eval_faithBuilder (p : ℕ) :
     Nat.Partrec.Code.eval faithBuilder p = Part.some (faithTableFn p) := by
   have h := congrFun (Classical.choose_spec
     (Nat.Partrec.Code.exists_code.mp partrec_faithTableFn)) p
@@ -3267,8 +3292,8 @@ def PermCarriesUpTo (U : Perm (Fin n)) (ℓ : ℕ → Fin n → Fin m) (T : ℕ)
   Function.Surjective (ℓ 0) ∧ ∀ t ≤ T, ∀ x, ℓ t ((U ^ t) x) = ℓ 0 x
 
 /-- An unbounded-horizon family satisfies every truncation of itself. -/
-theorem PermCarries.upTo {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m} (h : PermCarries U ℓ) (T : ℕ) :
-    PermCarriesUpTo U ℓ T :=
+private theorem PermCarries.upTo {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m} (h : PermCarries U ℓ)
+    (T : ℕ) : PermCarriesUpTo U ℓ T :=
   ⟨h.1, fun t _ x => h.2 t x⟩
 
 /-- **The per-frame budget out to horizon `T`**: every frame up to `T` is affordable at `b`. -/
@@ -3279,7 +3304,7 @@ frame's table up to `T`. What the program does past the horizon is not asked. -/
 def UniformBudgetUpTo (ℓ : ℕ → Fin n → Fin m) (b T : ℕ) : Prop :=
   ∃ c : Nat.Partrec.Code, elen c ≤ b ∧ ∀ t ≤ T, c.eval t = Part.some (lensCode (ℓ t))
 
-theorem UniformBudget.upTo {ℓ : ℕ → Fin n → Fin m} {b : ℕ} (h : UniformBudget ℓ b) (T : ℕ) :
+private theorem UniformBudget.upTo {ℓ : ℕ → Fin n → Fin m} {b : ℕ} (h : UniformBudget ℓ b) (T : ℕ) :
     UniformBudgetUpTo ℓ b T :=
   let ⟨c, hlen, heval⟩ := h
   ⟨c, hlen, fun t _ => heval t⟩
@@ -3314,41 +3339,41 @@ truncated): the capacity of an observer that owns its reading and needs it only 
 noncomputable def CbHu_upTo (U : Perm (Fin n)) (b T : ℕ) : ℕ :=
   sSup (UniformBudgetedEntropiesUpTo U b T)
 
-theorem budgetedEntropiesUpTo_le {U : Perm (Fin n)} {b T N : ℕ}
+private theorem budgetedEntropiesUpTo_le {U : Perm (Fin n)} {b T N : ℕ}
     (h : N ∈ BudgetedEntropiesUpTo U b T) : N ≤ n ! := by
   obtain ⟨k, ℓ, -, -, rfl⟩ := h
   have hprod : 0 < ∏ i : Fin k, (Nat.card {x : Fin n // ℓ 0 x = i})! :=
     Finset.prod_pos fun i _ => Nat.factorial_pos _
   exact card_orbit_mul_prod_fiber (ℓ 0) ▸ Nat.le_mul_of_pos_right _ hprod
 
-theorem bddAbove_budgetedEntropiesUpTo (U : Perm (Fin n)) (b T : ℕ) :
+private theorem bddAbove_budgetedEntropiesUpTo (U : Perm (Fin n)) (b T : ℕ) :
     BddAbove (BudgetedEntropiesUpTo U b T) :=
   ⟨n !, fun _ h => budgetedEntropiesUpTo_le h⟩
 
-theorem uniformBudgetedEntropiesUpTo_le {U : Perm (Fin n)} {b T N : ℕ}
+private theorem uniformBudgetedEntropiesUpTo_le {U : Perm (Fin n)} {b T N : ℕ}
     (h : N ∈ UniformBudgetedEntropiesUpTo U b T) : N ≤ n ! := by
   obtain ⟨k, ℓ, -, -, rfl⟩ := h
   have hprod : 0 < ∏ i : Fin k, (Nat.card {x : Fin n // ℓ 0 x = i})! :=
     Finset.prod_pos fun i _ => Nat.factorial_pos _
   exact card_orbit_mul_prod_fiber (ℓ 0) ▸ Nat.le_mul_of_pos_right _ hprod
 
-theorem bddAbove_uniformBudgetedEntropiesUpTo (U : Perm (Fin n)) (b T : ℕ) :
+private theorem bddAbove_uniformBudgetedEntropiesUpTo (U : Perm (Fin n)) (b T : ℕ) :
     BddAbove (UniformBudgetedEntropiesUpTo U b T) :=
   ⟨n !, fun _ h => uniformBudgetedEntropiesUpTo_le h⟩
 
 /-- **No reading distinguishes more than the world has to offer**, at any horizon. -/
-theorem CbH_upTo_le_factorial (U : Perm (Fin n)) (b T : ℕ) : CbH_upTo U b T ≤ n ! := by
+private theorem CbH_upTo_le_factorial (U : Perm (Fin n)) (b T : ℕ) : CbH_upTo U b T ≤ n ! := by
   rcases Set.eq_empty_or_nonempty (BudgetedEntropiesUpTo U b T) with hemp | hne
   · simp [CbH_upTo, hemp]
   · exact csSup_le hne fun _ h => budgetedEntropiesUpTo_le h
 
-theorem CbHu_upTo_le_factorial (U : Perm (Fin n)) (b T : ℕ) : CbHu_upTo U b T ≤ n ! := by
+private theorem CbHu_upTo_le_factorial (U : Perm (Fin n)) (b T : ℕ) : CbHu_upTo U b T ≤ n ! := by
   rcases Set.eq_empty_or_nonempty (UniformBudgetedEntropiesUpTo U b T) with hemp | hne
   · simp [CbHu_upTo, hemp]
   · exact csSup_le hne fun _ h => uniformBudgetedEntropiesUpTo_le h
 
 /-- **More budget never hurts**, at any horizon. -/
-theorem CbH_upTo_mono (U : Perm (Fin n)) (T : ℕ) {b₁ b₂ : ℕ} (h : b₁ ≤ b₂) :
+private theorem CbH_upTo_mono (U : Perm (Fin n)) (T : ℕ) {b₁ b₂ : ℕ} (h : b₁ ≤ b₂) :
     CbH_upTo U b₁ T ≤ CbH_upTo U b₂ T :=
   csSup_le_csSup' (bddAbove_budgetedEntropiesUpTo U b₂ T) (by
     rintro N ⟨k, ℓ, hcar, hbud, rfl⟩
@@ -3365,7 +3390,7 @@ theorem CbH_upTo_antitone (U : Perm (Fin n)) (b : ℕ) {T₁ T₂ : ℕ} (h : T�
       fun t ht => hbud t (ht.trans h), rfl⟩)
 
 /-- The owner's capacity is antitone in the horizon too. -/
-theorem CbHu_upTo_antitone (U : Perm (Fin n)) (b : ℕ) {T₁ T₂ : ℕ} (h : T₁ ≤ T₂) :
+private theorem CbHu_upTo_antitone (U : Perm (Fin n)) (b : ℕ) {T₁ T₂ : ℕ} (h : T₁ ≤ T₂) :
     CbHu_upTo U b T₂ ≤ CbHu_upTo U b T₁ :=
   csSup_le_csSup' (bddAbove_uniformBudgetedEntropiesUpTo U b T₁) (by
     rintro N ⟨k, ℓ, hcar, hbud, rfl⟩
@@ -3381,7 +3406,7 @@ theorem CbH_le_CbH_upTo (U : Perm (Fin n)) (b T : ℕ) : CbH U b ≤ CbH_upTo U 
     exact ⟨k, ℓ, hcar.upTo T, fun t _ => hbud t, rfl⟩)
 
 /-- The same for an owner. -/
-theorem CbHu_le_CbHu_upTo (U : Perm (Fin n)) (b T : ℕ) : CbHu U b ≤ CbHu_upTo U b T :=
+private theorem CbHu_le_CbHu_upTo (U : Perm (Fin n)) (b T : ℕ) : CbHu U b ≤ CbHu_upTo U b T :=
   csSup_le_csSup' (bddAbove_uniformBudgetedEntropiesUpTo U b T) (by
     rintro N ⟨k, ℓ, hcar, hbud, rfl⟩
     exact ⟨k, ℓ, hcar.upTo T, hbud.upTo T, rfl⟩)
@@ -3567,13 +3592,13 @@ def unionWorld {n₁ n₂ : ℕ} (U₁ : Perm (Fin n₁)) (U₂ : Perm (Fin n₂
   simp [unionWorld, Equiv.permCongr_def]
 
 /-- Blocks are preserved by every power: the union world never mixes them. -/
-theorem unionWorld_pow_left {n₁ n₂ : ℕ} (U₁ : Perm (Fin n₁)) (U₂ : Perm (Fin n₂)) (t : ℕ)
+private theorem unionWorld_pow_left {n₁ n₂ : ℕ} (U₁ : Perm (Fin n₁)) (U₂ : Perm (Fin n₂)) (t : ℕ)
     (i : Fin n₁) : ((unionWorld U₁ U₂) ^ t) (Fin.castAdd n₂ i) = Fin.castAdd n₂ ((U₁ ^ t) i) := by
   induction t generalizing i with
   | zero => simp
   | succ t ih => rw [pow_succ, pow_succ]; simp [Equiv.Perm.mul_apply, ih]
 
-theorem unionWorld_pow_right {n₁ n₂ : ℕ} (U₁ : Perm (Fin n₁)) (U₂ : Perm (Fin n₂)) (t : ℕ)
+private theorem unionWorld_pow_right {n₁ n₂ : ℕ} (U₁ : Perm (Fin n₁)) (U₂ : Perm (Fin n₂)) (t : ℕ)
     (j : Fin n₂) : ((unionWorld U₁ U₂) ^ t) (Fin.natAdd n₁ j) = Fin.natAdd n₁ ((U₂ ^ t) j) := by
   induction t generalizing j with
   | zero => simp
@@ -3584,7 +3609,7 @@ builders below: for the world the shift is the first table's own length, for a l
 block's label count. -/
 def shiftAppend (T₁ T₂ : List ℕ) (s : ℕ) : List ℕ := T₁ ++ T₂.map (fun v => s + v)
 
-theorem primrec_shiftAppend :
+private theorem primrec_shiftAppend :
     Primrec fun q : (List ℕ × List ℕ) × ℕ => shiftAppend q.1.1 q.1.2 q.2 := by
   have hmap : Primrec fun q : (List ℕ × List ℕ) × ℕ => q.1.2.map (fun v => q.2 + v) :=
     Primrec.list_map (Primrec.snd.comp Primrec.fst)
@@ -3610,7 +3635,7 @@ def unionTableFn (p : ℕ) : ℕ :=
       ((Encodable.decode (α := List ℕ) p.unpair.2).getD [])
       ((Encodable.decode (α := List ℕ) p.unpair.1).getD []).length)
 
-theorem primrec_unionTableFn : Primrec unionTableFn := by
+private theorem primrec_unionTableFn : Primrec unionTableFn := by
   have hdec1 : Primrec fun p : ℕ => (Encodable.decode (α := List ℕ) p.unpair.1).getD [] :=
     Primrec.option_getD.comp (Primrec.decode.comp (Primrec.fst.comp Primrec.unpair))
       (Primrec.const [])
@@ -3630,14 +3655,14 @@ theorem unionTableFn_eq {n₁ n₂ : ℕ} (U₁ : Perm (Fin n₁)) (U₂ : Perm 
   rw [hlen, ← lensTable_unionWorld]
   rfl
 
-theorem partrec_unionTableFn : Nat.Partrec (fun p : ℕ => (unionTableFn p : ℕ)) :=
+private theorem partrec_unionTableFn : Nat.Partrec (fun p : ℕ => (unionTableFn p : ℕ)) :=
   _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_unionTableFn).partrec
 
 /-- **The fixed union-world builder code.** -/
 noncomputable def unionBuilder : Nat.Partrec.Code :=
   Classical.choose (Nat.Partrec.Code.exists_code.mp partrec_unionTableFn)
 
-theorem eval_unionBuilder (p : ℕ) :
+private theorem eval_unionBuilder (p : ℕ) :
     Nat.Partrec.Code.eval unionBuilder p = Part.some (unionTableFn p) := by
   have h := congrFun (Classical.choose_spec
     (Nat.Partrec.Code.exists_code.mp partrec_unionTableFn)) p
@@ -3704,12 +3729,12 @@ the union lens's table. Unlike `unionTableFn`, the shift **must** be supplied �
 one entry per state, so its length is the block size and the *label* count is nowhere in it. That is
 the one place a size parameter is unavoidable here, and `uniformBudget_unionLens` pays `O (log k₁)`
 for it. -/
-def unionLensTableFn (p : ℕ) : ℕ :=
+private def unionLensTableFn (p : ℕ) : ℕ :=
   Encodable.encode
     (shiftAppend ((Encodable.decode (α := List ℕ) p.unpair.1.unpair.1).getD [])
       ((Encodable.decode (α := List ℕ) p.unpair.1.unpair.2).getD []) p.unpair.2)
 
-theorem primrec_unionLensTableFn : Primrec unionLensTableFn := by
+private theorem primrec_unionLensTableFn : Primrec unionLensTableFn := by
   have hdec1 : Primrec fun p : ℕ => (Encodable.decode (α := List ℕ) p.unpair.1.unpair.1).getD [] :=
     Primrec.option_getD.comp
       (Primrec.decode.comp
@@ -3726,7 +3751,7 @@ theorem primrec_unionLensTableFn : Primrec unionLensTableFn := by
 
 /-- The union lens's table is the two readings' tables, the second shifted past the first's
 labels. -/
-theorem lensTable_unionLens {n₁ n₂ k₁ k₂ : ℕ} (ℓ₁ : ℕ → Fin n₁ → Fin k₁)
+private theorem lensTable_unionLens {n₁ n₂ k₁ k₂ : ℕ} (ℓ₁ : ℕ → Fin n₁ → Fin k₁)
     (ℓ₂ : ℕ → Fin n₂ → Fin k₂) (t : ℕ) :
     lensTable (unionLens ℓ₁ ℓ₂ t) = shiftAppend (lensTable (ℓ₁ t)) (lensTable (ℓ₂ t)) k₁ := by
   have hfun : (fun x : Fin (n₁ + n₂) => ((unionLens ℓ₁ ℓ₂ t x : Fin (k₁ + k₂)) : ℕ))
@@ -3737,7 +3762,7 @@ theorem lensTable_unionLens {n₁ n₂ k₁ k₂ : ℕ} (ℓ₁ : ℕ → Fin n�
     ← List.ofFn_eq_map, List.map_ofFn, hfun, List.ofFn_fin_append]
   rfl
 
-theorem unionLensTableFn_eq {n₁ n₂ k₁ k₂ : ℕ} (ℓ₁ : ℕ → Fin n₁ → Fin k₁)
+private theorem unionLensTableFn_eq {n₁ n₂ k₁ k₂ : ℕ} (ℓ₁ : ℕ → Fin n₁ → Fin k₁)
     (ℓ₂ : ℕ → Fin n₂ → Fin k₂) (t : ℕ) :
     unionLensTableFn (Nat.pair (Nat.pair (lensCode (ℓ₁ t)) (lensCode (ℓ₂ t))) k₁)
       = lensCode (unionLens ℓ₁ ℓ₂ t) := by
@@ -3746,14 +3771,14 @@ theorem unionLensTableFn_eq {n₁ n₂ k₁ k₂ : ℕ} (ℓ₁ : ℕ → Fin n�
   rw [← lensTable_unionLens]
   rfl
 
-theorem partrec_unionLensTableFn : Nat.Partrec (fun p : ℕ => (unionLensTableFn p : ℕ)) :=
+private theorem partrec_unionLensTableFn : Nat.Partrec (fun p : ℕ => (unionLensTableFn p : ℕ)) :=
   _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_unionLensTableFn).partrec
 
 /-- **The fixed block-pair-lens builder code.** -/
 noncomputable def unionLensBuilder : Nat.Partrec.Code :=
   Classical.choose (Nat.Partrec.Code.exists_code.mp partrec_unionLensTableFn)
 
-theorem eval_unionLensBuilder (p : ℕ) :
+private theorem eval_unionLensBuilder (p : ℕ) :
     Nat.Partrec.Code.eval unionLensBuilder p = Part.some (unionLensTableFn p) := by
   have h := congrFun (Classical.choose_spec
     (Nat.Partrec.Code.exists_code.mp partrec_unionLensTableFn)) p
@@ -3793,7 +3818,7 @@ theorem uniformBudget_unionLens {n₁ n₂ k₁ k₂ : ℕ} {ℓ₁ : ℕ → Fi
 
 /-- The union lens's fibre over a **first-block** label is that block's fibre: no state of the
 second block carries a first-block label. -/
-theorem card_fiber_unionLens_left {n₁ n₂ k₁ k₂ : ℕ} (ℓ₁ : ℕ → Fin n₁ → Fin k₁)
+private theorem card_fiber_unionLens_left {n₁ n₂ k₁ k₂ : ℕ} (ℓ₁ : ℕ → Fin n₁ → Fin k₁)
     (ℓ₂ : ℕ → Fin n₂ → Fin k₂) (a : Fin k₁) :
     Nat.card {x : Fin (n₁ + n₂) // unionLens ℓ₁ ℓ₂ 0 x = Fin.castAdd k₂ a}
       = Nat.card {i : Fin n₁ // ℓ₁ 0 i = a} := by
@@ -3818,7 +3843,7 @@ theorem card_fiber_unionLens_left {n₁ n₂ k₁ k₂ : ℕ} (ℓ₁ : ℕ → 
   exact Nat.card_congr (e1.trans (Equiv.subtypeSum.trans ((Equiv.sumEmpty _ _).trans e3)))
 
 /-- The union lens's fibre over a **second-block** label is that block's fibre. -/
-theorem card_fiber_unionLens_right {n₁ n₂ k₁ k₂ : ℕ} (ℓ₁ : ℕ → Fin n₁ → Fin k₁)
+private theorem card_fiber_unionLens_right {n₁ n₂ k₁ k₂ : ℕ} (ℓ₁ : ℕ → Fin n₁ → Fin k₁)
     (ℓ₂ : ℕ → Fin n₂ → Fin k₂) (b : Fin k₂) :
     Nat.card {x : Fin (n₁ + n₂) // unionLens ℓ₁ ℓ₂ 0 x = Fin.natAdd k₁ b}
       = Nat.card {j : Fin n₂ // ℓ₂ 0 j = b} := by
@@ -3993,7 +4018,7 @@ def subWorld {U : Perm (Fin n)} {B : Finset (Fin n)} (hB : ∀ i ∈ B, U i ∈ 
     (e : {x : Fin n // x ∈ B} ≃ Fin B.card) : Perm (Fin B.card) :=
   Equiv.permCongr e (subPerm hB)
 
-theorem subPerm_pow_apply {U : Perm (Fin n)} {B : Finset (Fin n)} (hB : ∀ i ∈ B, U i ∈ B)
+private theorem subPerm_pow_apply {U : Perm (Fin n)} {B : Finset (Fin n)} (hB : ∀ i ∈ B, U i ∈ B)
     (t : ℕ) (y : {x : Fin n // x ∈ B}) :
     (((subPerm hB) ^ t) y : Fin n) = (U ^ t) (y : Fin n) := by
   rw [subPerm, Equiv.Perm.subtypePerm_pow]
@@ -4112,7 +4137,7 @@ theorem permCarries_iff_carries {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin 
 
 /-- **A permutation world is its own recurrent core** ([Persistence] §7's standing simplification,
 proved rather than assumed): nothing is transient when nothing is irreversible. -/
-theorem core_perm (U : Perm (Fin n)) : core (⇑U) = Set.univ := by
+private theorem core_perm (U : Perm (Fin n)) : core (⇑U) = Set.univ := by
   have h : ∀ t : ℕ, ((⇑U)^[t]) '' Set.univ = (Set.univ : Set (Fin n)) := by
     intro t
     have hs : Function.Surjective ((⇑U)^[t]) := by
@@ -4122,7 +4147,7 @@ theorem core_perm (U : Perm (Fin n)) : core (⇑U) = Set.univ := by
   simp only [core, h, Set.iInter_const]
 
 /-- The core of a permutation world, identified with the world itself. -/
-noncomputable def corePermEquiv (U : Perm (Fin n)) : ↥(core (⇑U)) ≃ Fin n :=
+private noncomputable def corePermEquiv (U : Perm (Fin n)) : ↥(core (⇑U)) ≃ Fin n :=
   (Equiv.setCongr (core_perm U)).trans (Equiv.Set.univ (Fin n))
 
 /-- **Carried entropy transports along a relabelling of the domain** ([Persistence] §2, Definition
@@ -4133,7 +4158,7 @@ capacity below be compared with the ambient one over a permutation world.
 Proved by the exact count (`card_orbit_mul_prod_fiber_card`) on each side rather than by exhibiting
 an equivalence of orbits: the two orbit cardinalities multiply the *same* fibre product to the
 *same* factorial, and the fibre product is positive. -/
-theorem card_orbit_congr {α β : Type*} [Finite α] (e : α ≃ β) (f : α → Fin m) :
+private theorem card_orbit_congr {α β : Type*} [Finite α] (e : α ≃ β) (f : α → Fin m) :
     Nat.card ↥(orbit (Perm α) f) = Nat.card ↥(orbit (Perm β) (f ∘ ⇑e.symm)) := by
   haveI : Finite β := Finite.of_equiv α e
   have hα := card_orbit_mul_prod_fiber_card f
@@ -4148,7 +4173,7 @@ theorem card_orbit_congr {α β : Type*} [Finite α] (e : α ≃ β) (f : α →
 
 /-- **Over a permutation world the core-restricted entropy is the ambient one.** The core is the
 whole world (`core_perm`), and carried entropy transports along that identification. -/
-theorem coreOrbit_perm (U : Perm (Fin n)) (f : Fin n → Fin m) :
+private theorem coreOrbit_perm (U : Perm (Fin n)) (f : Fin n → Fin m) :
     Nat.card ↥(orbit (Perm ↥(core (⇑U))) (coreLens (⇑U) f))
       = Nat.card ↥(orbit (Perm (Fin n)) f) := by
   have h := card_orbit_congr (corePermEquiv U) (coreLens (⇑U) f)
@@ -4182,8 +4207,8 @@ noncomputable def CbHue (U : Fin n → Fin n) (b : ℕ) : ℕ := sSup (UniformBu
 
 /-- No reading distinguishes more of the core than the core has to offer: a relabelling class on the
 core is at most `|core U| !`. -/
-theorem budgetedEntropiesE_le {U : Fin n → Fin n} {b N : ℕ} (h : N ∈ BudgetedEntropiesE U b) :
-    N ≤ (Nat.card ↥(core U))! := by
+private theorem budgetedEntropiesE_le {U : Fin n → Fin n} {b N : ℕ}
+    (h : N ∈ BudgetedEntropiesE U b) : N ≤ (Nat.card ↥(core U))! := by
   obtain ⟨k, ℓ, -, -, rfl⟩ := h
   have hprod : 0 < ∏ i : Fin k, (Nat.card {x : ↥(core U) // coreLens U (ℓ 0) x = i})! :=
     Finset.prod_pos fun i _ => Nat.factorial_pos _
@@ -4191,7 +4216,7 @@ theorem budgetedEntropiesE_le {U : Fin n → Fin n} {b N : ℕ} (h : N ∈ Budge
 
 /-- The uniform variant is bounded for the same reason — the bound is the orbit count and consumes
 no budget at all. -/
-theorem uniformBudgetedEntropiesE_le {U : Fin n → Fin n} {b N : ℕ}
+private theorem uniformBudgetedEntropiesE_le {U : Fin n → Fin n} {b N : ℕ}
     (h : N ∈ UniformBudgetedEntropiesE U b) : N ≤ (Nat.card ↥(core U))! := by
   obtain ⟨k, ℓ, -, -, rfl⟩ := h
   have hprod : 0 < ∏ i : Fin k, (Nat.card {x : ↥(core U) // coreLens U (ℓ 0) x = i})! :=
@@ -4199,16 +4224,16 @@ theorem uniformBudgetedEntropiesE_le {U : Fin n → Fin n} {b N : ℕ}
   exact card_orbit_mul_prod_fiber_card (coreLens U (ℓ 0)) ▸ Nat.le_mul_of_pos_right _ hprod
 
 /-- The recurrent core is part of the world. -/
-theorem card_core_le (U : Fin n → Fin n) : Nat.card ↥(core U) ≤ n := by
+private theorem card_core_le (U : Fin n → Fin n) : Nat.card ↥(core U) ≤ n := by
   have h : Nat.card ↥(core U) ≤ Nat.card (Fin n) :=
     Nat.card_le_card_of_injective _ Subtype.val_injective
   simpa using h
 
-theorem bddAbove_budgetedEntropiesE (U : Fin n → Fin n) (b : ℕ) :
+private theorem bddAbove_budgetedEntropiesE (U : Fin n → Fin n) (b : ℕ) :
     BddAbove (BudgetedEntropiesE U b) :=
   ⟨(Nat.card ↥(core U))!, fun _ h => budgetedEntropiesE_le h⟩
 
-theorem bddAbove_uniformBudgetedEntropiesE (U : Fin n → Fin n) (b : ℕ) :
+private theorem bddAbove_uniformBudgetedEntropiesE (U : Fin n → Fin n) (b : ℕ) :
     BddAbove (UniformBudgetedEntropiesE U b) :=
   ⟨(Nat.card ↥(core U))!, fun _ h => uniformBudgetedEntropiesE_le h⟩
 
@@ -4229,7 +4254,7 @@ theorem CbHe_le_core_factorial (U : Fin n → Fin n) (b : ℕ) : CbHe U b ≤ (N
   · simp [CbHe, hemp]
   · exact csSup_le hne fun _ h => budgetedEntropiesE_le h
 
-theorem CbHue_le_core_factorial (U : Fin n → Fin n) (b : ℕ) :
+private theorem CbHue_le_core_factorial (U : Fin n → Fin n) (b : ℕ) :
     CbHue U b ≤ (Nat.card ↥(core U))! := by
   rcases Set.eq_empty_or_nonempty (UniformBudgetedEntropiesE U b) with hemp | hne
   · simp [CbHue, hemp]
@@ -4238,14 +4263,14 @@ theorem CbHue_le_core_factorial (U : Fin n → Fin n) (b : ℕ) :
 /-- The core cap is below the world cap: `CbHe U b ≤ n !`, the general-world form of
 `CbH_le_factorial`. Over a permutation world the two coincide; over an irreversible one the core
 factorial is the sharper statement, and it is the one [Persistence] §3 predicts. -/
-theorem CbHe_le_factorial (U : Fin n → Fin n) (b : ℕ) : CbHe U b ≤ n ! :=
+private theorem CbHe_le_factorial (U : Fin n → Fin n) (b : ℕ) : CbHe U b ≤ n ! :=
   (CbHe_le_core_factorial U b).trans (Nat.factorial_le (card_core_le U))
 
-theorem CbHue_le_factorial (U : Fin n → Fin n) (b : ℕ) : CbHue U b ≤ n ! :=
+private theorem CbHue_le_factorial (U : Fin n → Fin n) (b : ℕ) : CbHue U b ≤ n ! :=
   (CbHue_le_core_factorial U b).trans (Nat.factorial_le (card_core_le U))
 
 /-- More budget never hurts. -/
-theorem CbHe_mono (U : Fin n → Fin n) {b₁ b₂ : ℕ} (h : b₁ ≤ b₂) : CbHe U b₁ ≤ CbHe U b₂ :=
+private theorem CbHe_mono (U : Fin n → Fin n) {b₁ b₂ : ℕ} (h : b₁ ≤ b₂) : CbHe U b₁ ≤ CbHe U b₂ :=
   csSup_le_csSup' (bddAbove_budgetedEntropiesE U b₂) (by
     rintro N ⟨k, ℓ, hcar, hbud, rfl⟩
     exact ⟨k, ℓ, hcar, fun t => (hbud t).trans h, rfl⟩)
@@ -4258,7 +4283,7 @@ theorem CbHue_mono (U : Fin n → Fin n) {b₁ b₂ : ℕ} (h : b₁ ≤ b₂) :
 /-- **The general objects restrict to the §7 ones** — the sanity bridge. Over a permutation world
 the carrying predicates agree (`permCarries_iff_carries`) and the core is everything
 (`coreOrbit_perm`), so the affordable-entropy sets are literally the same set. -/
-theorem budgetedEntropiesE_perm (U : Perm (Fin n)) (b : ℕ) :
+private theorem budgetedEntropiesE_perm (U : Perm (Fin n)) (b : ℕ) :
     BudgetedEntropiesE (⇑U) b = BudgetedEntropies U b := by
   ext N
   constructor
@@ -4267,7 +4292,7 @@ theorem budgetedEntropiesE_perm (U : Perm (Fin n)) (b : ℕ) :
   · rintro ⟨k, ℓ, hcar, hbud, rfl⟩
     exact ⟨k, ℓ, permCarries_iff_carries.mp hcar, hbud, (coreOrbit_perm U (ℓ 0)).symm⟩
 
-theorem uniformBudgetedEntropiesE_perm (U : Perm (Fin n)) (b : ℕ) :
+private theorem uniformBudgetedEntropiesE_perm (U : Perm (Fin n)) (b : ℕ) :
     UniformBudgetedEntropiesE (⇑U) b = UniformBudgetedEntropies U b := by
   ext N
   constructor
@@ -4309,10 +4334,10 @@ def stepComp (T T' : List ℕ) : List ℕ := T'.map fun v => T.getD v 0
 
 /-- **The table of `U^[τ]`**, by self-composition. The identity's table is `List.range n`, read off
 `T`'s own length — no size parameter is loaded, and none is needed. -/
-def iterTable (T : List ℕ) (τ : ℕ) : List ℕ := (stepComp T)^[τ] (List.range T.length)
+private def iterTable (T : List ℕ) (τ : ℕ) : List ℕ := (stepComp T)^[τ] (List.range T.length)
 
 /-- Composition of tables tabulates composition of functions. -/
-theorem stepComp_lensTable (U V : Fin n → Fin n) :
+private theorem stepComp_lensTable (U V : Fin n → Fin n) :
     stepComp (lensTable U) (lensTable V) = lensTable (U ∘ V) := by
   simp only [stepComp, lensTable, List.map_map]
   refine List.map_congr_left fun i _ => ?_
@@ -4320,7 +4345,7 @@ theorem stepComp_lensTable (U V : Fin n → Fin n) :
 
 /-- Iterated self-composition tabulates the iterate: `τ` steps of `stepComp` against `U`'s own table
 turn the identity's table into `U^[τ]`'s. -/
-theorem iterTable_lensTable (U : Fin n → Fin n) (τ : ℕ) :
+private theorem iterTable_lensTable (U : Fin n → Fin n) (τ : ℕ) :
     iterTable (lensTable U) τ = lensTable (U^[τ]) := by
   induction τ with
   | zero => simp [iterTable, lensTable]
@@ -4333,15 +4358,15 @@ theorem iterTable_lensTable (U : Fin n → Fin n) (τ : ℕ) :
 /-- **The dilation builder, from `⟨U's table, τ⟩`** — ONE fixed function of a single natural number,
 carrying no dependence on `n` or the world: decode the table, compose it with itself `τ` times,
 re-encode. -/
-def iterTableFn (p : ℕ) : ℕ :=
+private def iterTableFn (p : ℕ) : ℕ :=
   Encodable.encode (iterTable ((Encodable.decode (α := List ℕ) p.unpair.1).getD []) p.unpair.2)
 
-theorem primrec_stepComp : Primrec₂ stepComp := by
+private theorem primrec_stepComp : Primrec₂ stepComp := by
   have hg : Primrec₂ fun (q : List ℕ × List ℕ) (v : ℕ) => q.1.getD v 0 :=
     ((Primrec.list_getD 0).comp (Primrec.fst.comp Primrec.fst) Primrec.snd).to₂
   exact (Primrec.list_map Primrec.snd hg).to₂
 
-theorem primrec_iterTable : Primrec₂ iterTable := by
+private theorem primrec_iterTable : Primrec₂ iterTable := by
   have hg : Primrec₂ fun (T : List ℕ) (p : ℕ × List ℕ) => stepComp T p.2 :=
     (primrec_stepComp.comp Primrec.fst (Primrec.snd.comp Primrec.snd)).to₂
   exact (Primrec.nat_rec (f := fun T : List ℕ => List.range T.length)
@@ -4350,14 +4375,14 @@ theorem primrec_iterTable : Primrec₂ iterTable := by
 
 /-- **The dilation builder is primitive recursive.** Decoding is `Primrec.decode`, composition is a
 `List.map`, and the iteration is `Nat.rec`. -/
-theorem primrec_iterTableFn : Primrec iterTableFn := by
+private theorem primrec_iterTableFn : Primrec iterTableFn := by
   have hdecT : Primrec fun p : ℕ => (Encodable.decode (α := List ℕ) p.unpair.1).getD [] :=
     Primrec.option_getD.comp
       (Primrec.decode.comp (Primrec.fst.comp Primrec.unpair)) (Primrec.const [])
   have hτ : Primrec fun p : ℕ => p.unpair.2 := Primrec.snd.comp Primrec.unpair
   exact Primrec.encode.comp (primrec_iterTable.comp hdecT hτ)
 
-theorem partrec_iterTableFn : Nat.Partrec (fun p : ℕ => (iterTableFn p : ℕ)) :=
+private theorem partrec_iterTableFn : Nat.Partrec (fun p : ℕ => (iterTableFn p : ℕ)) :=
   _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_iterTableFn).partrec
 
 /-- **The fixed self-composition builder code.** One program, independent of the world and of
@@ -4366,14 +4391,14 @@ noncomputable def iterBuilder : Nat.Partrec.Code :=
   Classical.choose (Nat.Partrec.Code.exists_code.mp partrec_iterTableFn)
 
 /-- The builder's evaluation law. -/
-theorem eval_iterBuilder (p : ℕ) :
+private theorem eval_iterBuilder (p : ℕ) :
     Nat.Partrec.Code.eval iterBuilder p = Part.some (iterTableFn p) := by
   have h := congrFun (Classical.choose_spec
     (Nat.Partrec.Code.exists_code.mp partrec_iterTableFn)) p
   simpa [iterBuilder] using h
 
 /-- **The builder is correct**: on `⟨U's table, τ⟩` it outputs `U^[τ]`'s encoded tabulation. -/
-theorem iterTableFn_eq (U : Fin n → Fin n) (τ : ℕ) :
+private theorem iterTableFn_eq (U : Fin n → Fin n) (τ : ℕ) :
     iterTableFn (Nat.pair (lensCode U) τ) = lensCode (U^[τ]) := by
   rw [iterTableFn]
   simp only [Nat.unpair_pair, decode_lensCode]
@@ -4454,7 +4479,7 @@ def EventuallyCarries {m : ℕ} (U : Fin n → Fin n) (ℓ : ℕ → Fin n → F
   Set.SurjOn v ↑B Set.univ ∧ ∀ s ∈ B, ∃ T, ∀ t ≥ T, ℓ t (U^[t] s) = v s
 
 /-- A `U`-closed `Finset` is a `U`-closed set. -/
-theorem coe_closed {U : Fin n → Fin n} {B : Finset (Fin n)} (hB : ∀ i ∈ B, U i ∈ B) :
+private theorem coe_closed {U : Fin n → Fin n} {B : Finset (Fin n)} (hB : ∀ i ∈ B, U i ∈ B) :
     ∀ s ∈ (↑B : Set (Fin n)), U s ∈ (↑B : Set (Fin n)) := fun s hs => hB s hs
 
 /-- **Reading the attractor through the world's own iterate does not change the carried entropy.**
@@ -4584,19 +4609,19 @@ theorem CbHev_eq_CbHeOn (U : Fin n → Fin n) {B : Finset (Fin n)} (hB : ∀ i �
   rw [CbHev, CbHeOn, eventualEntropies_eq U hB b]
 
 /-- No reading distinguishes more of a region than the region has to offer. -/
-theorem entropiesOn_le {U : Fin n → Fin n} {S : Set (Fin n)} {b N : ℕ}
+private theorem entropiesOn_le {U : Fin n → Fin n} {S : Set (Fin n)} {b N : ℕ}
     (h : N ∈ EntropiesOn U S b) : N ≤ (Nat.card ↥S)! := by
   obtain ⟨k, ℓ, -, -, rfl⟩ := h
   have hprod : 0 < ∏ i : Fin k, (Nat.card {x : ↥S // S.restrict (ℓ 0) x = i})! :=
     Finset.prod_pos fun i _ => Nat.factorial_pos _
   exact card_orbit_mul_prod_fiber_card (S.restrict (ℓ 0)) ▸ Nat.le_mul_of_pos_right _ hprod
 
-theorem bddAbove_entropiesOn (U : Fin n → Fin n) (S : Set (Fin n)) (b : ℕ) :
+private theorem bddAbove_entropiesOn (U : Fin n → Fin n) (S : Set (Fin n)) (b : ℕ) :
     BddAbove (EntropiesOn U S b) := ⟨(Nat.card ↥S)!, fun _ h => entropiesOn_le h⟩
 
 /-- **The attractor is the ceiling on eventual capacity** — the §3 ceiling, relativized to a basin
 and read in the entropic currency. A transient buys no more than the attractor can hold. -/
-theorem CbHeOn_le_factorial (U : Fin n → Fin n) (S : Set (Fin n)) (b : ℕ) :
+private theorem CbHeOn_le_factorial (U : Fin n → Fin n) (S : Set (Fin n)) (b : ℕ) :
     CbHeOn U S b ≤ (Nat.card ↥S)! := by
   rcases Set.eq_empty_or_nonempty (EntropiesOn U S b) with hemp | hne
   · simp [CbHeOn, hemp]
@@ -4634,16 +4659,16 @@ absolute. -/
 
 /-- **The clamped clock**: identity below `n`, and past `n` a reindexing into
 `[n, n + orderOf (corePerm U))` by the core permutation's period. -/
-noncomputable def clamp (U : Fin n → Fin n) (t : ℕ) : ℕ :=
+private noncomputable def clamp (U : Fin n → Fin n) (t : ℕ) : ℕ :=
   if t < n then t else n + ((t - n) % orderOf (corePerm U))
 
-theorem clamp_zero (U : Fin n → Fin n) : clamp U 0 = 0 := by
+private theorem clamp_zero (U : Fin n → Fin n) : clamp U 0 = 0 := by
   rcases Nat.eq_zero_or_pos n with hn | hn
   · simp [clamp, hn]
   · simp [clamp, hn]
 
 /-- The core permutation's period is at most `n !`. -/
-theorem orderOf_corePerm_le (U : Fin n → Fin n) : orderOf (corePerm U) ≤ n ! := by
+private theorem orderOf_corePerm_le (U : Fin n → Fin n) : orderOf (corePerm U) ≤ n ! := by
   classical
   haveI : Fintype ↥(core U) := Fintype.ofFinite _
   have h := orderOf_le_card_univ (x := corePerm U)
@@ -4653,7 +4678,7 @@ theorem orderOf_corePerm_le (U : Fin n → Fin n) : orderOf (corePerm U) ≤ n !
   rwa [Nat.card_eq_fintype_card] at this
 
 /-- The clamped clock never counts past `n + n !`. -/
-theorem clamp_le (U : Fin n → Fin n) (t : ℕ) : clamp U t ≤ n + n ! := by
+private theorem clamp_le (U : Fin n → Fin n) (t : ℕ) : clamp U t ≤ n + n ! := by
   have hpos : 0 < orderOf (corePerm U) := orderOf_pos _
   have hle := orderOf_corePerm_le U
   by_cases h : t < n
@@ -4666,7 +4691,7 @@ theorem clamp_le (U : Fin n → Fin n) (t : ℕ) : clamp U t ≤ n + n ! := by
 `clamp U t` and `t` are congruent modulo the core permutation's order, so they name the same power
 of it — and on the core a carried family's frame is determined by that power
 (`carries_coreLens_eq`). -/
-theorem corePerm_pow_clamp (U : Fin n → Fin n) {t : ℕ} (ht : n ≤ t) :
+private theorem corePerm_pow_clamp (U : Fin n → Fin n) {t : ℕ} (ht : n ≤ t) :
     corePerm U ^ (clamp U t) = corePerm U ^ t := by
   have hlt : ¬ t < n := by omega
   simp only [clamp, if_neg hlt]
@@ -4758,8 +4783,8 @@ theorem intertwines_iterate_one {U : X → X} {F : M → M} {ℓ : ℕ → X →
 
 /-- **Telescoping**: `t` steps of the world, read through frame `t`, are `t` steps of the law
 applied to frame zero's reading. The square is a *local* statement; this is its global content. -/
-theorem Intertwines.iterate {U : X → X} {F : M → M} {ℓ : ℕ → X → M} (h : Intertwines U F ℓ) :
-    ∀ t s, ℓ t (U^[t] s) = F^[t] (ℓ 0 s) := by
+private theorem Intertwines.iterate {U : X → X} {F : M → M} {ℓ : ℕ → X → M}
+    (h : Intertwines U F ℓ) : ∀ t s, ℓ t (U^[t] s) = F^[t] (ℓ 0 s) := by
   intro t
   induction t with
   | zero => intro s; rfl
@@ -4770,7 +4795,7 @@ theorem Intertwines.iterate {U : X → X} {F : M → M} {ℓ : ℕ → X → M} 
 /-- **Telescoping a dilated square, from an arbitrary starting frame**: `j` blocks of `τ` steps of
 the world advance the frame index by `j` and the reading by `j` steps of the law. This is the engine
 of the composition lemma — it is what lets level 2 read level 1 at *its* own clock rate. -/
-theorem Intertwines.iterate_shift {U : X → X} {F : M → M} {ℓ : ℕ → X → M} {τ : ℕ}
+private theorem Intertwines.iterate_shift {U : X → X} {F : M → M} {ℓ : ℕ → X → M} {τ : ℕ}
     (h : Intertwines (U^[τ]) F ℓ) : ∀ j r x, ℓ (r + j) (U^[τ * j] x) = F^[j] (ℓ r x) := by
   intro j
   induction j with
@@ -4810,7 +4835,7 @@ theorem Intertwines.comp {P : Type*} {U : X → X} {F₁ : M → M} {F₂ : P �
   exact h₂ k (ℓ₁ (τ₂ * k) x)
 
 /-- Surjectivity composes frame by frame: the tower distinguishes what both levels distinguish. -/
-theorem surjective_tower_frame {P : Type*} {ℓ₁ : ℕ → X → M} {ℓ₂ : ℕ → M → P} {τ₂ : ℕ}
+private theorem surjective_tower_frame {P : Type*} {ℓ₁ : ℕ → X → M} {ℓ₂ : ℕ → M → P} {τ₂ : ℕ}
     (h₁ : Function.Surjective (ℓ₁ 0)) (h₂ : Function.Surjective (ℓ₂ 0)) :
     Function.Surjective ((fun k => ℓ₂ k ∘ ℓ₁ (τ₂ * k)) 0) := by
   simpa using h₂.comp h₁
@@ -4838,7 +4863,7 @@ the families. Budgets ADD; the dilation is paid for in its bit-length, not its m
 looking each of the inner table's outputs up in the outer table, and that operation is blind to the
 `Fin` bounds — so the same builder that iterates an endofunction composes a level-2 reading with a
 level-1 reading across three different alphabets. -/
-theorem stepComp_lensTable_comp {n₁ n₂ n₃ : ℕ} (g : Fin n₂ → Fin n₃) (f : Fin n₁ → Fin n₂) :
+private theorem stepComp_lensTable_comp {n₁ n₂ n₃ : ℕ} (g : Fin n₂ → Fin n₃) (f : Fin n₁ → Fin n₂) :
     stepComp (lensTable g) (lensTable f) = lensTable (g ∘ f) := by
   simp only [stepComp, lensTable, List.map_map]
   refine List.map_congr_left fun i _ => ?_
@@ -4852,7 +4877,7 @@ def compTableFn (p : ℕ) : ℕ :=
 
 /-- **The composer is primitive recursive**: decoding is `Primrec.decode` and composition is a
 `List.map` lookup. -/
-theorem primrec_compTableFn : Primrec compTableFn := by
+private theorem primrec_compTableFn : Primrec compTableFn := by
   have h1 : Primrec fun p : ℕ => (Encodable.decode (α := List ℕ) p.unpair.1).getD [] :=
     Primrec.option_getD.comp
       (Primrec.decode.comp (Primrec.fst.comp Primrec.unpair)) (Primrec.const [])
@@ -4861,14 +4886,14 @@ theorem primrec_compTableFn : Primrec compTableFn := by
       (Primrec.decode.comp (Primrec.snd.comp Primrec.unpair)) (Primrec.const [])
   exact Primrec.encode.comp (primrec_stepComp.comp h1 h2)
 
-theorem partrec_compTableFn : Nat.Partrec (fun p : ℕ => (compTableFn p : ℕ)) :=
+private theorem partrec_compTableFn : Nat.Partrec (fun p : ℕ => (compTableFn p : ℕ)) :=
   _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_compTableFn).partrec
 
 /-- **The fixed composition builder.** One program, independent of the worlds and the alphabets. -/
 noncomputable def compBuilder : Nat.Partrec.Code :=
   Classical.choose (Nat.Partrec.Code.exists_code.mp partrec_compTableFn)
 
-theorem eval_compBuilder (p : ℕ) :
+private theorem eval_compBuilder (p : ℕ) :
     Nat.Partrec.Code.eval compBuilder p = Part.some (compTableFn p) := by
   have h := congrFun (Classical.choose_spec
     (Nat.Partrec.Code.exists_code.mp partrec_compTableFn)) p
@@ -4884,19 +4909,19 @@ theorem compTableFn_eq {n₁ n₂ n₃ : ℕ} (g : Fin n₂ → Fin n₃) (f : F
   rfl
 
 /-- Multiplying the two halves of a pair. -/
-def mulFn (p : ℕ) : ℕ := p.unpair.1 * p.unpair.2
+private def mulFn (p : ℕ) : ℕ := p.unpair.1 * p.unpair.2
 
-theorem primrec_mulFn : Primrec mulFn :=
+private theorem primrec_mulFn : Primrec mulFn :=
   Primrec.nat_mul.comp (Primrec.fst.comp Primrec.unpair) (Primrec.snd.comp Primrec.unpair)
 
-theorem partrec_mulFn : Nat.Partrec (fun p : ℕ => (mulFn p : ℕ)) :=
+private theorem partrec_mulFn : Nat.Partrec (fun p : ℕ => (mulFn p : ℕ)) :=
   _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_mulFn).partrec
 
 /-- The fixed multiplication builder. -/
 noncomputable def mulBuilder : Nat.Partrec.Code :=
   Classical.choose (Nat.Partrec.Code.exists_code.mp partrec_mulFn)
 
-theorem eval_mulBuilder (p : ℕ) :
+private theorem eval_mulBuilder (p : ℕ) :
     Nat.Partrec.Code.eval mulBuilder p = Part.some (mulFn p) := by
   have h := congrFun (Classical.choose_spec
     (Nat.Partrec.Code.exists_code.mp partrec_mulFn)) p
@@ -4905,17 +4930,17 @@ theorem eval_mulBuilder (p : ℕ) :
 /-- **The clock rescaler** `k ↦ τ * k`: level 2's frame `k` is level 1's frame `τ * k`. The dilation
 `τ` rides in as a *binary* constant (`bconst`), so the tower pays for its dilation in bit-length —
 `O (Nat.size τ)` — and not in magnitude. -/
-noncomputable def scaleCode (τ : ℕ) : Nat.Partrec.Code :=
+private noncomputable def scaleCode (τ : ℕ) : Nat.Partrec.Code :=
   comp mulBuilder (pair (bconst τ) Code.id)
 
-theorem eval_scaleCode (τ k : ℕ) : (scaleCode τ).eval k = Part.some (τ * k) := by
+private theorem eval_scaleCode (τ k : ℕ) : (scaleCode τ).eval k = Part.some (τ * k) := by
   have hp : (pair (bconst τ) Code.id).eval k = Part.some (Nat.pair τ k) := by
     change Nat.pair <$> (bconst τ).eval k <*> Code.id.eval k = _
     rw [eval_bconst, eval_id]
     simp [Seq.seq]
   rw [scaleCode, eval_comp_some hp, eval_mulBuilder, mulFn, Nat.unpair_pair]
 
-theorem elen_scaleCode_le (τ : ℕ) :
+private theorem elen_scaleCode_le (τ : ℕ) :
     elen (scaleCode τ) ≤ (15 + elen dbl) * Nat.size τ + (elen mulBuilder + (30 + elen dbl)) := by
   have hb := elen_bconst_le τ
   have hid : elen Code.id = 9 := by decide
@@ -4924,14 +4949,14 @@ theorem elen_scaleCode_le (τ : ℕ) :
 
 /-- **The tower builder**: one program for the composite family. Rescale the clock, run each level's
 program on its own index, compose the tabulations. -/
-noncomputable def towerCode (c₁ c₂ : Nat.Partrec.Code) (τ₂ : ℕ) : Nat.Partrec.Code :=
+private noncomputable def towerCode (c₁ c₂ : Nat.Partrec.Code) (τ₂ : ℕ) : Nat.Partrec.Code :=
   comp compBuilder (pair c₂ (comp c₁ (scaleCode τ₂)))
 
 /-- The plumbing constant: the two fixed builders plus the opcodes. Absolute — independent of the
 worlds, the alphabets, the families, the dilations, and the budgets. -/
 noncomputable def towerConst : ℕ := 39 + elen compBuilder + elen mulBuilder + elen dbl
 
-theorem eval_towerCode {n₁ n₂ n₃ : ℕ} {ℓ₁ : ℕ → Fin n₁ → Fin n₂} {ℓ₂ : ℕ → Fin n₂ → Fin n₃}
+private theorem eval_towerCode {n₁ n₂ n₃ : ℕ} {ℓ₁ : ℕ → Fin n₁ → Fin n₂} {ℓ₂ : ℕ → Fin n₂ → Fin n₃}
     {c₁ c₂ : Nat.Partrec.Code} (he₁ : ∀ t, c₁.eval t = Part.some (lensCode (ℓ₁ t)))
     (he₂ : ∀ t, c₂.eval t = Part.some (lensCode (ℓ₂ t))) (τ₂ k : ℕ) :
     (towerCode c₁ c₂ τ₂).eval k = Part.some (lensCode (ℓ₂ k ∘ ℓ₁ (τ₂ * k))) := by
@@ -4944,7 +4969,7 @@ theorem eval_towerCode {n₁ n₂ n₃ : ℕ} {ℓ₁ : ℕ → Fin n₁ → Fin
     simp [Seq.seq]
   rw [towerCode, eval_comp_some hp, eval_compBuilder, compTableFn_eq]
 
-theorem elen_towerCode_le (c₁ c₂ : Nat.Partrec.Code) (τ₂ : ℕ) :
+private theorem elen_towerCode_le (c₁ c₂ : Nat.Partrec.Code) (τ₂ : ℕ) :
     elen (towerCode c₁ c₂ τ₂)
       ≤ elen c₁ + elen c₂ + (15 + elen dbl) * Nat.size τ₂ + towerConst := by
   have hs := elen_scaleCode_le τ₂
@@ -5035,11 +5060,11 @@ coarsening merges fibres, and merged fibres mean a smaller relabelling class. -/
 
 /-- **Coarsening is equivariant**: composing a further reading on the left commutes with relabelling
 the domain on the right — the two operations touch opposite ends of the arrow. -/
-theorem comp_smul_lens {α : Type*} {k : ℕ} (U : Perm α) (ℓ : α → Fin m) (g : Fin m → Fin k) :
-    g ∘ (U • ℓ) = U • (g ∘ ℓ) := rfl
+private theorem comp_smul_lens {α : Type*} {k : ℕ} (U : Perm α) (ℓ : α → Fin m)
+    (g : Fin m → Fin k) : g ∘ (U • ℓ) = U • (g ∘ ℓ) := rfl
 
 /-- The coarsened reading's relabelling class is the *image* of the original's, by equivariance. -/
-theorem orbit_comp_eq_image {α : Type*} {k : ℕ} (ℓ : α → Fin m) (g : Fin m → Fin k) :
+private theorem orbit_comp_eq_image {α : Type*} {k : ℕ} (ℓ : α → Fin m) (g : Fin m → Fin k) :
     orbit (Perm α) (g ∘ ℓ) = (fun h : α → Fin m => g ∘ h) '' orbit (Perm α) ℓ := by
   ext h
   constructor
@@ -5122,22 +5147,22 @@ other. Componentwise by definition, so its evaluation and iteration laws are `rf
 def prodWorld {X₁ X₂ : Type*} (U₁ : X₁ → X₁) (U₂ : X₂ → X₂) : X₁ × X₂ → X₁ × X₂ :=
   Prod.map U₁ U₂
 
-@[simp] theorem prodWorld_apply {X₁ X₂ : Type*} (U₁ : X₁ → X₁) (U₂ : X₂ → X₂) (x : X₁ × X₂) :
-    prodWorld U₁ U₂ x = (U₁ x.1, U₂ x.2) := rfl
+@[simp] private theorem prodWorld_apply {X₁ X₂ : Type*} (U₁ : X₁ → X₁) (U₂ : X₂ → X₂)
+    (x : X₁ × X₂) : prodWorld U₁ U₂ x = (U₁ x.1, U₂ x.2) := rfl
 
 /-- **The factors never mix**: `t` steps of the product are `t` steps of each factor. -/
 theorem prodWorld_iterate {X₁ X₂ : Type*} (U₁ : X₁ → X₁) (U₂ : X₂ → X₂) (t : ℕ) :
     (prodWorld U₁ U₂)^[t] = prodWorld (U₁^[t]) (U₂^[t]) := Prod.map_iterate U₁ U₂ t
 
-@[simp] theorem prodWorld_iterate_apply {X₁ X₂ : Type*} (U₁ : X₁ → X₁) (U₂ : X₂ → X₂) (t : ℕ)
-    (x : X₁ × X₂) : (prodWorld U₁ U₂)^[t] x = (U₁^[t] x.1, U₂^[t] x.2) := by
+@[simp] private theorem prodWorld_iterate_apply {X₁ X₂ : Type*} (U₁ : X₁ → X₁) (U₂ : X₂ → X₂)
+    (t : ℕ) (x : X₁ × X₂) : (prodWorld U₁ U₂)^[t] x = (U₁^[t] x.1, U₂^[t] x.2) := by
   rw [prodWorld_iterate]; rfl
 
 /-- The product of two **permutations** is a permutation of the product, acting as `prodWorld`. -/
-def prodPerm {X₁ X₂ : Type*} (U₁ : Perm X₁) (U₂ : Perm X₂) : Perm (X₁ × X₂) :=
+private def prodPerm {X₁ X₂ : Type*} (U₁ : Perm X₁) (U₂ : Perm X₂) : Perm (X₁ × X₂) :=
   Equiv.prodCongr U₁ U₂
 
-theorem prodPerm_coe {X₁ X₂ : Type*} (U₁ : Perm X₁) (U₂ : Perm X₂) :
+private theorem prodPerm_coe {X₁ X₂ : Type*} (U₁ : Perm X₁) (U₂ : Perm X₂) :
     ⇑(prodPerm U₁ U₂) = prodWorld ⇑U₁ ⇑U₂ := rfl
 
 /-- **The product world on `Fin (n₁ * n₂)`**: `prodPerm` transported along `finProdFinEquiv`, which
@@ -5163,7 +5188,7 @@ theorem prodWorldFin_pow {n₁ n₂ : ℕ} (U₁ : Perm (Fin n₁)) (U₂ : Perm
 
 /-- The product world's table entry at the pair `(i, j)`, in the index shape `List.ofFn_mul`
 produces: state `i * n₂ + j` moves to `(U₂ j) + n₂ * (U₁ i)`. -/
-theorem prodWorldFin_val {n₁ n₂ : ℕ} (U₁ : Perm (Fin n₁)) (U₂ : Perm (Fin n₂)) (i : Fin n₁)
+private theorem prodWorldFin_val {n₁ n₂ : ℕ} (U₁ : Perm (Fin n₁)) (U₂ : Perm (Fin n₂)) (i : Fin n₁)
     (j : Fin n₂) (h : i.val * n₂ + j.val < n₁ * n₂) :
     ((prodWorldFin U₁ U₂ ⟨i.val * n₂ + j.val, h⟩ : Fin (n₁ * n₂)) : ℕ)
       = ((U₂ j : Fin n₂) : ℕ) + n₂ * ((U₁ i : Fin n₁) : ℕ) := by
@@ -5180,7 +5205,7 @@ as long as its state space — so no size parameter appears. -/
 def prodAppend (T₁ T₂ : List ℕ) : List ℕ :=
   T₁.flatMap (fun a => T₂.map (fun b => b + T₂.length * a))
 
-theorem primrec_prodAppend : Primrec fun q : List ℕ × List ℕ => prodAppend q.1 q.2 := by
+private theorem primrec_prodAppend : Primrec fun q : List ℕ × List ℕ => prodAppend q.1 q.2 := by
   refine Primrec.list_flatMap Primrec.fst ?_
   refine Primrec₂.mk ?_
   refine Primrec.list_map (Primrec.snd.comp Primrec.fst) ?_
@@ -5211,7 +5236,7 @@ def prodTableFn (p : ℕ) : ℕ :=
     (prodAppend ((Encodable.decode (α := List ℕ) p.unpair.1).getD [])
       ((Encodable.decode (α := List ℕ) p.unpair.2).getD []))
 
-theorem primrec_prodTableFn : Primrec prodTableFn := by
+private theorem primrec_prodTableFn : Primrec prodTableFn := by
   have hdec1 : Primrec fun p : ℕ => (Encodable.decode (α := List ℕ) p.unpair.1).getD [] :=
     Primrec.option_getD.comp (Primrec.decode.comp (Primrec.fst.comp Primrec.unpair))
       (Primrec.const [])
@@ -5228,14 +5253,14 @@ theorem prodTableFn_eq {n₁ n₂ : ℕ} (U₁ : Perm (Fin n₁)) (U₂ : Perm (
   rw [← lensTable_prodWorldFin]
   rfl
 
-theorem partrec_prodTableFn : Nat.Partrec (fun p : ℕ => (prodTableFn p : ℕ)) :=
+private theorem partrec_prodTableFn : Nat.Partrec (fun p : ℕ => (prodTableFn p : ℕ)) :=
   _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_prodTableFn).partrec
 
 /-- **The fixed product-world builder code.** -/
 noncomputable def prodBuilder : Nat.Partrec.Code :=
   Classical.choose (Nat.Partrec.Code.exists_code.mp partrec_prodTableFn)
 
-theorem eval_prodBuilder (p : ℕ) :
+private theorem eval_prodBuilder (p : ℕ) :
     Nat.Partrec.Code.eval prodBuilder p = Part.some (prodTableFn p) := by
   have h := congrFun (Classical.choose_spec
     (Nat.Partrec.Code.exists_code.mp partrec_prodTableFn)) p
@@ -5301,13 +5326,13 @@ def prodLensFinFst {n₁ k₁ : ℕ} (ℓ₁ : ℕ → Fin n₁ → Fin k₁) (n
     ℕ → Fin (n₁ * n₂) → Fin k₁ :=
   fun t p => ℓ₁ t (finProdFinEquiv.symm p).1
 
-@[simp] theorem divNat_finProdFinEquiv {n₁ n₂ : ℕ} (i : Fin n₁) (j : Fin n₂) :
+@[simp] private theorem divNat_finProdFinEquiv {n₁ n₂ : ℕ} (i : Fin n₁) (j : Fin n₂) :
     (finProdFinEquiv (i, j)).divNat = i := by
   have h := finProdFinEquiv.symm_apply_apply (i, j)
   rw [finProdFinEquiv_symm_apply] at h
   exact congrArg Prod.fst h
 
-@[simp] theorem prodLensFinFst_apply {n₁ n₂ k₁ : ℕ} (ℓ₁ : ℕ → Fin n₁ → Fin k₁) (t : ℕ)
+@[simp] private theorem prodLensFinFst_apply {n₁ n₂ k₁ : ℕ} (ℓ₁ : ℕ → Fin n₁ → Fin k₁) (t : ℕ)
     (i : Fin n₁) (j : Fin n₂) :
     prodLensFinFst ℓ₁ n₂ t (finProdFinEquiv (i, j)) = ℓ₁ t i := by
   simp [prodLensFinFst]
@@ -5328,9 +5353,9 @@ theorem permCarries_prodLensFinFst {n₁ n₂ k₁ : ℕ} {U₁ : Perm (Fin n₁
 
 /-- **Each label, repeated once per state of the second factor.** The shape of the lifted frame's
 table; the repetition count must be supplied — see `uniformBudget_prodLensFinFst`. -/
-def liftAppend (T₁ : List ℕ) (s : ℕ) : List ℕ := T₁.flatMap (fun a => List.replicate s a)
+private def liftAppend (T₁ : List ℕ) (s : ℕ) : List ℕ := T₁.flatMap (fun a => List.replicate s a)
 
-theorem primrec_liftAppend : Primrec fun q : List ℕ × ℕ => liftAppend q.1 q.2 := by
+private theorem primrec_liftAppend : Primrec fun q : List ℕ × ℕ => liftAppend q.1 q.2 := by
   have hrw : (fun q : List ℕ × ℕ => liftAppend q.1 q.2)
       = fun q : List ℕ × ℕ => q.1.flatMap (fun a => (List.range q.2).map (fun _ => a)) := by
     funext q
@@ -5342,7 +5367,7 @@ theorem primrec_liftAppend : Primrec fun q : List ℕ × ℕ => liftAppend q.1 q
   refine Primrec.list_map (Primrec.list_range.comp (Primrec.snd.comp Primrec.fst)) ?_
   exact Primrec₂.mk (Primrec.snd.comp Primrec.fst)
 
-theorem lensTable_prodLensFinFst {n₁ n₂ k₁ : ℕ} (ℓ₁ : ℕ → Fin n₁ → Fin k₁) (t : ℕ) :
+private theorem lensTable_prodLensFinFst {n₁ n₂ k₁ : ℕ} (ℓ₁ : ℕ → Fin n₁ → Fin k₁) (t : ℕ) :
     lensTable (prodLensFinFst ℓ₁ n₂ t) = liftAppend (lensTable (ℓ₁ t)) n₂ := by
   rw [liftAppend, lensTable, lensTable, ← List.ofFn_eq_map, ← List.ofFn_eq_map,
     List.flatMap_def, List.map_ofFn]
@@ -5363,32 +5388,32 @@ theorem lensTable_prodLensFinFst {n₁ n₂ k₁ : ℕ} (ℓ₁ : ℕ → Fin n�
   simp
 
 /-- **The lift builder**: on `⟨the factor frame's table, n₂⟩` it gives the lifted frame's table. -/
-def liftLensTableFn (p : ℕ) : ℕ :=
+private def liftLensTableFn (p : ℕ) : ℕ :=
   Encodable.encode
     (liftAppend ((Encodable.decode (α := List ℕ) p.unpair.1).getD []) p.unpair.2)
 
-theorem primrec_liftLensTableFn : Primrec liftLensTableFn := by
+private theorem primrec_liftLensTableFn : Primrec liftLensTableFn := by
   have hdec1 : Primrec fun p : ℕ => (Encodable.decode (α := List ℕ) p.unpair.1).getD [] :=
     Primrec.option_getD.comp (Primrec.decode.comp (Primrec.fst.comp Primrec.unpair))
       (Primrec.const [])
   exact Primrec.encode.comp
     (primrec_liftAppend.comp (Primrec.pair hdec1 (Primrec.snd.comp Primrec.unpair)))
 
-theorem liftLensTableFn_eq {n₁ n₂ k₁ : ℕ} (ℓ₁ : ℕ → Fin n₁ → Fin k₁) (t : ℕ) :
+private theorem liftLensTableFn_eq {n₁ n₂ k₁ : ℕ} (ℓ₁ : ℕ → Fin n₁ → Fin k₁) (t : ℕ) :
     liftLensTableFn (Nat.pair (lensCode (ℓ₁ t)) n₂) = lensCode (prodLensFinFst ℓ₁ n₂ t) := by
   rw [liftLensTableFn]
   simp only [Nat.unpair_pair, decode_lensCode]
   rw [← lensTable_prodLensFinFst]
   rfl
 
-theorem partrec_liftLensTableFn : Nat.Partrec (fun p : ℕ => (liftLensTableFn p : ℕ)) :=
+private theorem partrec_liftLensTableFn : Nat.Partrec (fun p : ℕ => (liftLensTableFn p : ℕ)) :=
   _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_liftLensTableFn).partrec
 
 /-- **The fixed lift-builder code.** -/
 noncomputable def liftBuilder : Nat.Partrec.Code :=
   Classical.choose (Nat.Partrec.Code.exists_code.mp partrec_liftLensTableFn)
 
-theorem eval_liftBuilder (p : ℕ) :
+private theorem eval_liftBuilder (p : ℕ) :
     Nat.Partrec.Code.eval liftBuilder p = Part.some (liftLensTableFn p) := by
   have h := congrFun (Classical.choose_spec
     (Nat.Partrec.Code.exists_code.mp partrec_liftLensTableFn)) p
@@ -5420,7 +5445,7 @@ theorem lensTable_length {n m : ℕ} (ℓ : Fin n → Fin m) : (lensTable ℓ).l
   rw [lensTable]; simp
 
 /-- A lens table's entry at a state is that state's label. -/
-theorem lensTable_getD {n m : ℕ} (ℓ : Fin n → Fin m) (i : ℕ) (h : i < n) :
+private theorem lensTable_getD {n m : ℕ} (ℓ : Fin n → Fin m) (i : ℕ) (h : i < n) :
     (lensTable ℓ).getD i 0 = ((ℓ ⟨i, h⟩ : Fin m) : ℕ) := by
   rw [lensTable, ← List.ofFn_eq_map]
   rw [List.getD_eq_getElem _ _ (by simpa using h)]
@@ -5437,7 +5462,7 @@ def splitFst (T : List ℕ) (s : ℕ) : List ℕ :=
 def splitSnd (T : List ℕ) (s : ℕ) : List ℕ :=
   (List.range s).map (fun j => T.getD j 0 % s)
 
-theorem primrec_splitFst : Primrec fun q : List ℕ × ℕ => splitFst q.1 q.2 := by
+private theorem primrec_splitFst : Primrec fun q : List ℕ × ℕ => splitFst q.1 q.2 := by
   refine Primrec.list_map
     (Primrec.list_range.comp (Primrec.nat_div.comp (Primrec.list_length.comp Primrec.fst)
       Primrec.snd)) ?_
@@ -5447,14 +5472,14 @@ theorem primrec_splitFst : Primrec fun q : List ℕ × ℕ => splitFst q.1 q.2 :
       (Primrec.nat_mul.comp Primrec.snd (Primrec.snd.comp Primrec.fst)))
     (Primrec.snd.comp Primrec.fst)
 
-theorem primrec_splitSnd : Primrec fun q : List ℕ × ℕ => splitSnd q.1 q.2 := by
+private theorem primrec_splitSnd : Primrec fun q : List ℕ × ℕ => splitSnd q.1 q.2 := by
   refine Primrec.list_map (Primrec.list_range.comp Primrec.snd) ?_
   refine Primrec₂.mk ?_
   exact Primrec.nat_mod.comp
     ((Primrec.list_getD 0).comp (Primrec.fst.comp Primrec.fst) Primrec.snd)
     (Primrec.snd.comp Primrec.fst)
 
-theorem splitFst_prodWorldFin {n₁ n₂ : ℕ} (U₁ : Perm (Fin n₁)) (U₂ : Perm (Fin n₂))
+private theorem splitFst_prodWorldFin {n₁ n₂ : ℕ} (U₁ : Perm (Fin n₁)) (U₂ : Perm (Fin n₂))
     (hn₂ : 0 < n₂) : splitFst (lensTable ⇑(prodWorldFin U₁ U₂)) n₂ = lensTable ⇑U₁ := by
   have hlenT : (lensTable ⇑(prodWorldFin U₁ U₂)).length = n₁ * n₂ := lensTable_length _
   rw [splitFst, hlenT, Nat.mul_div_cancel _ hn₂]
@@ -5473,7 +5498,7 @@ theorem splitFst_prodWorldFin {n₁ n₂ : ℕ} (U₁ : Perm (Fin n₁)) (U₂ :
     rw [prodWorldFin_val U₁ U₂ ⟨i, hi⟩ ⟨0, hn₂⟩ hlt]
     rw [Nat.add_mul_div_left _ _ hn₂, Nat.div_eq_of_lt (U₂ ⟨0, hn₂⟩).isLt, Nat.zero_add]
 
-theorem splitSnd_prodWorldFin {n₁ n₂ : ℕ} (U₁ : Perm (Fin n₁)) (U₂ : Perm (Fin n₂))
+private theorem splitSnd_prodWorldFin {n₁ n₂ : ℕ} (U₁ : Perm (Fin n₁)) (U₂ : Perm (Fin n₂))
     (hn₁ : 0 < n₁) : splitSnd (lensTable ⇑(prodWorldFin U₁ U₂)) n₂ = lensTable ⇑U₂ := by
   rw [splitSnd]
   apply List.ext_getElem
@@ -5504,14 +5529,14 @@ def splitSndFn (p : ℕ) : ℕ :=
   Encodable.encode
     (splitSnd ((Encodable.decode (α := List ℕ) p.unpair.1).getD []) p.unpair.2)
 
-theorem primrec_splitFstFn : Primrec splitFstFn := by
+private theorem primrec_splitFstFn : Primrec splitFstFn := by
   have hdec : Primrec fun p : ℕ => (Encodable.decode (α := List ℕ) p.unpair.1).getD [] :=
     Primrec.option_getD.comp (Primrec.decode.comp (Primrec.fst.comp Primrec.unpair))
       (Primrec.const [])
   exact Primrec.encode.comp
     (primrec_splitFst.comp (Primrec.pair hdec (Primrec.snd.comp Primrec.unpair)))
 
-theorem primrec_splitSndFn : Primrec splitSndFn := by
+private theorem primrec_splitSndFn : Primrec splitSndFn := by
   have hdec : Primrec fun p : ℕ => (Encodable.decode (α := List ℕ) p.unpair.1).getD [] :=
     Primrec.option_getD.comp (Primrec.decode.comp (Primrec.fst.comp Primrec.unpair))
       (Primrec.const [])
@@ -5532,10 +5557,10 @@ theorem splitSndFn_eq {n₁ n₂ : ℕ} (U₁ : Perm (Fin n₁)) (U₂ : Perm (F
   rw [splitSnd_prodWorldFin U₁ U₂ hn₁]
   rfl
 
-theorem partrec_splitFstFn : Nat.Partrec (fun p : ℕ => (splitFstFn p : ℕ)) :=
+private theorem partrec_splitFstFn : Nat.Partrec (fun p : ℕ => (splitFstFn p : ℕ)) :=
   _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_splitFstFn).partrec
 
-theorem partrec_splitSndFn : Nat.Partrec (fun p : ℕ => (splitSndFn p : ℕ)) :=
+private theorem partrec_splitSndFn : Nat.Partrec (fun p : ℕ => (splitSndFn p : ℕ)) :=
   _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_splitSndFn).partrec
 
 /-- **The fixed first-factor splitter code.** -/
@@ -5546,13 +5571,13 @@ noncomputable def splitFstBuilder : Nat.Partrec.Code :=
 noncomputable def splitSndBuilder : Nat.Partrec.Code :=
   Classical.choose (Nat.Partrec.Code.exists_code.mp partrec_splitSndFn)
 
-theorem eval_splitFstBuilder (p : ℕ) :
+private theorem eval_splitFstBuilder (p : ℕ) :
     Nat.Partrec.Code.eval splitFstBuilder p = Part.some (splitFstFn p) := by
   have h := congrFun (Classical.choose_spec
     (Nat.Partrec.Code.exists_code.mp partrec_splitFstFn)) p
   simpa [splitFstBuilder] using h
 
-theorem eval_splitSndBuilder (p : ℕ) :
+private theorem eval_splitSndBuilder (p : ℕ) :
     Nat.Partrec.Code.eval splitSndBuilder p = Part.some (splitSndFn p) := by
   have h := congrFun (Classical.choose_spec
     (Nat.Partrec.Code.exists_code.mp partrec_splitSndFn)) p
@@ -5622,13 +5647,13 @@ theorem KE_factorSnd_le_of_faithful {n₁ n₂ k : ℕ} {U₁ : Perm (Fin n₁)}
 def liftFst {n₁ k₁ : ℕ} (ℓ₀ : Fin n₁ → Fin k₁) (n₂ : ℕ) : Fin (n₁ * n₂) → Fin k₁ :=
   fun p => ℓ₀ (finProdFinEquiv.symm p).1
 
-theorem prodLensFinFst_eq_liftFst {n₁ n₂ k₁ : ℕ} (ℓ₁ : ℕ → Fin n₁ → Fin k₁) (t : ℕ) :
+private theorem prodLensFinFst_eq_liftFst {n₁ n₂ k₁ : ℕ} (ℓ₁ : ℕ → Fin n₁ → Fin k₁) (t : ℕ) :
     prodLensFinFst ℓ₁ n₂ t = liftFst (ℓ₁ t) n₂ := rfl
 
-@[simp] theorem liftFst_apply {n₁ n₂ k₁ : ℕ} (ℓ₀ : Fin n₁ → Fin k₁) (i : Fin n₁) (j : Fin n₂) :
-    liftFst ℓ₀ n₂ (finProdFinEquiv (i, j)) = ℓ₀ i := by simp [liftFst]
+@[simp] private theorem liftFst_apply {n₁ n₂ k₁ : ℕ} (ℓ₀ : Fin n₁ → Fin k₁) (i : Fin n₁)
+    (j : Fin n₂) : liftFst ℓ₀ n₂ (finProdFinEquiv (i, j)) = ℓ₀ i := by simp [liftFst]
 
-theorem liftFst_injective {n₁ n₂ k₁ : ℕ} (hn₂ : 0 < n₂) :
+private theorem liftFst_injective {n₁ n₂ k₁ : ℕ} (hn₂ : 0 < n₂) :
     Function.Injective (fun ℓ₀ : Fin n₁ → Fin k₁ => liftFst ℓ₀ n₂) := by
   intro ℓ₀ ℓ₀' h
   funext i
@@ -5650,7 +5675,7 @@ theorem liftFst_smul {n₁ n₂ k₁ : ℕ} (U : Perm (Fin n₁)) (ℓ₀ : Fin 
 
 /-- The factor's orbit embeds in the product's: equivariance sends `U • ℓ₀` to `(U × 1) • liftFst`,
 and the lift is injective, so no two relabellings of the factor collide. -/
-theorem card_orbit_le_liftFst {n₁ n₂ k₁ : ℕ} (ℓ₀ : Fin n₁ → Fin k₁) (hn₂ : 0 < n₂) :
+private theorem card_orbit_le_liftFst {n₁ n₂ k₁ : ℕ} (ℓ₀ : Fin n₁ → Fin k₁) (hn₂ : 0 < n₂) :
     Nat.card ↥(orbit (Perm (Fin n₁)) ℓ₀)
       ≤ Nat.card ↥(orbit (Perm (Fin (n₁ * n₂))) (liftFst ℓ₀ n₂)) := by
   haveI : Finite ↥(orbit (Perm (Fin (n₁ * n₂))) (liftFst ℓ₀ n₂)) := Set.toFinite _
@@ -5725,8 +5750,8 @@ def SettlesValue (U : X → X) (ℓ : ℕ → X → M) (B : Set X) (v : X → M)
 
 /-- Coherence with the budgeted form: `EventuallyCarries` is settling plus the demand that the
 settled value be surjective. The two predicates are one predicate. -/
-theorem eventuallyCarries_iff_settlesValue {n m : ℕ} (U : Fin n → Fin n) (ℓ : ℕ → Fin n → Fin m)
-    (B : Finset (Fin n)) (v : Fin n → Fin m) :
+private theorem eventuallyCarries_iff_settlesValue {n m : ℕ} (U : Fin n → Fin n)
+    (ℓ : ℕ → Fin n → Fin m) (B : Finset (Fin n)) (v : Fin n → Fin m) :
     EventuallyCarries U ℓ B v ↔ Set.SurjOn v ↑B Set.univ ∧ SettlesValue U ℓ (↑B) v :=
   Iff.rfl
 
@@ -5735,13 +5760,14 @@ cells. -/
 def hball [Fintype ι] [DecidableEq V] (e : ℕ) (c : Mem ι V) : Set (Mem ι V) :=
   {x | hammingDist c x ≤ e}
 
-theorem mem_hball [Fintype ι] [DecidableEq V] {e : ℕ} {c x : Mem ι V} :
+private theorem mem_hball [Fintype ι] [DecidableEq V] {e : ℕ} {c x : Mem ι V} :
     x ∈ hball e c ↔ hammingDist c x ≤ e := Iff.rfl
 
-theorem self_mem_hball [Fintype ι] [DecidableEq V] (e : ℕ) (c : Mem ι V) : c ∈ hball e c := by
+private theorem self_mem_hball [Fintype ι] [DecidableEq V] (e : ℕ) (c : Mem ι V) :
+    c ∈ hball e c := by
   simp [hball]
 
-theorem hball_mono [Fintype ι] [DecidableEq V] {e e' : ℕ} (h : e ≤ e') (c : Mem ι V) :
+private theorem hball_mono [Fintype ι] [DecidableEq V] {e e' : ℕ} (h : e ≤ e') (c : Mem ι V) :
     hball e c ⊆ hball e' c := fun _ hx => le_trans hx h
 
 instance instDecidableMemHball [Fintype ι] [DecidableEq V] (e : ℕ) (c : Mem ι V) :
@@ -5783,8 +5809,8 @@ theorem HasMargin.mono [Fintype ι] [DecidableEq V] {U : Mem ι V → Mem ι V} 
 
 /-- **The degenerate sanity check**: every settling family has margin `0`. A zero-cell perturbation
 is no perturbation (`hammingDist x y = 0 ↔ x = y`), and the attractor is inside its own basin. -/
-theorem hasMargin_zero [Fintype ι] [DecidableEq V] (U : Mem ι V → Mem ι V) (B : Set (Mem ι V))
-    (v : Mem ι V → M) : HasMargin U B v 0 := by
+private theorem hasMargin_zero [Fintype ι] [DecidableEq V] (U : Mem ι V → Mem ι V)
+    (B : Set (Mem ι V)) (v : Mem ι V → M) : HasMargin U B v 0 := by
   intro s hs s' hs'
   have : s = s' := hammingDist_eq_zero.mp (Nat.le_zero.mp hs')
   subst this
@@ -5804,20 +5830,20 @@ noncomputable def margin [Fintype ι] [DecidableEq V] (U : Mem ι V → Mem ι V
     (v : Mem ι V → M) : ℕ :=
   sSup (MarginSet U B v)
 
-theorem zero_mem_marginSet [Fintype ι] [DecidableEq V] (U : Mem ι V → Mem ι V) (B : Set (Mem ι V))
-    (v : Mem ι V → M) : 0 ∈ MarginSet U B v :=
+private theorem zero_mem_marginSet [Fintype ι] [DecidableEq V] (U : Mem ι V → Mem ι V)
+    (B : Set (Mem ι V)) (v : Mem ι V → M) : 0 ∈ MarginSet U B v :=
   ⟨Nat.zero_le _, hasMargin_zero U B v⟩
 
-theorem bddAbove_marginSet [Fintype ι] [DecidableEq V] (U : Mem ι V → Mem ι V) (B : Set (Mem ι V))
-    (v : Mem ι V → M) : BddAbove (MarginSet U B v) :=
+private theorem bddAbove_marginSet [Fintype ι] [DecidableEq V] (U : Mem ι V → Mem ι V)
+    (B : Set (Mem ι V)) (v : Mem ι V → M) : BddAbove (MarginSet U B v) :=
   ⟨Fintype.card ι, fun _ he => he.1⟩
 
-theorem le_margin [Fintype ι] [DecidableEq V] {U : Mem ι V → Mem ι V} {B : Set (Mem ι V)}
+private theorem le_margin [Fintype ι] [DecidableEq V] {U : Mem ι V → Mem ι V} {B : Set (Mem ι V)}
     {v : Mem ι V → M} {e : ℕ} (he : e ∈ MarginSet U B v) : e ≤ margin U B v :=
   le_csSup (bddAbove_marginSet U B v) he
 
-theorem margin_le_card [Fintype ι] [DecidableEq V] (U : Mem ι V → Mem ι V) (B : Set (Mem ι V))
-    (v : Mem ι V → M) : margin U B v ≤ Fintype.card ι :=
+private theorem margin_le_card [Fintype ι] [DecidableEq V] (U : Mem ι V → Mem ι V)
+    (B : Set (Mem ι V)) (v : Mem ι V → M) : margin U B v ≤ Fintype.card ι :=
   csSup_le ⟨0, zero_mem_marginSet U B v⟩ fun _ he => he.1
 
 /-- **The margin is itself a margin**: the supremum is attained, so `margin` names a radius at which
@@ -5834,10 +5860,10 @@ taking any state to any other. -/
 def transport [DecidableEq V] (c s : Mem ι V) : Mem ι V ≃ Mem ι V :=
   Equiv.piCongrRight fun i => Equiv.swap (c i) (s i)
 
-theorem transport_apply [DecidableEq V] (c s x : Mem ι V) (i : ι) :
+private theorem transport_apply [DecidableEq V] (c s x : Mem ι V) (i : ι) :
     transport c s x i = Equiv.swap (c i) (s i) (x i) := rfl
 
-theorem transport_left [DecidableEq V] (c s : Mem ι V) : transport c s c = s := by
+private theorem transport_left [DecidableEq V] (c s : Mem ι V) : transport c s c = s := by
   funext i
   simp [transport_apply]
 
@@ -5848,8 +5874,8 @@ theorem hammingDist_transport [Fintype ι] [DecidableEq V] (c s x y : Mem ι V) 
     (fun i => (Equiv.swap (c i) (s i)).injective)
 
 /-- Balls are carried to balls: the transporter maps `Ball e c` into `Ball e s`. -/
-theorem transport_mem_hball [Fintype ι] [DecidableEq V] {e : ℕ} {c x : Mem ι V} (s : Mem ι V)
-    (hx : x ∈ hball e c) : transport c s x ∈ hball e s := by
+private theorem transport_mem_hball [Fintype ι] [DecidableEq V] {e : ℕ} {c x : Mem ι V}
+    (s : Mem ι V) (hx : x ∈ hball e c) : transport c s x ∈ hball e s := by
   have h : hammingDist (transport c s c) (transport c s x) = hammingDist c x :=
     hammingDist_transport c s c x
   rw [transport_left] at h
@@ -5917,19 +5943,19 @@ def RecoversWithin [Fintype ι] [DecidableEq V] (U : Mem ι V → Mem ι V) (ℓ
     (B : Set (Mem ι V)) (v : Mem ι V → M) (e T : ℕ) : Prop :=
   ∀ s ∈ omegaLimit U B, ∀ s' ∈ hball e s, ∀ t ≥ T, ℓ t (U^[t] s') = v s'
 
-theorem RecoversWithin.mono_time [Fintype ι] [DecidableEq V] {U : Mem ι V → Mem ι V}
+private theorem RecoversWithin.mono_time [Fintype ι] [DecidableEq V] {U : Mem ι V → Mem ι V}
     {ℓ : ℕ → Mem ι V → M} {B : Set (Mem ι V)} {v : Mem ι V → M} {e T T' : ℕ}
     (h : RecoversWithin U ℓ B v e T) (hle : T ≤ T') : RecoversWithin U ℓ B v e T' :=
   fun s hs s' hs' t ht => h s hs s' hs' t (le_trans hle ht)
 
-theorem RecoversWithin.mono_radius [Fintype ι] [DecidableEq V] {U : Mem ι V → Mem ι V}
+private theorem RecoversWithin.mono_radius [Fintype ι] [DecidableEq V] {U : Mem ι V → Mem ι V}
     {ℓ : ℕ → Mem ι V → M} {B : Set (Mem ι V)} {v : Mem ι V → M} {e e' T : ℕ}
     (h : RecoversWithin U ℓ B v e T) (hle : e' ≤ e) : RecoversWithin U ℓ B v e' T :=
   fun s hs s' hs' => h s hs s' (hball_mono hle s hs')
 
 /-- Under a margin, recovery restores the **attractor's** value, not merely the perturbed state's
 own: the two agree exactly because the perturbation stayed inside the margin. -/
-theorem RecoversWithin.settled_value [Fintype ι] [DecidableEq V] {U : Mem ι V → Mem ι V}
+private theorem RecoversWithin.settled_value [Fintype ι] [DecidableEq V] {U : Mem ι V → Mem ι V}
     {ℓ : ℕ → Mem ι V → M} {B : Set (Mem ι V)} {v : Mem ι V → M} {e T : ℕ}
     (hm : HasMargin U B v e) (h : RecoversWithin U ℓ B v e T) :
     ∀ s ∈ omegaLimit U B, ∀ s' ∈ hball e s, ∀ t ≥ T, ℓ t (U^[t] s') = v s :=
@@ -5941,11 +5967,12 @@ noncomputable def recoveryTime [Fintype ι] [DecidableEq V] (U : Mem ι V → Me
     (ℓ : ℕ → Mem ι V → M) (B : Set (Mem ι V)) (v : Mem ι V → M) (e : ℕ) : ℕ :=
   sInf {T | RecoversWithin U ℓ B v e T}
 
-theorem recoveryTime_le [Fintype ι] [DecidableEq V] {U : Mem ι V → Mem ι V} {ℓ : ℕ → Mem ι V → M}
-    {B : Set (Mem ι V)} {v : Mem ι V → M} {e T : ℕ} (h : RecoversWithin U ℓ B v e T) :
+private theorem recoveryTime_le [Fintype ι] [DecidableEq V] {U : Mem ι V → Mem ι V}
+    {ℓ : ℕ → Mem ι V → M} {B : Set (Mem ι V)} {v : Mem ι V → M} {e T : ℕ}
+    (h : RecoversWithin U ℓ B v e T) :
     recoveryTime U ℓ B v e ≤ T := Nat.sInf_le h
 
-theorem recoversWithin_recoveryTime [Fintype ι] [DecidableEq V] {U : Mem ι V → Mem ι V}
+private theorem recoversWithin_recoveryTime [Fintype ι] [DecidableEq V] {U : Mem ι V → Mem ι V}
     {ℓ : ℕ → Mem ι V → M} {B : Set (Mem ι V)} {v : Mem ι V → M} {e : ℕ}
     (h : ∃ T, RecoversWithin U ℓ B v e T) :
     RecoversWithin U ℓ B v e (recoveryTime U ℓ B v e) := Nat.sInf_mem h
@@ -5953,24 +5980,25 @@ theorem recoversWithin_recoveryTime [Fintype ι] [DecidableEq V] {U : Mem ι V �
 /-! ### The positive witness: the majority world is robust ([Decoupling] §3.5) -/
 
 /-- The majority world writes back its own consensus bit: `majBit` is invariant under one step. -/
-theorem majBit_majWorld (s : Mem (Fin 3) Bool) : majBit (majWorld s) = majBit s := by
+private theorem majBit_majWorld (s : Mem (Fin 3) Bool) : majBit (majWorld s) = majBit s := by
   rw [majWorld_apply]
   cases h : majBit s <;> simp [majBit]
 
 /-- …hence under every number of steps: the consensus bit is what the majority world conserves. -/
-theorem majBit_iterate (t : ℕ) (s : Mem (Fin 3) Bool) : majBit (majWorld^[t] s) = majBit s := by
+private theorem majBit_iterate (t : ℕ) (s : Mem (Fin 3) Bool) :
+    majBit (majWorld^[t] s) = majBit s := by
   induction t with
   | zero => rfl
   | succ t ih => rw [Function.iterate_succ_apply', majBit_majWorld]; exact ih
 
 /-- The consensus bit settles instantly along every orbit: the majority world with the static
 decoder `majBit` is a settling family, with transient zero. -/
-theorem settlesValue_majWorld :
+private theorem settlesValue_majWorld :
     SettlesValue majWorld (fun _ => majBit) (Set.univ : Set (Mem (Fin 3) Bool)) majBit :=
   fun s _ => ⟨0, fun t _ => majBit_iterate t s⟩
 
 /-- Both bits are attained: the settled reading carries one full bit. -/
-theorem surjOn_majBit :
+private theorem surjOn_majBit :
     Set.SurjOn majBit (Set.univ : Set (Mem (Fin 3) Bool)) Set.univ := by
   intro b _
   exact ⟨fun _ => b, Set.mem_univ _, by cases b <;> rfl⟩
@@ -5980,7 +6008,7 @@ theorem surjOn_majBit :
 in agreement and the majority — hence the settled bit — unchanged. The `1` is the whole content of
 "three-copy redundancy corrects one error", read here as a property of the *world's dynamics*
 rather than of a code: `majWorld` is its own decoder. -/
-theorem hasMargin_majWorld :
+private theorem hasMargin_majWorld :
     HasMargin majWorld (Set.univ : Set (Mem (Fin 3) Bool)) majBit 1 := by
   intro s hs s' hs'
   refine ⟨Set.mem_univ _, ?_⟩
@@ -5991,7 +6019,7 @@ theorem hasMargin_majWorld :
   revert s s'
   decide
 
-theorem margin_majWorld : 1 ≤ margin majWorld (Set.univ : Set (Mem (Fin 3) Bool)) majBit :=
+private theorem margin_majWorld : 1 ≤ margin majWorld (Set.univ : Set (Mem (Fin 3) Bool)) majBit :=
   le_margin ⟨by simp, hasMargin_majWorld⟩
 
 /-- **The tax is tight on the worked witness.** Three cells over two values is a memory of eight
@@ -6067,14 +6095,14 @@ Anchors: [Persistence] §10.1 + §2. The recursive block is this development's; 
 /-- **Majority of three** on `Bool`. -/
 def maj3 (a b c : Bool) : Bool := (a && b) || (b && c) || (a && c)
 
-@[simp] theorem maj3_self (b : Bool) : maj3 b b b = b := by cases b <;> rfl
+@[simp] private theorem maj3_self (b : Bool) : maj3 b b b = b := by cases b <;> rfl
 
 /-- Two agreeing votes carry the majority, wherever the third sits. -/
-theorem maj3_left_left (b z : Bool) : maj3 b b z = b := by cases b <;> cases z <;> rfl
+private theorem maj3_left_left (b z : Bool) : maj3 b b z = b := by cases b <;> cases z <;> rfl
 
-theorem maj3_left_right (b z : Bool) : maj3 b z b = b := by cases b <;> cases z <;> rfl
+private theorem maj3_left_right (b z : Bool) : maj3 b z b = b := by cases b <;> cases z <;> rfl
 
-theorem maj3_right_right (b z : Bool) : maj3 z b b = b := by cases b <;> cases z <;> rfl
+private theorem maj3_right_right (b z : Bool) : maj3 z b b = b := by cases b <;> cases z <;> rfl
 
 /-- The index split of a depth-`(k+1)` block into three depth-`k` sub-blocks. -/
 def tripleEquiv (k : ℕ) : Fin 3 × Fin (3 ^ k) ≃ Fin (3 ^ (k + 1)) :=
@@ -6097,7 +6125,7 @@ in every cell, so — unlike the decoder — the encoder needs no recursion at a
 codewords exist at every depth: the block carries one bit. -/
 def encRec (k : ℕ) (b : Bool) : Mem (Fin (3 ^ k)) Bool := fun _ => b
 
-@[simp] theorem subBlock_encRec (k : ℕ) (c : Fin 3) (b : Bool) :
+@[simp] private theorem subBlock_encRec (k : ℕ) (c : Fin 3) (b : Bool) :
     subBlock k c (encRec (k + 1) b) = encRec k b := rfl
 
 /-- **The roundtrip**: the decoder reads back what the encoder wrote. -/
@@ -6107,7 +6135,7 @@ def encRec (k : ℕ) (b : Bool) : Mem (Fin (3 ^ k)) Bool := fun _ => b
   | succ k ih => rw [decRec]; simp only [subBlock_encRec, ih]; exact maj3_self b
 
 /-- `hammingDist` as a sum of indicators — the counting form the block split needs. -/
-theorem hammingDist_eq_sum {ι : Type*} [Fintype ι] (x y : ι → Bool) :
+private theorem hammingDist_eq_sum {ι : Type*} [Fintype ι] (x y : ι → Bool) :
     hammingDist x y = ∑ i, if x i ≠ y i then 1 else 0 := by
   rw [hammingDist, Finset.card_filter]
 
@@ -6163,7 +6191,7 @@ apparatus. -/
 def healWorld (k : ℕ) : Mem (Fin (3 ^ k)) Bool → Mem (Fin (3 ^ k)) Bool :=
   fun x => encRec k (decRec k x)
 
-theorem healWorld_apply (k : ℕ) (x : Mem (Fin (3 ^ k)) Bool) :
+private theorem healWorld_apply (k : ℕ) (x : Mem (Fin (3 ^ k)) Bool) :
     healWorld k x = encRec k (decRec k x) := rfl
 
 /-- **One step lands exactly on the codeword**, from anywhere inside the healing radius: the
@@ -6178,7 +6206,7 @@ theorem healWorld_mem_codewords (k : ℕ) (x : Mem (Fin (3 ^ k)) Bool) :
     ∃ b, healWorld k x = encRec k b := ⟨decRec k x, rfl⟩
 
 /-- The decoded bit is what the healer world conserves. -/
-@[simp] theorem decRec_healWorld (k : ℕ) (x : Mem (Fin (3 ^ k)) Bool) :
+@[simp] private theorem decRec_healWorld (k : ℕ) (x : Mem (Fin (3 ^ k)) Bool) :
     decRec k (healWorld k x) = decRec k x := by
   rw [healWorld_apply, decRec_encRec]
 
@@ -6210,7 +6238,7 @@ theorem core_healWorld (k : ℕ) :
       (healWorld_fixed_iff k _).mpr ⟨b, rfl⟩
     exact Set.mem_iInter.mpr fun t => ⟨_, Set.mem_univ _, Function.iterate_fixed hfix t⟩
 
-theorem decRec_iterate (k t : ℕ) (x : Mem (Fin (3 ^ k)) Bool) :
+private theorem decRec_iterate (k t : ℕ) (x : Mem (Fin (3 ^ k)) Bool) :
     decRec k ((healWorld k)^[t] x) = decRec k x := by
   induction t with
   | zero => rfl
@@ -6244,10 +6272,10 @@ theorem recMaj_hasMargin (k e : ℕ) (he : e < 2 ^ k) :
   rw [hammingDist_comm]
   omega
 
-theorem two_pow_le_three_pow (k : ℕ) : (2 : ℕ) ^ k ≤ 3 ^ k :=
+private theorem two_pow_le_three_pow (k : ℕ) : (2 : ℕ) ^ k ≤ 3 ^ k :=
   Nat.pow_le_pow_left (by norm_num) k
 
-theorem recMaj_le_margin (k e : ℕ) (he : e < 2 ^ k) :
+private theorem recMaj_le_margin (k e : ℕ) (he : e < 2 ^ k) :
     e ≤ margin (healWorld k) (Set.univ : Set (Mem (Fin (3 ^ k)) Bool)) (decRec k) := by
   refine le_margin ⟨?_, recMaj_hasMargin k e he⟩
   have h3 := two_pow_le_three_pow k
@@ -6270,15 +6298,15 @@ def advRec : (k : ℕ) → Bool → Mem (Fin (3 ^ k)) Bool
   | k + 1, b => fun p =>
       if ((tripleEquiv k).symm p).1 = 2 then b else advRec k b ((tripleEquiv k).symm p).2
 
-theorem subBlock_advRec_zero (k : ℕ) (b : Bool) :
+private theorem subBlock_advRec_zero (k : ℕ) (b : Bool) :
     subBlock k 0 (advRec (k + 1) b) = advRec k b := by
   funext i; simp [subBlock, advRec, Equiv.symm_apply_apply]
 
-theorem subBlock_advRec_one (k : ℕ) (b : Bool) :
+private theorem subBlock_advRec_one (k : ℕ) (b : Bool) :
     subBlock k 1 (advRec (k + 1) b) = advRec k b := by
   funext i; simp [subBlock, advRec, Equiv.symm_apply_apply]
 
-theorem subBlock_advRec_two (k : ℕ) (b : Bool) :
+private theorem subBlock_advRec_two (k : ℕ) (b : Bool) :
     subBlock k 2 (advRec (k + 1) b) = encRec k b := by
   funext i; simp [subBlock, advRec, Equiv.symm_apply_apply, encRec]
 
@@ -6399,10 +6427,10 @@ a two-part world a cell structure, so that perturbations of it are counted in ce
 def sumMem {ι₁ ι₂ V : Type*} : Mem ι₁ V × Mem ι₂ V ≃ Mem (ι₁ ⊕ ι₂) V :=
   (Equiv.sumArrowEquivProdArrow ι₁ ι₂ V).symm
 
-@[simp] theorem sumMem_apply {ι₁ ι₂ V : Type*} (p : Mem ι₁ V × Mem ι₂ V) :
+@[simp] private theorem sumMem_apply {ι₁ ι₂ V : Type*} (p : Mem ι₁ V × Mem ι₂ V) :
     (sumMem p : Mem (ι₁ ⊕ ι₂) V) = Sum.elim p.1 p.2 := rfl
 
-@[simp] theorem sumMem_symm_apply {ι₁ ι₂ V : Type*} (x : Mem (ι₁ ⊕ ι₂) V) :
+@[simp] private theorem sumMem_symm_apply {ι₁ ι₂ V : Type*} (x : Mem (ι₁ ⊕ ι₂) V) :
     sumMem.symm x = (x ∘ Sum.inl, x ∘ Sum.inr) := rfl
 
 /-- **Distance splits across the two parts** — the disjoint-union analogue of the block split. -/
@@ -6431,7 +6459,7 @@ def habitatWorld (κ k : ℕ) (G : Mem (Fin κ) Bool → Mem (Fin κ) Bool)
     (h : Mem (Fin κ × Fin (3 ^ k)) Bool) : Mem (Fin κ × Fin (3 ^ k)) Bool :=
   habitatEnc κ k (G (macroLens κ k h))
 
-@[simp] theorem blockOf_habitatEnc (κ k : ℕ) (b : Mem (Fin κ) Bool) (i : Fin κ) :
+@[simp] private theorem blockOf_habitatEnc (κ k : ℕ) (b : Mem (Fin κ) Bool) (i : Fin κ) :
     blockOf (habitatEnc κ k b) i = encRec k (b i) := rfl
 
 @[simp] theorem macroLens_habitatEnc (κ k : ℕ) (b : Mem (Fin κ) Bool) :
@@ -6445,8 +6473,8 @@ theorem hammingDist_habitat_blocks (κ k : ℕ) (h h' : Mem (Fin κ × Fin (3 ^ 
   exact Finset.sum_congr rfl fun i _ => (hammingDist_eq_sum _ _).symm
 
 /-- …so a total budget bounds every single block's share of it. -/
-theorem hammingDist_blockOf_le (κ k : ℕ) (h h' : Mem (Fin κ × Fin (3 ^ k)) Bool) (i : Fin κ) :
-    hammingDist (blockOf h i) (blockOf h' i) ≤ hammingDist h h' := by
+private theorem hammingDist_blockOf_le (κ k : ℕ) (h h' : Mem (Fin κ × Fin (3 ^ k)) Bool)
+    (i : Fin κ) : hammingDist (blockOf h i) (blockOf h' i) ≤ hammingDist h h' := by
   rw [hammingDist_habitat_blocks]
   exact Finset.single_le_sum
     (f := fun j => hammingDist (blockOf h j) (blockOf h' j))
@@ -6492,7 +6520,7 @@ theorem intertwines_macroLens (κ k : ℕ) (G : Mem (Fin κ) Bool → Mem (Fin �
     Intertwines (habitatWorld κ k G) G (fun _ => macroLens κ k) :=
   fun _ h => macro_square κ k G h
 
-theorem habitatWorld_valid (κ k : ℕ) (G : Mem (Fin κ) Bool → Mem (Fin κ) Bool)
+private theorem habitatWorld_valid (κ k : ℕ) (G : Mem (Fin κ) Bool → Mem (Fin κ) Bool)
     (h : Mem (Fin κ × Fin (3 ^ k)) Bool) :
     ∃ b, habitatWorld κ k G h = habitatEnc κ k b := ⟨G (macroLens κ k h), rfl⟩
 
@@ -6521,7 +6549,7 @@ theorem witnessWorld_conj (κ k : ℕ) (G : Mem (Fin κ) Bool → Mem (Fin κ) B
   funext x
   rfl
 
-@[simp] theorem witnessWorld_inl (κ k : ℕ) (G : Mem (Fin κ) Bool → Mem (Fin κ) Bool)
+@[simp] private theorem witnessWorld_inl (κ k : ℕ) (G : Mem (Fin κ) Bool → Mem (Fin κ) Bool)
     (π : Mem ι_J Bool → Mem ι_J Bool) (x : Mem ((Fin κ × Fin (3 ^ k)) ⊕ ι_J) Bool) :
     (witnessWorld κ k G π x) ∘ Sum.inl = habitatWorld κ k G (x ∘ Sum.inl) := rfl
 
@@ -6684,15 +6712,15 @@ theorem stateEquiv_val {N : ℕ} (x : Mem (Fin N) Bool) :
   cases h : x i <;> simp [finTwoEquiv]
 
 /-- The `j`-th binary digit of a memory state, in the shape `sum_digits_div_mod` consumes. -/
-def bitDigit {N : ℕ} (x : Mem (Fin N) Bool) (j : ℕ) : ℕ :=
+private def bitDigit {N : ℕ} (x : Mem (Fin N) Bool) (j : ℕ) : ℕ :=
   if h : j < N then (if x ⟨j, h⟩ then 1 else 0) else 0
 
-theorem bitDigit_lt {N : ℕ} (x : Mem (Fin N) Bool) (j : ℕ) : bitDigit x j < 2 := by
+private theorem bitDigit_lt {N : ℕ} (x : Mem (Fin N) Bool) (j : ℕ) : bitDigit x j < 2 := by
   rw [bitDigit]; split
   · split <;> norm_num
   · norm_num
 
-theorem stateEquiv_val_range {N : ℕ} (x : Mem (Fin N) Bool) :
+private theorem stateEquiv_val_range {N : ℕ} (x : Mem (Fin N) Bool) :
     ((stateEquiv N x : Fin (2 ^ N)) : ℕ) = ∑ j ∈ Finset.range N, bitDigit x j * 2 ^ j := by
   rw [stateEquiv_val, Finset.sum_range fun j => bitDigit x j * 2 ^ j]
   refine Finset.sum_congr rfl fun i _ => ?_
@@ -6713,7 +6741,7 @@ applies to `packWorld U` verbatim. -/
 def packWorld {N : ℕ} (U : Mem (Fin N) Bool → Mem (Fin N) Bool) : Fin (2 ^ N) → Fin (2 ^ N) :=
   fun s => stateEquiv N (U ((stateEquiv N).symm s))
 
-@[simp] theorem packWorld_apply {N : ℕ} (U : Mem (Fin N) Bool → Mem (Fin N) Bool)
+@[simp] private theorem packWorld_apply {N : ℕ} (U : Mem (Fin N) Bool → Mem (Fin N) Bool)
     (x : Mem (Fin N) Bool) : packWorld U (stateEquiv N x) = stateEquiv N (U x) := by
   rw [packWorld, Equiv.symm_apply_apply]
 
@@ -6753,7 +6781,7 @@ theorem packPerm_coe {N : ℕ} (U : Equiv.Perm (Mem (Fin N) Bool)) :
 def packLens {N M : ℕ} (ℓ : Mem (Fin N) Bool → Mem (Fin M) Bool) : Fin (2 ^ N) → Fin (2 ^ M) :=
   fun s => stateEquiv M (ℓ ((stateEquiv N).symm s))
 
-@[simp] theorem packLens_apply {N M : ℕ} (ℓ : Mem (Fin N) Bool → Mem (Fin M) Bool)
+@[simp] private theorem packLens_apply {N M : ℕ} (ℓ : Mem (Fin N) Bool → Mem (Fin M) Bool)
     (x : Mem (Fin N) Bool) : packLens ℓ (stateEquiv N x) = stateEquiv M (ℓ x) := by
   rw [packLens, Equiv.symm_apply_apply]
 
@@ -6905,7 +6933,7 @@ def packReduce (m s : ℕ) : ℕ :=
   ∑ j ∈ Finset.range m,
     ((numBitN s (3 * j) + numBitN s (3 * j + 1) + numBitN s (3 * j + 2)) / 2) * 2 ^ j
 
-theorem numBitN_stateEquiv {N : ℕ} (x : Mem (Fin N) Bool) (j : ℕ) (hj : j < N) :
+private theorem numBitN_stateEquiv {N : ℕ} (x : Mem (Fin N) Bool) (j : ℕ) (hj : j < N) :
     numBitN ((stateEquiv N x : Fin (2 ^ N)) : ℕ) j = if x ⟨j, hj⟩ then 1 else 0 := by
   rw [numBitN]
   exact stateEquiv_digit x ⟨j, hj⟩
@@ -6987,11 +7015,11 @@ Anchors: [Persistence] §2 + §5. The decoder is this development's; no numbered
 [Persistence] is claimed machine-checked by its presence. -/
 
 /-- the List form of `packReduce`, the shape `Primrec` consumes -/
-def packReduceList (m s : ℕ) : ℕ :=
+private def packReduceList (m s : ℕ) : ℕ :=
   ((List.range m).map fun j =>
     ((numBitN s (3 * j) + numBitN s (3 * j + 1) + numBitN s (3 * j + 2)) / 2) * 2 ^ j).sum
 
-theorem packReduceList_eq (m s : ℕ) : packReduceList m s = packReduce m s := by
+private theorem packReduceList_eq (m s : ℕ) : packReduceList m s = packReduce m s := by
   rw [packReduceList, packReduce]; simp [Finset.sum, Multiset.range]
 
 theorem primrec_packReduce : Primrec₂ packReduce := by
@@ -7027,7 +7055,7 @@ private theorem natRec_eq_iterate {α : Type*} (f : α → α) : ∀ (n : ℕ) (
   | succ n ih => intro p; rw [Function.iterate_succ_apply']; exact congrArg f (ih p)
 
 /-- one level of the decode, as a step on `(remaining depth, numeral)` -/
-private def redStep (p : ℕ × ℕ) : ℕ × ℕ := (p.1 - 1, packReduce (3 ^ (p.1 - 1)) p.2)
+def redStep (p : ℕ × ℕ) : ℕ × ℕ := (p.1 - 1, packReduce (3 ^ (p.1 - 1)) p.2)
 
 private theorem primrec_redStep : Primrec redStep := by
   have hpow : Primrec₂ ((· ^ ·) : ℕ → ℕ → ℕ) := Primrec₂.unpaired'.1 Nat.Primrec.pow
@@ -7074,10 +7102,10 @@ theorem primrec_numDecRec : Primrec₂ numDecRec := by
 /-- the decode as ONE function of a single natural — `⟨depth, packed state⟩` -/
 def decFn (a : ℕ) : ℕ := numDecRec a.unpair.1 a.unpair.2
 
-theorem primrec_decFn : Primrec decFn :=
+private theorem primrec_decFn : Primrec decFn :=
   primrec_numDecRec.comp (Primrec.fst.comp Primrec.unpair) (Primrec.snd.comp Primrec.unpair)
 
-theorem partrec_decFn : Nat.Partrec (fun a : ℕ => (decFn a : ℕ)) :=
+private theorem partrec_decFn : Nat.Partrec (fun a : ℕ => (decFn a : ℕ)) :=
   _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_decFn).partrec
 
 /-- **The fixed decoder code**: one program, uniform in the depth and the state. -/
@@ -7130,7 +7158,7 @@ Anchors: [Persistence] §2 + §5 + §8. The relabelling is this development's; n
 def reindexMem {ι₁ ι₂ V : Type*} (e : ι₁ ≃ ι₂) : Mem ι₂ V ≃ Mem ι₁ V :=
   Equiv.arrowCongr e.symm (Equiv.refl V)
 
-@[simp] theorem reindexMem_apply {ι₁ ι₂ V : Type*} (e : ι₁ ≃ ι₂) (x : Mem ι₂ V) (i : ι₁) :
+@[simp] private theorem reindexMem_apply {ι₁ ι₂ V : Type*} (e : ι₁ ≃ ι₂) (x : Mem ι₂ V) (i : ι₁) :
     reindexMem e x i = x (e i) := rfl
 
 /-- The habitat's flat cell index: block `i`, position `p` sits at `p + 3 ^ k * i`, so block `i`
@@ -7141,7 +7169,7 @@ def habEquiv (κ k : ℕ) : Fin (κ * 3 ^ k) ≃ Fin κ × Fin (3 ^ k) := finPro
 def flatHab (κ k : ℕ) : Mem (Fin κ × Fin (3 ^ k)) Bool ≃ Mem (Fin (κ * 3 ^ k)) Bool :=
   reindexMem (habEquiv κ k)
 
-@[simp] theorem flatHab_symm_cell (κ k : ℕ) (h : Mem (Fin κ × Fin (3 ^ k)) Bool)
+@[simp] private theorem flatHab_symm_cell (κ k : ℕ) (h : Mem (Fin κ × Fin (3 ^ k)) Bool)
     (i : Fin κ) (p : Fin (3 ^ k)) :
     flatHab κ k h (finProdFinEquiv (i, p)) = h (i, p) := by
   rw [flatHab, reindexMem_apply, habEquiv]
@@ -7164,16 +7192,16 @@ theorem stateEquiv_flatHab_blocks (κ k : ℕ) (h : Mem (Fin κ × Fin (3 ^ k)) 
   rfl
 
 /-- The packed habitat's base-`2 ^ 3 ^ k` digit `j`, in the shape `sum_digits_div_mod` consumes. -/
-def blockDigit (κ k : ℕ) (h : Mem (Fin κ × Fin (3 ^ k)) Bool) (j : ℕ) : ℕ :=
+private def blockDigit (κ k : ℕ) (h : Mem (Fin κ × Fin (3 ^ k)) Bool) (j : ℕ) : ℕ :=
   if hj : j < κ then ((stateEquiv (3 ^ k) (blockOf h ⟨j, hj⟩) : Fin (2 ^ 3 ^ k)) : ℕ) else 0
 
-theorem blockDigit_lt (κ k : ℕ) (h : Mem (Fin κ × Fin (3 ^ k)) Bool) (j : ℕ) :
+private theorem blockDigit_lt (κ k : ℕ) (h : Mem (Fin κ × Fin (3 ^ k)) Bool) (j : ℕ) :
     blockDigit κ k h j < 2 ^ 3 ^ k := by
   rw [blockDigit]; split
   · exact Fin.isLt _
   · positivity
 
-theorem stateEquiv_flatHab_range (κ k : ℕ) (h : Mem (Fin κ × Fin (3 ^ k)) Bool) :
+private theorem stateEquiv_flatHab_range (κ k : ℕ) (h : Mem (Fin κ × Fin (3 ^ k)) Bool) :
     ((stateEquiv (κ * 3 ^ k) (flatHab κ k h) : Fin (2 ^ (κ * 3 ^ k))) : ℕ)
       = ∑ j ∈ Finset.range κ, blockDigit κ k h j * (2 ^ 3 ^ k) ^ j := by
   rw [stateEquiv_flatHab_blocks,
@@ -7287,7 +7315,7 @@ Anchors: [Persistence] §2 + §5 + §8. The walk is this development's; no numbe
 def macroWordOf (κ k s : ℕ) : ℕ :=
   ((List.range κ).map fun j => numDecRec k (s / (2 ^ 3 ^ k) ^ j % (2 ^ 3 ^ k)) * 2 ^ j).sum
 
-theorem macroWordOf_eq_sum (κ k s : ℕ) :
+private theorem macroWordOf_eq_sum (κ k s : ℕ) :
     macroWordOf κ k s
       = ∑ j ∈ Finset.range κ, numDecRec k (s / (2 ^ 3 ^ k) ^ j % (2 ^ 3 ^ k)) * 2 ^ j := by
   rw [macroWordOf]; simp [Finset.sum, Multiset.range]
@@ -7301,7 +7329,7 @@ theorem macroWordOf_stateEquiv (κ k : ℕ) (h : Mem (Fin κ × Fin (3 ^ k)) Boo
 def habWriteBack (κ k Gw : ℕ) : ℕ :=
   ((List.range κ).map fun j => numBitN Gw j * (2 ^ 3 ^ k - 1) * (2 ^ 3 ^ k) ^ j).sum
 
-theorem habWriteBack_eq_sum (κ k Gw : ℕ) :
+private theorem habWriteBack_eq_sum (κ k Gw : ℕ) :
     habWriteBack κ k Gw
       = ∑ j ∈ Finset.range κ, numBitN Gw j * (2 ^ 3 ^ k - 1) * (2 ^ 3 ^ k) ^ j := by
   rw [habWriteBack]; simp [Finset.sum, Multiset.range]
@@ -7474,11 +7502,6 @@ it runs in is astronomically large.
 Anchors: [Persistence] §2 + §5 + §8. No numbered result of [Persistence] is claimed machine-checked
 by their presence. -/
 
-private theorem eval_comp_some' {a b : Nat.Partrec.Code} {j v : ℕ}
-    (hv : Nat.Partrec.Code.eval b j = Part.some v) :
-    Nat.Partrec.Code.eval (Nat.Partrec.Code.comp a b) j = Nat.Partrec.Code.eval a v := by
-  simp [Nat.Partrec.Code.eval, hv]
-
 /-- **The table normal form**: `lensTable` re-listed along `List.range n` rather than
 `List.finRange n`. Proved once at symbolic `n`, so a downstream bridge to a `List.range`-built table
 is a `List.map` congruence with no `Fin` index ever unified — the fix for the huge-length wall, and
@@ -7536,7 +7559,7 @@ theorem habTableFn_eq (κ k : ℕ) (G : Mem (Fin κ) Bool → Mem (Fin κ) Bool)
   rw [dif_pos hsN]
   exact habStep_packWorld κ k G ⟨s, hsN⟩
 
-theorem partrec_habTableFn : Nat.Partrec (fun a : ℕ => (habTableFn a : ℕ)) :=
+private theorem partrec_habTableFn : Nat.Partrec (fun a : ℕ => (habTableFn a : ℕ)) :=
   _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_habTableFn).partrec
 
 /-- **The fixed habitat builder code**, extracted from universality: one program taking
@@ -7566,7 +7589,7 @@ theorem KE_flatWorld_le (κ k : ℕ) (G : Mem (Fin κ) Bool → Mem (Fin κ) Boo
         + (elen habBuilder + 2 * (15 + elen dbl) + 15) := by
   have hz : Nat.Partrec.Code.eval Nat.Partrec.Code.zero 0 = Part.some 0 := rfl
   have hcG : Nat.Partrec.Code.eval (Nat.Partrec.Code.comp cG Nat.Partrec.Code.zero) 0
-      = Part.some (lensCode (packWorld G)) := (eval_comp_some' hz).trans hG
+      = Part.some (lensCode (packWorld G)) := (eval_comp_some hz).trans hG
   have hp2 : Nat.Partrec.Code.eval
       (Nat.Partrec.Code.pair (bconst k) (Nat.Partrec.Code.comp cG Nat.Partrec.Code.zero)) 0
       = Part.some (Nat.pair k (lensCode (packWorld G))) := by
@@ -7583,7 +7606,7 @@ theorem KE_flatWorld_le (κ k : ℕ) (G : Mem (Fin κ) Bool → Mem (Fin κ) Boo
         (Nat.Partrec.Code.pair (bconst k) (Nat.Partrec.Code.comp cG Nat.Partrec.Code.zero))))
       (lensCode (packWorld (flatWorld κ k G))) := by
     change Nat.Partrec.Code.eval _ 0 = _
-    rw [eval_comp_some' hp1, eval_habBuilder, habTableFn_eq]
+    rw [eval_comp_some hp1, eval_habBuilder, habTableFn_eq]
   have hle := KE_le hcomp
   have hbκ := elen_bconst_le κ
   have hbk := elen_bconst_le k
@@ -7655,15 +7678,15 @@ def prodWorldFinFn {n₁ n₂ : ℕ} (U₁ : Fin n₁ → Fin n₁) (U₂ : Fin 
     Fin (n₁ * n₂) → Fin (n₁ * n₂) :=
   fun p => finProdFinEquiv (U₁ (finProdFinEquiv.symm p).1, U₂ (finProdFinEquiv.symm p).2)
 
-@[simp] theorem prodWorldFinFn_apply {n₁ n₂ : ℕ} (U₁ : Fin n₁ → Fin n₁) (U₂ : Fin n₂ → Fin n₂)
-    (i : Fin n₁) (j : Fin n₂) :
+@[simp] private theorem prodWorldFinFn_apply {n₁ n₂ : ℕ} (U₁ : Fin n₁ → Fin n₁)
+    (U₂ : Fin n₂ → Fin n₂) (i : Fin n₁) (j : Fin n₂) :
     prodWorldFinFn U₁ U₂ (finProdFinEquiv (i, j)) = finProdFinEquiv (U₁ i, U₂ j) := by
   simp [prodWorldFinFn]
 
 /-- The product world's table entry at the pair `(i, j)`, in the index shape `List.ofFn_mul`
 produces — the `prodWorldFin_val` arithmetic with the permutation coercion dropped. -/
-theorem prodWorldFinFn_val {n₁ n₂ : ℕ} (U₁ : Fin n₁ → Fin n₁) (U₂ : Fin n₂ → Fin n₂) (i : Fin n₁)
-    (j : Fin n₂) (h : i.val * n₂ + j.val < n₁ * n₂) :
+private theorem prodWorldFinFn_val {n₁ n₂ : ℕ} (U₁ : Fin n₁ → Fin n₁) (U₂ : Fin n₂ → Fin n₂)
+    (i : Fin n₁) (j : Fin n₂) (h : i.val * n₂ + j.val < n₁ * n₂) :
     ((prodWorldFinFn U₁ U₂ ⟨i.val * n₂ + j.val, h⟩ : Fin (n₁ * n₂)) : ℕ)
       = ((U₂ j : Fin n₂) : ℕ) + n₂ * ((U₁ i : Fin n₁) : ℕ) := by
   have hidx : (⟨i.val * n₂ + j.val, h⟩ : Fin (n₁ * n₂)) = finProdFinEquiv (i, j) := by
@@ -7675,7 +7698,7 @@ theorem prodWorldFinFn_val {n₁ n₂ : ℕ} (U₁ : Fin n₁ → Fin n₁) (U�
 
 /-- The endofunction product world's table is the two factors' tables interleaved, exactly as for
 `prodWorldFin`. -/
-theorem lensTable_prodWorldFinFn {n₁ n₂ : ℕ} (U₁ : Fin n₁ → Fin n₁) (U₂ : Fin n₂ → Fin n₂) :
+private theorem lensTable_prodWorldFinFn {n₁ n₂ : ℕ} (U₁ : Fin n₁ → Fin n₁) (U₂ : Fin n₂ → Fin n₂) :
     lensTable (prodWorldFinFn U₁ U₂) = prodAppend (lensTable U₁) (lensTable U₂) := by
   have hlen : (lensTable U₂).length = n₂ := by rw [lensTable]; simp
   rw [prodAppend, hlen, lensTable, lensTable, lensTable, ← List.ofFn_eq_map, ← List.ofFn_eq_map,
@@ -7690,7 +7713,7 @@ theorem lensTable_prodWorldFinFn {n₁ n₂ : ℕ} (U₁ : Fin n₁ → Fin n₁
 
 /-- **`prodBuilder` prices the endofunction product too**: on `⟨U₁'s table, U₂'s table⟩` the one
 fixed product builder outputs the endofunction product world's table. -/
-theorem prodTableFn_eq_fn {n₁ n₂ : ℕ} (U₁ : Fin n₁ → Fin n₁) (U₂ : Fin n₂ → Fin n₂) :
+private theorem prodTableFn_eq_fn {n₁ n₂ : ℕ} (U₁ : Fin n₁ → Fin n₁) (U₂ : Fin n₂ → Fin n₂) :
     prodTableFn (Nat.pair (lensCode U₁) (lensCode U₂)) = lensCode (prodWorldFinFn U₁ U₂) := by
   rw [prodTableFn]
   simp only [Nat.unpair_pair, decode_lensCode]
@@ -7700,7 +7723,7 @@ theorem prodTableFn_eq_fn {n₁ n₂ : ℕ} (U₁ : Fin n₁ → Fin n₁) (U₂
 /-- **Rules compose for endofunctions too.** Given codes for the two factors' tables, the
 endofunction product world costs their lengths plus the same absolute constant
 `elen prodBuilder + 6` as `KE_prodWorldFin_le` — one fixed builder, independent of the worlds. -/
-theorem KE_prodWorldFinFn_le {n₁ n₂ : ℕ} (U₁ : Fin n₁ → Fin n₁) (U₂ : Fin n₂ → Fin n₂)
+private theorem KE_prodWorldFinFn_le {n₁ n₂ : ℕ} (U₁ : Fin n₁ → Fin n₁) (U₂ : Fin n₂ → Fin n₂)
     (c₁ c₂ : Code) (h₁ : c₁.eval 0 = Part.some (lensCode U₁))
     (h₂ : c₂.eval 0 = Part.some (lensCode U₂)) :
     KE (lensCode (prodWorldFinFn U₁ U₂)) ≤ elen c₁ + elen c₂ + (elen prodBuilder + 6) := by
@@ -7800,18 +7823,18 @@ def flatRead (κ k : ℕ) (x : Mem (Fin (κ * 3 ^ k)) Bool) : Mem (Fin κ) Bool 
 /-- The macro reading, transported onto the numeral carrier the capacities are indexed by. -/
 def packRead (κ k : ℕ) : Fin (2 ^ (κ * 3 ^ k)) → Fin (2 ^ κ) := packLens (flatRead κ k)
 
-theorem flatRead_surjective (κ k : ℕ) : Function.Surjective (flatRead κ k) := by
+private theorem flatRead_surjective (κ k : ℕ) : Function.Surjective (flatRead κ k) := by
   intro b
   obtain ⟨h, hh⟩ := macroLens_surjective κ k b
   exact ⟨flatHab κ k h, by rw [flatRead, Equiv.symm_apply_apply, hh]⟩
 
-theorem packRead_surjective (κ k : ℕ) : Function.Surjective (packRead κ k) :=
+private theorem packRead_surjective (κ k : ℕ) : Function.Surjective (packRead κ k) :=
   packLens_surjective (flatRead_surjective κ k)
 
 /-- **The reading intertwines the flat world with the macro law**: reading after a step is a step of
 `G` after reading, on the numeral carrier — `flatWorld` conjugates `habitatWorld`, `macroLens` reads
 `G` off it, and the packing preserves the square. -/
-theorem packRead_square (κ k : ℕ) (G : Mem (Fin κ) Bool → Mem (Fin κ) Bool)
+private theorem packRead_square (κ k : ℕ) (G : Mem (Fin κ) Bool → Mem (Fin κ) Bool)
     (s : Fin (2 ^ (κ * 3 ^ k))) :
     packRead κ k (packWorld (flatWorld κ k G) s) = packWorld G (packRead κ k s) := by
   refine packWorld_square (fun x => ?_) s
@@ -7819,11 +7842,11 @@ theorem packRead_square (κ k : ℕ) (G : Mem (Fin κ) Bool → Mem (Fin κ) Boo
 
 /-- **The reading's table**, tabulated over every state as one function of the paired input
 `⟨κ, k⟩` — the reading has no other parameter, so nothing about `G` or the environment enters. -/
-def readTableFn (a : ℕ) : ℕ :=
+private def readTableFn (a : ℕ) : ℕ :=
   Encodable.encode ((List.range (2 ^ (a.unpair.1 * 3 ^ a.unpair.2))).map
     (fun s => macroWordOf a.unpair.1 a.unpair.2 s))
 
-theorem primrec_readTableFn : Primrec readTableFn := by
+private theorem primrec_readTableFn : Primrec readTableFn := by
   have hpow : Primrec₂ ((· ^ ·) : ℕ → ℕ → ℕ) := Primrec₂.unpaired'.1 Nat.Primrec.pow
   have hκ : Primrec fun a : ℕ => a.unpair.1 := Primrec.fst.comp Primrec.unpair
   have hk : Primrec fun a : ℕ => a.unpair.2 := Primrec.snd.comp Primrec.unpair
@@ -7837,7 +7860,8 @@ theorem primrec_readTableFn : Primrec readTableFn := by
 /-- **The reading's table is the packed macro reading's**: both list along `List.range`, closed
 per-entry by `macroWordOf_stateEquiv` through the `List.range` normal form — the huge length never
 unifies an index. -/
-theorem readTableFn_eq (κ k : ℕ) : readTableFn (Nat.pair κ k) = lensCode (packRead κ k) := by
+private theorem readTableFn_eq (κ k : ℕ) :
+    readTableFn (Nat.pair κ k) = lensCode (packRead κ k) := by
   rw [readTableFn]
   simp only [Nat.unpair_pair]
   conv_rhs => rw [packRead, lensCode, lensTable_range]
@@ -7858,7 +7882,7 @@ theorem readTableFn_eq (κ k : ℕ) : readTableFn (Nat.pair κ k) = lensCode (pa
     rw [← hh, packLens_apply, flatRead, Equiv.symm_apply_apply]
   rw [hlhs, hrhs]
 
-theorem partrec_readTableFn : Nat.Partrec (fun a : ℕ => (readTableFn a : ℕ)) :=
+private theorem partrec_readTableFn : Nat.Partrec (fun a : ℕ => (readTableFn a : ℕ)) :=
   _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_readTableFn).partrec
 
 /-- **The fixed reading builder code**: one program taking `⟨κ, k⟩` and returning the reading's
@@ -7866,7 +7890,7 @@ table — the decoder, uniform in the structural sizes and free of `G`. -/
 noncomputable def readBuilder : Nat.Partrec.Code :=
   Classical.choose (Nat.Partrec.Code.exists_code.mp partrec_readTableFn)
 
-theorem eval_readBuilder (a : ℕ) :
+private theorem eval_readBuilder (a : ℕ) :
     Nat.Partrec.Code.eval readBuilder a = Part.some (readTableFn a) := by
   have h := congrFun (Classical.choose_spec
     (Nat.Partrec.Code.exists_code.mp partrec_readTableFn)) a
@@ -7875,17 +7899,19 @@ theorem eval_readBuilder (a : ℕ) :
 /-- **The owned reading family**: at frame `t`, read the macro state and transport it `t` steps back
 along the macro law. Where `G` is a permutation this is `⇑((packPerm G)^t)⁻¹ ∘ packRead`, and it
 carries the persistent macro model — the reference frame is the reading itself. -/
-def ownLens (κ k : ℕ) (G : Perm (Mem (Fin κ) Bool)) : ℕ → Fin (2 ^ (κ * 3 ^ k)) → Fin (2 ^ κ) :=
+private def ownLens (κ k : ℕ) (G : Perm (Mem (Fin κ) Bool)) :
+    ℕ → Fin (2 ^ (κ * 3 ^ k)) → Fin (2 ^ κ) :=
   fun t s => ⇑((packPerm G ^ t)⁻¹) (packRead κ k s)
 
-theorem ownLens_zero (κ k : ℕ) (G : Perm (Mem (Fin κ) Bool)) : ownLens κ k G 0 = packRead κ k := by
+private theorem ownLens_zero (κ k : ℕ) (G : Perm (Mem (Fin κ) Bool)) :
+    ownLens κ k G 0 = packRead κ k := by
   funext s; simp [ownLens]
 
 /-- **The family carries the macro model** over the flat habitat world. The reading intertwines the
 world with the macro law (`packRead_square`), so `t` steps of the world advance the macro state by
 `⇑((packPerm G)^t)`; transporting it back by the inverse recovers the reference reading.
 Reversibility enters exactly here — the inverse iterate needs `G` a permutation. -/
-theorem carries_ownLens (κ k : ℕ) (G : Perm (Mem (Fin κ) Bool)) :
+private theorem carries_ownLens (κ k : ℕ) (G : Perm (Mem (Fin κ) Bool)) :
     Carries (packWorld (flatWorld κ k ⇑G)) (ownLens κ k G) := by
   have hsq : Intertwines (packWorld (flatWorld κ k ⇑G)) (packWorld ⇑G) (fun _ => packRead κ k) :=
     fun _ s => packRead_square κ k ⇑G s
@@ -7904,8 +7930,8 @@ computes every frame: the macro law's code `cG` recovers the law's table (compos
 exponential table — fed the two small structural numbers, `readBuilder` rebuilds it — so the whole
 time-indexed family costs
 `elen cG + O(size κ + size k)`, nothing scaling with the state count. -/
-theorem uniformBudget_ownLens (κ k : ℕ) (G : Perm (Mem (Fin κ) Bool)) (cG : Nat.Partrec.Code)
-    (hG : cG.eval 0 = Part.some (lensCode (packWorld ⇑G))) :
+private theorem uniformBudget_ownLens (κ k : ℕ) (G : Perm (Mem (Fin κ) Bool))
+    (cG : Nat.Partrec.Code) (hG : cG.eval 0 = Part.some (lensCode (packWorld ⇑G))) :
     UniformBudget (ownLens κ k G)
       (elen compBuilder + elen faithBuilder + elen readBuilder + elen cG
         + (15 + elen dbl) * Nat.size (Nat.pair κ k) + ((15 + elen dbl) + 30)) := by
@@ -7974,7 +8000,7 @@ hence the contrast of `card_readable_core_le`, lives. -/
 
 /-- **The witness world's iterate factors**: `t` steps of the whole world are `t` steps of the
 habitat beside `t` steps of the environment. -/
-theorem witnessWorld_iterate_apply {ι_J : Type*} (κ k : ℕ)
+private theorem witnessWorld_iterate_apply {ι_J : Type*} (κ k : ℕ)
     (G : Mem (Fin κ) Bool → Mem (Fin κ) Bool) (π : Mem ι_J Bool → Mem ι_J Bool)
     (t : ℕ) (x : Mem ((Fin κ × Fin (3 ^ k)) ⊕ ι_J) Bool) :
     (witnessWorld κ k G π)^[t] x
@@ -7987,7 +8013,7 @@ theorem witnessWorld_iterate_apply {ι_J : Type*} (κ k : ℕ)
 
 /-- **On codewords the habitat runs the macro law**: `t` steps of the habitat world from a codeword
 state advance its macro word by `G^t`, re-encoded. -/
-theorem habitatWorld_iterate_codeword (κ k : ℕ) (G : Perm (Mem (Fin κ) Bool)) (t : ℕ)
+private theorem habitatWorld_iterate_codeword (κ k : ℕ) (G : Perm (Mem (Fin κ) Bool)) (t : ℕ)
     (c : Mem (Fin κ) Bool) :
     (habitatWorld κ k ⇑G)^[t] (habitatEnc κ k c) = habitatEnc κ k (⇑(G ^ t) c) := by
   induction t generalizing c with
@@ -8167,7 +8193,7 @@ theorem carries_emergeLens {n m : ℕ} (U : Fin n → Fin n) (θ : Fin n → Fin
     exact Function.iterate_fixed (hfix _ hmem) t
 
 /-- The factorial is primitive recursive — the exponent's one non-trivial ingredient. -/
-theorem primrec_factorial : Primrec Nat.factorial := by
+private theorem primrec_factorial : Primrec Nat.factorial := by
   have hstep : Primrec₂ fun (m ih : ℕ) => (m + 1) * ih :=
     (Primrec.nat_mul.comp (Primrec.succ.comp Primrec.fst) Primrec.snd).to₂
   refine (Primrec.nat_rec₁ 1 hstep).of_eq fun n => ?_
@@ -8178,13 +8204,13 @@ theorem primrec_factorial : Primrec Nat.factorial := by
 /-- **The emergence builder's table**: from `⟨U's table, θ's table, t⟩`, iterate `U`'s table
 `(n ! − 1) · t + n` times (`iterTable`, `n` read off the table's own length) and read the result
 through `θ` (`stepComp`) — the guest's frame-`t` table, all forward, no inverse. -/
-def emergeTableFn (a : ℕ) : ℕ :=
+private def emergeTableFn (a : ℕ) : ℕ :=
   Encodable.encode (stepComp ((Encodable.decode (α := List ℕ) a.unpair.2.unpair.1).getD [])
     (iterTable ((Encodable.decode (α := List ℕ) a.unpair.1).getD [])
       ((Nat.factorial ((Encodable.decode (α := List ℕ) a.unpair.1).getD []).length - 1)
         * a.unpair.2.unpair.2 + ((Encodable.decode (α := List ℕ) a.unpair.1).getD []).length)))
 
-theorem primrec_emergeTableFn : Primrec emergeTableFn := by
+private theorem primrec_emergeTableFn : Primrec emergeTableFn := by
   have hP : Primrec fun a : ℕ => (Encodable.decode (α := List ℕ) a.unpair.1).getD [] :=
     Primrec.option_getD.comp (Primrec.decode.comp (Primrec.fst.comp Primrec.unpair))
       (Primrec.const [])
@@ -8209,7 +8235,7 @@ theorem primrec_emergeTableFn : Primrec emergeTableFn := by
 frame-`t` table. Both bridges are in-tree — `iterTable_lensTable` tabulates the iterate,
 `stepComp_lensTable_comp` composes the frame — so the table lists over `Fin n`, never an exponential
 alphabet. -/
-theorem emergeTableFn_eq {n m : ℕ} (U : Fin n → Fin n) (θ : Fin n → Fin m) (t : ℕ) :
+private theorem emergeTableFn_eq {n m : ℕ} (U : Fin n → Fin n) (θ : Fin n → Fin m) (t : ℕ) :
     emergeTableFn (Nat.pair (lensCode U) (Nat.pair (lensCode θ) t))
       = lensCode (emergeLens U θ t) := by
   rw [emergeTableFn]
@@ -8217,14 +8243,14 @@ theorem emergeTableFn_eq {n m : ℕ} (U : Fin n → Fin n) (θ : Fin n → Fin m
   rw [iterTable_lensTable, stepComp_lensTable_comp]
   rfl
 
-theorem partrec_emergeTableFn : Nat.Partrec (fun a : ℕ => (emergeTableFn a : ℕ)) :=
+private theorem partrec_emergeTableFn : Nat.Partrec (fun a : ℕ => (emergeTableFn a : ℕ)) :=
   _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_emergeTableFn).partrec
 
 /-- **The fixed emergence builder code**: one program taking `⟨U's table, θ's table, t⟩`. -/
 noncomputable def emergeBuilder : Nat.Partrec.Code :=
   Classical.choose (Nat.Partrec.Code.exists_code.mp partrec_emergeTableFn)
 
-theorem eval_emergeBuilder (a : ℕ) :
+private theorem eval_emergeBuilder (a : ℕ) :
     Nat.Partrec.Code.eval emergeBuilder a = Part.some (emergeTableFn a) := by
   have h := congrFun (Classical.choose_spec
     (Nat.Partrec.Code.exists_code.mp partrec_emergeTableFn)) a

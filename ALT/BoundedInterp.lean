@@ -157,19 +157,19 @@ def trailOnes : ℕ → ℕ
   | 0 => 0
   | n + 1 => if (n + 1) % 2 = 1 then trailOnes ((n + 1) / 2) + 1 else 0
 
-theorem trailOnes_even {n : ℕ} (h : n % 2 = 0) : trailOnes n = 0 := by
+private theorem trailOnes_even {n : ℕ} (h : n % 2 = 0) : trailOnes n = 0 := by
   cases n with
   | zero => simp [trailOnes]
   | succ m => rw [trailOnes, if_neg (by omega)]
 
-theorem trailOnes_odd {n : ℕ} (h : n % 2 = 1) : trailOnes n = trailOnes (n / 2) + 1 := by
+private theorem trailOnes_odd {n : ℕ} (h : n % 2 = 1) : trailOnes n = trailOnes (n / 2) + 1 := by
   cases n with
   | zero => omega
   | succ m => rw [trailOnes, if_pos h]
 
 /-- **The header reads back its own length.** A numeral whose bottom is `L` ones followed by a zero
 bit reports header length `L`, whatever sits above. -/
-theorem trailOnes_pack (L m : ℕ) : trailOnes ((2 ^ L - 1) + 2 ^ (L + 1) * m) = L := by
+private theorem trailOnes_pack (L m : ℕ) : trailOnes ((2 ^ L - 1) + 2 ^ (L + 1) * m) = L := by
   induction L with
   | zero =>
       have h : (2 ^ 0 - 1) + 2 ^ (0 + 1) * m = 2 * m := by norm_num
@@ -186,7 +186,7 @@ theorem trailOnes_pack (L m : ℕ) : trailOnes ((2 ^ L - 1) + 2 ^ (L + 1) * m) =
       rw [hval, trailOnes_odd (by omega), hdiv, ih]
 
 /-- Doubling commutes with remainder on an odd numeral. -/
-theorem two_mul_add_one_mod (a b : ℕ) (hb : 0 < b) :
+private theorem two_mul_add_one_mod (a b : ℕ) (hb : 0 < b) :
     (2 * a + 1) % (2 * b) = 2 * (a % b) + 1 := by
   have h1 : (2 * a) % (2 * b) = 2 * (a % b) := Nat.mul_mod_mul_left 2 a b
   have h2 : a % b < b := Nat.mod_lt _ hb
@@ -314,23 +314,23 @@ Stating the test as a round-trip makes `stkCons_head_tail` hold by definition, w
 denotation's recursion needs on numerals that were never built by `stkCons`. -/
 def stkIsCons (s : ℕ) : Bool := stkCons (stkHead s) (stkTail s) == s
 
-theorem stkBody_cons (f k : ℕ) :
+private theorem stkBody_cons (f k : ℕ) :
     stkBody (stkCons f k) =
       (2 ^ frameBits f - 1) + f * 2 ^ (frameBits f + 1) + k * 2 ^ (2 * frameBits f + 1) := by
   rw [stkBody, stkCons]
   omega
 
-@[simp] theorem stkLen_cons (f k : ℕ) : stkLen (stkCons f k) = frameBits f := by
+@[simp] private theorem stkLen_cons (f k : ℕ) : stkLen (stkCons f k) = frameBits f := by
   rw [stkLen, stkBody_cons, pack_eq, Nat.add_comm]
   exact trailOnes_pack _ _
 
-@[simp] theorem stkHead_cons (f k : ℕ) : stkHead (stkCons f k) = f := by
+@[simp] private theorem stkHead_cons (f k : ℕ) : stkHead (stkCons f k) = f := by
   have hlt : f < 2 ^ frameBits f := Nat.lt_size_self f
   rw [stkHead, stkLen_cons, stkBody_cons, pack_eq, Nat.mul_add_div (two_pow_pos _),
     Nat.div_eq_of_lt (hdr_lt _), Nat.add_zero, Nat.add_mul_mod_self_right,
     Nat.mod_eq_of_lt hlt]
 
-@[simp] theorem stkTail_cons (f k : ℕ) : stkTail (stkCons f k) = k := by
+@[simp] private theorem stkTail_cons (f k : ℕ) : stkTail (stkCons f k) = k := by
   have hlt : f < 2 ^ frameBits f := Nat.lt_size_self f
   rw [stkTail, stkLen_cons, stkBody_cons,
     show (2 ^ frameBits f - 1) + f * 2 ^ (frameBits f + 1) + k * 2 ^ (2 * frameBits f + 1)
@@ -338,22 +338,22 @@ theorem stkBody_cons (f k : ℕ) :
             + ((2 ^ frameBits f - 1) + f * 2 ^ (frameBits f + 1)) from by ring,
     Nat.mul_add_div (two_pow_pos _), Nat.div_eq_of_lt (low_lt hlt), Nat.add_zero]
 
-@[simp] theorem stkIsCons_cons (f k : ℕ) : stkIsCons (stkCons f k) = true := by
+@[simp] private theorem stkIsCons_cons (f k : ℕ) : stkIsCons (stkCons f k) = true := by
   simp [stkIsCons]
 
-@[simp] theorem stkIsCons_zero : stkIsCons 0 = false := by
+@[simp] private theorem stkIsCons_zero : stkIsCons 0 = false := by
   have h : stkCons (stkHead 0) (stkTail 0) ≠ 0 := by rw [stkCons]; omega
   simpa [stkIsCons] using h
 
 /-- Reassembling a cell from its head and tail is the identity on cells — by construction, since
 that round-trip is what `stkIsCons` tests. -/
-theorem stkCons_head_tail {s : ℕ} (h : stkIsCons s = true) :
+private theorem stkCons_head_tail {s : ℕ} (h : stkIsCons s = true) :
     stkCons (stkHead s) (stkTail s) = s := by simpa [stkIsCons] using h
 
 /-- **The termination fact.** A cell is strictly larger than its tail: the tail sits above the
 header and the frame, so it is shifted up by at least one place. This is what makes the stack's
 denotation well-founded on *every* numeral, well-formed or not. -/
-theorem stkTail_lt {s : ℕ} (h : stkIsCons s = true) : stkTail s < s := by
+private theorem stkTail_lt {s : ℕ} (h : stkIsCons s = true) : stkTail s < s := by
   have hs := stkCons_head_tail h
   have hle : stkTail s ≤ stkTail s * 2 ^ (2 * frameBits (stkHead s) + 1) :=
     Nat.le_mul_of_pos_right _ (two_pow_pos _)
@@ -367,7 +367,7 @@ of at most `F` bits occupies `O(d · F)` bits, linear in the depth.
 
 This is the property a nested-pairing layout could not have: there a cell is at least the square of
 its tail, so depth costs bits exponentially. -/
-theorem size_stkCons_le (f k : ℕ) :
+private theorem size_stkCons_le (f k : ℕ) :
     Nat.size (stkCons f k) ≤ 2 * Nat.size f + Nat.size k + 2 := by
   have hlt : f < 2 ^ frameBits f := Nat.lt_size_self f
   have hk : k < 2 ^ Nat.size k := Nat.lt_size_self k
@@ -397,9 +397,9 @@ def frTag (f : ℕ) : ℕ := f.unpair.1
 /-- A frame's payload. -/
 def frPay (f : ℕ) : ℕ := f.unpair.2
 
-@[simp] theorem frTag_frame (t p : ℕ) : frTag (frame t p) = t := by simp [frTag, frame]
+@[simp] private theorem frTag_frame (t p : ℕ) : frTag (frame t p) = t := by simp [frTag, frame]
 
-@[simp] theorem frPay_frame (t p : ℕ) : frPay (frame t p) = p := by simp [frPay, frame]
+@[simp] private theorem frPay_frame (t p : ℕ) : frPay (frame t p) = p := by simp [frPay, frame]
 
 /-- A configuration: a mode, the current object, and the stack. -/
 def config (mode cur stk : ℕ) : ℕ := Nat.pair mode (Nat.pair cur stk)
@@ -413,11 +413,14 @@ def cfCur (s : ℕ) : ℕ := s.unpair.2.unpair.1
 /-- The configuration's stack. -/
 def cfStk (s : ℕ) : ℕ := s.unpair.2.unpair.2
 
-@[simp] theorem cfMode_config (m c k : ℕ) : cfMode (config m c k) = m := by simp [cfMode, config]
+@[simp] private theorem cfMode_config (m c k : ℕ) :
+    cfMode (config m c k) = m := by simp [cfMode, config]
 
-@[simp] theorem cfCur_config (m c k : ℕ) : cfCur (config m c k) = c := by simp [cfCur, config]
+@[simp] private theorem cfCur_config (m c k : ℕ) :
+    cfCur (config m c k) = c := by simp [cfCur, config]
 
-@[simp] theorem cfStk_config (m c k : ℕ) : cfStk (config m c k) = k := by simp [cfStk, config]
+@[simp] private theorem cfStk_config (m c k : ℕ) :
+    cfStk (config m c k) = k := by simp [cfStk, config]
 
 /-- A descending configuration: evaluate the code numbered `c` at input `n`. -/
 def descend (c n k : ℕ) : ℕ := config 0 (Nat.pair c n) k
@@ -434,9 +437,9 @@ def isHalt (s : ℕ) : Bool := (cfMode s == 1) && (cfStk s == 0)
 /-- The answer of a halted configuration. -/
 def haltVal (s : ℕ) : ℕ := cfCur s
 
-@[simp] theorem isHalt_ret_zero (v : ℕ) : isHalt (ret v 0) = true := by simp [isHalt, ret]
+@[simp] private theorem isHalt_ret_zero (v : ℕ) : isHalt (ret v 0) = true := by simp [isHalt, ret]
 
-@[simp] theorem haltVal_ret (v k : ℕ) : haltVal (ret v k) = v := by simp [haltVal, ret]
+@[simp] private theorem haltVal_ret (v k : ℕ) : haltVal (ret v k) = v := by simp [haltVal, ret]
 
 /-! ## The step function -/
 
@@ -497,10 +500,10 @@ def stepUFn (s : ℕ) : ℕ :=
 
 theorem stepUFn_halt {s : ℕ} (h : isHalt s = true) : stepUFn s = s := by simp [stepUFn, h]
 
-theorem stepUFn_descend (c n k : ℕ) : stepUFn (descend c n k) = stepDescend c n k := by
+private theorem stepUFn_descend (c n k : ℕ) : stepUFn (descend c n k) = stepDescend c n k := by
   simp [stepUFn, isHalt, descend, config, cfMode, cfCur, cfStk]
 
-theorem stepUFn_ret_cons (v f k : ℕ) :
+private theorem stepUFn_ret_cons (v f k : ℕ) :
     stepUFn (ret v (stkCons f k)) = stepReturn v f k := by
   have h : stkCons f k ≠ 0 := by rw [stkCons]; omega
   simp [stepUFn, isHalt, ret, config, cfMode, cfCur, cfStk, h]
@@ -518,15 +521,15 @@ recursion reaches from accumulator `v` at counter `y` with `r` iterations left: 
 The machine runs this loop under a *single* stack cell, so bounded recursion costs one frame however
 large its counter — the account `TimeCost.spaceCost` already gives it, where the counter appears in
 a `max` and not in a sum. -/
-def precLoop (cgn a : ℕ) : ℕ → ℕ → ℕ → Part ℕ
+private def precLoop (cgn a : ℕ) : ℕ → ℕ → ℕ → Part ℕ
   | 0, _y, v => Part.some v
   | r + 1, y, v =>
       (eval (Denumerable.ofNat Code cgn) (Nat.pair a (Nat.pair y v))).bind fun w =>
         precLoop cgn a r (y + 1) w
 
-@[simp] theorem precLoop_zero (cgn a y v : ℕ) : precLoop cgn a 0 y v = Part.some v := rfl
+@[simp] private theorem precLoop_zero (cgn a y v : ℕ) : precLoop cgn a 0 y v = Part.some v := rfl
 
-theorem precLoop_succ (cgn a r y v : ℕ) :
+private theorem precLoop_succ (cgn a r y v : ℕ) :
     precLoop cgn a (r + 1) y v =
       (eval (Denumerable.ofNat Code cgn) (Nat.pair a (Nat.pair y v))).bind fun w =>
         precLoop cgn a r (y + 1) w := rfl
@@ -535,7 +538,7 @@ theorem precLoop_succ (cgn a r y v : ℕ) :
 bounded recursion has at counter `y` gives the value it has at counter `y + r`. At `y = 0` this is
 the whole of `eval (prec cf cg)`, which is what lets the machine start from the base case and climb
 rather than unroll the counter onto the stack. -/
-theorem precLoop_eval (cf cg : Code) (a : ℕ) : ∀ (r y : ℕ),
+private theorem precLoop_eval (cf cg : Code) (a : ℕ) : ∀ (r y : ℕ),
     (eval (Code.prec cf cg) (Nat.pair a y)).bind
         (fun v => precLoop (Encodable.encode cg) a r y v)
       = eval (Code.prec cf cg) (Nat.pair a (y + r)) := by
@@ -574,7 +577,7 @@ in the way its tag says, and a numeral that is neither empty nor a cell returns 
 
 The recursion is on the numeral itself and terminates by `stkTail_lt` — the cell flag guarantees a
 strict decrease, so no well-formedness hypothesis is needed. -/
-def stackDenote (s : ℕ) (v : ℕ) : Part ℕ :=
+private def stackDenote (s : ℕ) (v : ℕ) : Part ℕ :=
   if _h : stkIsCons s = true then
     match frTag (stkHead s) with
     | 0 => (eval (Denumerable.ofNat Code (frPay (stkHead s)).unpair.1)
@@ -596,11 +599,11 @@ def stackDenote (s : ℕ) (v : ℕ) : Part ℕ :=
 termination_by s
 decreasing_by all_goals exact stkTail_lt _h
 
-@[simp] theorem stackDenote_zero (v : ℕ) : stackDenote 0 v = Part.some v := by
+@[simp] private theorem stackDenote_zero (v : ℕ) : stackDenote 0 v = Part.some v := by
   rw [stackDenote]; simp
 
 /-- The stack denotation unfolded at a cell — the form every step-case proof uses. -/
-theorem stackDenote_cons (f k v : ℕ) :
+private theorem stackDenote_cons (f k v : ℕ) :
     stackDenote (stkCons f k) v =
       (match frTag f with
         | 0 => (eval (Denumerable.ofNat Code (frPay f).unpair.1) (frPay f).unpair.2).bind fun w =>
@@ -619,23 +622,23 @@ theorem stackDenote_cons (f k v : ℕ) :
   simp only [stkIsCons_cons, stkHead_cons, stkTail_cons, dif_pos]
 
 /-- **The denotation of a configuration**: what the whole remaining computation will produce. -/
-def denote (s : ℕ) : Part ℕ :=
+private def denote (s : ℕ) : Part ℕ :=
   if cfMode s = 0 then
     (eval (Denumerable.ofNat Code (cfCur s).unpair.1) (cfCur s).unpair.2).bind
       (stackDenote (cfStk s))
   else stackDenote (cfStk s) (cfCur s)
 
-@[simp] theorem denote_descend (c n k : ℕ) :
+@[simp] private theorem denote_descend (c n k : ℕ) :
     denote (descend c n k) = (eval (Denumerable.ofNat Code c) n).bind (stackDenote k) := by
   simp [denote, descend]
 
-@[simp] theorem denote_ret (v k : ℕ) : denote (ret v k) = stackDenote k v := by
+@[simp] private theorem denote_ret (v k : ℕ) : denote (ret v k) = stackDenote k v := by
   simp [denote, ret]
 
 /-! ## Unbounded search, as a one-probe recurrence -/
 
 /-- A search probe reports `true` exactly when the probed code returns `0`. -/
-theorem probe_true {o : Part ℕ} : (true ∈ (fun x => decide (x = 0)) <$> o) ↔ 0 ∈ o := by
+private theorem probe_true {o : Part ℕ} : (true ∈ (fun x => decide (x = 0)) <$> o) ↔ 0 ∈ o := by
   rw [Part.map_eq_map, Part.mem_map_iff]
   constructor
   · rintro ⟨z, hz, hz0⟩
@@ -645,7 +648,7 @@ theorem probe_true {o : Part ℕ} : (true ∈ (fun x => decide (x = 0)) <$> o) �
     exact ⟨0, h, by simp⟩
 
 /-- A search probe reports `false` exactly when the probed code returns something non-zero. -/
-theorem probe_false {o : Part ℕ} :
+private theorem probe_false {o : Part ℕ} :
     (false ∈ (fun x => decide (x = 0)) <$> o) ↔ ∃ z ∈ o, z ≠ 0 := by
   rw [Part.map_eq_map, Part.mem_map_iff]
   constructor
@@ -723,7 +726,7 @@ theorem eval_rfind'_unfold (cf : Code) (a m : ℕ) :
 
 /-- The search frame's clause is exactly the `rfind'` recurrence, bound through the rest of the
 stack. Used both when unbounded search is entered and when it goes round again. -/
-theorem rfind_frame_bind (cfn a m k : ℕ) :
+private theorem rfind_frame_bind (cfn a m k : ℕ) :
     (eval (Denumerable.ofNat Code cfn) (Nat.pair a m)).bind
         (stackDenote (stkCons (frame 4 (Nat.pair cfn (Nat.pair a m))) k))
       = (eval (Code.rfind' (Denumerable.ofNat Code cfn)) (Nat.pair a m)).bind
@@ -736,7 +739,7 @@ theorem rfind_frame_bind (cfn a m k : ℕ) :
   by_cases h : v = 0 <;> simp [h]
 
 /-- The pair frame's clause reassembles the applicative product of the two components. -/
-theorem pair_frame_bind (cfn cgn n k : ℕ) :
+private theorem pair_frame_bind (cfn cgn n k : ℕ) :
     (eval (Denumerable.ofNat Code cfn) n).bind
         (stackDenote (stkCons (frame 0 (Nat.pair cgn n)) k))
       = (Nat.pair <$> eval (Denumerable.ofNat Code cfn) n <*>
@@ -762,7 +765,7 @@ theorem pair_frame_bind (cfn cgn n k : ℕ) :
 
 /-- A descending step keeps the denotation: the pending work the new configuration records is
 exactly the semantics of the constructor it decoded. One case per constructor. -/
-theorem denote_stepDescend (c n k : ℕ) :
+private theorem denote_stepDescend (c n k : ℕ) :
     denote (stepDescend c n k) = (eval (Denumerable.ofNat Code c) n).bind (stackDenote k) := by
   cases hc : Denumerable.ofNat Code c with
   | zero =>
@@ -817,7 +820,7 @@ theorem denote_stepDescend (c n k : ℕ) :
       simp only [Denumerable.ofNat_encode]
 
 /-- A returning step keeps the denotation: each frame's action is its clause of `stackDenote`. -/
-theorem denote_stepReturn (v f k : ℕ) :
+private theorem denote_stepReturn (v f k : ℕ) :
     denote (stepReturn v f k) = stackDenote (stkCons f k) v := by
   rw [stackDenote_cons]
   rcases ht : frTag f with _ | _ | _ | _ | _ | t
@@ -851,7 +854,7 @@ theorem denote_stepReturn (v f k : ℕ) :
 
 /-- **The invariance.** One step of the machine never changes what the configuration denotes —
 including at halted and at stuck configurations, which the step function fixes. -/
-theorem step_denote (s : ℕ) : denote (stepUFn s) = denote s := by
+private theorem step_denote (s : ℕ) : denote (stepUFn s) = denote s := by
   by_cases hh : isHalt s = true
   · rw [stepUFn_halt hh]
   · by_cases hm : cfMode s = 0
@@ -869,7 +872,7 @@ theorem step_denote (s : ℕ) : denote (stepUFn s) = denote s := by
 
 /-- Any number of steps leaves the denotation alone. The induction peels a step off the **front**
 (`Function.iterate_succ_apply`), with the configuration generalized. -/
-theorem denote_iterate : ∀ (τ : ℕ) (s : ℕ), denote (stepUFn^[τ] s) = denote s := by
+private theorem denote_iterate : ∀ (τ : ℕ) (s : ℕ), denote (stepUFn^[τ] s) = denote s := by
   intro τ
   induction τ with
   | zero => intro s; rfl
@@ -923,9 +926,9 @@ def IsStack (s : ℕ) : Prop :=
 termination_by s
 decreasing_by exact stkTail_lt _h
 
-@[simp] theorem isStack_zero : IsStack 0 := by rw [IsStack]; simp
+@[simp] private theorem isStack_zero : IsStack 0 := by rw [IsStack]; simp
 
-theorem isStack_cons {f k : ℕ} (h : IsStack k) : IsStack (stkCons f k) := by
+private theorem isStack_cons {f k : ℕ} (h : IsStack k) : IsStack (stkCons f k) := by
   rw [IsStack]
   simpa using h
 
@@ -941,10 +944,10 @@ def stkMaxFrame (s : ℕ) : ℕ :=
 termination_by s
 decreasing_by exact stkTail_lt _h
 
-theorem stkDepth_cons (f k : ℕ) : stkDepth (stkCons f k) = stkDepth k + 1 := by
+private theorem stkDepth_cons (f k : ℕ) : stkDepth (stkCons f k) = stkDepth k + 1 := by
   rw [stkDepth]; simp
 
-theorem stkMaxFrame_cons (f k : ℕ) :
+private theorem stkMaxFrame_cons (f k : ℕ) :
     stkMaxFrame (stkCons f k) = max (Nat.size f) (stkMaxFrame k) := by
   rw [stkMaxFrame]; simp
 
@@ -1001,37 +1004,43 @@ def codeDepth : Code → ℕ
   | Code.prec cf cg => 1 + max (codeDepth cf) (codeDepth cg)
   | Code.rfind' cf => 1 + codeDepth cf
 
-theorem codeDepth_pos (c : Code) : 0 < codeDepth c := by
+private theorem codeDepth_pos (c : Code) : 0 < codeDepth c := by
   cases c <;> simp [codeDepth]
 
-theorem codeDepth_pair_left (cf cg : Code) : codeDepth cf < codeDepth (Code.pair cf cg) := by
+private theorem codeDepth_pair_left (cf cg : Code) :
+    codeDepth cf < codeDepth (Code.pair cf cg) := by
   simp only [codeDepth]; omega
 
-theorem codeDepth_pair_right (cf cg : Code) : codeDepth cg < codeDepth (Code.pair cf cg) := by
+private theorem codeDepth_pair_right (cf cg : Code) :
+    codeDepth cg < codeDepth (Code.pair cf cg) := by
   simp only [codeDepth]; omega
 
-theorem codeDepth_comp_left (cf cg : Code) : codeDepth cf < codeDepth (Code.comp cf cg) := by
+private theorem codeDepth_comp_left (cf cg : Code) :
+    codeDepth cf < codeDepth (Code.comp cf cg) := by
   simp only [codeDepth]; omega
 
-theorem codeDepth_comp_right (cf cg : Code) : codeDepth cg < codeDepth (Code.comp cf cg) := by
+private theorem codeDepth_comp_right (cf cg : Code) :
+    codeDepth cg < codeDepth (Code.comp cf cg) := by
   simp only [codeDepth]; omega
 
-theorem codeDepth_prec_left (cf cg : Code) : codeDepth cf < codeDepth (Code.prec cf cg) := by
+private theorem codeDepth_prec_left (cf cg : Code) :
+    codeDepth cf < codeDepth (Code.prec cf cg) := by
   simp only [codeDepth]; omega
 
-theorem codeDepth_prec_right (cf cg : Code) : codeDepth cg < codeDepth (Code.prec cf cg) := by
+private theorem codeDepth_prec_right (cf cg : Code) :
+    codeDepth cg < codeDepth (Code.prec cf cg) := by
   simp only [codeDepth]; omega
 
-theorem codeDepth_rfind' (cf : Code) : codeDepth cf < codeDepth (Code.rfind' cf) := by
+private theorem codeDepth_rfind' (cf : Code) : codeDepth cf < codeDepth (Code.rfind' cf) := by
   simp only [codeDepth]; omega
 
 /-! ## Well-formedness is preserved along a run -/
 
-@[simp] theorem cfStk_descend (c n k : ℕ) : cfStk (descend c n k) = k := by simp [descend]
+@[simp] private theorem cfStk_descend (c n k : ℕ) : cfStk (descend c n k) = k := by simp [descend]
 
-@[simp] theorem cfStk_ret (v k : ℕ) : cfStk (ret v k) = k := by simp [ret]
+@[simp] private theorem cfStk_ret (v k : ℕ) : cfStk (ret v k) = k := by simp [ret]
 
-theorem isStack_stepDescend {c n k : ℕ} (h : IsStack k) :
+private theorem isStack_stepDescend {c n k : ℕ} (h : IsStack k) :
     IsStack (cfStk (stepDescend c n k)) := by
   cases hc : Denumerable.ofNat Code c with
   | zero => simpa [stepDescend, hc] using h
@@ -1043,7 +1052,7 @@ theorem isStack_stepDescend {c n k : ℕ} (h : IsStack k) :
   | prec cf cg => simpa [stepDescend, hc] using isStack_cons (f := _) h
   | rfind' cf => simpa [stepDescend, hc] using isStack_cons (f := _) h
 
-theorem isStack_stepReturn {v f k : ℕ} (h : IsStack k) :
+private theorem isStack_stepReturn {v f k : ℕ} (h : IsStack k) :
     IsStack (cfStk (stepReturn v f k)) := by
   rcases ht : frTag f with _ | _ | _ | _ | _ | t
   · simpa [stepReturn, ht] using isStack_cons (f := _) h
@@ -1064,7 +1073,7 @@ theorem isStack_stepReturn {v f k : ℕ} (h : IsStack k) :
 
 /-- **One step keeps the stack well formed.** Each case either leaves the stack alone, pushes a
 cell onto it, or pops to its tail — and a cell's tail is well formed whenever the cell is. -/
-theorem isStack_step {s : ℕ} (h : IsStack (cfStk s)) : IsStack (cfStk (stepUFn s)) := by
+private theorem isStack_step {s : ℕ} (h : IsStack (cfStk s)) : IsStack (cfStk (stepUFn s)) := by
   by_cases hh : isHalt s = true
   · rwa [stepUFn_halt hh]
   · by_cases hm : cfMode s = 0
@@ -1121,7 +1130,7 @@ theorem stkDepth_prec_descend (cf cg : Code) (a m k : ℕ) :
 /-- **The loop never accumulates.** A turn of the loop replaces its cell and leaving the loop pops
 it, so a configuration returning into a loop frame is never more than one cell above the frame's
 tail — no matter how many turns remain. -/
-theorem stkDepth_precFrame_return {v f k : ℕ} (h : frTag f = 3) :
+private theorem stkDepth_precFrame_return {v f k : ℕ} (h : frTag f = 3) :
     stkDepth (cfStk (stepReturn v f k)) ≤ stkDepth k + 1 := by
   obtain ⟨cgn, aa, yy, rr, hp⟩ :
       ∃ cgn aa yy rr, frPay f = Nat.pair cgn (Nat.pair aa (Nat.pair yy rr)) :=
@@ -1132,7 +1141,7 @@ theorem stkDepth_precFrame_return {v f k : ℕ} (h : frTag f = 3) :
   | zero => simp [stepReturn, h, hp]
   | succ r => simp [stepReturn, h, hp, stkDepth_cons]
 
-@[simp] theorem stkDepth_zero : stkDepth 0 = 0 := by rw [stkDepth]; simp
+@[simp] private theorem stkDepth_zero : stkDepth 0 = 0 := by rw [stkDepth]; simp
 
 /-! ## The candidate run measure, and why it does not settle the depth bound
 
@@ -1185,7 +1194,7 @@ discharges exactly the popped cell's obligation into the new pending depth — t
 stored becomes the code that is pending, and its charge was already paid for. -/
 
 /-- The depth of the code a frame will descend into when it is popped. -/
-def framePend (f : ℕ) : ℕ :=
+private def framePend (f : ℕ) : ℕ :=
   match frTag f with
   | 0 => codeDepth (Denumerable.ofNat Code (frPay f).unpair.1)
   | 1 => 0
@@ -1195,54 +1204,54 @@ def framePend (f : ℕ) : ℕ :=
   | _ => 0
 
 /-- The depth of the code a configuration is about to enter, if it is descending. -/
-def pendingDepth (s : ℕ) : ℕ :=
+private def pendingDepth (s : ℕ) : ℕ :=
   if cfMode s = 0 then codeDepth (Denumerable.ofNat Code (cfCur s).unpair.1) else 0
 
-@[simp] theorem pendingDepth_descend (c n k : ℕ) :
+@[simp] private theorem pendingDepth_descend (c n k : ℕ) :
     pendingDepth (descend c n k) = codeDepth (Denumerable.ofNat Code c) := by
   simp [pendingDepth, descend]
 
-@[simp] theorem pendingDepth_ret (v k : ℕ) : pendingDepth (ret v k) = 0 := by
+@[simp] private theorem pendingDepth_ret (v k : ℕ) : pendingDepth (ret v k) = 0 := by
   simp [pendingDepth, ret]
 
 /-- **The per-frame obligation.** Every cell is charged for the code it stores together with the
 cells beneath it. -/
-def StackOK (k D : ℕ) : Prop :=
+private def StackOK (k D : ℕ) : Prop :=
   if _h : stkIsCons k = true then
     framePend (stkHead k) + stkDepth (stkTail k) + 1 ≤ D ∧ StackOK (stkTail k) D
   else True
 termination_by k
 decreasing_by exact stkTail_lt _h
 
-@[simp] theorem stackOK_zero (D : ℕ) : StackOK 0 D := by rw [StackOK]; simp
+@[simp] private theorem stackOK_zero (D : ℕ) : StackOK 0 D := by rw [StackOK]; simp
 
-@[simp] theorem stackOK_cons (f k D : ℕ) :
+@[simp] private theorem stackOK_cons (f k D : ℕ) :
     StackOK (stkCons f k) D ↔ (framePend f + stkDepth k + 1 ≤ D ∧ StackOK k D) := by
   rw [StackOK]; simp
 
 /-- A configuration meets its budget: what it is about to do fits above its stack, and every cell
 of that stack meets its own obligation. -/
-def ConfigOK (s D : ℕ) : Prop :=
+private def ConfigOK (s D : ℕ) : Prop :=
   pendingDepth s + stkDepth (cfStk s) ≤ D ∧ StackOK (cfStk s) D
 
-theorem framePend_tag0 {f : ℕ} (h : frTag f = 0) :
+private theorem framePend_tag0 {f : ℕ} (h : frTag f = 0) :
     framePend f = codeDepth (Denumerable.ofNat Code (frPay f).unpair.1) := by simp [framePend, h]
 
-theorem framePend_tag1 {f : ℕ} (h : frTag f = 1) : framePend f = 0 := by simp [framePend, h]
+private theorem framePend_tag1 {f : ℕ} (h : frTag f = 1) : framePend f = 0 := by simp [framePend, h]
 
-theorem framePend_tag2 {f : ℕ} (h : frTag f = 2) :
+private theorem framePend_tag2 {f : ℕ} (h : frTag f = 2) :
     framePend f = codeDepth (Denumerable.ofNat Code (frPay f)) := by simp [framePend, h]
 
-theorem framePend_tag3 {f : ℕ} (h : frTag f = 3) :
+private theorem framePend_tag3 {f : ℕ} (h : frTag f = 3) :
     framePend f = codeDepth (Denumerable.ofNat Code (frPay f).unpair.1) := by simp [framePend, h]
 
-theorem framePend_tag4 {f : ℕ} (h : frTag f = 4) :
+private theorem framePend_tag4 {f : ℕ} (h : frTag f = 4) :
     framePend f = codeDepth (Denumerable.ofNat Code (frPay f).unpair.1) := by simp [framePend, h]
 
-theorem framePend_other {f t : ℕ} (h : frTag f = t + 5) : framePend f = 0 := by
+private theorem framePend_other {f t : ℕ} (h : frTag f = t + 5) : framePend f = 0 := by
   simp [framePend, h]
 
-theorem configOK_stepDescend {c n k D : ℕ}
+private theorem configOK_stepDescend {c n k D : ℕ}
     (hd : codeDepth (Denumerable.ofNat Code c) + stkDepth k ≤ D) (hs : StackOK k D) :
     ConfigOK (stepDescend c n k) D := by
   cases hc : Denumerable.ofNat Code c with
@@ -1291,7 +1300,7 @@ theorem configOK_stepDescend {c n k D : ℕ}
       · omega
       · exact ⟨by omega, hs⟩
 
-theorem configOK_stepReturn {v f k D : ℕ}
+private theorem configOK_stepReturn {v f k D : ℕ}
     (hf : framePend f + stkDepth k + 1 ≤ D) (hs : StackOK k D) :
     ConfigOK (stepReturn v f k) D := by
   rcases ht : frTag f with _ | _ | _ | _ | _ | tg
@@ -1353,7 +1362,7 @@ theorem configOK_stepReturn {v f k D : ℕ}
 /-- **One step keeps a configuration within its budget.** All thirteen cases: a descent spends one
 level of the code it decoded, a return spends the obligation of the cell it popped, and a halted or
 stuck configuration does not move. -/
-theorem configOK_step {s D : ℕ} (h : ConfigOK s D) : ConfigOK (stepUFn s) D := by
+private theorem configOK_step {s D : ℕ} (h : ConfigOK s D) : ConfigOK (stepUFn s) D := by
   by_cases hh : isHalt s = true
   · rwa [stepUFn_halt hh]
   · by_cases hm : cfMode s = 0
@@ -1373,7 +1382,7 @@ theorem configOK_step {s D : ℕ} (h : ConfigOK s D) : ConfigOK (stepUFn s) D :=
         rwa [hstep]
 
 /-- The initial configuration meets the budget its own code sets. -/
-theorem configOK_init (p x : ℕ) :
+private theorem configOK_init (p x : ℕ) :
     ConfigOK (initConfig p x) (codeDepth (Denumerable.ofNat Code p)) :=
   ⟨by simp [initConfig], by simp [initConfig]⟩
 
@@ -1407,65 +1416,65 @@ The transition lemmas below are the machine's rules in the form a run-compositio
 one per descending constructor and one per frame, with the frame payloads already destructured. -/
 
 /-- The machine gets from `s` to `t` in some number of steps. -/
-def Reaches (s t : ℕ) : Prop := ∃ τ : ℕ, stepUFn^[τ] s = t
+private def Reaches (s t : ℕ) : Prop := ∃ τ : ℕ, stepUFn^[τ] s = t
 
-theorem Reaches.refl (s : ℕ) : Reaches s s := ⟨0, rfl⟩
+private theorem Reaches.refl (s : ℕ) : Reaches s s := ⟨0, rfl⟩
 
-theorem Reaches.trans {s t u : ℕ} (h₁ : Reaches s t) (h₂ : Reaches t u) : Reaches s u := by
+private theorem Reaches.trans {s t u : ℕ} (h₁ : Reaches s t) (h₂ : Reaches t u) : Reaches s u := by
   obtain ⟨τ₁, h₁⟩ := h₁
   obtain ⟨τ₂, h₂⟩ := h₂
   exact ⟨τ₂ + τ₁, by rw [Function.iterate_add_apply, h₁, h₂]⟩
 
 /-- One transition, then a run. -/
-theorem Reaches.head {s t u : ℕ} (h₁ : stepUFn s = t) (h₂ : Reaches t u) : Reaches s u :=
+private theorem Reaches.head {s t u : ℕ} (h₁ : stepUFn s = t) (h₂ : Reaches t u) : Reaches s u :=
   Reaches.trans ⟨1, by simpa using h₁⟩ h₂
 
 /-- A halted configuration reports its value. -/
-theorem isHalt_of_reaches_ret {s v : ℕ} (h : Reaches s (ret v 0)) :
+private theorem isHalt_of_reaches_ret {s v : ℕ} (h : Reaches s (ret v 0)) :
     ∃ τ, isHalt (stepUFn^[τ] s) = true ∧ haltVal (stepUFn^[τ] s) = v := by
   obtain ⟨τ, hτ⟩ := h
   exact ⟨τ, by rw [hτ]; simp, by rw [hτ]; simp⟩
 
 /-! ### The descending transitions -/
 
-theorem step_zero (n stk : ℕ) :
+private theorem step_zero (n stk : ℕ) :
     stepUFn (descend (Encodable.encode Code.zero) n stk) = ret 0 stk := by
   rw [stepUFn_descend]; simp [stepDescend]
 
-theorem step_succ (n stk : ℕ) :
+private theorem step_succ (n stk : ℕ) :
     stepUFn (descend (Encodable.encode Code.succ) n stk) = ret (n + 1) stk := by
   rw [stepUFn_descend]; simp [stepDescend]
 
-theorem step_left (n stk : ℕ) :
+private theorem step_left (n stk : ℕ) :
     stepUFn (descend (Encodable.encode Code.left) n stk) = ret n.unpair.1 stk := by
   rw [stepUFn_descend]; simp [stepDescend]
 
-theorem step_right (n stk : ℕ) :
+private theorem step_right (n stk : ℕ) :
     stepUFn (descend (Encodable.encode Code.right) n stk) = ret n.unpair.2 stk := by
   rw [stepUFn_descend]; simp [stepDescend]
 
-theorem step_pair (cf cg n stk : ℕ) :
+private theorem step_pair (cf cg n stk : ℕ) :
     stepUFn (descend (Encodable.encode (Code.pair (Denumerable.ofNat Code cf)
         (Denumerable.ofNat Code cg))) n stk)
       = descend cf n (stkCons (frame 0 (Nat.pair cg n)) stk) := by
   rw [stepUFn_descend]
   simp [stepDescend, Denumerable.encode_ofNat]
 
-theorem step_comp (cf cg n stk : ℕ) :
+private theorem step_comp (cf cg n stk : ℕ) :
     stepUFn (descend (Encodable.encode (Code.comp (Denumerable.ofNat Code cf)
         (Denumerable.ofNat Code cg))) n stk)
       = descend cg n (stkCons (frame 2 cf) stk) := by
   rw [stepUFn_descend]
   simp [stepDescend, Denumerable.encode_ofNat]
 
-theorem step_prec (cf cg a m stk : ℕ) :
+private theorem step_prec (cf cg a m stk : ℕ) :
     stepUFn (descend (Encodable.encode (Code.prec (Denumerable.ofNat Code cf)
         (Denumerable.ofNat Code cg))) (Nat.pair a m) stk)
       = descend cf a (stkCons (frame 3 (Nat.pair cg (Nat.pair a (Nat.pair 0 m)))) stk) := by
   rw [stepUFn_descend]
   simp [stepDescend, Denumerable.encode_ofNat]
 
-theorem step_rfind (cf a m stk : ℕ) :
+private theorem step_rfind (cf a m stk : ℕ) :
     stepUFn (descend (Encodable.encode (Code.rfind' (Denumerable.ofNat Code cf)))
         (Nat.pair a m) stk)
       = descend cf (Nat.pair a m)
@@ -1475,35 +1484,35 @@ theorem step_rfind (cf a m stk : ℕ) :
 
 /-! ### The returning transitions -/
 
-theorem step_ret_pairR (v cg n stk : ℕ) :
+private theorem step_ret_pairR (v cg n stk : ℕ) :
     stepUFn (ret v (stkCons (frame 0 (Nat.pair cg n)) stk))
       = descend cg n (stkCons (frame 1 v) stk) := by
   rw [stepUFn_ret_cons]; simp [stepReturn]
 
-theorem step_ret_pairL (v w stk : ℕ) :
+private theorem step_ret_pairL (v w stk : ℕ) :
     stepUFn (ret w (stkCons (frame 1 v) stk)) = ret (Nat.pair v w) stk := by
   rw [stepUFn_ret_cons]; simp [stepReturn]
 
-theorem step_ret_comp (v cf stk : ℕ) :
+private theorem step_ret_comp (v cf stk : ℕ) :
     stepUFn (ret v (stkCons (frame 2 cf) stk)) = descend cf v stk := by
   rw [stepUFn_ret_cons]; simp [stepReturn]
 
-theorem step_ret_loop_done (v cg a y stk : ℕ) :
+private theorem step_ret_loop_done (v cg a y stk : ℕ) :
     stepUFn (ret v (stkCons (frame 3 (Nat.pair cg (Nat.pair a (Nat.pair y 0)))) stk))
       = ret v stk := by
   rw [stepUFn_ret_cons]; simp [stepReturn]
 
-theorem step_ret_loop_turn (v cg a y r stk : ℕ) :
+private theorem step_ret_loop_turn (v cg a y r stk : ℕ) :
     stepUFn (ret v (stkCons (frame 3 (Nat.pair cg (Nat.pair a (Nat.pair y (r + 1))))) stk))
       = descend cg (Nat.pair a (Nat.pair y v))
           (stkCons (frame 3 (Nat.pair cg (Nat.pair a (Nat.pair (y + 1) r)))) stk) := by
   rw [stepUFn_ret_cons]; simp [stepReturn]
 
-theorem step_ret_search_found (cf a m stk : ℕ) :
+private theorem step_ret_search_found (cf a m stk : ℕ) :
     stepUFn (ret 0 (stkCons (frame 4 (Nat.pair cf (Nat.pair a m))) stk)) = ret m stk := by
   rw [stepUFn_ret_cons]; simp [stepReturn]
 
-theorem step_ret_search_again {v : ℕ} (hv : v ≠ 0) (cf a m stk : ℕ) :
+private theorem step_ret_search_again {v : ℕ} (hv : v ≠ 0) (cf a m stk : ℕ) :
     stepUFn (ret v (stkCons (frame 4 (Nat.pair cf (Nat.pair a m))) stk))
       = descend cf (Nat.pair a (m + 1))
           (stkCons (frame 4 (Nat.pair cf (Nat.pair a (m + 1)))) stk) := by
@@ -1511,38 +1520,38 @@ theorem step_ret_search_again {v : ℕ} (hv : v ≠ 0) (cf a m stk : ℕ) :
 
 /-! ## Transition rules, stated at codes -/
 
-theorem step_pair' (cf cg : Code) (n stk : ℕ) :
+private theorem step_pair' (cf cg : Code) (n stk : ℕ) :
     stepUFn (descend (Encodable.encode (Code.pair cf cg)) n stk)
       = descend (Encodable.encode cf) n
           (stkCons (frame 0 (Nat.pair (Encodable.encode cg) n)) stk) := by
   rw [stepUFn_descend]; simp [stepDescend]
 
-theorem step_comp' (cf cg : Code) (n stk : ℕ) :
+private theorem step_comp' (cf cg : Code) (n stk : ℕ) :
     stepUFn (descend (Encodable.encode (Code.comp cf cg)) n stk)
       = descend (Encodable.encode cg) n (stkCons (frame 2 (Encodable.encode cf)) stk) := by
   rw [stepUFn_descend]; simp [stepDescend]
 
-theorem step_prec' (cf cg : Code) (a m stk : ℕ) :
+private theorem step_prec' (cf cg : Code) (a m stk : ℕ) :
     stepUFn (descend (Encodable.encode (Code.prec cf cg)) (Nat.pair a m) stk)
       = descend (Encodable.encode cf) a
           (stkCons (frame 3 (Nat.pair (Encodable.encode cg)
             (Nat.pair a (Nat.pair 0 m)))) stk) := by
   rw [stepUFn_descend]; simp [stepDescend]
 
-theorem step_rfind' (cf : Code) (a m stk : ℕ) :
+private theorem step_rfind' (cf : Code) (a m stk : ℕ) :
     stepUFn (descend (Encodable.encode (Code.rfind' cf)) (Nat.pair a m) stk)
       = descend (Encodable.encode cf) (Nat.pair a m)
           (stkCons (frame 4 (Nat.pair (Encodable.encode cf) (Nat.pair a m))) stk) := by
   rw [stepUFn_descend]; simp [stepDescend]
 
 /-- A descending configuration is never a returning one. -/
-theorem descend_ne_ret (c n k v k' : ℕ) : descend c n k ≠ ret v k' := by
+private theorem descend_ne_ret (c n k v k' : ℕ) : descend c n k ≠ ret v k' := by
   intro h
   have : cfMode (descend c n k) = cfMode (ret v k') := by rw [h]
   simp [descend, ret] at this
 
 /-- Peel the first transition off a run that must take at least one. -/
-theorem Reaches.tail {s t u : ℕ} (hst : stepUFn s = t) (hne : s ≠ u) (h : Reaches s u) :
+private theorem Reaches.tail {s t u : ℕ} (hst : stepUFn s = t) (hne : s ≠ u) (h : Reaches s u) :
     Reaches t u := by
   obtain ⟨τ, hτ⟩ := h
   cases τ with
@@ -1561,7 +1570,7 @@ set_option linter.flexible false in
 /-- **Downward closure.** If bounded recursion is defined at counter `j + 1`, it is defined at `j`:
 the clause at `j + 1` evaluates it, one level of fuel down, and fuel monotonicity lifts the witness
 back up. -/
-theorem evaln_prec_defined_below {k : ℕ} {cf cg : Code} {a j w : ℕ}
+private theorem evaln_prec_defined_below {k : ℕ} {cf cg : Code} {a j w : ℕ}
     (hw : w ∈ evaln (k + 1) (Code.prec cf cg) (Nat.pair a (j + 1))) :
     ∃ v, v ∈ evaln (k + 1) (Code.prec cf cg) (Nat.pair a j) := by
   simp [evaln, Option.bind_eq_some_iff] at hw
@@ -1574,7 +1583,7 @@ then `w` is what the step code produces from `v`. This is what lets the climb ta
 
 Proof: the clause at `y + 1` exhibits some `i` at counter `y` one level of fuel down; monotonicity
 puts `i` at this fuel, and a partial function has at most one value, so `i = v`. -/
-theorem evaln_prec_stepUp {k : ℕ} {cf cg : Code} {a y v w : ℕ}
+private theorem evaln_prec_stepUp {k : ℕ} {cf cg : Code} {a y v w : ℕ}
     (hv : v ∈ evaln (k + 1) (Code.prec cf cg) (Nat.pair a y))
     (hw : w ∈ evaln (k + 1) (Code.prec cf cg) (Nat.pair a (y + 1))) :
     w ∈ evaln (k + 1) cg (Nat.pair a (Nat.pair y v)) := by
@@ -1588,13 +1597,13 @@ theorem evaln_prec_stepUp {k : ℕ} {cf cg : Code} {a y v w : ℕ}
 
 set_option linter.flexible false in
 /-- Bounded recursion at counter zero is the base code. -/
-theorem evaln_prec_base {k : ℕ} {cf cg : Code} {a v : ℕ}
+private theorem evaln_prec_base {k : ℕ} {cf cg : Code} {a v : ℕ}
     (h : v ∈ evaln (k + 1) (Code.prec cf cg) (Nat.pair a 0)) : v ∈ evaln (k + 1) cf a := by
   simp [evaln, Option.bind_eq_some_iff] at h
   exact h.2
 
 /-- Downward closure, iterated: defined at `m` means defined everywhere below. -/
-theorem evaln_prec_defined_le {k : ℕ} {cf cg : Code} {a : ℕ} : ∀ (m x : ℕ),
+private theorem evaln_prec_defined_le {k : ℕ} {cf cg : Code} {a : ℕ} : ∀ (m x : ℕ),
     x ∈ evaln (k + 1) (Code.prec cf cg) (Nat.pair a m) →
     ∀ j ≤ m, ∃ v, v ∈ evaln (k + 1) (Code.prec cf cg) (Nat.pair a j) := by
   intro m
@@ -1618,7 +1627,7 @@ Induction on the turns remaining. Each turn takes one transition into the step c
 (`step_ret_loop_turn`), a sub-run of that code — which `evaln_prec_stepUp` certifies computes the
 next value — and lands back on the loop frame one counter up; the last turn leaves by
 `step_ret_loop_done`. -/
-theorem prec_loop_reaches {k : ℕ} {cf cg : Code} {a : ℕ}
+private theorem prec_loop_reaches {k : ℕ} {cf cg : Code} {a : ℕ}
     (ihg : ∀ (n x stk : ℕ), x ∈ evaln (k + 1) cg n →
         Reaches (descend (Encodable.encode cg) n stk) (ret x stk)) :
     ∀ (r y v x stk : ℕ),
@@ -1653,7 +1662,7 @@ Induction on the fuel, with a nested structural induction on the code: the sub-c
 fuel are on structurally smaller codes, and the sub-calls one level of fuel down — bounded
 recursion's counter and unbounded search's next probe — are the outer hypothesis. The stack is
 universally quantified, which is what makes the sub-runs composable. -/
-theorem evaln_reaches : ∀ (K : ℕ) (c : Code) (n x : ℕ), x ∈ evaln K c n →
+private theorem evaln_reaches : ∀ (K : ℕ) (c : Code) (n x : ℕ), x ∈ evaln K c n →
     ∀ stk, Reaches (descend (Encodable.encode c) n stk) (ret x stk) := by
   intro K
   induction K with

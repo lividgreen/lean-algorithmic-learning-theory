@@ -34,10 +34,10 @@ Mathlib's Hoeffding inequality for sub-Gaussian MGFs
 `hasSubgaussianMGF_of_mem_Icc`).
 
 ## What this DOES establish
-* `sq_oracle_concentration` (§3 Tool (ii), Hoeffding): the empirical mean `emp` of `n` i.i.d.
-  bounded query-values `Z i` deviates from the true answer `predZ = 𝔼φ` by `≥ τ` with probability
-  `≤ 2·exp(−nτ²/2)`.  Two-sided, via the right tail on the centred family and the left tail on its
-  negation.
+* `sq_oracle_concentration` (§3 Tool (ii), Hoeffding): the empirical mean `empiricalMean` of `n`
+  i.i.d. bounded query-values `Z i` deviates from the true answer `predZ = 𝔼φ` by `≥ τ` with
+  probability `≤ 2·exp(−nτ²/2)`.  Two-sided, via the right tail on the centred family and the left
+  tail on its negation.
 * `sq_oracle_sample_complexity` (the `O(1/√n)` estimate, solved for `n`): once
   `n ≥ (2/τ²)·log(2/δ)`, the empirical answer is within `τ` of the truth with probability `≥ 1−δ`.
 * `sq_oracle_truth_survives` (§3 → FV-A4 wiring): chaining the sample complexity through
@@ -68,8 +68,8 @@ Mathlib's Hoeffding inequality for sub-Gaussian MGFs
 
 ## Hypotheses: paper-stated vs added/strengthened
 * Paper-stated / faithful: i.i.d. ensemble (`hindep` + common mean `hmean`); bounded query-values
-  (`hbdd`, the `φ : · → [−1,1]` normalisation of the SQ model); the empirical-mean estimator `emp`;
-  the `O(1/√n)` rate solved as `n ≥ (2/τ²)·log(2/δ)`.
+  (`hbdd`, the `φ : · → [−1,1]` normalisation of the SQ model); the empirical-mean estimator
+  `empiricalMean`; the `O(1/√n)` rate solved as `n ≥ (2/τ²)·log(2/δ)`.
 * Added/strengthened (flagged): the query-values are taken in the *concrete* interval `[−1,1]`
   (giving the sub-Gaussian proxy `1`); independence and the common mean are stated separately
   (`hindep`, `hmean`) rather than as a single `IdentDistrib` family — `hmean` only constrains the
@@ -82,7 +82,7 @@ open MeasureTheory ProbabilityTheory
 
 /-- Empirical SQ answer: the mean of the query-values `Z i ω = φ(Xᵢ ω)` over the first `n`
 ensemble trajectories. -/
-noncomputable def emp {Ω : Type*} (Z : ℕ → Ω → ℝ) (n : ℕ) (ω : Ω) : ℝ :=
+noncomputable def empiricalMean {Ω : Type*} (Z : ℕ → Ω → ℝ) (n : ℕ) (ω : Ω) : ℝ :=
   (n : ℝ)⁻¹ * ∑ i ∈ Finset.range n, Z i ω
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
@@ -97,7 +97,7 @@ private theorem tail_le
     (hindep : iIndepFun Z μ)
     (hmean : ∀ i, μ[Z i] = predZ)
     (hn : 1 ≤ n) (hτ : 0 ≤ τ) :
-    μ.real {ω | τ ≤ emp Z n ω - predZ} ≤ Real.exp (-(n : ℝ) * τ ^ 2 / 2) := by
+    μ.real {ω | τ ≤ empiricalMean Z n ω - predZ} ≤ Real.exp (-(n : ℝ) * τ ^ 2 / 2) := by
   have hnpos : (0 : ℝ) < n := by exact_mod_cast hn
   have hn0 : (n : ℝ) ≠ 0 := ne_of_gt hnpos
   have hnτ : (0 : ℝ) ≤ (n : ℝ) * τ := mul_nonneg hnpos.le hτ
@@ -115,13 +115,15 @@ private theorem tail_le
   -- Hoeffding bound on the sum of the centred family.
   have hb := HasSubgaussianMGF.measure_sum_range_ge_le_of_iIndepFun hWindep
     (c := 1) (n := n) (fun i _ => hsgW i) hnτ
-  -- `∑ (Z i ω − predZ) = n·(emp − predZ)`, so the empirical event sits inside the sum event.
-  have hTeq : ∀ ω, ∑ i ∈ Finset.range n, (Z i ω - predZ) = (n : ℝ) * (emp Z n ω - predZ) := by
+  -- `∑ (Z i ω − predZ) = n·(empiricalMean − predZ)`, so the empirical event sits inside the sum
+  -- event.
+  have hTeq : ∀ ω, ∑ i ∈ Finset.range n, (Z i ω - predZ)
+      = (n : ℝ) * (empiricalMean Z n ω - predZ) := by
     intro ω
     rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_range, nsmul_eq_mul]
-    simp only [emp]
+    simp only [empiricalMean]
     rw [mul_sub, ← mul_assoc, mul_inv_cancel₀ hn0, one_mul]
-  have hsub : {ω | τ ≤ emp Z n ω - predZ} ⊆
+  have hsub : {ω | τ ≤ empiricalMean Z n ω - predZ} ⊆
       {ω | (n : ℝ) * τ ≤ ∑ i ∈ Finset.range n, (Z i ω - predZ)} := by
     intro ω hω
     simp only [Set.mem_setOf_eq] at hω ⊢
@@ -142,7 +144,7 @@ theorem sq_oracle_concentration
     (hindep : iIndepFun Z μ)
     (hmean : ∀ i, μ[Z i] = predZ)
     (hn : 1 ≤ n) (hτ : 0 ≤ τ) :
-    μ.real {ω | τ ≤ |emp Z n ω - predZ|} ≤ 2 * Real.exp (-(n : ℝ) * τ ^ 2 / 2) := by
+    μ.real {ω | τ ≤ |empiricalMean Z n ω - predZ|} ≤ 2 * Real.exp (-(n : ℝ) * τ ^ 2 / 2) := by
   -- Right tail directly from `tail_le`.
   have hR := tail_le Z predZ n τ hmeas hbdd hindep hmean hn hτ
   -- Left tail: apply `tail_le` to the negated ensemble `Y i = -(Z i)`.
@@ -157,28 +159,31 @@ theorem sq_oracle_concentration
     intro i
     rw [integral_neg, hmean i]
   have hL0 := tail_le (fun i ω => -(Z i ω)) (-predZ) n τ hmeasY hbddY hindepY hmeanY hn hτ
-  -- `emp` of the negated ensemble is `-emp`, so the left tail set is `{τ ≤ predZ − emp}`.
-  have hempneg : ∀ ω, emp (fun i ω => -(Z i ω)) n ω = - emp Z n ω := by
+  -- `empiricalMean` of the negated ensemble is `-empiricalMean`, so the left tail set is
+  -- `{τ ≤ predZ − empiricalMean}`.
+  have hempneg : ∀ ω, empiricalMean (fun i ω => -(Z i ω)) n ω = - empiricalMean Z n ω := by
     intro ω
-    simp only [emp, Finset.sum_neg_distrib, mul_neg]
-  have hLset : {ω | τ ≤ emp (fun i ω => -(Z i ω)) n ω - -predZ}
-      = {ω | τ ≤ predZ - emp Z n ω} := by
+    simp only [empiricalMean, Finset.sum_neg_distrib, mul_neg]
+  have hLset : {ω | τ ≤ empiricalMean (fun i ω => -(Z i ω)) n ω - -predZ}
+      = {ω | τ ≤ predZ - empiricalMean Z n ω} := by
     ext ω
     simp only [Set.mem_setOf_eq, hempneg ω]
     constructor <;> intro h <;> linarith
   rw [hLset] at hL0
-  -- Union bound: `{τ ≤ |emp − predZ|} ⊆ {τ ≤ emp − predZ} ∪ {τ ≤ predZ − emp}`.
-  have hsubU : {ω | τ ≤ |emp Z n ω - predZ|} ⊆
-      {ω | τ ≤ emp Z n ω - predZ} ∪ {ω | τ ≤ predZ - emp Z n ω} := by
+  -- Union bound: `{τ ≤ |empiricalMean − predZ|}` sits inside
+  -- `{τ ≤ empiricalMean − predZ} ∪ {τ ≤ predZ − empiricalMean}`.
+  have hsubU : {ω | τ ≤ |empiricalMean Z n ω - predZ|} ⊆
+      {ω | τ ≤ empiricalMean Z n ω - predZ} ∪ {ω | τ ≤ predZ - empiricalMean Z n ω} := by
     intro ω hω
     simp only [Set.mem_setOf_eq, Set.mem_union] at hω ⊢
-    rcases abs_choice (emp Z n ω - predZ) with h | h
+    rcases abs_choice (empiricalMean Z n ω - predZ) with h | h
     · left; rwa [h] at hω
     · right; rw [h] at hω; linarith
-  calc μ.real {ω | τ ≤ |emp Z n ω - predZ|}
-      ≤ μ.real ({ω | τ ≤ emp Z n ω - predZ} ∪ {ω | τ ≤ predZ - emp Z n ω}) :=
+  calc μ.real {ω | τ ≤ |empiricalMean Z n ω - predZ|}
+      ≤ μ.real ({ω | τ ≤ empiricalMean Z n ω - predZ} ∪ {ω | τ ≤ predZ - empiricalMean Z n ω}) :=
         measureReal_mono hsubU (measure_ne_top μ _)
-    _ ≤ μ.real {ω | τ ≤ emp Z n ω - predZ} + μ.real {ω | τ ≤ predZ - emp Z n ω} :=
+    _ ≤ μ.real {ω | τ ≤ empiricalMean Z n ω - predZ}
+          + μ.real {ω | τ ≤ predZ - empiricalMean Z n ω} :=
         measureReal_union_le _ _
     _ ≤ Real.exp (-(n : ℝ) * τ ^ 2 / 2) + Real.exp (-(n : ℝ) * τ ^ 2 / 2) := add_le_add hR hL0
     _ = 2 * Real.exp (-(n : ℝ) * τ ^ 2 / 2) := by ring
@@ -191,7 +196,7 @@ theorem sq_oracle_sample_complexity
     (hindep : iIndepFun Z μ) (hmean : ∀ i, μ[Z i] = predZ)
     (hn1 : 1 ≤ n) (hτ : 0 < τ) (hδ0 : 0 < δ) (hδ1 : δ ≤ 1)
     (hn : (2 / τ ^ 2) * Real.log (2 / δ) ≤ (n : ℝ)) :
-    1 - δ ≤ μ.real {ω | |emp Z n ω - predZ| < τ} := by
+    1 - δ ≤ μ.real {ω | |empiricalMean Z n ω - predZ| < τ} := by
   have hconc := sq_oracle_concentration Z predZ n τ hmeas hbdd hindep hmean hn1 hτ.le
   have hτ0 : τ ≠ 0 := ne_of_gt hτ
   -- `n ≥ (2/τ²)·log(2/δ)` ⟹ `log(2/δ) ≤ nτ²/2`.
@@ -217,14 +222,15 @@ theorem sq_oracle_sample_complexity
       linarith
     linarith
   -- complement of the tail event.
-  have hempmeas : Measurable (emp Z n) := by
-    unfold emp
+  have hempmeas : Measurable (empiricalMean Z n) := by
+    unfold empiricalMean
     exact (Finset.measurable_fun_sum (Finset.range n) (fun i _ => hmeas i)).const_mul _
-  have hsetmeas : MeasurableSet {ω | τ ≤ |emp Z n ω - predZ|} :=
+  have hsetmeas : MeasurableSet {ω | τ ≤ |empiricalMean Z n ω - predZ|} :=
     measurableSet_le measurable_const ((hempmeas.sub_const predZ).abs)
-  have hcompl : μ.real {ω | |emp Z n ω - predZ| < τ}
-      = 1 - μ.real {ω | τ ≤ |emp Z n ω - predZ|} := by
-    have hset : {ω | |emp Z n ω - predZ| < τ} = {ω | τ ≤ |emp Z n ω - predZ|}ᶜ := by
+  have hcompl : μ.real {ω | |empiricalMean Z n ω - predZ| < τ}
+      = 1 - μ.real {ω | τ ≤ |empiricalMean Z n ω - predZ|} := by
+    have hset : {ω | |empiricalMean Z n ω - predZ| < τ}
+        = {ω | τ ≤ |empiricalMean Z n ω - predZ|}ᶜ := by
       ext ω
       simp only [Set.mem_setOf_eq, Set.mem_compl_iff, not_le]
     rw [hset, measureReal_compl hsetmeas, probReal_univ]
@@ -241,12 +247,12 @@ theorem sq_oracle_truth_survives
     (hindep : iIndepFun Z μ) (hmean : ∀ i, μ[Z i] = predZ)
     (hn1 : 1 ≤ n) (hτ : 0 < τ) (hδ0 : 0 < δ) (hδ1 : δ ≤ 1)
     (hn : (2 / τ ^ 2) * Real.log (2 / δ) ≤ (n : ℝ)) :
-    1 - δ ≤ μ.real {ω | |predZ - emp Z n ω| ≤ 2 * τ} := by
+    1 - δ ≤ μ.real {ω | |predZ - empiricalMean Z n ω| ≤ 2 * τ} := by
   have hsc := sq_oracle_sample_complexity Z predZ n τ δ hmeas hbdd hindep hmean hn1 hτ hδ0 hδ1 hn
   refine hsc.trans (measureReal_mono ?_ (measure_ne_top μ _))
   intro ω hω
   simp only [Set.mem_setOf_eq] at hω ⊢
-  exact SQVersionSpace.truth_survives_pruning predZ (emp Z n ω) τ hτ.le hω.le
+  exact SQVersionSpace.truth_survives_pruning predZ (empiricalMean Z n ω) τ hτ.le hω.le
 
 /-! ### The W-attack: window-noise budget `2η ≤ τ` ([SQ] §3.1)
 
@@ -310,13 +316,13 @@ theorem sq_oracle_truth_survives_noisy
     (hn1 : 1 ≤ n) (hτ : 0 < τ) (hδ0 : 0 < δ) (hδ1 : δ ≤ 1)
     (hn : (2 / τ ^ 2) * Real.log (2 / δ) ≤ (n : ℝ))
     (hη : 0 ≤ η) (hbudget : 2 * η ≤ τ) (hnoise : |a - predR| ≤ 2 * η) :
-    1 - δ ≤ μ.real {ω | |predR - emp Z n ω| ≤ 2 * τ} := by
+    1 - δ ≤ μ.real {ω | |predR - empiricalMean Z n ω| ≤ 2 * τ} := by
   have hsc := sq_oracle_sample_complexity Z a n τ δ hmeas hbdd hindep hmean hn1 hτ hδ0 hδ1 hn
   refine hsc.trans (measureReal_mono ?_ (measure_ne_top μ _))
   intro ω hω
   simp only [Set.mem_setOf_eq] at hω ⊢
-  exact SQVersionSpace.truth_survives_pruning_noisy predR a (emp Z n ω) τ η hτ.le hη hbudget hω.le
-    hnoise
+  exact SQVersionSpace.truth_survives_pruning_noisy predR a (empiricalMean Z n ω) τ η hτ.le hη
+    hbudget hω.le hnoise
 
 /-! ### FV-E → FV-J union-bound glue
 
@@ -375,19 +381,20 @@ theorem empirical_isSQOracle_of_iid (Qs : Finset Q) (hQs : Qs.Nonempty)
     (hmean : ∀ φ ∈ Qs, ∀ i, μ[Zq φ i] = tru φ)
     (hn1 : 1 ≤ n) (hτ : 0 < τ) (hδ0 : 0 < δ)
     (hn : (2 / τ ^ 2) * Real.log (2 * (Qs.card : ℝ) / δ) ≤ (n : ℝ)) :
-    μ ({ω | SQObjects.IsSQOracle (fun φ : ↥Qs => emp (Zq ↑φ) n ω) (fun φ : ↥Qs => tru ↑φ) τ}ᶜ)
+    μ ({ω | SQObjects.IsSQOracle (fun φ : ↥Qs => empiricalMean (Zq ↑φ) n ω)
+        (fun φ : ↥Qs => tru ↑φ) τ}ᶜ)
       ≤ ENNReal.ofReal δ := by
   have hMpos : (0 : ℝ) < (Qs.card : ℝ) := by exact_mod_cast Finset.card_pos.mpr hQs
   -- Each query's tail is small (concentration ⇒ the `<`/`ENNReal.ofReal` shape `htail` needs).
-  have htail : ∀ φ ∈ Qs, μ {ω | τ < |emp (Zq φ) n ω - tru φ|}
+  have htail : ∀ φ ∈ Qs, μ {ω | τ < |empiricalMean (Zq φ) n ω - tru φ|}
       ≤ ENNReal.ofReal (2 * Real.exp (-(n : ℝ) * τ ^ 2 / 2)) := by
     intro φ hφ
     have hconc := sq_oracle_concentration (Zq φ) (tru φ) n τ (hmeas φ hφ) (hbdd φ hφ)
       (hindep φ hφ) (hmean φ hφ) hn1 hτ.le
-    calc μ {ω | τ < |emp (Zq φ) n ω - tru φ|}
-        ≤ μ {ω | τ ≤ |emp (Zq φ) n ω - tru φ|} :=
+    calc μ {ω | τ < |empiricalMean (Zq φ) n ω - tru φ|}
+        ≤ μ {ω | τ ≤ |empiricalMean (Zq φ) n ω - tru φ|} :=
           measure_mono (Set.setOf_subset_setOf.mpr fun ω h => le_of_lt h)
-      _ = ENNReal.ofReal (μ.real {ω | τ ≤ |emp (Zq φ) n ω - tru φ|}) :=
+      _ = ENNReal.ofReal (μ.real {ω | τ ≤ |empiricalMean (Zq φ) n ω - tru φ|}) :=
           (ENNReal.ofReal_toReal (measure_ne_top μ _)).symm
       _ ≤ ENNReal.ofReal (2 * Real.exp (-(n : ℝ) * τ ^ 2 / 2)) := ENNReal.ofReal_le_ofReal hconc
   -- `n ≥ (2/τ²)·log(2|Qs|/δ)` ⟹ `|Qs|·2·exp(−nτ²/2) ≤ δ`.
@@ -413,9 +420,10 @@ theorem empirical_isSQOracle_of_iid (Qs : Finset Q) (hQs : Qs.Nonempty)
           mul_le_mul_of_nonneg_left hstep (by positivity)
       _ = δ := by field_simp
   -- assemble: union bound to FV-J's oracle object, then the `|Qs|·δ_φ ≤ δ` collapse.
-  calc μ ({ω | SQObjects.IsSQOracle (fun φ : ↥Qs => emp (Zq ↑φ) n ω) (fun φ : ↥Qs => tru ↑φ) τ}ᶜ)
+  calc μ ({ω | SQObjects.IsSQOracle (fun φ : ↥Qs => empiricalMean (Zq ↑φ) n ω)
+          (fun φ : ↥Qs => tru ↑φ) τ}ᶜ)
       ≤ (Qs.card : ENNReal) * ENNReal.ofReal (2 * Real.exp (-(n : ℝ) * τ ^ 2 / 2)) :=
-        empirical_isSQOracle Qs (fun φ => emp (Zq φ) n) tru τ
+        empirical_isSQOracle Qs (fun φ => empiricalMean (Zq φ) n) tru τ
           (2 * Real.exp (-(n : ℝ) * τ ^ 2 / 2)) htail
     _ = ENNReal.ofReal ((Qs.card : ℝ) * (2 * Real.exp (-(n : ℝ) * τ ^ 2 / 2))) := by
         rw [← ENNReal.ofReal_natCast, ← ENNReal.ofReal_mul (Nat.cast_nonneg _)]

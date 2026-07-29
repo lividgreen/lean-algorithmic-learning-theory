@@ -32,7 +32,7 @@ complementing the empirical-process/statistical side formalized in
   workspace bound laws — recursion and search enter as a `max` over their
   steps, never a sum (`CapacityBoundedEval.lean`) — and a bounded-enumeration
   workspace bound independent of the enumeration's length
-  (`CheckerScratch.lean`). The step model carries a greedy decision-list
+  (`CheckerWorkspace.lean`). The step model carries a greedy decision-list
   learner verified **both correct and `poly(m,k)`-step**
   (`DecisionListSolver.lean`); we believe this is the first learning algorithm
   mechanically verified for correctness and complexity at once.
@@ -119,15 +119,41 @@ complementing the empirical-process/statistical side formalized in
   off the path to bare representational reflection, while the steady-state
   per-step bound genuinely consumes retention. Purely structural: it proves no
   import, all edges being abstract propositions.
-- **A bounded Gödel decision** (`GodelChecker.lean`,
-  `GodelCheckerComplete.lean`): an executable sound bounded proof-checker and
-  a sound-and-complete bounded non-provability decision, axiom-clean for the
-  finite theory PA⁻, with incompleteness discharged against
+- **Window determinism, and a mixing hypothesis checked at both ends**
+  (`WindowDeterminism.lean`, `BirkhoffTool.lean`): if each observation is
+  exactly determined by the window of the previous `k` over a finite
+  alphabet, the observation process is eventually periodic — and the initial
+  window determines the whole trajectory, choice-free — so exact window
+  sufficiency and quantitative mixing cannot coexist on a finite alphabet.
+  On the mixing side, the `MixingHoeffding` rate hypothesis is pinned at both
+  ends: a *theorem* at the i.i.d. end (the spectral-gap constant at one
+  recovers the independent Hoeffding bound exactly), a vacuity guard at
+  non-positive constants (the bound then asserts nothing, for every law and
+  target), and genuine refutability at every positive constant — so the
+  constant is where the hypothesis's content lives, stated rather than
+  implied. The window-noise pruning budget now reaches the single-trajectory
+  route, not only the i.i.d. ensemble. And a first genuinely **dependent**
+  instance is derived (`NoisyWindowChain.lean`, engine in `ParityWalk.lean`):
+  the Bernoulli-noise window chain satisfies the rate at the named constant
+  `4·k` for coordinate observables, at every noise rate — no `1/η`, the
+  relevant eigenvalue being negative, so consecutive time-averages cancel
+  rather than accumulate. Honest boundary: multi-coordinate queries see a
+  positive eigenvalue and a genuinely noise-dependent constant, not bounded
+  here; the general spectral-gap theorem stays unproved.
+- **A sound bounded checker, and a classical sound-and-complete bounded
+  decision** (`GodelChecker.lean`, `GodelCheckerComplete.lean`): two separate
+  artifacts, not one — an *executable* sound bounded proof-checker, and a
+  *noncomputable* classically-packaged sound-and-complete bounded
+  non-provability decision (Foundation ships no `Decidable` instance for its
+  own proof relation, so no single artifact here is both computable and
+  complete), axiom-clean for the finite theory PA⁻, with incompleteness
+  discharged against
   [FormalizedFormalLogic/Foundation](https://github.com/FormalizedFormalLogic/Foundation);
-  run by a two-cell decision automaton whose code cell is read-only — the
-  sentence under test persists by the Decoupling Lemma while the work cell
-  drives to the Gödel verdict (`ReflectiveAutomaton.lean`, executable at the
-  PA⁻ Gödel sentence in `GodelCheckerAutomaton.lean`).
+  run by a two-cell decision automaton over the executable checker, whose
+  code cell is read-only — the sentence under test persists by the
+  Decoupling Lemma while the work cell drives to the Gödel verdict
+  (`ReflectiveAutomaton.lean`, executable at the PA⁻ Gödel sentence in
+  `GodelCheckerAutomaton.lean`).
 - **An expressiveness excess order** (`ExcessOrder.lean`,
   `ExcessOrderComplete.lean`): representational classes graded by work-bit
   budget, with inclusions strict exactly as the budget grows; an
@@ -151,7 +177,7 @@ complementing the empirical-process/statistical side formalized in
 - No `sorry`, `admit`, or `native_decide`; standard axioms only
   (`propext`, `Classical.choice`, `Quot.sound`) — several cores are
   choice-free, and the structural capstone depends on no axioms at all.
-- **Build-enforced axiom hygiene**: 602 `#guard_msgs in #print axioms` guards
+- **Build-enforced axiom hygiene**: 615 `#guard_msgs in #print axioms` guards
   assert each capstone's exact axiom set; `lake build` fails on any drift.
 - **Targeted imports throughout**: every module names exactly the Mathlib
   files it uses — no monolith `import Mathlib`, one vendored port excepted —
@@ -160,6 +186,45 @@ complementing the empirical-process/statistical side formalized in
 - To *genuinely* re-verify (guards only re-run on true elaboration), delete
   the project's compiled artifacts first:
   `rm -rf .lake/build/lib/lean/ALT*` then `lake build`.
+
+## The public surface
+
+Most of this development is `private`, and that is deliberate: what remains
+public is an API rather than an accident of nobody having marked anything.
+A declaration is public when something requires it to be —
+
+1. an axiom guard names it (`#guard_msgs in #print axioms` cannot see a private
+   name);
+2. a companion paper cites it;
+3. another module uses it;
+4. a public declaration's **statement** mentions it — otherwise you could not
+   restate the theorem; or
+5. a public **definition** that is not `Code`-valued has it in its body —
+   otherwise you could not unfold what the definition means.
+
+Rules 4 and 5 are a transitive closure, and rule 5 stops at
+`Nat.Partrec.Code`-valued definitions on purpose: the code constructions are
+meant to be opaque, characterized by their exported `val_`/`tc_` lemmas rather
+than by their syntax trees. So `OneDL.ExistsConsistentDL` is public because it
+*is* what `OneDL.solve_decides` claims, while `OneDL.cSolve` is public as a
+cited object whose internals are not.
+
+The rule is recomputed against the compiled environment and enforced as a
+ratchet, so the surface can narrow but not silently widen.
+
+**If you are looking for reusable pieces** rather than a paper's machine-checked
+core, these are the library-shaped modules: `ALT/Code/EvalLaws.lean` (the
+`Nat.Partrec.Code` evaluation laws Mathlib omits for `comp`, `left`, `right` and
+`pair`), `ALT/Code/SizeArith.lean` (`Nat.size` and pairing arithmetic),
+`ALT/Code/BitGates.lean` (Boolean gates as codes), and above them
+`ALT/PolyTime.lean`, `ALT/TimeCost.lean` and `ALT/AdditiveComplexity.lean` (the
+native cost model over `Nat.Partrec.Code`). These are leaves by construction.
+
+Names follow the papers rather than local readability: where a paper writes
+`C_b^{H,u}` or `tc(·)`, the Lean spells it `CbHu` and `tc`, because the
+correspondence is worth more to a reader holding both than the extra characters
+would be. `ALT/PersistenceCapacity.lean`'s module docstring decodes that
+family's suffixes.
 
 ## Building
 
@@ -177,7 +242,7 @@ library `ALT`):
 [[require]]
 name = "alt"
 git = "https://github.com/lividgreen/lean-algorithmic-learning-theory"
-rev = "v1.2"
+rev = "<tag>"  -- pin to a tagged release; see the Releases page below for available tags
 ```
 
 ## Papers
@@ -199,11 +264,12 @@ as a whole in a formalization paper (in preparation).
 
 ## Citation and license
 
-See `CITATION.cff` — archived releases: concept DOI
+See `CITATION.cff` — concept DOI
 [10.5281/zenodo.21284775](https://doi.org/10.5281/zenodo.21284775)
-— which always resolves to the latest version. This release is v1.2; its version
-DOI is recorded here and in `CITATION.cff` once Zenodo mints it from the GitHub
-Release. Code is Apache-2.0 (`LICENSE`); third-party attribution in
+always resolves to the latest archived version. For a specific tagged
+version and its own version DOI, see the
+[GitHub Releases page](https://github.com/lividgreen/lean-algorithmic-learning-theory/releases)
+and `CITATION.cff`. Code is Apache-2.0 (`LICENSE`); third-party attribution in
 `NOTICE`. Developed by Mykola Palamarchuk (independent researcher), with
 substantial AI assistance (Claude Code, Anthropic) under the author's
 direction and review — every result is machine-checked by Lean and replayed

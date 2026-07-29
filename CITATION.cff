@@ -19,16 +19,20 @@ authors:
 repository-code: https://github.com/lividgreen/lean-algorithmic-learning-theory
 license: Apache-2.0
 doi: 10.5281/zenodo.21284775
+# Deliberately only the concept DOI (decision 2026-07-28). Per-version DOIs are
+# minted by Zenodo *after* a release exists, so a version row can only be added
+# in a commit that comes after the tag — which means every tagged artifact would
+# lack its own DOI and carry its predecessor's, permanently one behind. Zenodo's
+# record page already lists every version and its DOI authoritatively, and the
+# concept DOI below always resolves to the latest, so an in-repo list duplicates
+# generated data and can only be stale. Cite the concept DOI for the work, or
+# the version DOI of the version you used — that one is on the Zenodo record.
 identifiers:
   - type: doi
     value: 10.5281/zenodo.21284775
-    description: Concept DOI (all versions)
-  - type: doi
-    value: 10.5281/zenodo.21284776
-    description: Version DOI (v1.0, 2026-07-09)
-  - type: doi
-    value: 10.5281/zenodo.21493562
-    description: Version DOI (v1.1, 2026-07-22)
+    description: >-
+      Concept DOI — resolves to the latest archived version, and its Zenodo
+      record lists the per-version DOIs.
 keywords:
   - Lean 4
   - Mathlib

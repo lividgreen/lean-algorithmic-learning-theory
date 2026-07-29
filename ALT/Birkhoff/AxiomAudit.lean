@@ -39,3 +39,19 @@ set_option linter.style.longLine false
 /-- info: 'BirkhoffTool.mixing_oracle_tail' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms BirkhoffTool.mixing_oracle_tail
+
+/-- info: 'BirkhoffTool.mixingHoeffding_of_iid' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BirkhoffTool.mixingHoeffding_of_iid
+
+/-- info: 'BirkhoffTool.mixingHoeffding_of_nonpos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BirkhoffTool.mixingHoeffding_of_nonpos
+
+/-- info: 'BirkhoffTool.not_mixingHoeffding_pinned' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BirkhoffTool.not_mixingHoeffding_pinned
+
+/-- info: 'BirkhoffTool.mixing_oracle_truth_survives_noisy' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BirkhoffTool.mixing_oracle_truth_survives_noisy

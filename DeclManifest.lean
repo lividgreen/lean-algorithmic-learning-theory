@@ -91,6 +91,24 @@ a trailing `field <module> <name>` section lists exactly the projections the
 counting rule excludes.  Consumers that check citations read both sections;
 consumers that quote a figure read the counts.  Private parents get the same
 source-level-name treatment as everywhere else (`privateToUserName?`).
+
+## The private section
+
+`private` hides a declaration outside its own file, but it is still a
+*citable* source-level name — `userName` already un-mangles it for identity,
+so a `private` declaration is counted exactly like a public one (the counting
+rule above tests nothing about visibility).  What the plain declaration lines
+cannot say is which of those counted names are actually visible outside the
+module that defines them, and a citation needs to know: a paper may not quote
+a name absent from the public API.
+
+So the manifest also records visibility, without touching identity.  A row
+for a `private` declaration is printed a second way: not among the plain
+declaration lines, but in a trailing `private <module> <name>` section,
+exactly mirroring the field section above.  A public declaration's line is
+unchanged; module counts and the header total still cover both sections —
+privatizing a declaration must not move it off the count, only off the
+public section.
 -/
 
 open Lean
@@ -187,15 +205,24 @@ def isField (env : Environment) (n : Name) : Bool :=
     && !(userName n).isInternal
     && !isGeneratedName env n (userName n)
 
-/-- Every `(module, declaration)` pair of the package recorded in `env`, every
-`(module, field)` pair (citable, not counted — see the module docstring), and the
-package modules `env` knows about (a module that declares nothing still counts as
-a module, and is emitted with a count of 0). -/
+/-- Is `n` a name Lean's `private` mangling hides — the visibility half of the
+manifest, orthogonal to the identity half `userName` already handles: a
+`private` declaration is counted exactly like a public one (see `counts`),
+and this only decides which section of the manifest its row lands in. -/
+def isPrivateDecl (n : Name) : Bool := (privateToUserName? n).isSome
+
+/-- Every `(module, declaration)` pair of the package recorded in `env`, split
+into the public pairs and the `private` pairs (see the module docstring's
+"private section"); every `(module, field)` pair (citable, not counted — see
+"the field section"); and the package modules `env` knows about (a module
+that declares nothing still counts as a module, and is emitted with a count
+of 0). -/
 def packagePairs (env : Environment) :
-    Array (Name × Name) × Array (Name × Name) × Array Name := Id.run do
+    Array (Name × Name) × Array (Name × Name) × Array (Name × Name) × Array Name := Id.run do
   let mods := env.header.moduleNames
   let data := env.header.moduleData
-  let mut pairs := #[]
+  let mut pubPairs := #[]
+  let mut privPairs := #[]
   let mut fields := #[]
   let mut seen := #[]
   for i in [0 : mods.size] do
@@ -205,10 +232,13 @@ def packagePairs (env : Environment) :
       for n in data[i]!.constNames do
         if let some ci := env.find? n then
           if counts env n ci then
-            pairs := pairs.push (m, userName n)
+            if isPrivateDecl n then
+              privPairs := privPairs.push (m, userName n)
+            else
+              pubPairs := pubPairs.push (m, userName n)
           else if isField env n then
             fields := fields.push (m, userName n)
-  return (pairs, fields, seen)
+  return (pubPairs, privPairs, fields, seen)
 
 /-- Sort the lines and drop adjacent duplicates. -/
 def sortedNub (xs : Array String) : Array String := Id.run do
@@ -226,7 +256,7 @@ def sortedNub (xs : Array String) : Array String := Id.run do
 environment imported without them answers `false` to all three — the filter
 would silently stop filtering rather than fail. -/
 unsafe def scanRoots (roots : Array Name) :
-    IO (Array (Name × Name) × Array (Name × Name) × Array Name) := do
+    IO (Array (Name × Name) × Array (Name × Name) × Array (Name × Name) × Array Name) := do
   enableInitializersExecution
   let env ← importModules (roots.map ({ module := · })) {} (loadExts := true)
   return packagePairs env
@@ -243,25 +273,31 @@ unsafe def main (args : List String) : IO Unit := do
       throw <| IO.userError s!"output directory does not exist: {dir}\n\
         pass an output path: lake env lean --run DeclManifest.lean OUT"
 
-  let (pairs, fields, mods) ← scanRoots #[packageRoot]
+  let (pubPairs, privPairs, fields, mods) ← scanRoots #[packageRoot]
 
-  let declLines := sortedNub <| pairs.map fun (m, n) => s!"{m} {n}"
+  let pubDeclLines := sortedNub <| pubPairs.map fun (m, n) => s!"{m} {n}"
+  let privDeclLines := sortedNub <| privPairs.map fun (m, n) => s!"{m} {n}"
   let fieldLines := sortedNub <| fields.map fun (m, n) => s!"{m} {n}"
   let modules := sortedNub <| mods.map toString
 
+  -- The combined public+private set, kept purely for counting: module counts
+  -- and the header total must not move when a declaration is privatized,
+  -- only its section does (see the module docstring's "private section").
+  let declLines := sortedNub <| pubDeclLines ++ privDeclLines
   let counted : Array (String × Nat) := modules.map fun m =>
     (m, declLines.foldl (init := 0) fun acc l =>
       if l.startsWith s!"{m} " then acc + 1 else acc)
 
   let header :=
     s!"# generated by formal/DeclManifest.lean; modules: {modules.size}; \
-       total decls: {declLines.size}; \
+       total decls: {declLines.size}; private: {privDeclLines.size}; \
        fields: {fieldLines.size} (structure projections: citable, NOT counted)"
   let moduleLines := counted.map fun (m, c) => s!"module {m} {c}"
   let fieldSection := fieldLines.map fun l => s!"field {l}"
+  let privSection := privDeclLines.map fun l => s!"private {l}"
   IO.FS.writeFile out <|
     String.intercalate "\n"
-      (header :: (moduleLines ++ declLines ++ fieldSection).toList) ++ "\n"
+      (header :: (moduleLines ++ pubDeclLines ++ fieldSection ++ privSection).toList) ++ "\n"
 
-  IO.eprintln s!"wrote {out}: {modules.size} modules, {declLines.size} declarations, \
-    {fieldLines.size} fields"
+  IO.eprintln s!"wrote {out}: {modules.size} modules, {declLines.size} declarations \
+    ({privDeclLines.size} private), {fieldLines.size} fields"

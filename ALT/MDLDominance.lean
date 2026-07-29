@@ -17,7 +17,8 @@ theorem), §2.2 (its proof: eq. (1) rule cost, eq. (2) table cost, Step 3 subtra
 `r + 2 log r + c₃`) from the Cor 2.2 warm-up.
 
 Status: PROVED as pure real-arithmetic statements. This is the *arithmetic core* of
-Sub-problem A only.
+Sub-problem A only; the two coding bounds it takes as named quantities (`Lrule`, `Ltable`) are
+proved separately, over concrete binary codes, in `ALT/MDLCoding.lean` — see below.
 
 ## What this DOES establish
 * `dominance_gap_eq`: the §2.2 Step-3 identity — the lookup-minus-rule advantage is *exactly*
@@ -26,15 +27,18 @@ Sub-problem A only.
   in general. Pure algebra, no regime, no strengthened constants.
 * `mdl_dominance`: under an explicit NAMED regime margin `hReg`, the rule-based two-part code
   is strictly shorter than the lookup table, `Lrule < Ltable`.
+* The two §2.2 coding bounds this file takes as named quantities — eq. (1)
+  `MDL₂(rule) ≤ Lrule` and eq. (2) `MDL₂(lookup) ≥ L` — are proved over concrete binary codes
+  in `ALT/MDLCoding.lean`: `ltable_lower_bound` (eq. (2), a fixed-width table encoder) and
+  `lrule_upper_bound` (eq. (1), a self-delimiting Elias-γ code). That file composes both, under
+  its own bit-unit analogue of this file's regime margin, into `mdl_dominance_codes` /
+  `mdl_dominance_codes_generated` — a genuine `ℕ < ℕ` comparison between actual code lengths
+  (the latter for a `Nat.Partrec.Code`-generated sequence), not merely between the
+  `Lrule`/`Ltable` named quantities this file works with.
 
 ## What this does NOT establish (stays in prose; no overclaiming)
 * No Kolmogorov complexity: `r`, `c₃`, `cd`, `O`, `n` are abstract reals; we do not formalize
   `r = K(R)`, and `O` is a real standing for `|O|` (not a finite type's cardinality).
-* We do not prove the two coding bounds themselves: eq. (1) `MDL₂(rule) ≤ Lrule` and eq. (2)
-  `MDL₂(lookup) ≥ L`. Those §2.2 counting arguments stay in prose. The Lean theorems prove the
-  resulting arithmetic, taking `Lrule` (an upper bound on the true rule MDL) and `Ltable = L`
-  (a lower bound on the true table MDL) as the named quantities; `Lrule < Ltable` then implies
-  the paper's `MDL₂(rule) < MDL₂(lookup)`.
 * We do not prove the §2.3 structure-function identity `min_α[α + Λ_x(α)] = K(x) + O(1)` — prose.
 
 ## On `K` and the hypothesis `L > K`

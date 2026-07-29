@@ -55,7 +55,7 @@ import ALT.SearchCost
 import ALT.SearchSpace
 import ALT.TimeCost
 import ALT.PolyTime
-import ALT.CheckerScratch
+import ALT.CheckerWorkspace
 import ALT.CapacityBoundedEval
 import ALT.BoundedInterp
 import ALT.CodePacking
@@ -2549,7 +2549,7 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms TimeCost.spaceCostP_rfind'_le
 
--- The bounded checker's scratch account (`ALT/CheckerScratch.lean`) — the [Decoupling] §6.3
+-- The bounded checker's scratch account (`ALT/CheckerWorkspace.lean`) — the [Decoupling] §6.3
 -- workspace bound assembled from the per-constituent capacity bounds and the native space cost.
 -- `checker_scratch_closure`: the enumeration over the `M_chk + 1` candidate proof codes runs in
 -- `max (spaceCost cf a) S` workspace, with the budget `M_chk` ABSENT from the bound, stated in
@@ -2559,17 +2559,17 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 -- twice — the budget hypothesis `M_chk ≤ g^2` is consumed by the TIME half alone (exhaustive
 -- search, polynomial in the value `g`), never by the space half. `checkerLoop_val_decides`: the
 -- native bounded recursion computes the same verdict as the finite fold `Decide`.
-/-- info: 'CheckerScratch.checker_scratch_closure' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'CheckerWorkspace.checker_scratch_closure' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms CheckerScratch.checker_scratch_closure
+#print axioms CheckerWorkspace.checker_scratch_closure
 
-/-- info: 'CheckerScratch.checker_space_time_contrast' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'CheckerWorkspace.checker_space_time_contrast' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms CheckerScratch.checker_space_time_contrast
+#print axioms CheckerWorkspace.checker_space_time_contrast
 
-/-- info: 'CheckerScratch.checkerLoop_val_decides' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'CheckerWorkspace.checkerLoop_val_decides' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms CheckerScratch.checkerLoop_val_decides
+#print axioms CheckerWorkspace.checkerLoop_val_decides
 
 -- Capacity-bounded evaluation (`ALT/CapacityBoundedEval.lean`) — the evaluator-side half of the
 -- [Decoupling] §4.5 crux of Conjecture 4.4. `size_val_le_spaceCost`: the keystone, an output is
