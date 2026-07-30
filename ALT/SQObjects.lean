@@ -98,6 +98,13 @@ theorem survivors_card_le_sqDim (M : Finset ι) (τ : ℝ) (ans : Q → ι → �
     V.card ≤ sqDim M τ ans :=
   sepFam_card_le_sqDim M τ ans ⟨hV, hsep⟩
 
+/-- **The statistical dimension never exceeds the family's own size.**  The sup runs over
+subfamilies of `M`, and every one of them is a subset — so a finite rule class of size `|M|` has
+`d_SQ ≤ |M|` unconditionally, which is how a concrete finite class discharges Assumption A. -/
+theorem sqDim_le_card (M : Finset ι) (τ : ℝ) (ans : Q → ι → ℝ) : sqDim M τ ans ≤ M.card := by
+  refine Finset.sup_le fun S hS => ?_
+  exact Finset.card_le_card (Finset.mem_powerset.mp (Finset.mem_filter.mp hS).1)
+
 /-- BQ1 (distribution-specificity of `d_SQ(M, μ)`): if every separation achievable by `ans` is also
 achievable by `ans'`, then `sqDim …ans ≤ sqDim …ans'`. A distribution-specific answer functional
 (fewer queries) never has larger statistical dimension than a distribution-free one that can realize

@@ -49,14 +49,36 @@ resulting bound would be vacuous.
 * `surjective_fittestFrame_of_fixed` — **the imported hypothesis is satisfiable**, so the pricing
   theorem is not vacuous: at an evolutionary fixed point a uniform population stands still and the
   fittest reading is surjective, on any fitness.
+* `predFrame` — **the base-reading frame**: the fittest candidate's *prediction of the base*, rather
+  than its codeword. Its codomain is the base's own state space, so the values it takes are supplied
+  by the base coordinate and not by the population.
+* `not_surjective_fittestFrame_of_converged` / `surjective_predFrame_of_converged` — **the two
+  frames separate by theorem**. One fixed fittest codeword from every initial state refutes the
+  codeword frame's hypothesis once `2 ≤ C`, and leaves the base-reading frame's standing.
+* `surjective_predFrame_of_faithful` / `predFrame_emergence_pricing` — the base-reading frame's own
+  satisfiability witness, and the pricing assembly restated over it at the same constant.
 
 ## Scope
 
-The convergence hypothesis is imported, not proved. `fiber_emergence_pricing` takes
-`Function.Surjective (fun s => θ (U^[N] s))` as a hypothesis: the operational form of "the fiber's
-population has settled on a faithful reading of the core". Discharging it is a separate matter
-entirely — it is where selection-by-predictive-fitness has to be shown to converge, and where the
-basin of initial conditions from which it does has to be exhibited.
+The frame's hypothesis is imported, not proved, and it is a **coverage** condition rather than a
+convergence one. `fiber_emergence_pricing` takes `Function.Surjective (fun s => θ (U^[N] s))`: as
+the *initial state* ranges over the state space, the reading must take every value in the frame's
+codomain — which is what makes it a full model worth pricing at all.
+
+For `fittestFrame`, whose codomain is the candidate alphabet, coverage and settling compete. A
+population that had converged on one codeword from every initial state would make that reading
+constant, and a constant map is not surjective once `2 ≤ C`. So the codeword frame can draw its
+coverage only from the initial condition — which is exactly what `surjective_fittestFrame_of_fixed`
+does, by switching variation off. Proving that selection converges would not discharge that
+hypothesis; it would refute it.
+
+`predFrame` moves the coverage off the population and onto the base coordinate, which the fiber
+reads but never writes. Settling then becomes compatible with the hypothesis instead of fatal to
+it, so a convergence theorem for the fiber has somewhere to land. This file adds that frame; it
+does not replace the other, and everything stated over `fittestFrame` stands unchanged.
+
+Whether selection under real variation settles at all, and from which initial states, is untouched
+here — as is the basin those initial states would form.
 
 Two further gaps are deliberate and are not narrowed here. The base of this construction is a
 finite endofunction on `Fin n₁`, carrying no measure and no mixing hypothesis; the mixing base and
@@ -99,6 +121,25 @@ def skewWorldFin (S : Fin n₁ → Fin n₁) (F : Fin n₁ → Fin n₂ → Fin 
     (i : Fin n₁) (j : Fin n₂) :
     skewWorldFin S F (finProdFinEquiv (i, j)) = finProdFinEquiv (S i, F i j) := by
   simp [skewWorldFin]
+
+/-- **The base does not see the fiber, in one step.** Projecting a skew step onto the base
+coordinate gives the base rule applied to the base coordinate — whatever the fiber rule did. -/
+theorem base_skewWorldFin (S : Fin n₁ → Fin n₁) (F : Fin n₁ → Fin n₂ → Fin n₂)
+    (p : Fin (n₁ * n₂)) :
+    (finProdFinEquiv.symm (skewWorldFin S F p)).1 = S (finProdFinEquiv.symm p).1 := by
+  rw [skewWorldFin, Equiv.symm_apply_apply]
+
+/-- **…and not over a run either**: the base coordinate of the `t`-th iterate is the base rule's
+`t`-th iterate at the base coordinate. The fiber is driven by the base and never feeds back, so a
+skew run projects onto a base run exactly — which is what lets a frame reading the base coordinate
+inherit the base rule's own coverage. -/
+theorem base_iterate_skewWorldFin (S : Fin n₁ → Fin n₁) (F : Fin n₁ → Fin n₂ → Fin n₂) (t : ℕ)
+    (p : Fin (n₁ * n₂)) :
+    (finProdFinEquiv.symm ((skewWorldFin S F)^[t] p)).1 = S^[t] (finProdFinEquiv.symm p).1 := by
+  induction t generalizing p with
+  | zero => rfl
+  | succ t ih =>
+      rw [Function.iterate_succ_apply, ih, base_skewWorldFin, Function.iterate_succ_apply]
 
 /-- **The fiber step, uncurried onto the flat carrier**: the one `Fin (n₁ * n₂) → Fin n₂` function
 whose table carries everything the fiber rule does. This — not the curried `F` — is what enters the
@@ -264,7 +305,8 @@ out to the whole population. Slot-indexed mutation is what regenerates diversity
 so this is a working `(1, P)` selection scheme rather than a fixed point.
 
 Nothing here is claimed to converge. These are the definitions the pricing theorem instantiates;
-the dynamics' behaviour is exactly what `fiber_emergence_pricing` imports as a hypothesis. -/
+what `fiber_emergence_pricing` imports as a hypothesis is not the dynamics' behaviour but the
+coverage its frame achieves as the initial state varies. -/
 
 section Evolution
 
@@ -313,18 +355,19 @@ def fittestFrame (P : ℕ) [NeZero P] (fit : Fin n₁ → Fin C → ℕ) : Fin (
   fun p => fittest (fit (finProdFinEquiv.symm p).1)
     (finFunctionFinEquiv.symm (finProdFinEquiv.symm p).2)
 
-/-! ### The convergence hypothesis is satisfiable
+/-! ### The coverage hypothesis is satisfiable
 
-`fiber_emergence_pricing` imports its convergence as a hypothesis, and a hypothesis nobody has
+`fiber_emergence_pricing` imports its coverage as a hypothesis, and a hypothesis nobody has
 exhibited an instance of makes a theorem worth nothing. The lemmas below discharge that worry
 without touching the real question: at an **evolutionary fixed point** — variation switched off, so
 selection has nothing left to act on — a uniform population sits still forever and the fittest
-reading hands back its codeword, whatever the fitness. The hypothesis therefore holds, for arbitrary
-`fit`, on that configuration.
+reading hands back its codeword, whatever the fitness. Distinct initial populations therefore sit
+on distinct codewords, and the hypothesis holds for arbitrary `fit`.
 
-This is a satisfiability witness and nothing more. It exhibits the *settled* state the hypothesis
-describes; it says nothing about whether selection under real variation reaches such a state, which
-is the whole of the open problem. -/
+This is a satisfiability witness and nothing more. It is also the plainest reading of what the
+hypothesis asks for: the coverage comes from the initial condition and from nothing the dynamics
+did. It could not come from the dynamics — a reading that settled on one fixed codeword from every
+initial state is constant, hence not surjective once `2 ≤ C`, which the next section proves. -/
 
 /-- A uniform population is its own fittest member: with every slot holding the same codeword the
 fold never moves off it, on any fitness. -/
@@ -371,8 +414,10 @@ theorem fittestFrame_const (P : ℕ) [NeZero P] (fit : Fin n₁ → Fin C → �
 
 /-- **The imported hypothesis is satisfiable.** On the variation-free dynamics every codeword is
 read off its own uniform population, which the world leaves untouched, so the frame is surjective
-after any number of steps — the hypothesis `fiber_emergence_pricing` takes, met on a settled
-configuration and for arbitrary fitness. `fiber_emergence_pricing` is therefore not vacuous. -/
+after any number of steps — the hypothesis `fiber_emergence_pricing` takes, met for arbitrary
+fitness. `fiber_emergence_pricing` is therefore not vacuous. The whole of the coverage is carried
+by the initial condition: each state stands still on its own codeword, and it is ranging over them
+that reaches every value. -/
 theorem surjective_fittestFrame_of_fixed (P : ℕ) [NeZero P] (S : Fin n₁ → Fin n₁)
     (fit : Fin n₁ → Fin C → ℕ) (hn₁ : 0 < n₁) :
     Function.Surjective fun s =>
@@ -380,6 +425,178 @@ theorem surjective_fittestFrame_of_fixed (P : ℕ) [NeZero P] (S : Fin n₁ → 
   intro c
   exact ⟨finProdFinEquiv (⟨0, hn₁⟩, finFunctionFinEquiv fun _ : Fin P => c),
     by simp only [iterate_evoWorld_const, fittestFrame_const]⟩
+
+/-! ### The base-reading frame
+
+`fittestFrame` reads the fittest *codeword*, so its codomain is the candidate alphabet and its
+coverage can only ever come from the initial population. The frame below reads instead what the
+fittest candidate *predicts the base will do*: decode the fittest codeword into a rule and apply
+that rule to the current base state. Its codomain is the base's own state space, so the values it
+takes are supplied by the base coordinate, which the fiber never feeds back into.
+
+The two frames then separate by theorem. A population that has settled on one codeword from every
+initial state makes `fittestFrame` constant, and a constant map into `Fin C` is not surjective once
+`2 ≤ C` (`not_surjective_fittestFrame_of_converged`). The very same settling leaves `predFrame`'s
+coverage intact, provided the codeword settled on decodes to the base rule and that rule is
+surjective (`surjective_predFrame_of_converged`). Coverage and settling compete for one frame and
+coexist for the other.
+
+Nothing here proves that the fiber settles. That question is untouched — the point is that a
+theorem about it would now have somewhere to land. -/
+
+/-- **The base-reading frame** ([Inevitability] §6): read the fittest candidate's *prediction of
+the base*. The fittest codeword is decoded into a rule by `dec` and that rule is applied to the
+current base state, so the frame's value is a base state rather than a codeword.
+
+This is `fittestFrame` composed with the decoding and evaluated at the base coordinate. The change
+that matters is the codomain: coverage of `Fin n₁` is a question about the base coordinate, where a
+surjective base rule supplies it outright, and not about which codewords the population happens to
+hold. -/
+def predFrame (P : ℕ) [NeZero P] (fit : Fin n₁ → Fin C → ℕ) (dec : Fin C → Fin n₁ → Fin n₁) :
+    Fin (n₁ * C ^ P) → Fin n₁ :=
+  fun p => dec (fittestFrame P fit p) (finProdFinEquiv.symm p).1
+
+/-- The evolving host's base coordinate runs the base rule alone, for any variation. -/
+theorem base_iterate_evoWorld [NeZero P] (S : Fin n₁ → Fin n₁) (fit : Fin n₁ → Fin C → ℕ)
+    (vary : Fin n₁ → Fin P → Fin C → Fin C) (t : ℕ) (s : Fin (n₁ * C ^ P)) :
+    (finProdFinEquiv.symm ((evoWorld S fit vary)^[t] s)).1 = S^[t] (finProdFinEquiv.symm s).1 :=
+  base_iterate_skewWorldFin S (evoFiber fit vary) t s
+
+/-- **Settling refutes the codeword frame's hypothesis.** Suppose the fittest reading after a full
+state-count of steps is one fixed codeword from every initial state — the conclusion shape a
+convergence theorem for the fiber would have. With at least two candidate codewords that reading is
+constant and therefore not surjective, so it fails exactly the hypothesis
+`fiber_emergence_pricing` imports.
+
+The hypothesis is a **coverage** condition on the frame's codomain as the initial state varies, not
+a convergence one, and this is the two pulling apart: coverage of `Fin C` by a codeword-valued
+frame has to be charged to the initial conditions, and a dynamics that erased their differences
+would take it away. -/
+theorem not_surjective_fittestFrame_of_converged [NeZero P] (S : Fin n₁ → Fin n₁)
+    (fit : Fin n₁ → Fin C → ℕ) (vary : Fin n₁ → Fin P → Fin C → Fin C) (c₀ : Fin C) (hC : 2 ≤ C)
+    (hconv : ∀ s, fittestFrame P fit ((evoWorld S fit vary)^[n₁ * C ^ P] s) = c₀) :
+    ¬ Function.Surjective fun s =>
+        fittestFrame P fit ((evoWorld S fit vary)^[n₁ * C ^ P] s) := by
+  intro hsurj
+  haveI : Nontrivial (Fin C) := Fin.nontrivial_iff_two_le.mpr hC
+  obtain ⟨c₁, hc₁⟩ := exists_ne c₀
+  obtain ⟨s, hs⟩ := hsurj c₁
+  exact hc₁ (hs.symm.trans (hconv s))
+
+/-- **The base-reading frame's hypothesis is satisfiable**, on the same variation-free dynamics
+`surjective_fittestFrame_of_fixed` uses. If some codeword decodes to the base rule itself and that
+rule is surjective, then starting from the uniform population on that codeword the fiber stands
+still, the frame's prediction is the base rule's own next state, and the reading after `N` steps is
+`S^[N + 1]` of the initial base coordinate — surjective as a composite of surjections.
+
+The coverage now comes from the base coordinate. The population contributes only the *identity* of
+the rule being applied, and it contributes the same one from every initial state used here. -/
+theorem surjective_predFrame_of_faithful (P : ℕ) [NeZero P] (S : Fin n₁ → Fin n₁)
+    (fit : Fin n₁ → Fin C → ℕ) (dec : Fin C → Fin n₁ → Fin n₁) (c₀ : Fin C) (hdec : dec c₀ = S)
+    (hS : Function.Surjective S) :
+    Function.Surjective fun s =>
+      predFrame P fit dec ((evoWorld (P := P) S fit fun _ _ d => d)^[n₁ * C ^ P] s) := by
+  intro z
+  obtain ⟨x, hx⟩ := hS.iterate (n₁ * C ^ P + 1) z
+  rw [Function.iterate_succ_apply'] at hx
+  refine ⟨finProdFinEquiv (x, finFunctionFinEquiv fun _ : Fin P => c₀), ?_⟩
+  simp only [predFrame, iterate_evoWorld_const, fittestFrame_const, Equiv.symm_apply_apply]
+  rw [hdec]
+  exact hx
+
+/-- **Settling is compatible with the base-reading frame's hypothesis.** Under the very
+convergence hypothesis that refutes `fittestFrame`'s coverage — one fixed codeword from every
+initial state — `predFrame`'s coverage holds, provided the settled codeword decodes to the base
+rule and that rule is surjective.
+
+Together with `not_surjective_fittestFrame_of_converged` this separates the two frames by theorem
+rather than by argument. The same antecedent kills one hypothesis and leaves the other standing, so
+a convergence result for the fiber would refute the pricing assembly stated over the codeword frame
+and discharge the one stated over the base-reading frame. Which frame the assembly is stated over
+is therefore not a presentational choice.
+
+Note what is doing the work: the fiber never feeds back into the base
+(`base_iterate_evoWorld`), so the base coordinate sweeps its whole state space regardless of what
+the population does. -/
+theorem surjective_predFrame_of_converged [NeZero P] (S : Fin n₁ → Fin n₁)
+    (fit : Fin n₁ → Fin C → ℕ) (dec : Fin C → Fin n₁ → Fin n₁)
+    (vary : Fin n₁ → Fin P → Fin C → Fin C) (c₀ : Fin C) (hdec : dec c₀ = S)
+    (hS : Function.Surjective S)
+    (hconv : ∀ s, fittestFrame P fit ((evoWorld S fit vary)^[n₁ * C ^ P] s) = c₀) :
+    Function.Surjective fun s =>
+      predFrame P fit dec ((evoWorld S fit vary)^[n₁ * C ^ P] s) := by
+  intro z
+  obtain ⟨x, hx⟩ := hS.iterate (n₁ * C ^ P + 1) z
+  rw [Function.iterate_succ_apply'] at hx
+  refine ⟨finProdFinEquiv (x, finFunctionFinEquiv fun _ : Fin P => c₀), ?_⟩
+  simp only [predFrame, hconv, base_iterate_evoWorld, Equiv.symm_apply_apply]
+  rw [hdec]
+  exact hx
+
+/-! #### The settled antecedent is inhabited
+
+The two theorems above are implications, and an implication whose antecedent nothing meets
+separates nothing. A variation rule that overwrites every slot with one codeword produces exactly
+the settled shape they hypothesise, so the separation below is a fact about a single dynamics
+rather than a pair of conditionals.
+
+It is a witness for the hypothesis' *shape* and not for selection: the codeword is imposed by the
+variation rather than found by the fitness, which is not even consulted. Whether predictive fitness
+reaches such a state, and from where, is exactly what this file does not address. -/
+
+/-- Variation that ignores the incumbent and writes one codeword makes the fiber uniform on it in a
+single generation, whatever the population was and whatever the fitness says. -/
+theorem evoFiber_const_vary [NeZero P] (fit : Fin n₁ → Fin C → ℕ) (c₀ : Fin C) (x : Fin n₁)
+    (y : Fin (C ^ P)) :
+    evoFiber (P := P) fit (fun _ _ _ => c₀) x y = finFunctionFinEquiv fun _ : Fin P => c₀ := by
+  have hgen : gaGen (fit x) (fun (_ : Fin P) (_ : Fin C) => c₀)
+      (finFunctionFinEquiv.symm y) = fun _ : Fin P => c₀ := by
+    funext i
+    exact fittest_const P (fit x) c₀
+  rw [evoFiber, hgen]
+
+/-- One step of the overwriting dynamics: the base advances and the fiber lands on the uniform
+population, from any state at all. -/
+theorem evoWorld_const_vary [NeZero P] (S : Fin n₁ → Fin n₁) (fit : Fin n₁ → Fin C → ℕ)
+    (c₀ : Fin C) (p : Fin (n₁ * C ^ P)) :
+    (evoWorld S fit fun _ _ _ => c₀) p
+      = finProdFinEquiv
+          (S (finProdFinEquiv.symm p).1, finFunctionFinEquiv fun _ : Fin P => c₀) := by
+  rw [evoWorld, skewWorldFin, evoFiber_const_vary]
+
+/-- **The settled shape is reached from every initial state, after a single step.** -/
+theorem fittestFrame_iterate_const_vary [NeZero P] (S : Fin n₁ → Fin n₁)
+    (fit : Fin n₁ → Fin C → ℕ) (c₀ : Fin C) (t : ℕ) (s : Fin (n₁ * C ^ P)) :
+    fittestFrame P fit ((evoWorld S fit fun _ _ _ => c₀)^[t + 1] s) = c₀ := by
+  rw [Function.iterate_succ_apply', evoWorld_const_vary, fittestFrame_const]
+
+/-- The same at the run length the pricing assembly reads at, which is positive once the base has a
+state to be in. -/
+theorem fittestFrame_const_vary [NeZero P] (S : Fin n₁ → Fin n₁) (fit : Fin n₁ → Fin C → ℕ)
+    (c₀ : Fin C) (hn₁ : 0 < n₁) (s : Fin (n₁ * C ^ P)) :
+    fittestFrame P fit ((evoWorld S fit fun _ _ _ => c₀)^[n₁ * C ^ P] s) = c₀ := by
+  have hpos : 0 < n₁ * C ^ P := Nat.mul_pos hn₁ (Nat.pow_pos c₀.pos)
+  have h := fittestFrame_iterate_const_vary S fit c₀ (n₁ * C ^ P - 1) s
+  rwa [Nat.sub_add_cancel hpos] at h
+
+/-- **The two frames separate on one dynamics.** With every slot overwritten by a single codeword
+that decodes to a surjective base rule, the codeword frame's coverage hypothesis **fails** and the
+base-reading frame's **holds** — the same world, the same run length, the same fitness.
+
+So the choice of frame is not presentational. `fiber_emergence_pricing` is unavailable here and
+`predFrame_emergence_pricing` applies, and what makes the difference is where each frame's values
+come from: the population, whose differences this dynamics has erased, or the base coordinate,
+which the fiber cannot touch. -/
+theorem frames_separate_of_settled [NeZero P] (S : Fin n₁ → Fin n₁) (fit : Fin n₁ → Fin C → ℕ)
+    (dec : Fin C → Fin n₁ → Fin n₁) (c₀ : Fin C) (hn₁ : 0 < n₁) (hC : 2 ≤ C) (hdec : dec c₀ = S)
+    (hS : Function.Surjective S) :
+    (¬ Function.Surjective fun s =>
+        fittestFrame P fit ((evoWorld S fit fun _ _ _ => c₀)^[n₁ * C ^ P] s)) ∧
+      Function.Surjective fun s =>
+        predFrame P fit dec ((evoWorld S fit fun _ _ _ => c₀)^[n₁ * C ^ P] s) :=
+  ⟨not_surjective_fittestFrame_of_converged S fit _ c₀ hC (fittestFrame_const_vary S fit c₀ hn₁),
+    surjective_predFrame_of_converged S fit dec _ c₀ hdec hS
+      (fittestFrame_const_vary S fit c₀ hn₁)⟩
 
 /-! ### The pricing assembly -/
 
@@ -402,9 +619,11 @@ rule's code and the fiber rule's code composed into one fixed builder — rather
 table. Nothing in the budget scales with the state count.
 
 The surjectivity hypothesis is where the evolutionary content sits, and it is imported wholesale.
-It says the population has settled on a faithful reading of the core; that selection by predictive
-fitness in fact converges to such a reading, and from which initial states, is not addressed
-here. -/
+It is a **coverage** condition: as the initial state ranges over the state space, the fittest
+reading must take every value in `Fin C`. It does not say the population has settled — settling on
+one codeword from every initial state would refute it outright once `2 ≤ C`
+(`not_surjective_fittestFrame_of_converged`). So what would discharge it is a change of frame
+(`predFrame`, and `predFrame_emergence_pricing` below), not a convergence theorem. -/
 theorem fiber_emergence_pricing [NeZero P] (S : Fin n₁ → Fin n₁) (fit : Fin n₁ → Fin C → ℕ)
     (vary : Fin n₁ → Fin P → Fin C → Fin C) (cS cF cθ : Nat.Partrec.Code)
     (hconv : Function.Surjective fun s =>
@@ -444,6 +663,42 @@ theorem fiber_emergence_pricing_predictive [NeZero P] (S : Fin n₁ → Fin n₁
       ≤ CbHue (evoWorld S (predFit S dec) vary)
           (elen cS + elen cF + elen cθ + (elen emergeBuilder + elen skewBuilder + 36)) :=
   fiber_emergence_pricing S (predFit S dec) vary cS cF cθ hconv hS hF hθ
+
+/-- **The evolving fiber's guest, priced through the base-reading frame** ([Inevitability] §6).
+`fiber_emergence_pricing` with `θ := predFrame P fit dec`: same host, same composed code, same
+constant, and the frame swapped.
+
+That it transports at all is the reusable fact. `skewCode`'s pricing and
+`PersistenceCapacity.emergence` are parametric in the fiber rule and in the frame, so the assembly
+never depended on reading a codeword; only the imported coverage hypothesis did. The guest here is
+`Fin n₁`-valued rather than `Fin C`-valued — it carries the fittest candidate's prediction of the
+base — and the budget is unchanged at `elen cS + elen cF + elen cθ + O(1)`.
+
+What the swap buys is where the hypothesis can be met: `surjective_predFrame_of_converged`
+discharges it from a settled population, which `not_surjective_fittestFrame_of_converged` shows is
+incompatible with the codeword frame's version. That the fiber does settle is still not proved
+anywhere here. -/
+theorem predFrame_emergence_pricing [NeZero P] (S : Fin n₁ → Fin n₁) (fit : Fin n₁ → Fin C → ℕ)
+    (dec : Fin C → Fin n₁ → Fin n₁) (vary : Fin n₁ → Fin P → Fin C → Fin C)
+    (cS cF cθ : Nat.Partrec.Code)
+    (hcov : Function.Surjective fun s =>
+      predFrame P fit dec ((evoWorld S fit vary)^[n₁ * C ^ P] s))
+    (hS : cS.eval 0 = Part.some (lensCode S))
+    (hF : cF.eval 0 = Part.some (lensCode (fiberFlat (evoFiber fit vary))))
+    (hθ : cθ.eval 0 = Part.some (lensCode (predFrame P fit dec))) :
+    Carries (evoWorld S fit vary) (emergeLens (evoWorld S fit vary) (predFrame P fit dec)) ∧
+    Nat.card ↥(orbit (Perm ↥(core (evoWorld S fit vary)))
+        (coreLens (evoWorld S fit vary)
+          (emergeLens (evoWorld S fit vary) (predFrame P fit dec) 0)))
+      ≤ CbHue (evoWorld S fit vary)
+          (elen cS + elen cF + elen cθ + (elen emergeBuilder + elen skewBuilder + 36)) := by
+  have hU : (skewCode cS cF).eval 0 = Part.some (lensCode (evoWorld S fit vary)) :=
+    eval_skewCode S (evoFiber fit vary) cS cF hS hF
+  obtain ⟨hcar, hprice⟩ :=
+    emergence (evoWorld S fit vary) (predFrame P fit dec) (skewCode cS cF) cθ hcov hU hθ
+  refine ⟨hcar, hprice.trans (CbHue_mono _ ?_)⟩
+  rw [elen_skewCode]
+  omega
 
 end Evolution
 

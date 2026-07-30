@@ -1,11 +1,39 @@
 # lean-algorithmic-learning-theory
 
+[![CI](https://github.com/lividgreen/lean-algorithmic-learning-theory/actions/workflows/lean_action_ci.yml/badge.svg)](https://github.com/lividgreen/lean-algorithmic-learning-theory/actions/workflows/lean_action_ci.yml)
+[![API docs](https://img.shields.io/badge/docs-API%20reference-4c1)](https://lividgreen.github.io/lean-algorithmic-learning-theory/)
 [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.21284775-blue)](https://doi.org/10.5281/zenodo.21284775)
+[![Lean](https://img.shields.io/badge/Lean%204-Mathlib-black)](https://leanprover-community.github.io/)
+[![License](https://img.shields.io/badge/license-Apache--2.0-lightgrey)](LICENSE)
 
-Machine-checked **algorithmic learning theory** in Lean 4 + Mathlib — the
-query-model, information-theoretic, and computational side of learning theory,
-complementing the empirical-process/statistical side formalized in
-[lean-stat-learning-theory](https://github.com/YuanheZ/lean-stat-learning-theory).
+**How much can a bounded observer, living inside a system, work out about the
+rules of that system — and what does it cost to hold on to what it works out?**
+
+That question has a surprising amount of mathematics behind it, drawn from
+learning theory, algorithmic information theory, computability and categorical
+logic. This library machine-checks that mathematics in Lean 4, end to end: the
+probabilistic tail bounds a bounded learner reasons with, the query model that
+says what it can learn at all, a cost model that says what it can afford to
+compute, and the representational limits it hits when it tries to model the
+system it is part of — including the point where modelling itself becomes
+self-reference and Gödel's theorem starts to bite.
+
+Everything here is proved, not sketched: no `sorry`, no `native_decide`,
+standard axioms only, with each capstone's exact axiom footprint asserted by a
+guard that fails the build if it ever drifts.
+
+**Start here:** the [**API reference**](https://lividgreen.github.io/lean-algorithmic-learning-theory/)
+is generated from the source and is the best way in — every definition and
+theorem below is a click away, with its statement and its dependencies. A few
+entry points, if you want a sense of the range before reading the list:
+
+| | |
+|---|---|
+| [`Ville.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/Ville.html) | Ville's inequality — the anytime-valid tail bound Mathlib does not carry |
+| [`SQEnvelope.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/SQEnvelope.html) | statistical-query learning, to our knowledge the first such formalization in any prover |
+| [`DecisionListSolver.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/DecisionListSolver.html) | a learner verified **correct *and* polynomial-step**, against a cost model built here |
+| [`Decoupling.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/Decoupling.html) | when a model a system holds of itself survives the system running |
+| [`GodelThreshold.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/GodelThreshold.html) | the capacity threshold at which self-representation turns into incompleteness |
 
 ## What is proved here
 
@@ -177,7 +205,7 @@ complementing the empirical-process/statistical side formalized in
 - No `sorry`, `admit`, or `native_decide`; standard axioms only
   (`propext`, `Classical.choice`, `Quot.sound`) — several cores are
   choice-free, and the structural capstone depends on no axioms at all.
-- **Build-enforced axiom hygiene**: 615 `#guard_msgs in #print axioms` guards
+- **Build-enforced axiom hygiene**: 689 `#guard_msgs in #print axioms` guards
   assert each capstone's exact axiom set; `lake build` fails on any drift.
 - **Targeted imports throughout**: every module names exactly the Mathlib
   files it uses — no monolith `import Mathlib`, one vendored port excepted —
@@ -209,8 +237,17 @@ than by their syntax trees. So `OneDL.ExistsConsistentDL` is public because it
 *is* what `OneDL.solve_decides` claims, while `OneDL.cSolve` is public as a
 cited object whose internals are not.
 
-The rule is recomputed against the compiled environment and enforced as a
-ratchet, so the surface can narrow but not silently widen.
+One further reason is not mechanical and so is not recomputed: a declaration
+that a module's own docstring presents as a **main result** stays public even
+when nothing in the list above consumes it — a paper's headline statement should
+be reachable whether or not another theorem happens to need it. So the public
+surface is the closure of rules 1–5 *plus* those advertised results, and it is
+deliberately a little wider than what the machine can derive.
+
+What the machine does enforce is that it never grows by accident: the closure is
+recomputed against the compiled environment and ratcheted per module, so the
+surface can narrow freely, while widening it requires an explicit, recorded
+decision rather than a silent drift.
 
 **If you are looking for reusable pieces** rather than a paper's machine-checked
 core, these are the library-shaped modules: `ALT/Code/EvalLaws.lean` (the
@@ -256,11 +293,57 @@ convergence under statistical queries), **[Persistence]** (resource-bounded
 persistence capacity: the priced decoder), and **[Inevitability]** (the
 realization-synthesis capstone: two independent routes to a reflective
 subsystem, and the open problem of realizing both on one
-witness) — so "[Discovery] §2.2" names a section of that paper. `FV-*` tags name rows of the
-papers' formal-verification tables, mirrored by the axiom-audit guard files.
-Preprints are forthcoming — this
-README will link arXiv IDs as they appear — and the development is described
-as a whole in a formalization paper (in preparation).
+witness) — so "[Discovery] §2.2" names a section of that paper. `FV-*` tags name
+rows of the papers' formal-verification tables, mirrored by the axiom-audit
+guard files, so a claim in a paper can be traced to the exact theorem that
+carries it. Preprints are forthcoming — this README will link arXiv IDs as they
+appear — and the development is described as a whole in a formalization paper
+(in preparation).
+
+The papers are what the library is *for*, but they are not needed to read it:
+every module's docstring states what it proves and where its boundary is,
+including what it deliberately does **not** claim.
+
+## Scope, and related formalizations
+
+This is the **query-model, information-theoretic and computational** side of
+learning theory: what a bounded learner can identify from queries, what its
+representation costs, and what its computation costs. It deliberately does not
+formalize the **empirical-process / statistical** side — uniform convergence,
+Rademacher complexity, PAC generalization bounds — which is the subject of
+[lean-stat-learning-theory](https://github.com/YuanheZ/lean-stat-learning-theory)
+(arXiv:2602.02285); the two developments complement each other and share no
+overlap that we are aware of. Elsewhere in the ecosystem, PAC learnability has
+been machine-checked for decision stumps in Lean 3 (arXiv:1911.00385), and Coq
+developments certify concrete generalization guarantees (Bagnall–Stewart, AAAI
+2019) and reinforcement-learning convergence (CertRL, Vajjha et al. 2021).
+
+What we have not found formalized anywhere, and therefore built here: the
+statistical-query model, Ville's inequality, and a cost semantics attached to
+Mathlib's own model of partial recursive functions — the last being what lets a
+learning algorithm be verified for correctness and running time in the same
+breath, rather than in a program logic separate from the mathematics.
+
+## How this repository is maintained
+
+This is a **curated snapshot**, not the working repository. Development happens
+in a private monorepo alongside the companion papers, and each release is
+rsynced here as a single reviewed commit — which is why the history is sparse
+and why you will not find work-in-progress branches.
+
+Practical consequences, if you want to engage with it:
+
+- **Issues and questions are welcome** — for anything about the mathematics, a
+  statement you think is wrong, a boundary you think is overstated, or a piece
+  you would like made reusable, please open an issue.
+- **Pull requests are awkward** rather than unwelcome: a patch here has to be
+  replayed by hand into the private tree, so for anything larger than a typo an
+  issue first will save you effort. Upstreamable pieces are a different matter —
+  several modules are built as leaves precisely so they can go to Mathlib, and
+  help with that is genuinely wanted.
+- **The build is the specification.** If CI is green, every theorem stated here
+  is proved from the axioms named above; if you find that untrue, that is the
+  most valuable issue you could open.
 
 ## Citation and license
 

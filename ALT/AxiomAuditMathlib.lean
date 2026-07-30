@@ -88,6 +88,7 @@ import ALT.AccretiveDecoupling
 import ALT.SurpriseBudget
 import ALT.WeightedFiber
 import ALT.QuantizationRate
+import ALT.FlooredMixture
 import ALT.SubstrateClass
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
@@ -230,6 +231,180 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 /-- info: 'WeightedFiber.toDist_sub_le_two' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms WeightedFiber.toDist_sub_le_two
+
+-- The floored mixture: the hypothesis-free exponent automaton with its running-leader theorems, the
+-- saturation normal form recovered from it at a frozen leader (with the below-horizon regime and
+-- the annihilating instance read off that), the threshold-gated event bound with the guard family
+-- that refutes it below the budget, the uniform-in-time accumulation bound, and the three families
+-- that refute the two quantitative results once realizability is dropped.
+/-- info: 'WeightedFiber.wRun_eq_pow_expRun' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.wRun_eq_pow_expRun
+
+/-- info: 'WeightedFiber.expRun_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.expRun_le
+
+/-- info: 'WeightedFiber.expMax_mono' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.expMax_mono
+
+/-- info: 'WeightedFiber.expMax_absorbing' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.expMax_absorbing
+
+/-- info: 'WeightedFiber.wRun_eq_pow_deficit' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.wRun_eq_pow_deficit
+
+/-- info: 'WeightedFiber.bayesRun_missFit' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.bayesRun_missFit
+
+/-- info: 'WeightedFiber.raw_wRun_eq_bayesRun_missFit' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.raw_wRun_eq_bayesRun_missFit
+
+/-- info: 'WeightedFiber.floorSurprises_unbounded_below_budget' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.floorSurprises_unbounded_below_budget
+
+/-- info: 'WeightedFiber.floorSurprises_unbounded_witness' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.floorSurprises_unbounded_witness
+
+/-- info: 'WeightedFiber.floorSurprise_card_mul_le_missCount' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.floorSurprise_card_mul_le_missCount
+
+/-- info: 'WeightedFiber.floorSurprise_card_mul_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.floorSurprise_card_mul_le
+
+/-- info: 'WeightedFiber.wrongMass_le_one' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.wrongMass_le_one
+
+/-- info: 'WeightedFiber.wrongMass_lt_one' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.wrongMass_lt_one
+
+/-- info: 'WeightedFiber.floorSurprise_vacuous_at_badW_budget' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.floorSurprise_vacuous_at_badW_budget
+
+/-- info: 'WeightedFiber.raw_wRun_allMiss_eq_badW' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.raw_wRun_allMiss_eq_badW
+
+/-- info: 'WeightedFiber.wrongMass_lt_one_of_hit' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.wrongMass_lt_one_of_hit
+
+/-- info: 'WeightedFiber.wrongMass_everyMiss' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.wrongMass_everyMiss
+
+/-- info: 'WeightedFiber.floorSurprises_unbounded_everyMiss' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.floorSurprises_unbounded_everyMiss
+
+/-- info: 'WeightedFiber.floorSurprise_card_mul_gt_everyMiss_witness' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.floorSurprise_card_mul_gt_everyMiss_witness
+
+/-- info: 'WeightedFiber.expRun_altMiss' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.expRun_altMiss
+
+/-- info: 'WeightedFiber.floorSurprises_unbounded_altMiss' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.floorSurprises_unbounded_altMiss
+
+/-- info: 'WeightedFiber.floorSurprise_card_mul_gt_altMiss_witness' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.floorSurprise_card_mul_gt_altMiss_witness
+
+/-- info: 'WeightedFiber.le_of_card_mul_le_missCount_everyMiss' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.le_of_card_mul_le_missCount_everyMiss
+
+/-- info: 'WeightedFiber.two_mul_le_of_card_mul_le_missCount_altMiss' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.two_mul_le_of_card_mul_le_missCount_altMiss
+
+/-- info: 'WeightedFiber.toDist_wRun_sub_bayesRun_mirrorMiss' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.toDist_wRun_sub_bayesRun_mirrorMiss
+
+/-- info: 'WeightedFiber.toDist_wRun_sub_bayesRun_not_le_mirrorMiss' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.toDist_wRun_sub_bayesRun_not_le_mirrorMiss
+
+/-- info: 'WeightedFiber.toDist_wRun_sub_bayesRun_not_le_mirrorMiss_two' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.toDist_wRun_sub_bayesRun_not_le_mirrorMiss_two
+
+/-- info: 'WeightedFiber.toDist_mul_left' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.toDist_mul_left
+
+/-- info: 'WeightedFiber.toDist_wRun_sub_bayesRun_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.toDist_wRun_sub_bayesRun_le
+
+-- The reading settles: under realizability the ceiling set is the version space, so the reading is
+-- the least never-missing candidate — a non-decreasing index below the candidate count, hence
+-- eventually constant and moving at most `C − 1` times. The last of the three is the same statement
+-- at the construction's own predictive fitness, read through the frame the pricing assembly uses.
+/-- info: 'WeightedFiber.argmax_wRun_eventually_const' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.argmax_wRun_eventually_const
+
+/-- info: 'WeightedFiber.argmax_wRun_card_changes_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.argmax_wRun_card_changes_le
+
+/-- info: 'WeightedFiber.argmaxFrame_wWorld_eventually_const' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.argmaxFrame_wWorld_eventually_const
+
+-- The base-reading frame over the weighted fiber. `wFiber_emergence_pricing` imports coverage
+-- through the candidate-valued `argmaxFrame`; `wPredFrame` reads the heaviest candidate's prediction
+-- of the base instead, so the coverage comes off the base coordinate and
+-- `surjective_wPredFrame_of_faithful` discharges it from a candidate decoding to a surjective base
+-- rule. Its settled antecedent is a fixed point of the construction's own predictive fitness
+-- (`wGen_settled_of_faithful`) rather than a configuration a variation rule imposes, and over that
+-- family of initial states the two frames separate: the candidate reading is constant, the
+-- base reading surjective (`wFrames_separate_of_settled`). The family is not a convenience — under
+-- the same hypotheses the candidate frame's coverage over ALL initial states can hold
+-- (`surjective_argmaxFrame_of_all_faithful`). Coverage and convergence stay independent: neither
+-- discharges the other, and nothing here shows selection reaches the settled configuration from an
+-- arbitrary weight vector. No numbered result.
+
+/-- info: 'WeightedFiber.wGen_settled_of_faithful' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.wGen_settled_of_faithful
+
+/-- info: 'WeightedFiber.surjective_argmaxFrame_of_all_faithful' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.surjective_argmaxFrame_of_all_faithful
+
+/-- info: 'WeightedFiber.surjective_wPredFrame_of_faithful' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.surjective_wPredFrame_of_faithful
+
+/-- info: 'WeightedFiber.wFrames_separate_of_settled' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.wFrames_separate_of_settled
+
+/-- info: 'WeightedFiber.wPredFrame_emergence_pricing' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.wPredFrame_emergence_pricing
+
+/-- info: 'WeightedFiber.wPredFrame_emergence_pricing_of_faithful' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.wPredFrame_emergence_pricing_of_faithful
 
 -- §3.5 robustness of the exclusion (FV-22): moving decoders and the price of a frame. The update
 -- restricts to a bijection on the recurrent core; the core is the exact ceiling on what ANY
@@ -1188,6 +1363,38 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms SkewFiber.surjective_fittestFrame_of_fixed
 
+-- The base-reading frame, and why the frame is not a presentational choice. `fiber_emergence_pricing`'s
+-- imported hypothesis is a COVERAGE condition — the reading must take every value in its codomain as
+-- the initial state varies — and for a frame returning the fittest CODEWORD that competes with
+-- settling: one fixed codeword from every initial state is a constant reading, refuting surjectivity
+-- once `2 ≤ C` (`not_surjective_fittestFrame_of_converged`). `predFrame` reads the fittest candidate's
+-- prediction of the base instead, so the coverage comes off the base coordinate, which the fiber reads
+-- but never writes (`base_iterate_skewWorldFin`); the same settling then leaves it standing
+-- (`surjective_predFrame_of_converged`), and both halves hold of one overwriting dynamics
+-- (`frames_separate_of_settled`), so neither implication is idle. `predFrame_emergence_pricing`
+-- transports the assembly to the new frame at the same constant. Nothing here proves the fiber
+-- settles under selection. No numbered result.
+
+/-- info: 'SkewFiber.not_surjective_fittestFrame_of_converged' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms SkewFiber.not_surjective_fittestFrame_of_converged
+
+/-- info: 'SkewFiber.surjective_predFrame_of_faithful' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms SkewFiber.surjective_predFrame_of_faithful
+
+/-- info: 'SkewFiber.surjective_predFrame_of_converged' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms SkewFiber.surjective_predFrame_of_converged
+
+/-- info: 'SkewFiber.frames_separate_of_settled' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms SkewFiber.frames_separate_of_settled
+
+/-- info: 'SkewFiber.predFrame_emergence_pricing' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms SkewFiber.predFrame_emergence_pricing
+
 -- Basins: a region a permutation world never leaves is setwise invariant (`image_perm_eq`), so the
 -- world restricts to a permutation of it and, transported along an enumeration, is a world of its
 -- own. Carrying families correspond both ways, and the ledger's frame determination survives. The
@@ -1492,6 +1699,17 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 /-- info: 'CategoricalThreshold.hostsAt_threshold' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms CategoricalThreshold.hostsAt_threshold
+
+-- §6.1/§6.4 + [Inevitability] §2 Definition 2.1 — the threshold as a capacity-indexed MEMBERSHIP
+-- condition (`ReflectiveWithin`): the vacuity guard first (it fails below the Gödel sentence's own
+-- size, which the un-capacitated `ReflectiveAsm` cannot), then the entry point at capacity `2n`.
+/-- info: 'CategoricalThreshold.not_reflectiveWithin_below_sentence_size' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms CategoricalThreshold.not_reflectiveWithin_below_sentence_size
+
+/-- info: 'CategoricalThreshold.reflectiveWithin_at_capacity' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms CategoricalThreshold.reflectiveWithin_at_capacity
 
 -- §6.5 Proposition 6.5 (FV-19): the reflective decision automaton — a shared-memory update whose
 -- code cell is read-only (§3 Decoupling) and whose work cell runs the §6.3 bounded proof search,
@@ -3229,3 +3447,26 @@ strict subset the guard pins verbatim. -/
 /-- info: 'SubstrateClass.substrate_satisfiable' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms SubstrateClass.substrate_satisfiable
+
+-- [Inevitability] §2 Definition 2.1 stated WITHIN a work budget (`ReachesThresholdWithin`):
+-- the membership condition that can fail, and the boundary it fails at.
+-- Exact on the tight family `g(T_S) = 2^n - 1`: membership iff the budget meets `capacity n = 2n`.
+/-- info: 'SubstrateClass.tightFamily_reflectiveWithin_iff' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms SubstrateClass.tightFamily_reflectiveWithin_iff
+
+-- `𝒮_L` reaches it at the host's leftover capacity, consuming (S3).
+/-- info: 'SubstrateClass.substrateL_reachesThresholdWithin' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms SubstrateClass.substrateL_reachesThresholdWithin
+
+-- And on that family (S3)-shaped capacity is NECESSARY for membership itself, not only for
+-- what a member then delivers.
+/-- info: 'SubstrateClass.reachesThresholdWithin_not_reachable_below_paperCapacity_on_family' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms SubstrateClass.reachesThresholdWithin_not_reachable_below_paperCapacity_on_family
+
+-- The coupled chain discharges the new clause from its own capacity-bounded witness.
+/-- info: 'SubstrateClass.coupledAtRequiredDepth_reachesThresholdWithin' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms SubstrateClass.coupledAtRequiredDepth_reachesThresholdWithin

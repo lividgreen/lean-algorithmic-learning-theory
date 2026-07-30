@@ -42,6 +42,7 @@ import ALT.ExcessOrder
 import ALT.ExcessOrderComplete
 import ALT.ExtensionalDiscovery
 import ALT.FiniteInfoTheory
+import ALT.FlooredMixture
 import ALT.GodelChecker
 import ALT.GodelCheckerAutomaton
 import ALT.GodelCheckerComplete
@@ -59,6 +60,7 @@ import ALT.KReconnection
 import ALT.KolmogorovBitlen
 import ALT.KolmogorovComplexity
 import ALT.KolmogorovTimeBounded
+import ALT.LearningWitness
 import ALT.MDLCoding
 import ALT.MDLDominance
 import ALT.MinimalityWitness
@@ -67,6 +69,7 @@ import ALT.ParameterizedNNO
 import ALT.ParityCounterexample
 import ALT.ParityWalk
 import ALT.PersistenceCapacity
+import ALT.PersistentWalk
 import ALT.PolyTime
 import ALT.PolyTimeAccounting
 import ALT.PrefixComplexity
@@ -108,6 +111,7 @@ import ALT.UniversalAt
 import ALT.Ville
 import ALT.WeightedFiber
 import ALT.WindowDeterminism
+import ALT.WitnessMixture
 
 /-!
 # ALT — Algorithmic Learning Theory in Lean 4

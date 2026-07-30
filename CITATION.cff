@@ -17,6 +17,19 @@ authors:
     orcid: https://orcid.org/0009-0007-2106-5777
     affiliation: Independent researcher
 repository-code: https://github.com/lividgreen/lean-algorithmic-learning-theory
+url: https://lividgreen.github.io/lean-algorithmic-learning-theory/
+abstract: >-
+  A Lean 4 + Mathlib development machine-checking the query-model,
+  information-theoretic and computational side of algorithmic learning
+  theory: Ville's inequality for non-negative supermartingales; a
+  statistical-query framework with the version-space envelope and parity's
+  exponential SQ dimension; a native step-and-workspace cost model over
+  Mathlib's partial recursive functions, carrying a decision-list learner
+  verified both correct and polynomial-step; a realizability category over
+  Kleene's first algebra with a capacity-bounded recursor; and a bounded
+  Gödel decision over an existing formalization of the first incompleteness
+  theorem. No sorry, no native_decide, standard axioms only, with every
+  capstone's axiom footprint asserted by a build-enforced guard.
 license: Apache-2.0
 doi: 10.5281/zenodo.21284775
 # Deliberately only the concept DOI (decision 2026-07-28). Per-version DOIs are

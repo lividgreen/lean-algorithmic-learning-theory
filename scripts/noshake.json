@@ -50,6 +50,9 @@
     "ALT.MDLCoding": [
       "Mathlib.Data.Nat.Digits.Lemmas"
     ],
+    "ALT.NoisyWindowChain": [
+      "ALT.PersistentWalk"
+    ],
     "ALT.ParameterizedNNO": [
       "Mathlib.Data.ZMod.Basic",
       "Mathlib.Tactic.Ring"

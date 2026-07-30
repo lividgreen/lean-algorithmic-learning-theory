@@ -39,7 +39,10 @@ stand-ins, not one `Rep(S)`. Here both live on ONE setting: the category of **fi
 The **realizability / capacity** layer of §4.1, §4.3 — objects encoded into `s_work`, morphisms
 carrying realizer *codes*, the "up to capacity" filtration — is NOT modeled: this file certifies the
 categorical *finite-set* shape (the genuine CCC of finite sets) and its unification with the
-recursor, not the `s_work` encoding. We certify the CCC operations **concretely** (as bijections on
+recursor, not the `s_work` encoding. One consequence is that `reflective_satisfiable` here holds
+unconditionally too, for every Gödel number: with no budget in the predicate, nothing can fail it.
+The capacity-indexed counterpart is `CategoricalThreshold.ReflectiveWithin`, over the realizability
+carrier and FV-14's `FitsIn`. We certify the CCC operations **concretely** (as bijections on
 finite types) rather than via Mathlib's `MonoidalClosed FintypeCat` instance: the abstract internal
 hom `(ihom X).obj Y` does not reduce to the function type `X → Y` definitionally (a Mathlib
 `Quiver.Hom`/`ihom` defeq obstruction), so the concrete bijections are the faithful, transparent

@@ -34,6 +34,14 @@ The constituents (all already axiom-clean):
   under imported incompleteness for the subsystem's theory at `g`, that genuine reflective object
   **represents a sentence that is true-but-underivable** in the internal logic.
 
+## Corollary 6.4 and the membership condition
+`hostsAt` stratifies the threshold by working-memory budget (§6.4). `ReflectiveWithin` — the last
+section — states the threshold itself as a capacity-indexed **membership condition**, in the form
+[Inevitability] §2 Definition 2.1 asks for: a reflective object at the demanded working depth whose
+recursor fits the budget. That predicate, unlike the un-capacitated `ReflectiveAsm` (satisfiable for
+every `gTS`, FV-13), **can fail** — `not_reflectiveWithin_below_sentence_size` — and is reached
+exactly at the capacity of Theorem 6.2 (`reflectiveWithin_at_capacity`).
+
 ## Boundary (the one paper-level residue)
 This is the categorical/logical content of Theorem 6.2 on the genuine realizability CCC carrier.
 What stays paper-level is **only** the *concrete* bitstring layout — that an actual decoupled
@@ -41,6 +49,11 @@ subsystem's `Rep(S)` is realized with its objects laid out as bitstrings in `{0,
 The category, the recursor object, the capacity arithmetic, and the consequence are all checked
 here. Gödel's first incompleteness theorem remains the imported black box
 (`GodelThreshold.Incompleteness`), as everywhere in §6.
+
+`ReflectiveWithin` inherits that same residue and adds no other: its Cartesian-closed conjuncts are
+`Asm`'s ambient universal properties, and the capacity filtration enters through FV-14's `FitsIn`,
+per §4.3's demarcation — the Cartesian-closed shape is ambient, and what a finite budget can fail is
+*hosting*.
 -/
 
 namespace CategoricalThreshold
@@ -146,5 +159,86 @@ theorem hostsAt_threshold
         ∃ M, GodelThreshold.RepresentsUnderivableTruth gnum Derivable True_ M) := by
   obtain ⟨R, hdepth, hfits, hcons⟩ := categorical_threshold gnum Derivable True_ g Mchk h1 h2
   exact ⟨R, hdepth, hfits.mono h, hcons⟩
+
+/-! ### The threshold as a capacity-indexed MEMBERSHIP condition ([Inevitability] §2, Def. 2.1)
+
+`hostsAt` above stratifies the threshold by budget, but it is a bare inequality on `w`: no object
+appears in it. `ReflectiveWithin` below is the membership condition itself — *there is* a reflective
+object at the working depth Definition 2.1 demands, and it fits the budget.
+
+The distinction matters because the un-capacitated predicates cannot fail. `ReflectiveAsm gTS` is
+inhabited for every `gTS` (FV-13 `reflectiveAsm_satisfiable`), and so is its arbitrary-depth
+generalization `reflectiveAsm_satisfiable_depth`; a threshold predicate built from the categorical
+data alone therefore certifies nothing about a *budgeted* subsystem. Adding the FV-14 capacity
+conjunct is what makes the predicate refutable: `not_reflectiveWithin_below_sentence_size` is the
+vacuity guard, and it fails exactly where §6.4's `hostsAt_excludes` does — below the Gödel
+sentence's own size. -/
+
+/-- **The reflective threshold within a work budget of `w` bits** ([Inevitability] §2 Def. 2.1, over
+[Decoupling] §6.1 Definition 6.1). The subsystem reaches the threshold for an internalized
+theory of Gödel size `gTS` when there is a reflective object `R` of the realizability CCC `Asm`
+(FV-13: the Cartesian-closed universal properties together with a bounded-recursor object) such that
+
+* **working depth** — `gTS ^ 2 ≤ R.depth`, Definition 2.1's `M_chk ≥ poly(g(T_S))` at the degree-2
+  representative §6.1 fixes; the **indexing** demand `M_idx ≥ g(T_S)` comes free from `R.depth_gt`,
+  the one number `R.depth` carrying both budgets (so `M_idx ≤ M_chk` holds by construction);
+* **capacity** — the recursor object `FitsIn` the `w` work bits (FV-14): "Cartesian closed up to
+  capacity" read as *hosting*, per §4.3's demarcation that the Cartesian-closed shape is ambient to
+  `Asm` while what a finite budget can fail is which objects it holds.
+
+Both clauses are tied to the SAME witness `R`; neither is a free-floating existential. Unlike the
+un-capacitated `ReflectiveAsm`, this predicate can fail — see
+`not_reflectiveWithin_below_sentence_size`, `ReflectiveWithin.mono` and
+`reflectiveWithin_at_capacity` for the boundary, the monotonicity and the entry point. -/
+def ReflectiveWithin (w gTS : ℕ) : Prop :=
+  ∃ R : ReflectiveAsm gTS,
+    gTS ^ 2 ≤ R.depth ∧ CapacityLayer.FitsIn (recursorAsm R.depth) w
+
+/-- **The vacuity guard: below the Gödel sentence's own size the threshold is not reached.** A work
+budget `w < n = ⌈log₂(g(T_S)+1)⌉` hosts at most `2 ^ w < g(T_S) + 1` distinct values, while any
+witness carries a recursor object of `R.depth + 1 ≥ g(T_S) + 2` of them (`R.depth_gt`). So
+`ReflectiveWithin w g(T_S)` fails outright — the same exclusion §6.4's `hostsAt_excludes` records
+for the budget inequality, now for the membership condition.
+
+This is the clause the capacity conjunct buys: drop `FitsIn` from `ReflectiveWithin` and the
+statement becomes FALSE at every `g(T_S)`, since `reflectiveAsm_satisfiable_depth` inhabits the
+remaining depth clause at, for instance, `depth = g(T_S) ^ 2 + 1`. No side condition on `g(T_S)` is
+needed: at `g(T_S) = 0` the hypothesis `w < ⌈log₂ 1⌉ = 0` is already vacuous. -/
+theorem not_reflectiveWithin_below_sentence_size {w gTS : ℕ}
+    (h : w < Nat.clog 2 (gTS + 1)) : ¬ ReflectiveWithin w gTS := by
+  rintro ⟨R, -, -, hcard⟩
+  have hcarrier : Nat.card (recursorAsm R.depth).carrier = R.depth + 1 := by
+    simp [Nat.card_eq_fintype_card, ZMod.card]
+  rw [hcarrier] at hcard
+  have hdepth : gTS < R.depth := R.depth_gt
+  have hpow : 2 ^ w < gTS + 1 := (Nat.lt_clog_iff_pow_lt (by norm_num)).mp h
+  omega
+
+/-- **Monotone in the work budget**: a threshold reached within `w` bits is reached within any
+larger budget — the membership counterpart of `hostsAt_mono`, by `CapacityLayer.FitsIn.mono` on
+the same witness. -/
+theorem ReflectiveWithin.mono {w w' gTS : ℕ}
+    (h : ReflectiveWithin w gTS) (hw : w ≤ w') : ReflectiveWithin w' gTS := by
+  obtain ⟨R, hdepth, hfits⟩ := h
+  exact ⟨R, hdepth, hfits.mono hw⟩
+
+/-- **The threshold IS reached at [Decoupling] Theorem 6.2's capacity.** At `2 ≤ g(T_S)` the budget
+`capacity n = 2n` (`n = ⌈log₂(g(T_S)+1)⌉`) suffices: the witness is the reflective object of working
+depth exactly `g(T_S) ^ 2` — Definition 2.1's own demand, met with equality — and its recursor fits
+by FV-8 `capacity_bound` composed with FV-14 `recursorAsm_fitsIn`, precisely the capacity step of
+FV-15.
+
+The side condition is tight at the same boundary as the rest of this development: `g(T_S) < g(T_S)²`
+fails at `g(T_S) ∈ {0, 1}`, so the depth demand and `ReflectiveAsm`'s `depth_gt` are incompatible
+there. Note the statement mentions no `Sentence`/`gnum` parameters — membership is a condition on
+the pair `(w, g(T_S))` alone; the §6.3 consequence is `categorical_threshold`'s business. -/
+theorem reflectiveWithin_at_capacity {gTS : ℕ} (hg : 2 ≤ gTS) :
+    ReflectiveWithin (GodelInternalization.capacity (Nat.clog 2 (gTS + 1))) gTS := by
+  have hidx : gTS < gTS ^ 2 := by nlinarith
+  refine ⟨reflectiveAsm_satisfiable_depth gTS (gTS ^ 2) hidx, le_refl _, ?_⟩
+  change CapacityLayer.FitsIn (recursorAsm (gTS ^ 2))
+    (GodelInternalization.capacity (Nat.clog 2 (gTS + 1)))
+  exact CapacityLayer.recursorAsm_fitsIn _ _
+    (GodelInternalization.capacity_bound gTS (gTS ^ 2) (le_refl _))
 
 end CategoricalThreshold

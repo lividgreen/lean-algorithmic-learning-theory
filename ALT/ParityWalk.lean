@@ -41,13 +41,22 @@ constant that comes out carries **no dependence on the noise rate**.
   multiplicativity `chi_xor` that makes the whole development algebraic.
 * `walk`, `par`, `walk_eq_xor_par` — the parity-walk orbit, the noise parity that drives it, and
   the identity showing the orbit is the initial state xor-shifted by that parity.
-* `hasSubgaussianMGF_signedSum` — **the engine** (above).
+* `hasSubgaussianMGF_blockSignedSum` — **the engine** (above), stated over disjoint noise
+  *blocks*: each step's increment is a bounded reading of its own block, so a multiplier built from
+  two or more noise bits at once is in range.  Only pairwise independence of a block from its own
+  past is used, never mutual independence of the derived block readings.
+* `hasSubgaussianMGF_signedSum` — the engine at one fresh noise bit per step, the singleton-block
+  case.
 * `measureReal_abs_ge_le` — the two-sided Chernoff bound for a sub-Gaussian variable, in the
   `2·exp(−ε²/(2c))` shape the SQ-oracle interface consumes.
-* `lagSum_telescope` / `abs_chiSum_le` — the telescoping identity and the resulting deterministic
-  bound `|Birkhoff sum| ≤ |signed sum| + 2·lag`.
-* `chiSum_tail` — **the single-orbit tail**, for any `Bool` process whose character satisfies the
-  lag-`k` recursion against an independent noise family.
+* `lagSum_telescope_gen` / `abs_chiSum_le_gen` — the telescoping identity against an arbitrary
+  multiplier sequence, and the resulting deterministic bound
+  `(1 − m)·|Birkhoff sum| ≤ |signed sum| + 2·lag`.  The weight `1 − m` is the whole story of the
+  constant: at `m ≤ 0` it helps (`abs_chiSum_le`), at `0 ≤ m < 1` it is the spectral gap.
+* `chiSum_tail_gen` / `chiSum_tail` — **the single-orbit tail**, for any `Bool` process whose
+  character satisfies a lag-`K` recursion against an independent noise family; the noise offset is
+  a separate parameter, so a query read through a *window* pays a boundary allowance in the lag
+  alone and never in its own offset.
 -/
 
 namespace ParityWalk
@@ -64,10 +73,10 @@ The sign is what distinguishes the parity walk from a lazy random walk — the d
 complement `¬` contributes the `−`, and makes consecutive states anti-correlated. -/
 def zeta (b : Bool) : ℝ := if b then 1 else -1
 
-@[simp] lemma chi_false : chi false = 1 := rfl
-@[simp] lemma chi_true : chi true = -1 := rfl
-@[simp] lemma zeta_false : zeta false = -1 := rfl
-@[simp] lemma zeta_true : zeta true = 1 := rfl
+@[simp] private lemma chi_false : chi false = 1 := rfl
+@[simp] private lemma chi_true : chi true = -1 := rfl
+@[simp] private lemma zeta_false : zeta false = -1 := rfl
+@[simp] private lemma zeta_true : zeta true = 1 := rfl
 
 lemma zeta_eq_neg_chi (b : Bool) : zeta b = -chi b := by cases b <;> simp [chi, zeta]
 
@@ -87,16 +96,19 @@ private lemma chi_mem_Icc (b : Bool) : chi b ∈ Set.Icc (-1 : ℝ) 1 := by case
 private lemma zeta_sub_mem_Icc (b : Bool) (m : ℝ) : zeta b - m ∈ Set.Icc (-1 - m) (1 - m) := by
   cases b <;> norm_num [zeta]
 
-@[fun_prop] private lemma measurable_chi : Measurable chi := measurable_from_top
+private lemma zeta_mem_Icc (b : Bool) : zeta b ∈ Set.Icc (-1 : ℝ) 1 := by
+  cases b <;> norm_num [zeta]
 
-@[fun_prop] private lemma measurable_zeta : Measurable zeta := measurable_from_top
+@[fun_prop] lemma measurable_chi : Measurable chi := measurable_from_top
+
+@[fun_prop] lemma measurable_zeta : Measurable zeta := measurable_from_top
 
 @[fun_prop] private lemma measurable_not : Measurable (not) := measurable_from_top
 
 /-- `xor` of two measurable `Bool`-valued maps is measurable, for an arbitrary σ-algebra on the
 domain — stated without the ambient instance so that it applies to a sub-σ-algebra such as
 `pastAlg`. -/
-private lemma measurable_xor {Ω : Type*} {m : MeasurableSpace Ω} {a b : Ω → Bool}
+lemma measurable_xor {Ω : Type*} {m : MeasurableSpace Ω} {a b : Ω → Bool}
     (ha : Measurable[m] a) (hb : Measurable[m] b) :
     Measurable[m] (fun ω => xor (a ω) (b ω)) := by
   have hre : (fun ω => xor (a ω) (b ω)) = fun ω => if a ω = true then !(b ω) else b ω := by
@@ -115,7 +127,7 @@ def walk (x₀ : Bool) (ξ : ℕ → Bool) : ℕ → Bool
   | 0 => x₀
   | s + 1 => step (walk x₀ ξ s) (ξ s)
 
-@[simp] lemma walk_zero (x₀ : Bool) (ξ : ℕ → Bool) : walk x₀ ξ 0 = x₀ := rfl
+@[simp] private lemma walk_zero (x₀ : Bool) (ξ : ℕ → Bool) : walk x₀ ξ 0 = x₀ := rfl
 
 @[simp] lemma walk_succ (x₀ : Bool) (ξ : ℕ → Bool) (s : ℕ) :
     walk x₀ ξ (s + 1) = !(xor (walk x₀ ξ s) (ξ s)) := rfl
@@ -126,9 +138,10 @@ def par (ξ : ℕ → Bool) : ℕ → Bool
   | 0 => false
   | s + 1 => xor (par ξ s) (!(ξ s))
 
-@[simp] lemma par_zero (ξ : ℕ → Bool) : par ξ 0 = false := rfl
+@[simp] private lemma par_zero (ξ : ℕ → Bool) : par ξ 0 = false := rfl
 
-@[simp] lemma par_succ (ξ : ℕ → Bool) (s : ℕ) : par ξ (s + 1) = xor (par ξ s) (!(ξ s)) := rfl
+@[simp] private lemma par_succ (ξ : ℕ → Bool) (s : ℕ) :
+    par ξ (s + 1) = xor (par ξ s) (!(ξ s)) := rfl
 
 /-- **The walk is its initial state shifted by the noise parity.**  The two-state chain has no
 dynamics beyond this: the whole trajectory is one bit of initial condition xor a running parity of
@@ -140,7 +153,7 @@ lemma walk_eq_xor_par (x₀ : Bool) (ξ : ℕ → Bool) (s : ℕ) : walk x₀ ξ
 
 /-- **The one-step character recursion.**  This is the property that makes the parity walk fit the
 signed-sum engine: its character multiplies by the noise character at every step. -/
-lemma chi_walk_succ (x₀ : Bool) (ξ : ℕ → Bool) (s : ℕ) :
+private lemma chi_walk_succ (x₀ : Bool) (ξ : ℕ → Bool) (s : ℕ) :
     chi (walk x₀ ξ s) * zeta (ξ s) = chi (walk x₀ ξ (s + 1)) := by
   rw [walk_succ, chi_not, chi_xor, zeta_eq_neg_chi]; ring
 
@@ -185,11 +198,39 @@ lemma measurable_noiseAlg_xi {ξ : ℕ → Ω → Bool} {t : Set ℕ} {i : ℕ} 
     Measurable[noiseAlg ξ t] (ξ i) :=
   Measurable.of_comap_le (le_biSup (fun j => MeasurableSpace.comap (ξ j) inferInstance) hi)
 
+lemma noiseAlg_mono (ξ : ℕ → Ω → Bool) {s t : Set ℕ} (h : s ⊆ t) : noiseAlg ξ s ≤ noiseAlg ξ t :=
+  iSup₂_mono' fun i hi => ⟨i, h hi, le_rfl⟩
+
+/-! ### Disjoint blocks
+
+The engine below reads one *block* of noise indices per step rather than one index.  `pastSet A n`
+is what a step-`n` multiplier may look at: everything outside every block from `n` on.  With the
+blocks pairwise disjoint that set contains all the earlier blocks, so the partial sums are
+measurable for it, while being disjoint from the current block — the two facts the induction
+needs. -/
+
+/-- What a step-`n` multiplier may read: every index that no block from `n` on contains. -/
+def pastSet (A : ℕ → Set ℕ) (n : ℕ) : Set ℕ := {i | ∀ v, n ≤ v → i ∉ A v}
+
+private lemma pastSet_mono (A : ℕ → Set ℕ) {a b : ℕ} (h : a ≤ b) : pastSet A a ⊆ pastSet A b :=
+  fun _ hi v hv => hi v (le_trans h hv)
+
+private lemma pastSet_subset_compl (A : ℕ → Set ℕ) (n : ℕ) : pastSet A n ⊆ (A n)ᶜ :=
+  fun _ hi => hi n le_rfl
+
+private lemma block_subset_pastSet {A : ℕ → Set ℕ} (hdisj : ∀ u v, u ≠ v → Disjoint (A u) (A v))
+    {u n : ℕ} (h : u < n) : A u ⊆ pastSet A n :=
+  fun _ hi v hv => Set.disjoint_left.mp (hdisj u v (by omega)) hi
+
 private lemma pastAlg_mono (ξ : ℕ → Ω → Bool) {a b : ℕ} (h : a ≤ b) : pastAlg ξ a ≤ pastAlg ξ b :=
   iSup₂_mono' fun i hi => ⟨i, lt_of_lt_of_le hi h, le_rfl⟩
 
 lemma pastAlg_le [MeasurableSpace Ω] {ξ : ℕ → Ω → Bool} (hmeas : ∀ i, Measurable (ξ i)) (n : ℕ) :
     pastAlg ξ n ≤ (inferInstance : MeasurableSpace Ω) :=
+  iSup₂_le fun i _ => (hmeas i).comap_le
+
+lemma noiseAlg_le [MeasurableSpace Ω] {ξ : ℕ → Ω → Bool} (hmeas : ∀ i, Measurable (ξ i))
+    (t : Set ℕ) : noiseAlg ξ t ≤ (inferInstance : MeasurableSpace Ω) :=
   iSup₂_le fun i _ => (hmeas i).comap_le
 
 lemma measurable_pastAlg_xi {ξ : ℕ → Ω → Bool} {i n : ℕ} (hi : i < n) :
@@ -215,15 +256,16 @@ lemma indepFun_noiseAlg_compl (hmeas : ∀ i, Measurable (ξ i)) (hindep : iInde
     indep_biSup_compl (fun i => (hmeas i).comap_le) hindep _
   exact indep_of_indep_of_le_left (indep_of_indep_of_le_right hbase hG.comap_le) hF.comap_le
 
-/-- **Past ⟂ present.**  The special case the signed-sum engine consumes: anything read off the
-strict past at time `n` is independent of the bit `ξ n`. -/
-private lemma indepFun_past_present (hmeas : ∀ i, Measurable (ξ i)) (hindep : iIndepFun ξ P) (n : ℕ)
-    {A B : Type*} [MeasurableSpace A] [MeasurableSpace B] {F : Ω → A} {G : Ω → B}
-    (hF : Measurable[pastAlg ξ n] F)
-    (hG : Measurable[MeasurableSpace.comap (ξ n) inferInstance] G) :
-    IndepFun F G P :=
-  indepFun_noiseAlg_compl hmeas hindep _ hF
-    (hG.mono (le_biSup (fun j => MeasurableSpace.comap (ξ j) inferInstance) (by simp)) le_rfl)
+/-- **Past ⟂ present, at a block.**  The form the signed-sum engine consumes: anything read outside
+every block from `n` on is independent of anything read inside the block `A n`. -/
+private lemma indepFun_block {A : ℕ → Set ℕ} (hmeas : ∀ i, Measurable (ξ i))
+    (hindep : iIndepFun ξ P) (n : ℕ)
+    {α β : Type*} [MeasurableSpace α] [MeasurableSpace β] {F : Ω → α} {G : Ω → β}
+    (hF : Measurable[noiseAlg ξ (pastSet A n)] F) (hG : Measurable[noiseAlg ξ (A n)] G) :
+    IndepFun F G P := by
+  refine indepFun_noiseAlg_compl hmeas hindep ((A n)ᶜ)
+    (hF.mono (noiseAlg_mono ξ (pastSet_subset_compl A n)) le_rfl) ?_
+  rwa [compl_compl]
 
 end Past
 
@@ -233,52 +275,63 @@ section SignedSum
 
 variable {Ω : Type*}
 
+/-- The sign-weighted partial sum over disjoint noise **blocks**: the multiplier `χ(σ u)` is an
+arbitrary `{±1}`-valued reading of everything outside the blocks from `u` on, and the increment
+`Y u − ρ` a centred `[−1, 1]`-valued reading of the block `A u` alone. -/
+noncomputable def blockSignedSum (σ : ℕ → Ω → Bool) (Y : ℕ → Ω → ℝ) (ρ : ℝ) (n : ℕ) (ω : Ω) : ℝ :=
+  ∑ u ∈ Finset.range n, chi (σ u ω) * (Y u ω - ρ)
+
 /-- The sign-weighted partial sum: the multiplier `χ(σ u)` is an arbitrary `{±1}`-valued reading of
 the strict past, the increment `ζ(ξ (u+d)) − m` a centred noise character. -/
 noncomputable def signedSum (ξ σ : ℕ → Ω → Bool) (m : ℝ) (d n : ℕ) (ω : Ω) : ℝ :=
   ∑ u ∈ Finset.range n, chi (σ u ω) * (zeta (ξ (u + d) ω) - m)
 
-@[simp] private lemma signedSum_zero (ξ σ : ℕ → Ω → Bool) (m : ℝ) (d : ℕ) :
-    signedSum ξ σ m d 0 = fun _ => 0 := by funext ω; simp [signedSum]
+@[simp] private lemma blockSignedSum_zero (σ : ℕ → Ω → Bool) (Y : ℕ → Ω → ℝ) (ρ : ℝ) :
+    blockSignedSum σ Y ρ 0 = fun _ => 0 := by funext ω; simp [blockSignedSum]
 
-private lemma signedSum_succ (ξ σ : ℕ → Ω → Bool) (m : ℝ) (d n : ℕ) (ω : Ω) :
-    signedSum ξ σ m d (n + 1) ω
-      = signedSum ξ σ m d n ω + chi (σ n ω) * (zeta (ξ (n + d) ω) - m) := by
-  simp [signedSum, Finset.sum_range_succ]
+private lemma blockSignedSum_succ (σ : ℕ → Ω → Bool) (Y : ℕ → Ω → ℝ) (ρ : ℝ) (n : ℕ) (ω : Ω) :
+    blockSignedSum σ Y ρ (n + 1) ω
+      = blockSignedSum σ Y ρ n ω + chi (σ n ω) * (Y n ω - ρ) := by
+  simp [blockSignedSum, Finset.sum_range_succ]
 
 variable [MeasurableSpace Ω] {P : Measure Ω} [IsProbabilityMeasure P]
-  {ξ : ℕ → Ω → Bool} {σ : ℕ → Ω → Bool} {m : ℝ} {d : ℕ}
+  {ξ : ℕ → Ω → Bool} {σ : ℕ → Ω → Bool} {Y : ℕ → Ω → ℝ} {m ρ : ℝ} {d : ℕ} {A : ℕ → Set ℕ}
 
 omit [MeasurableSpace Ω] in
-/-- The partial sum through time `n` reads only the strict past at time `n + d`. -/
-private lemma measurable_signedSum (hσ : ∀ u, Measurable[pastAlg ξ (u + d)] (σ u)) (n : ℕ) :
-    Measurable[pastAlg ξ (n + d)] (signedSum ξ σ m d n) := by
-  change Measurable[pastAlg ξ (n + d)]
-    fun ω => ∑ u ∈ Finset.range n, chi (σ u ω) * (zeta (ξ (u + d) ω) - m)
+/-- The partial sum through time `n` reads only what is outside the blocks from `n` on. -/
+private lemma measurable_blockSignedSum (hdisj : ∀ u v, u ≠ v → Disjoint (A u) (A v))
+    (hY : ∀ u, Measurable[noiseAlg ξ (A u)] (Y u))
+    (hσ : ∀ u, Measurable[noiseAlg ξ (pastSet A u)] (σ u)) (n : ℕ) :
+    Measurable[noiseAlg ξ (pastSet A n)] (blockSignedSum σ Y ρ n) := by
+  change Measurable[noiseAlg ξ (pastSet A n)]
+    fun ω => ∑ u ∈ Finset.range n, chi (σ u ω) * (Y u ω - ρ)
   refine Finset.measurable_fun_sum (Finset.range n) ?_
   intro u hu
   simp only [Finset.mem_range] at hu
-  refine Measurable.mul ?_ (measurable_pastAlg_comp (by omega) (fun b => zeta b - m))
-  have h : Measurable[pastAlg ξ (n + d)] (σ u) := (hσ u).mono (pastAlg_mono ξ (by omega)) le_rfl
-  exact measurable_chi.comp h
+  refine Measurable.mul ?_ ?_
+  · exact measurable_chi.comp ((hσ u).mono (noiseAlg_mono ξ (pastSet_mono A hu.le)) le_rfl)
+  · exact ((hY u).mono (noiseAlg_mono ξ (block_subset_pastSet hdisj hu)) le_rfl).sub
+      measurable_const
 
 /-- The one-step increment is centred and lives in an interval of length `2`, so Hoeffding's lemma
 gives it a sub-Gaussian mgf with parameter `1`. -/
-private lemma hasSubgaussianMGF_increment (hmeas : ∀ i, Measurable (ξ i))
-    (hmean : ∀ u, ∫ ω, zeta (ξ (u + d) ω) ∂P = m) (n : ℕ) :
-    HasSubgaussianMGF (fun ω => zeta (ξ (n + d) ω) - m) 1 P := by
-  have hz : Measurable fun ω => zeta (ξ (n + d) ω) := measurable_zeta.comp (hmeas (n + d))
-  have hm : Measurable fun ω => zeta (ξ (n + d) ω) - m := hz.sub measurable_const
-  have hint : Integrable (fun ω => zeta (ξ (n + d) ω)) P := by
-    refine (integrable_const (1 : ℝ)).mono' hz.aestronglyMeasurable
+private lemma hasSubgaussianMGF_increment (n : ℕ) (hYm : Measurable (Y n))
+    (hYbdd : ∀ ω, Y n ω ∈ Set.Icc (-1 : ℝ) 1) (hYmean : ∫ ω, Y n ω ∂P = ρ) :
+    HasSubgaussianMGF (fun ω => Y n ω - ρ) 1 P := by
+  have hm : Measurable fun ω => Y n ω - ρ := hYm.sub measurable_const
+  have hint : Integrable (fun ω => Y n ω) P := by
+    refine (integrable_const (1 : ℝ)).mono' hYm.aestronglyMeasurable
       (Filter.Eventually.of_forall fun ω => ?_)
-    simp
-  have h0 : ∫ ω, (zeta (ξ (n + d) ω) - m) ∂P = 0 := by
-    rw [integral_sub hint (integrable_const _), hmean n]; simp
+    have h := hYbdd ω
+    rw [Real.norm_eq_abs, abs_le]
+    exact ⟨h.1, h.2⟩
+  have h0 : ∫ ω, (Y n ω - ρ) ∂P = 0 := by
+    rw [integral_sub hint (integrable_const _), hYmean]; simp
   have h := hasSubgaussianMGF_of_mem_Icc_of_integral_eq_zero (μ := P)
-    (X := fun ω => zeta (ξ (n + d) ω) - m) (a := -1 - m) (b := 1 - m) hm.aemeasurable
-    (Filter.Eventually.of_forall fun ω => zeta_sub_mem_Icc _ _) h0
-  have hc : ((‖(1 - m) - (-1 - m)‖₊ / 2 : NNReal) ^ 2) = 1 := by
+    (X := fun ω => Y n ω - ρ) (a := -1 - ρ) (b := 1 - ρ) hm.aemeasurable
+    (Filter.Eventually.of_forall fun ω =>
+      ⟨by have := (hYbdd ω).1; linarith, by have := (hYbdd ω).2; linarith⟩) h0
+  have hc : ((‖(1 - ρ) - (-1 - ρ)‖₊ / 2 : NNReal) ^ 2) = 1 := by
     norm_num
   rwa [hc] at h
 
@@ -293,86 +346,89 @@ private lemma exp_split (t : ℝ) (S y : ℝ) (b : Bool) :
   · simp [chi]
   · rw [chi_true, show t * (-1 * y) = -t * y by ring]; norm_num
 
-/-- **The engine.**  A sum of `n` sign-weighted, centred noise characters has a sub-Gaussian
+/-- **The engine.**  A sum of `n` sign-weighted, centred block increments has a sub-Gaussian
 moment-generating function with parameter `n` — the parameter an i.i.d. `[−1,1]` sum would get —
-even though the signs may depend arbitrarily on the past.
+even though the signs may depend arbitrarily on everything the earlier blocks say.
 
 At step `n` the exponential factors as `exp(t·Sₙ)·exp(t·χ(σ n)·y)`; splitting on the two values of
 `σ n` writes it as a sum of two products of a past factor and a present factor, independence
 factors each integral, and the two present factors are the mgfs of `±y`, both bounded by
 `exp(t²/2)` by Hoeffding's lemma.  The two past factors add back up to `exp(t·Sₙ)`, so the
-induction hypothesis closes the step. -/
-theorem hasSubgaussianMGF_signedSum (hmeas : ∀ i, Measurable (ξ i)) (hindep : iIndepFun ξ P)
-    (hσ : ∀ u, Measurable[pastAlg ξ (u + d)] (σ u))
-    (hmean : ∀ u, ∫ ω, zeta (ξ (u + d) ω) ∂P = m) (n : ℕ) :
-    HasSubgaussianMGF (signedSum ξ σ m d n) n P := by
+induction hypothesis closes the step.
+
+Only *pairwise* independence of a block from its own past is used — no mutual independence of the
+derived block readings, which is what keeps this reachable without a σ-algebra grouping lemma. -/
+theorem hasSubgaussianMGF_blockSignedSum (hmeas : ∀ i, Measurable (ξ i)) (hindep : iIndepFun ξ P)
+    (hdisj : ∀ u v, u ≠ v → Disjoint (A u) (A v))
+    (hY : ∀ u, Measurable[noiseAlg ξ (A u)] (Y u))
+    (hYbdd : ∀ u ω, Y u ω ∈ Set.Icc (-1 : ℝ) 1) (hYmean : ∀ u, ∫ ω, Y u ω ∂P = ρ)
+    (hσ : ∀ u, Measurable[noiseAlg ξ (pastSet A u)] (σ u)) (n : ℕ) :
+    HasSubgaussianMGF (blockSignedSum σ Y ρ n) n P := by
   induction n with
   | zero => simp
   | succ n ih =>
-    have hstep : HasSubgaussianMGF (fun ω => zeta (ξ (n + d) ω) - m) 1 P :=
-      hasSubgaussianMGF_increment hmeas hmean n
-    have hSmeas : Measurable[pastAlg ξ (n + d)] (signedSum ξ σ m d n) :=
-      measurable_signedSum hσ n
-    have hxipres : Measurable[MeasurableSpace.comap (ξ (n + d)) inferInstance] (ξ (n + d)) :=
-      Measurable.of_comap_le le_rfl
-    have hzpres : Measurable[MeasurableSpace.comap (ξ (n + d)) inferInstance]
-        (fun ω => zeta (ξ (n + d) ω)) := measurable_zeta.comp hxipres
-    have hymeas : Measurable[MeasurableSpace.comap (ξ (n + d)) inferInstance]
-        (fun ω => zeta (ξ (n + d) ω) - m) := hzpres.sub measurable_const
+    have hYmeas : Measurable (Y n) := (hY n).mono (noiseAlg_le hmeas _) le_rfl
+    have hstep : HasSubgaussianMGF (fun ω => Y n ω - ρ) 1 P :=
+      hasSubgaussianMGF_increment n hYmeas (fun ω => hYbdd n ω) (hYmean n)
+    have hSmeas : Measurable[noiseAlg ξ (pastSet A n)] (blockSignedSum σ Y ρ n) :=
+      measurable_blockSignedSum hdisj hY hσ n
+    have hymeas : Measurable[noiseAlg ξ (A n)] (fun ω => Y n ω - ρ) :=
+      (hY n).sub measurable_const
     -- the four factors, at a given `t`
     have main : ∀ t : ℝ,
-        Integrable (fun ω => Real.exp (t * signedSum ξ σ m d (n + 1) ω)) P ∧
-          mgf (signedSum ξ σ m d (n + 1)) P t
+        Integrable (fun ω => Real.exp (t * blockSignedSum σ Y ρ (n + 1) ω)) P ∧
+          mgf (blockSignedSum σ Y ρ (n + 1)) P t
             ≤ Real.exp ((n : ℝ) * t ^ 2 / 2) * Real.exp (t ^ 2 / 2) := by
       intro t
       set F₀ : Ω → ℝ :=
-        fun ω => Real.exp (t * signedSum ξ σ m d n ω) * ((1 + chi (σ n ω)) / 2) with hF₀
+        fun ω => Real.exp (t * blockSignedSum σ Y ρ n ω) * ((1 + chi (σ n ω)) / 2) with hF₀
       set F₁ : Ω → ℝ :=
-        fun ω => Real.exp (t * signedSum ξ σ m d n ω) * ((1 - chi (σ n ω)) / 2) with hF₁
-      set G₀ : Ω → ℝ := fun ω => Real.exp (t * (zeta (ξ (n + d) ω) - m)) with hG₀
-      set G₁ : Ω → ℝ := fun ω => Real.exp (-t * (zeta (ξ (n + d) ω) - m)) with hG₁
-      have hsplit : ∀ ω, Real.exp (t * signedSum ξ σ m d (n + 1) ω)
+        fun ω => Real.exp (t * blockSignedSum σ Y ρ n ω) * ((1 - chi (σ n ω)) / 2) with hF₁
+      set G₀ : Ω → ℝ := fun ω => Real.exp (t * (Y n ω - ρ)) with hG₀
+      set G₁ : Ω → ℝ := fun ω => Real.exp (-t * (Y n ω - ρ)) with hG₁
+      have hsplit : ∀ ω, Real.exp (t * blockSignedSum σ Y ρ (n + 1) ω)
           = F₀ ω * G₀ ω + F₁ ω * G₁ ω := by
         intro ω
-        rw [signedSum_succ]
+        rw [blockSignedSum_succ]
         exact exp_split t _ _ _
       -- integrability of the four factors
-      have hexpS : Integrable (fun ω => Real.exp (t * signedSum ξ σ m d n ω)) P :=
+      have hexpS : Integrable (fun ω => Real.exp (t * blockSignedSum σ Y ρ n ω)) P :=
         ih.integrable_exp_mul t
-      have hchi : Measurable[pastAlg ξ (n + d)] fun ω => chi (σ n ω) := measurable_chi.comp (hσ n)
-      have hF₀meas : Measurable[pastAlg ξ (n + d)] F₀ :=
+      have hchi : Measurable[noiseAlg ξ (pastSet A n)] fun ω => chi (σ n ω) :=
+        measurable_chi.comp (hσ n)
+      have hF₀meas : Measurable[noiseAlg ξ (pastSet A n)] F₀ :=
         (Measurable.exp (hSmeas.const_mul t)).mul ((measurable_const.add hchi).div_const 2)
-      have hF₁meas : Measurable[pastAlg ξ (n + d)] F₁ :=
+      have hF₁meas : Measurable[noiseAlg ξ (pastSet A n)] F₁ :=
         (Measurable.exp (hSmeas.const_mul t)).mul ((measurable_const.sub hchi).div_const 2)
       have hF₀int : Integrable F₀ P := by
         refine hexpS.mono'
-          (hF₀meas.mono (pastAlg_le hmeas (n + d)) le_rfl).aestronglyMeasurable
+          (hF₀meas.mono (noiseAlg_le hmeas _) le_rfl).aestronglyMeasurable
           (Filter.Eventually.of_forall fun ω => ?_)
         rw [hF₀]
         cases hb : σ n ω <;>
-          simp [hb, abs_of_nonneg (Real.exp_nonneg (t * signedSum ξ σ m d n ω)),
-            Real.exp_nonneg (t * signedSum ξ σ m d n ω)]
+          simp [hb, abs_of_nonneg (Real.exp_nonneg (t * blockSignedSum σ Y ρ n ω)),
+            Real.exp_nonneg (t * blockSignedSum σ Y ρ n ω)]
       have hF₁int : Integrable F₁ P := by
         refine hexpS.mono'
-          (hF₁meas.mono (pastAlg_le hmeas (n + d)) le_rfl).aestronglyMeasurable
+          (hF₁meas.mono (noiseAlg_le hmeas _) le_rfl).aestronglyMeasurable
           (Filter.Eventually.of_forall fun ω => ?_)
         rw [hF₁]
         cases hb : σ n ω <;>
-          simp [hb, abs_of_nonneg (Real.exp_nonneg (t * signedSum ξ σ m d n ω)),
-            Real.exp_nonneg (t * signedSum ξ σ m d n ω)]
+          simp [hb, abs_of_nonneg (Real.exp_nonneg (t * blockSignedSum σ Y ρ n ω)),
+            Real.exp_nonneg (t * blockSignedSum σ Y ρ n ω)]
       have hG₀int : Integrable G₀ P := hstep.integrable_exp_mul t
       have hG₁int : Integrable G₁ P := hstep.integrable_exp_mul (-t)
       -- independence of past factors from present factors
       have hind₀ : IndepFun F₀ G₀ P :=
-        indepFun_past_present hmeas hindep (n + d) hF₀meas (Measurable.exp (hymeas.const_mul t))
+        indepFun_block hmeas hindep n hF₀meas (Measurable.exp (hymeas.const_mul t))
       have hind₁ : IndepFun F₁ G₁ P :=
-        indepFun_past_present hmeas hindep (n + d) hF₁meas (Measurable.exp (hymeas.const_mul (-t)))
+        indepFun_block hmeas hindep n hF₁meas (Measurable.exp (hymeas.const_mul (-t)))
       have hint₀ : Integrable (fun ω => F₀ ω * G₀ ω) P := hind₀.integrable_mul hF₀int hG₀int
       have hint₁ : Integrable (fun ω => F₁ ω * G₁ ω) P := hind₁.integrable_mul hF₁int hG₁int
       constructor
       · exact (hint₀.add hint₁).congr (Filter.Eventually.of_forall fun ω => (hsplit ω).symm)
       · -- the mgf bound
-        have hmgfsum : mgf (signedSum ξ σ m d (n + 1)) P t
+        have hmgfsum : mgf (blockSignedSum σ Y ρ (n + 1)) P t
             = (∫ ω, F₀ ω ∂P) * (∫ ω, G₀ ω ∂P) + (∫ ω, F₁ ω ∂P) * (∫ ω, G₁ ω ∂P) := by
           rw [mgf, integral_congr_ae (Filter.Eventually.of_forall hsplit),
             integral_add hint₀ hint₁,
@@ -388,15 +444,15 @@ theorem hasSubgaussianMGF_signedSum (hmeas : ∀ i, Measurable (ξ i)) (hindep :
           simpa [mgf, hG₁] using h
         have hF₀nn : 0 ≤ ∫ ω, F₀ ω ∂P := by
           refine integral_nonneg fun ω => ?_
-          rw [hF₀]; cases hb : σ n ω <;> simp [hb, Real.exp_nonneg (t * signedSum ξ σ m d n ω)]
+          rw [hF₀]; cases hb : σ n ω <;> simp [hb, Real.exp_nonneg (t * blockSignedSum σ Y ρ n ω)]
         have hF₁nn : 0 ≤ ∫ ω, F₁ ω ∂P := by
           refine integral_nonneg fun ω => ?_
-          rw [hF₁]; cases hb : σ n ω <;> simp [hb, Real.exp_nonneg (t * signedSum ξ σ m d n ω)]
-        have hFsum : (∫ ω, F₀ ω ∂P) + (∫ ω, F₁ ω ∂P) = mgf (signedSum ξ σ m d n) P t := by
+          rw [hF₁]; cases hb : σ n ω <;> simp [hb, Real.exp_nonneg (t * blockSignedSum σ Y ρ n ω)]
+        have hFsum : (∫ ω, F₀ ω ∂P) + (∫ ω, F₁ ω ∂P) = mgf (blockSignedSum σ Y ρ n) P t := by
           rw [mgf, ← integral_add hF₀int hF₁int]
           refine integral_congr_ae (Filter.Eventually.of_forall fun ω => ?_)
           rw [hF₀, hF₁]; ring
-        have hSle : mgf (signedSum ξ σ m d n) P t ≤ Real.exp ((n : ℝ) * t ^ 2 / 2) := by
+        have hSle : mgf (blockSignedSum σ Y ρ n) P t ≤ Real.exp ((n : ℝ) * t ^ 2 / 2) := by
           simpa using ih.mgf_le t
         rw [hmgfsum]
         calc (∫ ω, F₀ ω ∂P) * (∫ ω, G₀ ω ∂P) + (∫ ω, F₁ ω ∂P) * (∫ ω, G₁ ω ∂P)
@@ -411,6 +467,35 @@ theorem hasSubgaussianMGF_signedSum (hmeas : ∀ i, Measurable (ξ i)) (hindep :
     congr 1
     push_cast
     ring
+
+/-- The blocks of the single-index engine: step `u` reads the one bit `ξ (u + d)`. -/
+private lemma pastSet_singleton (d u : ℕ) :
+    pastSet (fun v => ({v + d} : Set ℕ)) u = {i : ℕ | i < u + d} := by
+  ext i
+  simp only [pastSet, Set.mem_setOf_eq, Set.mem_singleton_iff]
+  constructor
+  · intro h
+    by_contra hlt
+    exact h (i - d) (by omega) (by omega)
+  · intro hi v hv hiv
+    omega
+
+/-- **The engine, at one fresh noise bit per step.**  The original shape: the multiplier `χ(σ u)`
+reads the strict past at time `u + d` and the increment is that step's own noise character.  It is
+the block engine at the singleton blocks `A u = {u + d}`. -/
+theorem hasSubgaussianMGF_signedSum (hmeas : ∀ i, Measurable (ξ i)) (hindep : iIndepFun ξ P)
+    (hσ : ∀ u, Measurable[pastAlg ξ (u + d)] (σ u))
+    (hmean : ∀ u, ∫ ω, zeta (ξ (u + d) ω) ∂P = m) (n : ℕ) :
+    HasSubgaussianMGF (signedSum ξ σ m d n) n P := by
+  have hre : signedSum ξ σ m d n = blockSignedSum σ (fun u ω => zeta (ξ (u + d) ω)) m n := rfl
+  rw [hre]
+  refine hasSubgaussianMGF_blockSignedSum (A := fun v => ({v + d} : Set ℕ)) hmeas hindep
+    (fun u v huv => ?_) (fun u => measurable_zeta.comp (measurable_noiseAlg_xi rfl))
+    (fun u ω => zeta_mem_Icc _) hmean (fun u => ?_) n
+  · simp only [Set.disjoint_singleton]
+    omega
+  · rw [pastSet_singleton]
+    exact hσ u
 
 end SignedSum
 
@@ -447,18 +532,27 @@ private lemma sum_range_shift (f : ℕ → ℝ) (k N : ℕ) :
     rw [Finset.sum_range_succ, ih, show N + 1 + k = (N + k) + 1 by omega, Finset.sum_range_succ]
     ring
 
-/-- **The telescope.**  For any `Bool` sequence `o` whose character obeys the lag-`k` recursion
-`χ(o u)·ζ(ζw (u+k)) = χ(o (u+k))`, the signed sum of the noise characters is the Birkhoff sum of
-`χ ∘ o` weighted by `1 − m`, up to two boundary blocks of length `k`. -/
+/-- **The telescope.**  For any `Bool` sequence `o` whose character obeys a lag-`K` multiplicative
+recursion `χ(o u)·ν u = χ(o (u+K))` against *any* multiplier sequence `ν`, the signed sum of the
+multipliers is the Birkhoff sum of `χ ∘ o` weighted by `1 − m`, up to two boundary blocks of
+length `K`. -/
+lemma lagSum_telescope_gen (o : ℕ → Bool) (ν : ℕ → ℝ) (K : ℕ) (m : ℝ)
+    (hrec : ∀ u, chi (o u) * ν u = chi (o (u + K))) (N : ℕ) :
+    ∑ u ∈ Finset.range N, chi (o u) * (ν u - m)
+      = (∑ u ∈ Finset.range (N + K), chi (o u)) - (∑ u ∈ Finset.range K, chi (o u))
+        - m * ∑ u ∈ Finset.range N, chi (o u) := by
+  have hexp : ∀ u, chi (o u) * (ν u - m) = chi (o (u + K)) - m * chi (o u) := by
+    intro u; rw [mul_sub, hrec u]; ring
+  rw [Finset.sum_congr rfl fun u _ => hexp u, Finset.sum_sub_distrib, ← Finset.mul_sum,
+    sum_range_shift (fun u => chi (o u)) K N]
+
+/-- The telescope at the parity walk's own multiplier, its noise character at lag `k`. -/
 lemma lagSum_telescope (o ζw : ℕ → Bool) (k : ℕ) (m : ℝ)
     (hrec : ∀ u, chi (o u) * zeta (ζw (u + k)) = chi (o (u + k))) (N : ℕ) :
     ∑ u ∈ Finset.range N, chi (o u) * (zeta (ζw (u + k)) - m)
       = (∑ u ∈ Finset.range (N + k), chi (o u)) - (∑ u ∈ Finset.range k, chi (o u))
-        - m * ∑ u ∈ Finset.range N, chi (o u) := by
-  have hexp : ∀ u, chi (o u) * (zeta (ζw (u + k)) - m) = chi (o (u + k)) - m * chi (o u) := by
-    intro u; rw [mul_sub, hrec u]; ring
-  rw [Finset.sum_congr rfl fun u _ => hexp u, Finset.sum_sub_distrib, ← Finset.mul_sum,
-    sum_range_shift (fun u => chi (o u)) k N]
+        - m * ∑ u ∈ Finset.range N, chi (o u) :=
+  lagSum_telescope_gen o (fun u => zeta (ζw (u + k))) k m hrec N
 
 /-- A Birkhoff block of length `b` has absolute value at most `b`. -/
 lemma abs_chiSum_le_card (o : ℕ → Bool) (b : ℕ) :
@@ -467,8 +561,50 @@ lemma abs_chiSum_le_card (o : ℕ → Bool) (b : ℕ) :
         Finset.abs_sum_le_sum_abs _ _
     _ = (b : ℝ) := by simp
 
-/-- **The deterministic half of the tail bound.**  Under the lag-`k` recursion and `-1 ≤ m ≤ 0`,
-the Birkhoff sum of the character through time `N + k` exceeds the signed sum by at most `2k`.
+/-- **The deterministic half of the tail bound.**  Under a lag-`K` multiplicative recursion against
+any multiplier sequence, and for any `|m| ≤ 1`, the Birkhoff sum of the character through time
+`N + K` is controlled by the signed sum up to two boundary blocks of length `K` — *weighted by the
+gap `1 − m`*.
+
+The weight is the whole story of the constant.  At `m ≤ 0` — the parity walk's own alternating
+sign — it is `≥ 1` and therefore helps: no spectral gap is divided by (`abs_chiSum_le`).  At
+`0 ≤ m < 1` — a *persistent* multiplier, which is what a cross-class pair character has — it is the
+gap itself, and dividing by it is where a noise-rate dependence necessarily enters. -/
+lemma abs_chiSum_le_gen (o : ℕ → Bool) (ν : ℕ → ℝ) (K : ℕ) (m : ℝ) (hm : |m| ≤ 1)
+    (hrec : ∀ u, chi (o u) * ν u = chi (o (u + K))) (N : ℕ) :
+    (1 - m) * |∑ u ∈ Finset.range (N + K), chi (o u)|
+      ≤ |∑ u ∈ Finset.range N, chi (o u) * (ν u - m)| + 2 * K := by
+  set A : ℝ := ∑ u ∈ Finset.range (N + K), chi (o u) with hA
+  set B : ℝ := ∑ u ∈ Finset.range K, chi (o u) with hB
+  set C : ℝ := ∑ u ∈ Finset.range N, chi (o u) with hC
+  set S : ℝ := ∑ u ∈ Finset.range N, chi (o u) * (ν u - m) with hS
+  have htel : S = A - B - m * C := lagSum_telescope_gen o ν K m hrec N
+  have hBk : |B| ≤ (K : ℝ) := abs_chiSum_le_card o K
+  have hAC : |A - C| ≤ (K : ℝ) := by
+    have : A - C = ∑ u ∈ Finset.range K, chi (o (u + N)) := by
+      rw [hA, hC, sum_range_shift (fun u => chi (o u)) N K, show K + N = N + K by omega]
+    rw [this]
+    exact abs_chiSum_le_card (fun u => o (u + N)) K
+  -- `(1 − m)·A = S + B − m·(A − C)`
+  have hkey : (1 - m) * A = S + B - m * (A - C) := by rw [htel]; ring
+  have hm1 : (0 : ℝ) ≤ 1 - m := by cases abs_le.mp hm; linarith
+  have hmAC : |m| * |A - C| ≤ (K : ℝ) := by
+    calc |m| * |A - C| ≤ 1 * (K : ℝ) := by
+          exact mul_le_mul hm hAC (abs_nonneg _) (by norm_num)
+      _ = (K : ℝ) := one_mul _
+  calc (1 - m) * |A| = |S + B - m * (A - C)| := by
+        rw [← abs_of_nonneg hm1, ← abs_mul, hkey]
+    _ ≤ |S| + |B| + |m| * |A - C| := by
+        have e : S + B - m * (A - C) = (S + B) + -(m * (A - C)) := by ring
+        have h₁ : |(S + B) + -(m * (A - C))| ≤ |S + B| + |-(m * (A - C))| := abs_add_le _ _
+        have h₂ : |S + B| ≤ |S| + |B| := abs_add_le _ _
+        have h₃ : |-(m * (A - C))| = |m| * |A - C| := by rw [abs_neg, abs_mul]
+        rw [e]; linarith
+    _ ≤ |S| + 2 * K := by linarith
+
+/-- **The deterministic half of the tail bound, at the alternating sign.**  Under the lag-`k`
+recursion and `-1 ≤ m ≤ 0`, the Birkhoff sum of the character through time `N + k` exceeds the
+signed sum by at most `2k`.
 
 This inequality is where the parity walk's anti-correlation is cashed in.  The telescope's
 denominator is `1 − m ≥ 1`, so it *helps*: no spectral gap is divided by, and the boundary term
@@ -477,33 +613,9 @@ lemma abs_chiSum_le (o ζw : ℕ → Bool) (k : ℕ) (m : ℝ) (hm0 : -1 ≤ m) 
     (hrec : ∀ u, chi (o u) * zeta (ζw (u + k)) = chi (o (u + k))) (N : ℕ) :
     |∑ u ∈ Finset.range (N + k), chi (o u)|
       ≤ |∑ u ∈ Finset.range N, chi (o u) * (zeta (ζw (u + k)) - m)| + 2 * k := by
-  set A : ℝ := ∑ u ∈ Finset.range (N + k), chi (o u) with hA
-  set B : ℝ := ∑ u ∈ Finset.range k, chi (o u) with hB
-  set C : ℝ := ∑ u ∈ Finset.range N, chi (o u) with hC
-  set S : ℝ := ∑ u ∈ Finset.range N, chi (o u) * (zeta (ζw (u + k)) - m) with hS
-  have htel : S = A - B - m * C := lagSum_telescope o ζw k m hrec N
-  have hBk : |B| ≤ (k : ℝ) := abs_chiSum_le_card o k
-  have hAC : |A - C| ≤ (k : ℝ) := by
-    have : A - C = ∑ u ∈ Finset.range k, chi (o (u + N)) := by
-      rw [hA, hC, sum_range_shift (fun u => chi (o u)) N k, show k + N = N + k by omega]
-    rw [this]
-    exact abs_chiSum_le_card (fun u => o (u + N)) k
-  -- `(1 − m)·A = S + B − m·(A − C)`
-  have hkey : (1 - m) * A = S + B - m * (A - C) := by rw [htel]; ring
-  have h1m : (1 : ℝ) ≤ 1 - m := by linarith
-  have habs : |A| ≤ (1 - m) * |A| := by nlinarith [abs_nonneg A]
-  have hmabs : |m| ≤ 1 := abs_le.mpr ⟨hm0, by linarith⟩
-  have : (1 - m) * |A| = |S + B - m * (A - C)| := by
-    rw [← hkey, abs_mul, abs_of_nonneg (by linarith : (0:ℝ) ≤ 1 - m)]
-  calc |A| ≤ (1 - m) * |A| := habs
-    _ = |S + B - m * (A - C)| := this
-    _ ≤ |S| + |B| + |m| * |A - C| := by
-        have e : S + B - m * (A - C) = (S + B) + -(m * (A - C)) := by ring
-        have h₁ : |(S + B) + -(m * (A - C))| ≤ |S + B| + |-(m * (A - C))| := abs_add_le _ _
-        have h₂ : |S + B| ≤ |S| + |B| := abs_add_le _ _
-        have h₃ : |-(m * (A - C))| = |m| * |A - C| := by rw [abs_neg, abs_mul]
-        rw [e]; linarith
-    _ ≤ |S| + 2 * k := by nlinarith [abs_nonneg (A - C), abs_nonneg B]
+  have hgen := abs_chiSum_le_gen o (fun u => zeta (ζw (u + k))) k m
+    (abs_le.mpr ⟨hm0, by linarith⟩) hrec N
+  nlinarith [abs_nonneg (∑ u ∈ Finset.range (N + k), chi (o u))]
 
 /-! ## The single-orbit tail -/
 
@@ -520,27 +632,43 @@ boundary allowance `2k` and the sub-Gaussian parameter `N`.
 
 For `k = 1` this is the parity walk `x ↦ ¬x ⊕ ξ` itself; larger `k` is the noisy window chain
 (`ALT/NoisyWindowChain.lean`).  Note what does *not* appear: the noise rate.  The bound is uniform
-over `m ∈ [−1, 0]`, i.e. over every noise level from deterministic alternation to unbiased. -/
+over `m ∈ [−1, 0]`, i.e. over every noise level from deterministic alternation to unbiased.
+
+The telescope's lag `K` and the noise offset `d` are separate parameters: `d = K = k` is the chain
+read from time `0`, while `d = a + k` with `K = k` is the same chain read through a **window
+starting at offset `a`** — whose boundary allowance is still `2k`, not `2(a+k)`.  That is what
+keeps a shifted query's constant free of its own offset. -/
+theorem chiSum_tail_gen (hmeas : ∀ i, Measurable (ξ i)) (hindep : iIndepFun ξ P) {d K : ℕ}
+    (hmean : ∀ u, ∫ ω, zeta (ξ (u + d) ω) ∂P = m) (hm0 : -1 ≤ m) (hm : m ≤ 0)
+    (o : ℕ → Ω → Bool) (hom : ∀ u, Measurable[pastAlg ξ (u + d)] (o u))
+    (hrec : ∀ u ω, chi (o u ω) * zeta (ξ (u + d) ω) = chi (o (u + K) ω))
+    (N : ℕ) {ε : ℝ} (hε : 0 ≤ ε) :
+    P.real {ω | ε + 2 * K ≤ |∑ u ∈ Finset.range (N + K), chi (o u ω)|}
+      ≤ 2 * Real.exp (-ε ^ 2 / (2 * N)) := by
+  have hsg : HasSubgaussianMGF (signedSum ξ o m d N) N P :=
+    hasSubgaussianMGF_signedSum hmeas hindep hom hmean N
+  have hsub : {ω | ε + 2 * K ≤ |∑ u ∈ Finset.range (N + K), chi (o u ω)|}
+      ⊆ {ω | ε ≤ |signedSum ξ o m d N ω|} := by
+    intro ω hω
+    simp only [Set.mem_setOf_eq] at hω ⊢
+    have hgen := abs_chiSum_le_gen (fun u => o u ω) (fun u => zeta (ξ (u + d) ω)) K m
+      (abs_le.mpr ⟨hm0, by linarith⟩) (fun u => hrec u ω) N
+    simp only [signedSum]
+    nlinarith [abs_nonneg (∑ u ∈ Finset.range (N + K), chi (o u ω))]
+  calc P.real {ω | ε + 2 * K ≤ |∑ u ∈ Finset.range (N + K), chi (o u ω)|}
+      ≤ P.real {ω | ε ≤ |signedSum ξ o m d N ω|} := measureReal_mono hsub (measure_ne_top _ _)
+    _ ≤ 2 * Real.exp (-ε ^ 2 / (2 * N)) := by
+        simpa using measureReal_abs_ge_le hsg hε
+
+/-- **The single-orbit tail** at the chain's own lag, read from time `0`. -/
 theorem chiSum_tail (hmeas : ∀ i, Measurable (ξ i)) (hindep : iIndepFun ξ P)
     (hmean : ∀ u, ∫ ω, zeta (ξ (u + k) ω) ∂P = m) (hm0 : -1 ≤ m) (hm : m ≤ 0)
     (o : ℕ → Ω → Bool) (hom : ∀ u, Measurable[pastAlg ξ (u + k)] (o u))
     (hrec : ∀ u ω, chi (o u ω) * zeta (ξ (u + k) ω) = chi (o (u + k) ω))
     (N : ℕ) {ε : ℝ} (hε : 0 ≤ ε) :
     P.real {ω | ε + 2 * k ≤ |∑ u ∈ Finset.range (N + k), chi (o u ω)|}
-      ≤ 2 * Real.exp (-ε ^ 2 / (2 * N)) := by
-  have hsg : HasSubgaussianMGF (signedSum ξ o m k N) N P :=
-    hasSubgaussianMGF_signedSum hmeas hindep hom hmean N
-  have hsub : {ω | ε + 2 * k ≤ |∑ u ∈ Finset.range (N + k), chi (o u ω)|}
-      ⊆ {ω | ε ≤ |signedSum ξ o m k N ω|} := by
-    intro ω hω
-    simp only [Set.mem_setOf_eq] at hω ⊢
-    have := abs_chiSum_le (fun u => o u ω) (fun u => ξ u ω) k m hm0 hm (fun u => hrec u ω) N
-    simp only [signedSum]
-    linarith
-  calc P.real {ω | ε + 2 * k ≤ |∑ u ∈ Finset.range (N + k), chi (o u ω)|}
-      ≤ P.real {ω | ε ≤ |signedSum ξ o m k N ω|} := measureReal_mono hsub (measure_ne_top _ _)
-    _ ≤ 2 * Real.exp (-ε ^ 2 / (2 * N)) := by
-        simpa using measureReal_abs_ge_le hsg hε
+      ≤ 2 * Real.exp (-ε ^ 2 / (2 * N)) :=
+  chiSum_tail_gen hmeas hindep hmean hm0 hm o hom hrec N hε
 
 end Tail
 
@@ -553,9 +681,17 @@ build-enforced. -/
 
 set_option linter.style.longLine false
 
+/-- info: 'ParityWalk.hasSubgaussianMGF_blockSignedSum' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms ParityWalk.hasSubgaussianMGF_blockSignedSum
+
 /-- info: 'ParityWalk.hasSubgaussianMGF_signedSum' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms ParityWalk.hasSubgaussianMGF_signedSum
+
+/-- info: 'ParityWalk.chiSum_tail_gen' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms ParityWalk.chiSum_tail_gen
 
 /-- info: 'ParityWalk.chiSum_tail' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in

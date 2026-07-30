@@ -94,12 +94,35 @@ file gave [Inevitability]'s own Definitions 2.1–2.3 a Lean counterpart.
   but failing the capacity inequality, machine-checking the paper's own "standing trap" warning.
 * `substrate_satisfiable`: the bare `Substrate` structure is non-vacuous, at a `g(T_S) = 2`
   witness where the capacity bridge is non-vacuous (not the degenerate `g(T_S) = 0`).
+* `ReachesThresholdWithin`: Definition 2.1 stated **within a work budget**, over
+  `CategoricalThreshold.ReflectiveWithin` — a genuine reflective object of the realizability CCC at
+  the demanded working depth, whose recursor fits the budget. Added ALONGSIDE `ReachesThreshold`
+  and `ReachesThresholdAtDepth`, both kept unchanged. This is the form that can FAIL, and the
+  boundary notes below record which of their limitations it removes and which it does not.
+* `tightFamily_reflectiveWithin_iff`: on `g(T_S) = 2 ^ n - 1` (`2 ≤ n`), membership holds **iff**
+  the budget meets the paper's own `capacity n = 2n` — an exact threshold, quantified over the
+  witness's own depth rather than fixed at one (`tightFamily_capacityMinusOne_lt_requiredCard`,
+  `tightFamily_not_fitsIn_capacityMinusOne_atDepth` are its reusable counting core).
+  `offFamily_reflectiveWithin_below_capacity` shows the same family-dependence off it that the
+  coupled results already record.
+* `substrateL_reachesThresholdWithin` (Theorem 5.1(b) for the membership form) and
+  `reachesThresholdWithin_not_reachable_below_paperCapacity_on_family`: `𝒮_L` reaches the threshold
+  at the host's leftover capacity `⌊K − |s_code|⌋₊`, and on the tight family a host one bit short of
+  `capacity n` does NOT — so (S3)-shaped capacity is load-bearing for MEMBERSHIP, not only for the
+  coupled conclusion.
+* `coupledAtRequiredDepth_reachesThresholdWithin`: the coupled chain discharges the new clause from
+  its own capacity-bounded witness — contrast `coupledAtRequiredDepth_reachesThresholdAtDepth`,
+  which discharges its reflective conjunct with the unconditionally-available
+  `ReflectiveAssembly.reflective_satisfiable`.
 
 ## What this does NOT establish (flagged)
 * `ReachesThreshold` (kept as the Definition-2.1-faithful CONDITION, unchanged) still wraps
   `ReflectiveAssembly.Reflective`, unconditionally satisfiable for every Gödel number
   (`ReflectiveAssembly.reflective_satisfiable`) — that has NOT changed, and
-  `substrateL_reachesThreshold` no longer targets it, precisely because of this.
+  `substrateL_reachesThreshold` no longer targets it, precisely because of this. The RESOLUTION is
+  `ReachesThresholdWithin`, which replaces that conjunct with the capacity-indexed
+  `CategoricalThreshold.ReflectiveWithin` and thereby fails below the Gödel sentence's own size —
+  it does not repair `ReachesThreshold`, which is deliberately left as the paper's literal reading.
 * **The honest limit of the fix.** `DeliversUnderivableTruth`'s bare conclusion (∃ a representer,
   under carried `Incompleteness`) is ITSELF reachable from `Incompleteness` alone, with no capacity
   or substrate input (`deliversUnderivableTruth_of_incompleteness_alone`): `GodelThreshold.
@@ -133,7 +156,18 @@ file gave [Inevitability]'s own Definitions 2.1–2.3 a Lean counterpart.
 * `ReachesThresholdAtDepth` fixes ONLY the depth clause's vacuity, not `ReachesThreshold`'s other
   one: it still wraps the same `ReflectiveAssembly.Reflective` stand-in
   (`reflective_satisfiable`, unconditionally satisfiable for every Gödel number) and the same
-  carried `TheoryConditions`, unchanged from `ReachesThreshold`.
+  carried `TheoryConditions`, unchanged from `ReachesThreshold`. `ReachesThresholdWithin` is the
+  form that fixes BOTH — but only by taking a work budget as a parameter, which the depth-tied form
+  does not; the two are not comparable statements, and both are kept.
+* `ReachesThresholdWithin`'s own limits, stated plainly. (i) The four `TheoryConditions` remain
+  CARRIED, uninterpreted, exactly as in the two forms above — the capacity conjunct is what became
+  refutable, not they. (ii) It is a condition on the pair `(work budget, g(T_S))`; it says nothing
+  about a *particular* subsystem's `Rep(S)` beyond what FV-13/FV-14 check, so the concrete
+  `{0,1}^{|s_work|}` layout stays paper-level here as everywhere. (iii) It carries no payload:
+  the represents-but-cannot-derive consequence is `CoupledDeliveranceAtRequiredDepth`'s, and
+  `coupledAtRequiredDepth_reachesThresholdWithin` runs from the payload form to this one, not back.
+  (iv) Necessity of the paper's `2n` figure remains family-dependent — exact on `2 ^ n - 1`, false
+  at `2 ^ m`, with no general characterization attempted, the same scope the coupled results have.
 * (S1) (`Decoupling.Fixes`) is carried by `Substrate`/`SubstrateL` and is exactly the
   architectural invariant `RetentionUpperBound.retention_persists` consumes, but
   `substrateL_reachesThreshold`'s proof does not need it: `DeliversUnderivableTruth`, as defined
@@ -215,6 +249,31 @@ def ReachesThresholdAtDepth (Consistent NSound Delta1Axiomatized InterpretsR0 : 
   ReflectiveAssembly.Reflective gTS ∧
     TheoryConditions Consistent NSound Delta1Axiomatized InterpretsR0 ∧
     gTS ≤ Robj.depth ∧ gTS ^ 2 ≤ Robj.depth
+
+/-- **Definition 2.1 with a capacity, and therefore with content.** The two forms above are
+unconditionally satisfiable in their categorical clause: both wrap `ReflectiveAssembly.Reflective`,
+which `ReflectiveAssembly.reflective_satisfiable` inhabits for every Gödel number — so neither can
+fail on that clause, whatever the subsystem's budget. This form replaces it with
+`CategoricalThreshold.ReflectiveWithin`, the SAME Definition-2.1 content stated *within a work
+budget of `w` bits*: a genuine reflective object of the realizability CCC `Asm` (FV-13), at the
+working depth Definition 2.1 demands, whose recursor object fits in `w` (FV-14).
+
+Three consequences distinguish it from `ReachesThreshold`/`ReachesThresholdAtDepth`, which are kept
+unchanged alongside it (the file's own precedent for an added form):
+
+* it **fails** below the Gödel sentence's own size — `CategoricalThreshold.
+  not_reflectiveWithin_below_sentence_size` — so it is a real condition on the subsystem, not a
+  bookkeeping bundle;
+* on the family `g(T_S) = 2 ^ n - 1` it is reached **exactly** at the paper's capacity figure
+  (`tightFamily_reflectiveWithin_iff`), which makes (S3) load-bearing for MEMBERSHIP
+  (`reachesThresholdWithin_not_reachable_below_paperCapacity_on_family`) and not only for the
+  coupled conclusion;
+* no separate `∃ M_idx M_chk` clause is needed: the depth demands live inside `ReflectiveWithin`,
+  tied to its own witness, rather than floating free of any object. -/
+def ReachesThresholdWithin (Consistent NSound Delta1Axiomatized InterpretsR0 : Prop)
+    (w gTS : ℕ) : Prop :=
+  CategoricalThreshold.ReflectiveWithin w gTS ∧
+    TheoryConditions Consistent NSound Delta1Axiomatized InterpretsR0
 
 /-- **The reflective threshold's payload** — the consequence Definition 2.1 exists to deliver,
 [Decoupling] §6.3's represents-but-cannot-derive fact — under `GodelThreshold.Incompleteness` for
@@ -713,6 +772,165 @@ theorem offFamily_fitsIn_below_paperCapacity_atRequiredDepth (m : ℕ) (hm : 1 �
   have hgoal2 : ((2 ^ m) ^ 2 + 1) * 2 ≤ 2 ^ (2 * (m + 1) - 1) * 2 := by
     rw [hpowsucc, hpoweq, hsq]; nlinarith [hone]
   exact le_of_mul_le_mul_right hgoal2 (by norm_num)
+
+/-! ### The membership predicate on the two families, and Definition 2.1's rewiring
+
+The results above are about `CoupledDeliveranceAtRequiredDepth` — a *conclusion* reached from the
+threshold. This section carries the same boundary over to the threshold's own MEMBERSHIP condition
+`ReachesThresholdWithin`: exact at the paper's capacity figure on the tight family, with slack off
+it, and discharged by the coupled chain from its own witness. -/
+
+/-- The counting core of the tight family, stated once and reused. One bit under the paper's figure,
+`2 ^ (capacity n - 1) = 2 ^ (2n - 1)` values, is strictly fewer than the `g(T_S) ^ 2 + 1` a recursor
+at the REQUIRED working depth carries, at `g(T_S) = 2 ^ n - 1` (`2 ≤ n`): doubling both sides turns
+the claim into `(g+1)^2 ≤ 2·g²`, i.e. `2g + 1 ≤ g²`, which holds from `g ≥ 3`. -/
+theorem tightFamily_capacityMinusOne_lt_requiredCard (n : ℕ) (hn : 2 ≤ n) :
+    2 ^ (GodelInternalization.capacity n - 1) < (2 ^ n - 1) ^ 2 + 1 := by
+  have h4 : (4 : ℕ) ≤ 2 ^ n := by
+    calc (4 : ℕ) = 2 ^ 2 := by norm_num
+      _ ≤ 2 ^ n := Nat.pow_le_pow_right (by norm_num) hn
+  set g := 2 ^ n - 1 with hgdef
+  have hg1 : g + 1 = 2 ^ n := by omega
+  have hg3 : 3 ≤ g := by omega
+  simp only [GodelInternalization.capacity]
+  have hpowsucc : (2 : ℕ) * 2 ^ (2 * n - 1) = 2 ^ (2 * n) := by
+    rw [← pow_succ']; congr 1; omega
+  have hpoweq : (2 : ℕ) ^ (2 * n) = (g + 1) * (g + 1) := by
+    rw [two_mul, pow_add, ← hg1]
+  have hdouble : 2 * 2 ^ (2 * n - 1) ≤ 2 * g ^ 2 := by
+    rw [hpowsucc, hpoweq]; nlinarith [hg3]
+  exact Nat.lt_succ_of_le (Nat.le_of_mul_le_mul_left hdouble (by norm_num))
+
+/-- **The tight family, at ANY depth Definition 2.1 admits.** `tightFamily_not_fitsIn_capacityMinusOne`
+refutes the fit at the required depth exactly; this generalizes it to every working depth
+`M_chk ≥ g(T_S) ^ 2` — the whole range Definition 2.1's `M_chk ≥ poly(g(T_S))` allows — since a
+deeper recursor only carries more values. This is the form the membership predicate needs, whose
+witness fixes no particular depth. -/
+theorem tightFamily_not_fitsIn_capacityMinusOne_atDepth {n M : ℕ} (hn : 2 ≤ n)
+    (hM : (2 ^ n - 1) ^ 2 ≤ M) :
+    ¬ CapacityLayer.FitsIn (RealizabilityRecursor.recursorAsm M)
+        (GodelInternalization.capacity n - 1) := by
+  rintro ⟨-, hcard⟩
+  have heq : Nat.card (RealizabilityRecursor.recursorAsm M).carrier = M + 1 := by
+    simp [Nat.card_eq_fintype_card, ZMod.card]
+  rw [heq] at hcard
+  have hlt : M + 1 < (2 ^ n - 1) ^ 2 + 1 :=
+    lt_of_le_of_lt hcard (tightFamily_capacityMinusOne_lt_requiredCard n hn)
+  exact absurd hM (Nat.not_le.mpr (Nat.lt_of_succ_lt_succ hlt))
+
+/-- **The exact threshold on the tight family.** At `g(T_S) = 2 ^ n - 1` (`2 ≤ n`) the membership
+condition `CategoricalThreshold.ReflectiveWithin` is reached **iff** the work budget meets the
+paper's own capacity figure `capacity n = 2n` — an equivalence, not a sufficiency:
+
+* *(⇐)* `CategoricalThreshold.reflectiveWithin_at_capacity` at `g(T_S) = 2 ^ n - 1` (where
+  `2 ≤ g(T_S)` from `2 ≤ n`), rewritten by `tightFamily_capacity_exact`, then pushed up by
+  monotonicity;
+* *(⇒)* one bit short already fails, at every admissible depth
+  (`tightFamily_not_fitsIn_capacityMinusOne_atDepth`).
+
+This is the sharp statement the coupled results could not make: they fix a depth and refute the fit
+there, whereas membership quantifies over the witness's own depth, and the bound survives it. -/
+theorem tightFamily_reflectiveWithin_iff {n : ℕ} (hn : 2 ≤ n) (w : ℕ) :
+    CategoricalThreshold.ReflectiveWithin w (2 ^ n - 1) ↔
+      GodelInternalization.capacity n ≤ w := by
+  have h4 : (4 : ℕ) ≤ 2 ^ n := by
+    calc (4 : ℕ) = 2 ^ 2 := by norm_num
+      _ ≤ 2 ^ n := Nat.pow_le_pow_right (by norm_num) hn
+  constructor
+  · rintro ⟨R, hdepth, hfits⟩
+    by_contra hlt
+    exact tightFamily_not_fitsIn_capacityMinusOne_atDepth hn hdepth (hfits.mono (by omega))
+  · intro hcap
+    have hg : 2 ≤ 2 ^ n - 1 := by omega
+    have h := CategoricalThreshold.reflectiveWithin_at_capacity hg
+    rw [tightFamily_capacity_exact n hn] at h
+    exact h.mono hcap
+
+/-- **Off-family slack, for membership.** At `g(T_S) = 2 ^ m` (`1 ≤ m`) the membership condition is
+already reached one bit UNDER the paper's figure at this index — the witness is the required-depth
+object `g(T_S) ^ 2`, and the fit is exactly `offFamily_fitsIn_below_paperCapacity_atRequiredDepth`.
+Together with `tightFamily_reflectiveWithin_iff` this settles the shape of the boundary for
+membership as it was already settled for the coupled conclusion: the necessity of the `2n` figure is
+family-dependent, and no general characterization is claimed. -/
+theorem offFamily_reflectiveWithin_below_capacity (m : ℕ) (hm : 1 ≤ m) :
+    CategoricalThreshold.ReflectiveWithin
+      (GodelInternalization.capacity (Nat.clog 2 (2 ^ m + 1)) - 1) (2 ^ m) := by
+  have h2 : (2 : ℕ) ≤ 2 ^ m := by
+    calc (2 : ℕ) = 2 ^ 1 := (pow_one 2).symm
+      _ ≤ 2 ^ m := Nat.pow_le_pow_right (by norm_num) hm
+  have hidx : 2 ^ m < (2 ^ m) ^ 2 := by nlinarith
+  exact ⟨CategoricalThreshold.reflectiveAsm_satisfiable_depth (2 ^ m) ((2 ^ m) ^ 2) hidx,
+    le_refl _, offFamily_fitsIn_below_paperCapacity_atRequiredDepth m hm⟩
+
+/-- **`𝒮_L` reaches the content-carrying threshold, at its own headroom.** `(M, U) ∈ 𝒮_L` at
+`2 ≤ g(T_S)` satisfies `ReachesThresholdWithin` at the work budget the host has left after its code
+region, `⌊K − |s_code|⌋₊`: (S3)'s inequality covers `capacity n`, and
+`CategoricalThreshold.reflectiveWithin_at_capacity` supplies the object there, monotonicity carrying
+it to the headroom (the `reflectiveCapacity_fitsIn_headroom` idiom, now landing in the membership
+predicate). The theory conditions are (S3)'s own second component.
+
+This is `substrateL_reachesThreshold`'s destination with the vacuity removed: that theorem's target
+`DeliversUnderivableTruth` is reachable from imported incompleteness alone, and
+`ReachesThreshold`'s categorical clause is satisfiable for every Gödel number — whereas this
+target FAILS below the sentence size, and, on the tight family, fails at every budget under
+`capacity n` (`reachesThresholdWithin_not_reachable_below_paperCapacity_on_family`). The proof
+consumes (S3) and `2 ≤ g(T_S)`, and — as everywhere on this route — neither (S1), (S2), nor 𝒮_L's
+five learning-specific fields. -/
+theorem substrateL_reachesThresholdWithin
+    {ι V : Type*} {U : Decoupling.Mem ι V → Decoupling.Mem ι V} {R : Set ι}
+    {r K L c₀ c₁ c₂ δ : ℝ} {sCodeSize gTS : ℕ}
+    {Consistent NSound Delta1Axiomatized InterpretsR0 : Prop}
+    {Realizability WindowSufficiency : Prop}
+    (h : SubstrateL U R r K L c₀ c₁ c₂ δ sCodeSize gTS
+      Consistent NSound Delta1Axiomatized InterpretsR0 Realizability WindowSufficiency)
+    (hg : 2 ≤ gTS) :
+    ReachesThresholdWithin Consistent NSound Delta1Axiomatized InterpretsR0
+      (Nat.floor (K - (sCodeSize : ℝ))) gTS := by
+  have hle : (GodelInternalization.capacity (Nat.clog 2 (gTS + 1)) : ℝ) ≤ K - (sCodeSize : ℝ) := by
+    linarith [h.s3.1]
+  exact ⟨(CategoricalThreshold.reflectiveWithin_at_capacity hg).mono (Nat.le_floor hle), h.s3.2⟩
+
+/-- **(S3)-shaped capacity is necessary for MEMBERSHIP, on the tight family.** At
+`g(T_S) = 2 ^ n - 1` (`2 ≤ n`), a host whose leftover capacity `⌊K − |s_code|⌋₊` falls even one bit
+short of `capacity n = 2n` does not reach `ReachesThresholdWithin` at all — by
+`tightFamily_reflectiveWithin_iff`'s forward direction, and independently of the four theory
+conditions, which the failing conjunct is not.
+
+This is the sentence the boundary notes above could not write. The coupled counterpart
+`coupledAtRequiredDepth_not_reachable_below_paperCapacity_on_family` establishes the same budget
+boundary for the coupled *conclusion*; here it holds for Definition 2.1's own membership condition,
+so on this family (S3) at the paper's literal figure is load-bearing for *being* a system that
+reaches the threshold, not only for what such a system then delivers. Off the family the necessity again fails
+(`offFamily_reflectiveWithin_below_capacity`), exactly as for the coupled conclusion. -/
+theorem reachesThresholdWithin_not_reachable_below_paperCapacity_on_family
+    {n : ℕ} (hn : 2 ≤ n) {K : ℝ} {sCodeSize : ℕ}
+    (hK : Nat.floor (K - (sCodeSize : ℝ)) < GodelInternalization.capacity n)
+    (Consistent NSound Delta1Axiomatized InterpretsR0 : Prop) :
+    ¬ ReachesThresholdWithin Consistent NSound Delta1Axiomatized InterpretsR0
+      (Nat.floor (K - (sCodeSize : ℝ))) (2 ^ n - 1) := by
+  rintro ⟨hrw, -⟩
+  exact absurd ((tightFamily_reflectiveWithin_iff hn _).mp hrw) (Nat.not_le.mpr hK)
+
+/-- **The coupled chain discharges the new clause from its OWN witness.** A
+`CoupledDeliveranceAtRequiredDepth` witness already is a `ReflectiveWithin` witness at the same
+budget: its object sits at depth `g(T_S) ^ 2` (meeting Definition 2.1's working-depth demand with
+equality) and its recursor already `FitsIn` the host's leftover capacity — the two conjuncts, on the
+one object, with nothing added.
+
+Contrast `coupledAtRequiredDepth_reachesThresholdAtDepth`, which discharges its reflective conjunct
+by `ReflectiveAssembly.reflective_satisfiable`, available unconditionally for every Gödel number and
+therefore carrying no information about the host. Here the witness's own `FitsIn` does that work, so
+the conclusion inherits the budget. The theory conditions are carried in, as everywhere. -/
+theorem coupledAtRequiredDepth_reachesThresholdWithin
+    {Sentence : Type*} (gnum : Sentence → ℕ) (Derivable True_ : Sentence → Prop)
+    {K : ℝ} {sCodeSize gTS : ℕ}
+    {Consistent NSound Delta1Axiomatized InterpretsR0 : Prop}
+    (hthy : TheoryConditions Consistent NSound Delta1Axiomatized InterpretsR0)
+    (hc : CoupledDeliveranceAtRequiredDepth gnum Derivable True_ K sCodeSize gTS) :
+    ReachesThresholdWithin Consistent NSound Delta1Axiomatized InterpretsR0
+      (Nat.floor (K - (sCodeSize : ℝ))) gTS := by
+  obtain ⟨Robj, hdepth, hfits, -⟩ := hc
+  exact ⟨⟨Robj, by rw [hdepth], hfits⟩, hthy⟩
 
 /-- **(S3) is not implied by (S2).** [Inevitability] §2 names conflating them "the standing trap
 on this route": C1 buys capacity to represent the rule, (S3) buys capacity to host the checker.

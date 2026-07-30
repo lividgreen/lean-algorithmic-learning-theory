@@ -61,7 +61,10 @@ face of the stand-in mismatch. For a real `Rep(S)` it would be the substantive P
 * The CCC conjunct is required by Def 6.1 and carried in `Reflective`, but the consequence flows
   through the NNO + Gödel — CCC is off the critical path (cf. `ALT/ChainDependencyAudit.lean`).
 * `reflective_satisfiable` is non-vacuity on the stand-ins, not a claim that every subsystem is
-  reflective.
+  reflective. It is satisfiable *unconditionally*, for every Gödel number, so no predicate built
+  over `Reflective` can fail on that conjunct. A predicate that CAN fail needs the subsystem's
+  budget: `CategoricalThreshold.ReflectiveWithin` adds the FV-14 capacity conjunct on the genuine
+  single-carrier object and is excluded below the Gödel sentence's own size.
 
 ## Hypotheses: paper-stated vs added
 * Paper-stated / faithful: Def 6.1 as CCC ∧ NNO-depth `> g(T_S)`; the §6 Consequence; §5.3
