@@ -91,16 +91,19 @@ the newer witness runs on the construction's own predictive fitness rather than 
 information-free one, at the cost of a decoder faithful at every candidate.
 
 Coverage and convergence remain **independent**, and neither is claimed to discharge the other.
-Coverage quantifies over all initial weight vectors, where the settling proved of this fiber in the
-floored development runs from the uniform start; so a settled configuration and a covering frame
-coexist here — that is what the base-reading frame buys — without either condition implying the
-other.
+Coverage quantifies over all initial weight vectors, and the floored development's settling now does
+too (`BasinSettling`) — but the candidate the reading settles on **depends on the start**, and a
+seeded run can settle on one that has already missed. What would refute coverage is convergence to
+the *same* candidate from every initial state, which is not what is proved; so a settled
+configuration and a covering frame coexist here — that is what the base-reading frame buys —
+without either condition implying the other.
 
-What is not shown: that selection *reaches* the settled configuration from an arbitrary weight
-vector. The configurations exhibited here are initial conditions, fixed points of the fitness rather
-than of a variation rule, and the basin question is untouched. The rounding residual is exhibited
-but not bounded — a quantitative bound, and the tracking form of a redundancy argument for a
-*floored* process, are not developed here.
+What is not shown: that selection reaches *this* configuration — the budget on one candidate, one
+quantum on each other — from an arbitrary weight vector. The configurations exhibited here are
+initial conditions, fixed points of the fitness rather than of a variation rule; that the *reading*
+settles from every initial vector is `BasinSettling`'s, and it identifies no settled vector. The
+rounding residual is exhibited but not bounded — a quantitative bound, and the tracking form of a
+redundancy argument for a *floored* process, are not developed here.
 -/
 
 namespace WeightedFiber
@@ -482,9 +485,11 @@ number of steps. `wFiber_emergence_pricing` is therefore not vacuous.
 
 A satisfiability witness and nothing more: it exhibits the settled state, and says nothing about
 whether Bayesian update under a real base reaches one. That second question is settled elsewhere —
-`FlooredMixture`'s `argmaxFrame_wWorld_eventually_const`, under realizability along the observed
-trajectory — and the two do not meet: convergence there is pathwise from the fiber's own uniform
-start, where coverage here quantifies over *all* initial states, and neither implies the other. -/
+`FlooredMixture`'s `argmaxFrame_wWorld_eventually_const` and, from every initial weight vector,
+`BasinSettling`'s `argmaxFrame_wWorld_eventually_const_wStartFrom`, both under realizability along
+the observed trajectory. The two still do not meet: what those settle on depends on the initial
+vector, where coverage here asks the reading to take every value as that vector ranges, and neither
+implies the other. -/
 theorem surjective_argmaxFrame_of_settled [NeZero C] (hW : 2 ≤ W) (S : Fin n₁ → Fin n₁)
     (fit : Fin n₁ → Fin C → ℕ) (hf : ∀ x i, fit x i = 1) (hn₁ : 0 < n₁) :
     Function.Surjective fun s =>
@@ -509,7 +514,8 @@ Two things this changes and one it does not. The fitness is now the real one, so
 configuration still is *selection*, not an absence of information — and, unlike every settled
 configuration exhibited over the pool fiber, it is not written in by a variation rule, the weighted
 fiber having none. What it does not change is the *reach* question: nothing below shows that
-selection arrives at this configuration from an arbitrary weight vector.
+selection arrives at this configuration from an arbitrary weight vector, and `BasinSettling` — which
+does settle the reading from every one of them — does not identify the vector reached either.
 
 Faithfulness is consumed only at the state being stepped, so that is how it is stated; the run asks
 for it only along the trajectory it visits. -/
@@ -625,9 +631,11 @@ fiber has no variation rule — the settling
 here is a fitness fixed point — so what the settled family supplies is a set of initial states on
 which the candidate reading covers nothing and the base reading covers everything.
 
-Neither half touches convergence. That the fiber's reading settles from its own uniform start under
-realizability is the floored development's theorem; coverage here quantifies over initial weight
-vectors instead, so the two conditions are compatible and neither implies the other. -/
+Neither half touches convergence. That the fiber's reading settles under realizability — from its
+own uniform start, and from every initial weight vector — is the floored development's theorem and
+`BasinSettling`'s; coverage here asks instead that the reading take every value as the initial
+vector ranges, which a start-dependent limit leaves open, so the two conditions are compatible and
+neither implies the other. -/
 
 /-- The base-reading frame over the settled configuration reads the base's own next state: the
 population contributes only the identity of the rule applied, and it contributes the same one at
@@ -684,8 +692,8 @@ what the statement quantifies over, because the candidate frame's coverage over 
 can hold under these hypotheses (`surjective_argmaxFrame_of_all_faithful`) — where over the pool
 fiber a variation rule made the settled shape reachable from every initial state. And the settled
 configuration is a fixed point of the fitness, not an imposed one, which is what the pool fiber's
-separation could not say; but it remains an initial condition, and nothing here shows selection
-reaches it from an arbitrary weight vector. -/
+separation could not say; but it remains an initial condition, and nothing shows selection reaches
+*it* from an arbitrary weight vector, `BasinSettling`'s settling identifying no vector. -/
 theorem wFrames_separate_of_settled [NeZero C] (hW : 2 ≤ W) (hC : 2 ≤ C) (S : Fin n₁ → Fin n₁)
     (dec : Fin C → Fin n₁ → Fin n₁) {c₀ : Fin C} (hdec : dec c₀ = S)
     (hS : Function.Surjective S) :
@@ -794,7 +802,8 @@ codomain, and a base-reading frame draws it from the base coordinate, which the 
 
 What remains outside is unchanged and is not hidden here: the coverage witness runs from the settled
 configuration on the faithful candidate, and that selection *arrives* at that configuration from an
-arbitrary weight vector is not shown anywhere. -/
+arbitrary weight vector is shown nowhere — `BasinSettling` settles the reading from every initial
+vector without identifying the vector it settles at. -/
 theorem wPredFrame_emergence_pricing_of_faithful [NeZero C] (hW : 2 ≤ W) (S : Fin n₁ → Fin n₁)
     (dec : Fin C → Fin n₁ → Fin n₁) {c₀ : Fin C} (hdec : dec c₀ = S)
     (hsurj : Function.Surjective S) (cS cF cθ : Nat.Partrec.Code)

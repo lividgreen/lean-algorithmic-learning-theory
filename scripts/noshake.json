@@ -66,6 +66,7 @@
     "ALT.PersistenceCapacity": [
       "Mathlib.Data.Finite.Perm",
       "Mathlib.Data.List.GetD",
+      "Mathlib.Data.Nat.Choose.Multinomial",
       "Mathlib.Data.Set.Card.Arithmetic"
     ],
     "ALT.PolyTime": [
@@ -78,6 +79,9 @@
     ],
     "ALT.ProofChainSkeleton": [
       "Mathlib.Tactic.Linter.Header"
+    ],
+    "ALT.ReadingWord": [
+      "Mathlib.Algebra.Order.Group.Finset"
     ],
     "ALT.RealizerLength": [
       "Mathlib.Data.Nat.Size",

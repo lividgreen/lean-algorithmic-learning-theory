@@ -6,6 +6,7 @@ Authors: Mykola Palamarchuk
 import Mathlib.Algebra.Order.Ring.Star
 import Mathlib.Data.Finite.Perm
 import Mathlib.Data.List.GetD
+import Mathlib.Data.Nat.Choose.Multinomial
 import Mathlib.Data.Set.Card.Arithmetic
 import Mathlib.InformationTheory.Hamming
 import ALT.AdditiveComplexity
@@ -1422,11 +1423,11 @@ variable {n m : ℕ}
 /-- Permutations act on lenses by relabelling the domain: `U • ℓ` reads the cell `U⁻¹ x` where `ℓ`
 read `x`. This is the action under which the canonical family of Proposition 3.5 moves its
 frames. -/
-private theorem smul_lens_apply {α : Type*} (U : Perm α) (ℓ : α → Fin m) (x : α) :
+private theorem smul_lens_apply {α β : Type*} (U : Perm α) (ℓ : α → β) (x : α) :
     (U • ℓ) x = ℓ (U⁻¹ x) := rfl
 
 /-- A permutation stabilizes a lens exactly when it preserves the lens's fibers. -/
-private theorem mem_stabilizer_lens {α : Type*} {U : Perm α} {ℓ : α → Fin m} :
+private theorem mem_stabilizer_lens {α β : Type*} {U : Perm α} {ℓ : α → β} :
     U ∈ stabilizer (Perm α) ℓ ↔ ∀ x, ℓ (U x) = ℓ x := by
   constructor
   · intro h x
@@ -1442,8 +1443,8 @@ private theorem mem_stabilizer_lens {α : Type*} {U : Perm α} {ℓ : α → Fin
 /-- **The stabilizer of a lens is the product of the symmetric groups of its fibers**
 ([Persistence] §7, Lemma 7.1). A fiber-preserving permutation is exactly a choice of one permutation
 per fiber: forward, restrict; backward, assemble along the fibration of `Fin n` by `ℓ`. -/
-private noncomputable def stabEquivPi {α : Type*} (ℓ : α → Fin m) :
-    ↥(stabilizer (Perm α) ℓ) ≃ ∀ i : Fin m, Perm {x : α // ℓ x = i} where
+private noncomputable def stabEquivPi {α β : Type*} (ℓ : α → β) :
+    ↥(stabilizer (Perm α) ℓ) ≃ ∀ i : β, Perm {x : α // ℓ x = i} where
   toFun U := fun i => Equiv.Perm.subtypePerm U.1 (fun x => by
     rw [mem_stabilizer_lens.mp U.2 x])
   invFun τ := ⟨(Equiv.permCongr (Equiv.sigmaFiberEquiv ℓ)) (Equiv.sigmaCongrRight τ),
@@ -1462,12 +1463,20 @@ private theorem card_fiber_eq {α : Type*} (ℓ : α → Fin m) (i : Fin m) :
     Nat.card {x : α // ℓ x = i} = (ℓ ⁻¹' {i}).ncard :=
   Nat.card_coe_set_eq (ℓ ⁻¹' {i})
 
-/-- **Fiber uniformity, in cardinality form** ([Persistence] §7, Lemma 7.1): the permutations fixing
-a lens number `∏ᵢ (fiberᵢ) !`. -/
-theorem card_stabilizer_lens {α : Type*} [Finite α] (ℓ : α → Fin m) :
-    Nat.card ↥(stabilizer (Perm α) ℓ) = ∏ i : Fin m, (Nat.card {x : α // ℓ x = i})! := by
+/-- **Fiber uniformity, in cardinality form, at any codomain** ([Persistence] §7, Lemma 7.1, stated
+codomain-generally): the permutations fixing a lens number `∏ᵢ (fiberᵢ) !`, the product ranging over
+the lens's whole codomain rather than over `Fin m`. -/
+theorem card_stabilizer_lens_dom {α β : Type*} [Finite α] [Fintype β] (ℓ : α → β) :
+    Nat.card ↥(stabilizer (Perm α) ℓ) = ∏ i : β, (Nat.card {x : α // ℓ x = i})! := by
   rw [Nat.card_congr (stabEquivPi ℓ), Nat.card_pi]
   exact Finset.prod_congr rfl fun i _ => Nat.card_perm
+
+/-- **Fiber uniformity, in cardinality form** ([Persistence] §7, Lemma 7.1): the permutations fixing
+a lens number `∏ᵢ (fiberᵢ) !`. The `Fin m` case of `card_stabilizer_lens_dom`, kept at its own name
+since [Persistence]'s FV-8 row cites it directly. -/
+theorem card_stabilizer_lens {α : Type*} [Finite α] (ℓ : α → Fin m) :
+    Nat.card ↥(stabilizer (Perm α) ℓ) = ∏ i : Fin m, (Nat.card {x : α // ℓ x = i})! :=
+  card_stabilizer_lens_dom ℓ
 
 /-- **The orbit of a lens is the set of lenses with its fiber sizes** ([Persistence] §7, Lemma 7.1,
 the surjectivity half). Precomposing with a permutation cannot change how many states a value is
@@ -1520,6 +1529,132 @@ theorem card_orbit_mul_prod_fiber (ℓ : Fin n → Fin m) :
     Nat.card ↥(orbit (Perm (Fin n)) ℓ) * ∏ i : Fin m, (Nat.card {x : Fin n // ℓ x = i})!
       = n ! := by
   simpa using card_orbit_mul_prod_fiber_card ℓ
+
+/-! ### The fiber profile's extremes ([Persistence] Open problem 8.4's design, the graded ledger)
+
+Two elementary facts about a lens's fiber profile, needed to force the marking anatomy at the
+incompressible pole: the profile's relabelling class is never much smaller than a binomial
+coefficient (`orbitCard_ge_choose`), and a surjective lens with a dominant fiber has few labels
+(`card_le_marks_succ`). Neither needs a world or a persistence identity — both read Lemma 7.1's
+orbit–stabilizer count against the profile's largest part. -/
+
+/-- The fiber sizes of `ℓ₀` sum to the size of the domain (Definition 2.2's profile, totalled):
+`Σᵢ (fiberᵢ) = n`, the sigma-decomposition of `Fin n` by `ℓ₀`. -/
+private theorem sum_fiber_card_eq (ℓ₀ : Fin n → Fin m) :
+    ∑ i : Fin m, Nat.card {x : Fin n // ℓ₀ x = i} = n := by
+  have h := Nat.card_congr (Equiv.sigmaFiberEquiv ℓ₀)
+  rw [Nat.card_sigma, Nat.card_eq_fintype_card, Fintype.card_fin] at h
+  exact h
+
+/-- **The orbit is never smaller than a binomial coefficient** ([Persistence] Open problem 8.4's
+design, the marking-anatomy counting half). Writing `maxFiber` for the largest fiber of `ℓ₀` and
+`m' := n − maxFiber` for what sits off it, `∏ᵢ (fiberᵢ)! ≤ maxFiber! · m'!` — a product of
+factorials divides the factorial of its sum (`Nat.multinomial_spec`, off the dominant fiber) —
+so orbit–stabilizer (`card_orbit_mul_prod_fiber`) gives `n.choose m' ≤ N₀`, sharp at every
+two-fiber profile `(n − m', m')` (`orbitCard_eq_choose_of_two_fiber`). -/
+theorem orbitCard_ge_choose (ℓ₀ : Fin n → Fin m) :
+    n.choose (n - Finset.univ.sup fun i : Fin m => Nat.card {x : Fin n // ℓ₀ x = i})
+      ≤ Nat.card ↥(orbit (Perm (Fin n)) ℓ₀) := by
+  classical
+  set f : Fin m → ℕ := fun i => Nat.card {x : Fin n // ℓ₀ x = i} with hf
+  rcases Nat.eq_zero_or_pos n with hn0 | hnpos
+  · -- `n = 0`: the domain is empty, the sup over `f` is `0` regardless of `m`, and the orbit of the
+    -- (unique) lens on `Fin 0` is a single point.
+    subst hn0
+    haveI : Nonempty ↥(orbit (Perm (Fin 0)) ℓ₀) := ⟨⟨ℓ₀, MulAction.mem_orbit_self ℓ₀⟩⟩
+    have h1 : 1 ≤ Nat.card ↥(orbit (Perm (Fin 0)) ℓ₀) := Nat.card_pos
+    simpa using h1
+  · -- `n > 0`: `Fin m` is nonempty (`ℓ₀`'s value at any point witnesses it), so sup is attained.
+    haveI : Nonempty (Fin m) := ⟨ℓ₀ ⟨0, hnpos⟩⟩
+    obtain ⟨i₀, -, hi₀⟩ := Finset.exists_mem_eq_sup Finset.univ Finset.univ_nonempty f
+    set maxFiber := Finset.univ.sup f with hmaxdef
+    set m' := n - maxFiber with hm'def
+    have hsum : ∑ i : Fin m, f i = n := sum_fiber_card_eq ℓ₀
+    have hmaxle : maxFiber ≤ n := by
+      rw [hi₀, ← hsum]
+      exact Finset.single_le_sum (fun i _ => Nat.zero_le (f i)) (Finset.mem_univ i₀)
+    have hnm' : n - m' = maxFiber := by omega
+    have hsum' : ∑ i ∈ Finset.univ.erase i₀, f i = m' := by
+      have hadd := Finset.add_sum_erase Finset.univ f (Finset.mem_univ i₀)
+      rw [← hi₀] at hadd
+      omega
+    have hmulti := Nat.multinomial_spec (Finset.univ.erase i₀) f
+    rw [hsum'] at hmulti
+    have hdvd : (∏ i ∈ Finset.univ.erase i₀, (f i)!) ≤ m' ! := by
+      have hpos := Nat.multinomial_pos (Finset.univ.erase i₀) f
+      nlinarith [hmulti]
+    have hprodsplit : ∏ i : Fin m, (f i)! = (f i₀)! * ∏ i ∈ Finset.univ.erase i₀, (f i)! :=
+      (Finset.mul_prod_erase Finset.univ (fun i => (f i)!) (Finset.mem_univ i₀)).symm
+    have hprodle : ∏ i : Fin m, (f i)! ≤ maxFiber ! * m' ! := by
+      rw [hprodsplit, ← hi₀]
+      exact Nat.mul_le_mul_left _ hdvd
+    have hcard := card_orbit_mul_prod_fiber ℓ₀
+    have hchoose : n.choose m' * (m' ! * maxFiber !) = n ! := by
+      have hkey := Nat.choose_mul_factorial_mul_factorial (Nat.sub_le n maxFiber)
+      rw [hnm'] at hkey
+      rw [← mul_assoc]
+      exact hkey
+    have hstep : n.choose m' * (m' ! * maxFiber !)
+        ≤ Nat.card ↥(orbit (Perm (Fin n)) ℓ₀) * (maxFiber ! * m' !) := by
+      rw [hchoose]
+      calc n ! = Nat.card ↥(orbit (Perm (Fin n)) ℓ₀) * ∏ i : Fin m, (f i)! := hcard.symm
+        _ ≤ Nat.card ↥(orbit (Perm (Fin n)) ℓ₀) * (maxFiber ! * m' !) :=
+          Nat.mul_le_mul_left _ hprodle
+    have hpos2 : 0 < m' ! * maxFiber ! := Nat.mul_pos (Nat.factorial_pos _) (Nat.factorial_pos _)
+    rw [Nat.mul_comm (maxFiber !) (m' !)] at hstep
+    exact Nat.le_of_mul_le_mul_right hstep hpos2
+
+/-- **Sharpness of `orbitCard_ge_choose`**: on the two-fiber profile itself — `ℓ₀ : Fin n → Fin 2`
+with fiber sizes exactly `(n − m', m')` — the orbit is exactly the binomial coefficient, not merely
+bounded below by it. The bound is tight, not slack. -/
+theorem orbitCard_eq_choose_of_two_fiber {m' : ℕ} (hmn : m' ≤ n) {ℓ₀ : Fin n → Fin 2}
+    (h0 : Nat.card {x : Fin n // ℓ₀ x = 0} = n - m') (h1 : Nat.card {x : Fin n // ℓ₀ x = 1} = m') :
+    Nat.card ↥(orbit (Perm (Fin n)) ℓ₀) = n.choose m' := by
+  have hcard := card_orbit_mul_prod_fiber ℓ₀
+  rw [Fin.prod_univ_two, h0, h1] at hcard
+  have hchoose := Nat.choose_mul_factorial_mul_factorial hmn
+  have hfact : n.choose m' * (m' ! * (n - m')!) = n ! := by
+    rw [show m' ! * (n - m')! = (n - m')! * m' ! from Nat.mul_comm _ _]
+    linarith [hchoose]
+  have hpos : 0 < (n - m')! * m' ! := Nat.mul_pos (Nat.factorial_pos _) (Nat.factorial_pos _)
+  have hfin : Nat.card ↥(orbit (Perm (Fin n)) ℓ₀) * ((n - m')! * m' !)
+      = n.choose m' * ((n - m')! * m' !) := by
+    rw [hcard]
+    linarith [hfact]
+  exact Nat.eq_of_mul_eq_mul_right hpos hfin
+
+/-- **A surjective lens with a dominant fiber has few labels** ([Persistence] Open problem 8.4's
+design, the marking-anatomy counting half). If every value off the largest fiber sits in one of
+`m'` states, a surjective lens has at most `m' + 1` labels: the dominant label plus at most one
+label per state off it, since surjectivity gives every other label a nonempty (hence `≥ 1`-sized)
+fiber, and those fibers are disjoint subsets of the `m'` remaining states. -/
+theorem card_le_marks_succ {ℓ₀ : Fin n → Fin m} (hs : Function.Surjective ℓ₀) :
+    m ≤ (n - Finset.univ.sup fun i : Fin m => Nat.card {x : Fin n // ℓ₀ x = i}) + 1 := by
+  classical
+  set f : Fin m → ℕ := fun i => Nat.card {x : Fin n // ℓ₀ x = i} with hf
+  rcases Nat.eq_zero_or_pos m with hm0 | hmpos
+  · omega
+  · haveI : Nonempty (Fin m) := ⟨⟨0, hmpos⟩⟩
+    obtain ⟨i₀, -, hi₀⟩ := Finset.exists_mem_eq_sup Finset.univ Finset.univ_nonempty f
+    have hsum : ∑ i : Fin m, f i = n := sum_fiber_card_eq ℓ₀
+    have hpos : ∀ i, 0 < f i := by
+      intro i
+      rw [hf]
+      obtain ⟨x, hx⟩ := hs i
+      exact Nat.card_pos_iff.mpr ⟨⟨⟨x, hx⟩⟩, inferInstance⟩
+    have hsum' : ∑ i ∈ Finset.univ.erase i₀, f i = n - Finset.univ.sup f := by
+      have hadd := Finset.add_sum_erase Finset.univ f (Finset.mem_univ i₀)
+      rw [← hi₀] at hadd
+      omega
+    have hcard_erase : (Finset.univ.erase i₀ : Finset (Fin m)).card = m - 1 := by
+      rw [Finset.card_erase_of_mem (Finset.mem_univ i₀), Finset.card_univ, Fintype.card_fin]
+    have hge : (Finset.univ.erase i₀ : Finset (Fin m)).card
+        ≤ ∑ i ∈ Finset.univ.erase i₀, f i := by
+      calc (Finset.univ.erase i₀ : Finset (Fin m)).card
+          = ∑ _i ∈ Finset.univ.erase i₀, 1 := by rw [Finset.sum_const, smul_eq_mul, Nat.mul_one]
+        _ ≤ ∑ i ∈ Finset.univ.erase i₀, f i := Finset.sum_le_sum fun i _ => hpos i
+    rw [hcard_erase, hsum'] at hge
+    omega
 
 /-- A lens is **balanced** when every value is read from the same number `n / m` of states — the
 extremal case of [Persistence] §7, and the one maximality forces up to the core's cycle
@@ -2471,6 +2606,277 @@ theorem CbH_ge_marking' {r : ℕ} {U : Perm (Fin n)} {x : Fin r → Fin n}
     n ! ≤ CbH U b * (n - r)! :=
   CbH_ge_marking hx hrn fun _ hy => le_trans (KE_markingLens_le hrn hy) hb
 
+/-! ### General labels on the marks ([Persistence] Open problem 8.4's design, the graded ledger)
+
+The marking family of Proposition 5.3 sends each mark to its OWN index, `j ↦ j + 1` — the cheapest
+possible labelling, distinct and increasing by construction. The graded ledger's marking-anatomy
+pole needs marks carrying ARBITRARY (possibly repeated) labels: everything off `r` marked points
+reads a fixed default value, and each mark `x j` reads an arbitrary `lab j`. The price is the same
+shape as `KE_markingLens_le` — one fixed builder, positions and labels each packed as a base-modulus
+numeral (`packMarks` reused at the label alphabet's own modulus `k`) — with `k` entering exactly
+where `κ = r + 1` entered before. -/
+
+/-- **The labelled marking lens**: `r` distinguished points `x 0, …, x (r − 1)` are read as the
+ARBITRARY (possibly repeated) labels `lab 0, …, lab (r − 1)`, and every other state reads the fixed
+`default`. `markingLens` is the case `k = r + 1`, `lab = Fin.succ`, `default = 0`. -/
+noncomputable def labelledMarkingLens {r k : ℕ} (x : Fin r → Fin n) (lab : Fin r → Fin k)
+    (default : Fin k) (i : Fin n) : Fin k :=
+  if h : ∃ j, x j = i then lab h.choose else default
+
+/-- A marked point is read as its own (arbitrary) label. -/
+private theorem labelledMarkingLens_mark {r k : ℕ} {x : Fin r → Fin n} (hx : Function.Injective x)
+    (lab : Fin r → Fin k) (default : Fin k) (j : Fin r) :
+    labelledMarkingLens x lab default (x j) = lab j := by
+  have h : ∃ j', x j' = x j := ⟨j, rfl⟩
+  rw [labelledMarkingLens, dif_pos h]
+  exact congrArg lab (hx h.choose_spec)
+
+/-- An unmarked point reads the default. -/
+private theorem labelledMarkingLens_unmark {r k : ℕ} {x : Fin r → Fin n} {lab : Fin r → Fin k}
+    {default : Fin k} {i : Fin n} (h : ¬∃ j, x j = i) :
+    labelledMarkingLens x lab default i = default := by
+  rw [labelledMarkingLens, dif_neg h]
+
+/-- The bounded search for the mark sitting at `i`, shifted up by one exactly as `markVal` shifts —
+`0` unambiguously means "no mark here" — but returning the LABEL digit rather than the mark's own
+index, so a repeated or non-increasing label alphabet is no obstruction. -/
+private def labelMatchSum (n r k v pos i : ℕ) : ℕ :=
+  ((List.range r).map fun j => if digitAt n pos j = i then digitAt k v j + 1 else 0).sum
+
+/-- The label read off the packed positions and packed labels at state `i`: the shifted search,
+un-shifted, or the default when the search finds nothing. -/
+private def labelVal (n r k default v pos i : ℕ) : ℕ :=
+  if labelMatchSum n r k v pos i = 0 then default else labelMatchSum n r k v pos i - 1
+
+private theorem labelMatchSum_eq_sum (n r k v pos i : ℕ) :
+    labelMatchSum n r k v pos i
+      = ∑ j ∈ Finset.range r, (if digitAt n pos j = i then digitAt k v j + 1 else 0) := by
+  rw [labelMatchSum]; simp [Finset.sum, Multiset.range]
+
+/-- **The builder reads the labelled marking lens back off the two numerals.** Injectivity of `x`
+collapses the bounded search to a single term: at most one mark sits at any given state. -/
+private theorem labelVal_eq {r k : ℕ} (hn : 0 < n) (hk : 0 < k) {x : Fin r → Fin n}
+    (hx : Function.Injective x) (lab : Fin r → Fin k) (default : Fin k) (i : Fin n) :
+    labelVal n r k (default : ℕ) (packMarks (n := k) lab) (packMarks x) (i : ℕ)
+      = (labelledMarkingLens x lab default i : ℕ) := by
+  have htest : ∀ (j : ℕ) (hj : j < r),
+      (digitAt n (packMarks x) j = (i : ℕ)) ↔ x ⟨j, hj⟩ = i := by
+    intro j hj
+    rw [show digitAt n (packMarks x) j = (x ⟨j, hj⟩ : ℕ) from digit_packMarks hn x ⟨j, hj⟩]
+    exact ⟨fun h => Fin.val_injective h, fun h => congrArg Fin.val h⟩
+  rw [labelVal, labelMatchSum_eq_sum]
+  by_cases hex : ∃ j' : Fin r, x j' = i
+  · obtain ⟨j₀, hj₀⟩ := hex
+    have hml : (labelledMarkingLens x lab default i : ℕ) = (lab j₀ : ℕ) := by
+      rw [← hj₀, labelledMarkingLens_mark hx]
+    have hc : digitAt n (packMarks x) (j₀ : ℕ) = (i : ℕ) := by
+      rw [htest (j₀ : ℕ) j₀.2, Fin.eta]; exact hj₀
+    have hlab : digitAt k (packMarks (n := k) lab) (j₀ : ℕ) = (lab j₀ : ℕ) :=
+      digit_packMarks (n := k) hk lab j₀
+    have h0 : ∀ j ∈ Finset.range r, j ≠ (j₀ : ℕ) →
+        (if digitAt n (packMarks x) j = (i : ℕ) then digitAt k (packMarks (n := k) lab) j + 1
+          else 0) = 0 := by
+      intro j hj hjk
+      rw [Finset.mem_range] at hj
+      have hnc : ¬(digitAt n (packMarks x) j = (i : ℕ)) := by
+        rw [htest j hj]
+        exact fun hcontra => hjk (congrArg Fin.val (hx (hcontra.trans hj₀.symm)))
+      rw [if_neg hnc]
+    have h1 : (j₀ : ℕ) ∉ Finset.range r →
+        (if digitAt n (packMarks x) (j₀ : ℕ) = (i : ℕ)
+          then digitAt k (packMarks (n := k) lab) (j₀ : ℕ) + 1 else 0) = 0 :=
+      fun hk' => absurd (Finset.mem_range.mpr j₀.2) hk'
+    rw [Finset.sum_eq_single (j₀ : ℕ) h0 h1, if_pos hc, hlab]
+    simp [hml]
+  · have h0 : ∀ j ∈ Finset.range r,
+        (if digitAt n (packMarks x) j = (i : ℕ) then digitAt k (packMarks (n := k) lab) j + 1
+          else 0) = 0 := by
+      intro j hj
+      rw [Finset.mem_range] at hj
+      have hnc : ¬(digitAt n (packMarks x) j = (i : ℕ)) := by
+        rw [htest j hj]
+        exact fun hcontra => hex ⟨⟨j, hj⟩, hcontra⟩
+      rw [if_neg hnc]
+    rw [Finset.sum_eq_zero h0, labelledMarkingLens_unmark hex, if_pos rfl]
+
+/-- **The tabulation, rebuilt from the packed program** `⟨n, r, k, default, pos, v⟩` — ONE fixed
+function of a single natural number, carrying no dependence on `n`, `r`, `k`, or the marks and
+their labels. -/
+private def labelledMarkTableFn (a : ℕ) : ℕ :=
+  Encodable.encode ((List.range a.unpair.1).map
+    (labelVal a.unpair.1 a.unpair.2.unpair.1 a.unpair.2.unpair.2.unpair.1
+      a.unpair.2.unpair.2.unpair.2.unpair.1
+      a.unpair.2.unpair.2.unpair.2.unpair.2.unpair.2
+      a.unpair.2.unpair.2.unpair.2.unpair.2.unpair.1))
+
+/-- **The builder is correct**: on the packed program `⟨n, r, k, default, packMarks x,
+packMarks lab⟩` it outputs exactly the labelled marking lens's encoded tabulation. -/
+private theorem labelledMarkTableFn_eq {r k : ℕ} (hn : 0 < n) (hk : 0 < k) {x : Fin r → Fin n}
+    (hx : Function.Injective x) (lab : Fin r → Fin k) (default : Fin k) :
+    labelledMarkTableFn (Nat.pair n (Nat.pair r (Nat.pair k (Nat.pair (default : ℕ)
+      (Nat.pair (packMarks x) (packMarks (n := k) lab))))))
+      = lensCode (labelledMarkingLens x lab default) := by
+  rw [labelledMarkTableFn, lensCode, lensTable]
+  simp only [Nat.unpair_pair]
+  congr 1
+  have hfr : (List.finRange n).map Fin.val = List.range n := by simp
+  rw [← hfr, List.map_map]
+  exact List.map_congr_left fun i _ => labelVal_eq hn hk hx lab default i
+
+/-- Summing a primitive-recursive list of naturals is primitive recursive (`List.sum` as a
+`foldr`), specialized to the labelled-mark search — the general `primrec_list_sum` above,
+restated so the two proofs stay independent of one another's internals. -/
+private theorem primrec_labelledMarkTableFn : Primrec labelledMarkTableFn := by
+  have hN : Primrec fun a : ℕ => a.unpair.1 := Primrec.fst.comp Primrec.unpair
+  have hR1 : Primrec fun a : ℕ => a.unpair.2 := Primrec.snd.comp Primrec.unpair
+  have hR : Primrec fun a : ℕ => a.unpair.2.unpair.1 := Primrec.fst.comp (Primrec.unpair.comp hR1)
+  have hR2 : Primrec fun a : ℕ => a.unpair.2.unpair.2 := Primrec.snd.comp (Primrec.unpair.comp hR1)
+  have hK : Primrec fun a : ℕ => a.unpair.2.unpair.2.unpair.1 :=
+    Primrec.fst.comp (Primrec.unpair.comp hR2)
+  have hR3 : Primrec fun a : ℕ => a.unpair.2.unpair.2.unpair.2 :=
+    Primrec.snd.comp (Primrec.unpair.comp hR2)
+  have hD : Primrec fun a : ℕ => a.unpair.2.unpair.2.unpair.2.unpair.1 :=
+    Primrec.fst.comp (Primrec.unpair.comp hR3)
+  have hR4 : Primrec fun a : ℕ => a.unpair.2.unpair.2.unpair.2.unpair.2 :=
+    Primrec.snd.comp (Primrec.unpair.comp hR3)
+  have hPos : Primrec fun a : ℕ => a.unpair.2.unpair.2.unpair.2.unpair.2.unpair.1 :=
+    Primrec.fst.comp (Primrec.unpair.comp hR4)
+  have hV : Primrec fun a : ℕ => a.unpair.2.unpair.2.unpair.2.unpair.2.unpair.2 :=
+    Primrec.snd.comp (Primrec.unpair.comp hR4)
+  have hpow : Primrec₂ ((· ^ ·) : ℕ → ℕ → ℕ) := Primrec₂.unpaired'.1 Nat.Primrec.pow
+  have ha : Primrec fun q : (ℕ × ℕ) × ℕ => q.1.1 := Primrec.fst.comp Primrec.fst
+  -- the shifted search test, over `q : (ℕ × ℕ) × ℕ` — `q.1.1` the packed program, `q.1.2` the
+  -- state `i`, `q.2` the mark index `j`
+  have hinner : Primrec₂ fun (p : ℕ × ℕ) (j : ℕ) =>
+      if digitAt p.1.unpair.1 p.1.unpair.2.unpair.2.unpair.2.unpair.2.unpair.1 j = p.2
+      then digitAt p.1.unpair.2.unpair.2.unpair.1
+        p.1.unpair.2.unpair.2.unpair.2.unpair.2.unpair.2 j + 1
+      else 0 := by
+    have hposdig : Primrec fun q : (ℕ × ℕ) × ℕ =>
+        digitAt q.1.1.unpair.1 q.1.1.unpair.2.unpair.2.unpair.2.unpair.2.unpair.1 q.2 :=
+      Primrec.nat_mod.comp
+        (Primrec.nat_div.comp (hPos.comp ha) (hpow.comp (hN.comp ha) Primrec.snd))
+        (hN.comp ha)
+    have hlabdig : Primrec fun q : (ℕ × ℕ) × ℕ =>
+        digitAt q.1.1.unpair.2.unpair.2.unpair.1
+          q.1.1.unpair.2.unpair.2.unpair.2.unpair.2.unpair.2 q.2 :=
+      Primrec.nat_mod.comp
+        (Primrec.nat_div.comp (hV.comp ha) (hpow.comp (hK.comp ha) Primrec.snd))
+        (hK.comp ha)
+    exact (Primrec.ite (PrimrecRel.comp Primrec.eq hposdig (Primrec.snd.comp Primrec.fst))
+      (Primrec.succ.comp hlabdig) (Primrec.const 0)).to₂
+  have hsum : Primrec₂ fun (a : ℕ) (i : ℕ) =>
+      labelMatchSum a.unpair.1 a.unpair.2.unpair.1 a.unpair.2.unpair.2.unpair.1
+        a.unpair.2.unpair.2.unpair.2.unpair.2.unpair.2
+        a.unpair.2.unpair.2.unpair.2.unpair.2.unpair.1 i :=
+    (primrec_list_sum (f := fun p : ℕ × ℕ =>
+        (List.range p.1.unpair.2.unpair.1).map fun j =>
+          if digitAt p.1.unpair.1 p.1.unpair.2.unpair.2.unpair.2.unpair.2.unpair.1 j = p.2
+          then digitAt p.1.unpair.2.unpair.2.unpair.1
+            p.1.unpair.2.unpair.2.unpair.2.unpair.2.unpair.2 j + 1
+          else 0)
+      (Primrec.list_map (Primrec.list_range.comp (hR.comp Primrec.fst)) hinner)).to₂
+  have hval : Primrec₂ fun (a : ℕ) (i : ℕ) =>
+      labelVal a.unpair.1 a.unpair.2.unpair.1 a.unpair.2.unpair.2.unpair.1
+        a.unpair.2.unpair.2.unpair.2.unpair.1 a.unpair.2.unpair.2.unpair.2.unpair.2.unpair.2
+        a.unpair.2.unpair.2.unpair.2.unpair.2.unpair.1 i := by
+    have hsum' : Primrec fun p : ℕ × ℕ =>
+        labelMatchSum p.1.unpair.1 p.1.unpair.2.unpair.1 p.1.unpair.2.unpair.2.unpair.1
+          p.1.unpair.2.unpair.2.unpair.2.unpair.2.unpair.2
+          p.1.unpair.2.unpair.2.unpair.2.unpair.2.unpair.1 p.2 := hsum
+    have heq : PrimrecPred fun p : ℕ × ℕ =>
+        labelMatchSum p.1.unpair.1 p.1.unpair.2.unpair.1 p.1.unpair.2.unpair.2.unpair.1
+          p.1.unpair.2.unpair.2.unpair.2.unpair.2.unpair.2
+          p.1.unpair.2.unpair.2.unpair.2.unpair.2.unpair.1 p.2 = 0 :=
+      PrimrecRel.comp Primrec.eq hsum' (Primrec.const 0)
+    exact (Primrec.ite heq (hD.comp Primrec.fst) (Primrec.nat_sub.comp hsum' (Primrec.const 1))
+      ).to₂.of_eq fun a i => by rw [labelVal]
+  exact Primrec.encode.comp (Primrec.list_map (Primrec.list_range.comp hN) hval)
+
+private theorem partrec_labelledMarkTableFn :
+    Nat.Partrec (fun a : ℕ => (labelledMarkTableFn a : ℕ)) :=
+  _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_labelledMarkTableFn).partrec
+
+/-- **The fixed labelled-mark builder code.** Independent of `n`, `r`, `k`, the marks, their labels,
+and the default — one program, exactly as `markBuilder`. -/
+noncomputable def labelledMarkBuilder : Nat.Partrec.Code :=
+  Classical.choose (Nat.Partrec.Code.exists_code.mp partrec_labelledMarkTableFn)
+
+private theorem eval_labelledMarkBuilder (a : ℕ) :
+    Nat.Partrec.Code.eval labelledMarkBuilder a = Part.some (labelledMarkTableFn a) := by
+  have h := congrFun (Classical.choose_spec
+    (Nat.Partrec.Code.exists_code.mp partrec_labelledMarkTableFn)) a
+  simpa [labelledMarkBuilder] using h
+
+/-- **The labelled marking lens's explicit price** ([Persistence] Open problem 8.4's design, the
+graded ledger's marking-anatomy pole). `r` marks on `n` states, carrying labels from a `k`-element
+alphabet, are tabulated by a program of length `O ((r + 1) · (Nat.size n + Nat.size k))` — the same
+shape as `KE_markingLens_le`, with the label alphabet's own modulus `k` priced exactly where the
+distinct-label count `r + 1` was priced before (`k = r + 1`, `lab = Fin.succ`, `default = 0`
+recovers it). Positions and labels are packed as independent base-modulus numerals
+(`packMarks x`, `packMarks lab`) and decoded by one fixed builder. -/
+theorem KE_labelledMarkingLens_le {r k : ℕ} (hrn : r < n) (hk : 0 < k) {x : Fin r → Fin n}
+    (hx : Function.Injective x) (lab : Fin r → Fin k) (default : Fin k) :
+    KE (lensCode (labelledMarkingLens x lab default))
+      ≤ 32 * (15 + elen dbl) * ((r + 1) * (Nat.size n + Nat.size k))
+        + (elen labelledMarkBuilder + 63 * (15 + elen dbl) + 3) := by
+  have hn : 0 < n := by omega
+  have heval : Nat.Partrec.Code.eval labelledMarkBuilder
+      (Nat.pair n (Nat.pair r (Nat.pair k (Nat.pair (default : ℕ)
+        (Nat.pair (packMarks x) (packMarks (n := k) lab))))))
+      = Part.some (lensCode (labelledMarkingLens x lab default)) := by
+    rw [eval_labelledMarkBuilder, labelledMarkTableFn_eq hn hk hx lab default]
+  have hinv := invariance_general labelledMarkBuilder _ _ heval
+  have hPosSize : Nat.size (packMarks x) ≤ r * Nat.size n := size_packMarks_le hn x
+  have hVSize : Nat.size (packMarks (n := k) lab) ≤ r * Nat.size k := size_packMarks_le hk lab
+  have hDSize : Nat.size (default : ℕ) ≤ Nat.size k :=
+    Nat.size_le_size (le_of_lt default.isLt)
+  have hRSize : Nat.size r ≤ Nat.size n := Nat.size_le_size (le_of_lt hrn)
+  have hPV : Nat.size (Nat.pair (packMarks x) (packMarks (n := k) lab))
+      ≤ 2 * (r * Nat.size n + r * Nat.size k) + 2 := by
+    have := size_pair_le (packMarks x) (packMarks (n := k) lab)
+    omega
+  have hDPV : Nat.size (Nat.pair (default : ℕ) (Nat.pair (packMarks x) (packMarks (n := k) lab)))
+      ≤ 4 * (r * Nat.size n + r * Nat.size k) + 2 * Nat.size k + 6 := by
+    have := size_pair_le (default : ℕ) (Nat.pair (packMarks x) (packMarks (n := k) lab))
+    omega
+  have hKDPV : Nat.size (Nat.pair k
+      (Nat.pair (default : ℕ) (Nat.pair (packMarks x) (packMarks (n := k) lab))))
+      ≤ 8 * (r * Nat.size n + r * Nat.size k) + 6 * Nat.size k + 14 := by
+    have := size_pair_le k
+      (Nat.pair (default : ℕ) (Nat.pair (packMarks x) (packMarks (n := k) lab)))
+    omega
+  have hRKDPV : Nat.size (Nat.pair r (Nat.pair k
+      (Nat.pair (default : ℕ) (Nat.pair (packMarks x) (packMarks (n := k) lab)))))
+      ≤ 16 * (r * Nat.size n + r * Nat.size k) + 2 * Nat.size n + 12 * Nat.size k + 30 := by
+    have := size_pair_le r (Nat.pair k
+      (Nat.pair (default : ℕ) (Nat.pair (packMarks x) (packMarks (n := k) lab))))
+    omega
+  have hFull : Nat.size (Nat.pair n (Nat.pair r (Nat.pair k (Nat.pair (default : ℕ)
+      (Nat.pair (packMarks x) (packMarks (n := k) lab))))))
+      ≤ 32 * (r * Nat.size n + r * Nat.size k) + 6 * Nat.size n + 24 * Nat.size k + 62 := by
+    have := size_pair_le n (Nat.pair r (Nat.pair k
+      (Nat.pair (default : ℕ) (Nat.pair (packMarks x) (packMarks (n := k) lab)))))
+    omega
+  have hexpand : (r + 1) * (Nat.size n + Nat.size k)
+      = r * Nat.size n + r * Nat.size k + Nat.size n + Nat.size k := by ring
+  have hkey : Nat.size (Nat.pair n (Nat.pair r (Nat.pair k (Nat.pair (default : ℕ)
+      (Nat.pair (packMarks x) (packMarks (n := k) lab))))))
+      ≤ 32 * ((r + 1) * (Nat.size n + Nat.size k)) + 62 := by
+    rw [hexpand]; omega
+  calc KE (lensCode (labelledMarkingLens x lab default))
+      ≤ elen labelledMarkBuilder + (15 + elen dbl) * Nat.size (Nat.pair n (Nat.pair r
+          (Nat.pair k (Nat.pair (default : ℕ)
+            (Nat.pair (packMarks x) (packMarks (n := k) lab))))))
+        + (3 + (15 + elen dbl)) := hinv
+    _ ≤ elen labelledMarkBuilder
+          + (15 + elen dbl) * (32 * ((r + 1) * (Nat.size n + Nat.size k)) + 62)
+          + (3 + (15 + elen dbl)) := by
+        have := Nat.mul_le_mul_left (15 + elen dbl) hkey
+        omega
+    _ = 32 * (15 + elen dbl) * ((r + 1) * (Nat.size n + Nat.size k))
+          + (elen labelledMarkBuilder + 63 * (15 + elen dbl) + 3) := by ring
+
 /-! ## Renting versus owning a reading ([Persistence] §5, Definition 5.1, the uniform variant)
 
 Definition 5.1's budget is **per-frame**: each frame's table must be describable in `b` bits, and
@@ -2652,6 +3058,597 @@ theorem getD_map_finRange (g : Fin n → ℕ) (j : Fin n) :
   have hj : (j : ℕ) < ((List.finRange n).map g).length := by simp [j.2]
   rw [List.getD_eq_getElem _ _ hj]
   simp
+
+/-! ## The graded ledger ([Persistence] Open problem 8.4's design, §6's argument at every family)
+
+Theorem 6.3's ledger (`ledger_K`) prices a MAXIMAL family: with `|M| = |core|`, the two frames pin
+`U` down to one value, and the two-part code is exact. Drop maximality and the two frames pin `U`
+down only to a COSET of `ℓ₀`'s fiber-stabilizer (Lemma 7.1's `card_stabilizer_lens`, of size
+`∏ᵢ (fiberᵢ)!`) — `ℓ₁ = ℓ₀ ∘ U⁻¹` (`permCarries_frame_one`) says `U` solves `ℓ₁ ∘ W = ℓ₀`, and the
+solutions form exactly the right coset `U · stabilizer (ℓ₀)`. The two-part code generalizes to a
+THREE-part one: the two tables plus a coset INDEX, at coefficient exactly `1` on the index — a fixed
+decoder enumerates candidate tables `W` over `[n]` in one canonical order (a base-`n` numeral,
+the `packMarks` idiom reused at the full domain `r = n`), filters for bijective-and-matching,
+selects the loaded index. `ledger_K` is the case `∏ᵢ (fiberᵢ)! = 1` (`ledger_graded_faithful`). -/
+
+/-- **Reconstruction**: a numeral `< n ^ r` is recovered exactly from its own `r` base-`n` digits —
+the converse of `digit_packMarks`'s extraction, by the same peeling induction. This is what makes
+the candidate enumeration below a genuine bijection with `[0, n ^ n)` rather than a many-to-one
+search. -/
+private theorem digitAt_sum_eq :
+    ∀ (r w : ℕ), w < n ^ r → ∑ j ∈ Finset.range r, digitAt n w j * n ^ j = w := by
+  intro r
+  induction r with
+  | zero => intro w hw; simp only [pow_zero] at hw; simp [Nat.lt_one_iff.mp hw]
+  | succ r ih =>
+    intro w hw
+    have hpeel : ∑ j ∈ Finset.range (r + 1), digitAt n w j * n ^ j
+        = digitAt n w 0 + n * ∑ j ∈ Finset.range r, digitAt n w (j + 1) * n ^ j := by
+      rw [Finset.sum_range_succ']
+      simp only [pow_zero, mul_one, pow_succ, Finset.mul_sum]
+      ring_nf
+      rw [Nat.add_comm]
+      congr 1
+      exact Finset.sum_congr rfl fun j _ => by ring
+    have hd0 : digitAt n w 0 = w % n := by unfold digitAt; simp
+    have hdsucc : ∀ j, digitAt n w (j + 1) = digitAt n (w / n) j := by
+      intro j
+      unfold digitAt
+      rw [pow_succ, Nat.mul_comm (n ^ j) n, Nat.div_div_eq_div_mul]
+    have hwn : w / n < n ^ r := by
+      rw [pow_succ] at hw
+      exact Nat.div_lt_of_lt_mul (by rwa [Nat.mul_comm] at hw)
+    calc ∑ j ∈ Finset.range (r + 1), digitAt n w j * n ^ j
+        = digitAt n w 0 + n * ∑ j ∈ Finset.range r, digitAt n w (j + 1) * n ^ j := hpeel
+      _ = w % n + n * ∑ j ∈ Finset.range r, digitAt n (w / n) j * n ^ j := by
+          rw [hd0]
+          congr 2
+          exact Finset.sum_congr rfl fun j _ => by rw [hdsucc]
+      _ = w % n + n * (w / n) := by rw [ih (w / n) hwn]
+      _ = w := by rw [Nat.add_comm]; exact Nat.div_add_mod w n
+
+/-- The decoded table, as a `List ℕ` — reading a `lensCode`/`lensTable` value back through
+`Encodable.decode`, exactly the `invcomp`/`markTableFn` idiom's first step. -/
+private def rawTable (code : ℕ) : List ℕ := (Encodable.decode (α := List ℕ) code).getD []
+
+private theorem primrec_rawTable : Primrec rawTable :=
+  Primrec.option_getD.comp Primrec.decode (Primrec.const [])
+
+/-- `rawTable` inverts `lensCode` exactly — the encode/decode round trip. -/
+private theorem rawTable_lensCode (ℓ : Fin n → Fin m) : rawTable (lensCode ℓ) = lensTable ℓ := by
+  rw [rawTable, lensCode, Encodable.encodek]; rfl
+
+/-- Summing a primitive-recursive `Bool`-list by `&&` is primitive recursive (`List.all` as a
+`foldr`) — the Boolean sibling of `primrec_list_sum`. -/
+private theorem primrec_list_all {α : Type*} [Primcodable α] {f : α → List ℕ} {g : α → ℕ → Bool}
+    (hf : Primrec f) (hg : Primrec₂ g) : Primrec fun a => (f a).all (g a) :=
+  (Primrec.list_foldr hf (Primrec.const true)
+      ((Primrec.dom_bool₂ (· && ·)).comp (hg.comp Primrec.fst (Primrec.fst.comp Primrec.snd))
+        (Primrec.snd.comp Primrec.snd)).to₂).of_eq
+    fun a => by
+      induction f a with
+      | nil => rfl
+      | cons b l ih => simp [List.all_cons, ih]
+
+/-- One pairwise distinctness test, `Bool`-valued: `i = j`, or the digits at `i` and `j` differ. -/
+private def pairOK (n w i j : ℕ) : Bool :=
+  decide (i = j) || !decide (digitAt n w i = digitAt n w j)
+
+private theorem primrec_pairOK :
+    Primrec₂ fun (a : ℕ × ℕ) (j : ℕ) => pairOK a.1.unpair.1 a.1.unpair.2 a.2 j := by
+  have hpow : Primrec₂ ((· ^ ·) : ℕ → ℕ → ℕ) := Primrec₂.unpaired'.1 Nat.Primrec.pow
+  have hN : Primrec fun q : (ℕ × ℕ) × ℕ => q.1.1.unpair.1 :=
+    Primrec.fst.comp (Primrec.unpair.comp (Primrec.fst.comp Primrec.fst))
+  have hW : Primrec fun q : (ℕ × ℕ) × ℕ => q.1.1.unpair.2 :=
+    Primrec.snd.comp (Primrec.unpair.comp (Primrec.fst.comp Primrec.fst))
+  have hI : Primrec fun q : (ℕ × ℕ) × ℕ => q.1.2 := Primrec.snd.comp Primrec.fst
+  have hJ : Primrec fun q : (ℕ × ℕ) × ℕ => q.2 := Primrec.snd
+  have hdI : Primrec fun q : (ℕ × ℕ) × ℕ => digitAt q.1.1.unpair.1 q.1.1.unpair.2 q.1.2 :=
+    Primrec.nat_mod.comp (Primrec.nat_div.comp hW (hpow.comp hN hI)) hN
+  have hdJ : Primrec fun q : (ℕ × ℕ) × ℕ => digitAt q.1.1.unpair.1 q.1.1.unpair.2 q.2 :=
+    Primrec.nat_mod.comp (Primrec.nat_div.comp hW (hpow.comp hN hJ)) hN
+  have h1 : Primrec fun q : (ℕ × ℕ) × ℕ => decide (q.1.2 = q.2) := Primrec.eq.decide.comp hI hJ
+  have h2 : Primrec fun q : (ℕ × ℕ) × ℕ =>
+      decide (digitAt q.1.1.unpair.1 q.1.1.unpair.2 q.1.2
+        = digitAt q.1.1.unpair.1 q.1.1.unpair.2 q.2) :=
+    Primrec.eq.decide.comp hdI hdJ
+  exact ((Primrec.dom_bool₂ (fun (b1 b2 : Bool) => b1 || !b2)).comp h1 h2).of_eq fun q => by
+    simp [pairOK]
+
+/-- **The bijectivity test**: every digit of `w`'s `n`-digit table differs from every other — the
+`Bool`-valued, doubly-bounded pairwise search. Injective on a domain the same size as its codomain
+is bijective (`candTable_bijective` below), so this one check both certifies a genuine `Perm (Fin
+n)` and, by construction, excludes every non-permutation candidate from the enumeration. -/
+private def candBijBool (n w : ℕ) : Bool :=
+  (List.range n).all (fun i => (List.range n).all (fun j => pairOK n w i j))
+
+private theorem primrec_candBijBool : Primrec₂ candBijBool := by
+  have hInner : Primrec₂ fun (packedNW i : ℕ) =>
+      (List.range packedNW.unpair.1).all
+        (fun j => pairOK packedNW.unpair.1 packedNW.unpair.2 i j) :=
+    primrec_list_all (Primrec.list_range.comp (Primrec.fst.comp (Primrec.unpair.comp Primrec.fst)))
+      primrec_pairOK
+  have hOuter : Primrec fun packedNW : ℕ =>
+      (List.range packedNW.unpair.1).all (fun i =>
+        (List.range packedNW.unpair.1).all
+          (fun j => pairOK packedNW.unpair.1 packedNW.unpair.2 i j)) :=
+    primrec_list_all (Primrec.list_range.comp (Primrec.fst.comp Primrec.unpair)) hInner
+  exact hOuter.of_eq fun packedNW => rfl
+
+private theorem candBijBool_iff (n w : ℕ) :
+    candBijBool n w = true ↔ ∀ i < n, ∀ j < n, i ≠ j → digitAt n w i ≠ digitAt n w j := by
+  simp only [candBijBool, List.all_eq_true, decide_eq_true_eq, List.mem_range, pairOK,
+    Bool.or_eq_true, Bool.not_eq_true', decide_eq_false_iff_not]
+  constructor
+  · intro h i hi j hj hij hcontra
+    rcases h i hi j hj with heq | hne
+    · exact hij heq
+    · exact hne hcontra
+  · intro h i hi j hj
+    by_cases hij : i = j
+    · left; exact hij
+    · right; exact h i hi j hj hij
+
+/-- The candidate's full table, at domain `[0, n)` — `packMarks`'s digit packing read at the
+FULL length `r = n`, so every position is a table entry rather than a sparse mark. -/
+private def candTable (n w : ℕ) : List ℕ := (List.range n).map (digitAt n w)
+
+private theorem primrec_candTable : Primrec₂ candTable := by
+  have hpow : Primrec₂ ((· ^ ·) : ℕ → ℕ → ℕ) := Primrec₂.unpaired'.1 Nat.Primrec.pow
+  have hdig : Primrec₂ fun (a : ℕ × ℕ) (i : ℕ) => digitAt a.1 a.2 i := by
+    have hN : Primrec fun q : (ℕ × ℕ) × ℕ => q.1.1 := Primrec.fst.comp Primrec.fst
+    have hW : Primrec fun q : (ℕ × ℕ) × ℕ => q.1.2 := Primrec.snd.comp Primrec.fst
+    exact (Primrec.nat_mod.comp (Primrec.nat_div.comp hW (hpow.comp hN Primrec.snd)) hN).to₂
+  exact Primrec.list_map (Primrec.list_range.comp Primrec.fst) hdig
+
+/-- The candidate's digit function is bijective on `Fin n` exactly when `candBijBool` says so —
+injective plus equal domain and codomain size (`Finite.injective_iff_bijective`). -/
+private theorem candTable_bijective {n w : ℕ} (hn : 0 < n) (h : candBijBool n w = true) :
+    Function.Bijective (fun i : Fin n => (⟨digitAt n w (i : ℕ), Nat.mod_lt _ hn⟩ : Fin n)) := by
+  rw [candBijBool_iff] at h
+  apply Finite.injective_iff_bijective.mp
+  intro i j hij
+  by_contra hne
+  exact h i i.2 j j.2 (fun hcon => hne (Fin.val_injective hcon))
+    (by simpa using congrArg Fin.val hij)
+
+/-- **Reading a genuine permutation's own table back off its packing**: `candTable` at `packMarks`
+of a `Fin n → Fin n` function reproduces its `lensTable`, digit for digit (`digit_packMarks`). -/
+private theorem candTable_packMarks (hn : 0 < n) (W : Fin n → Fin n) :
+    candTable n (packMarks W) = lensTable W := by
+  rw [candTable, lensTable]
+  have hfr : (List.finRange n).map Fin.val = List.range n := by simp
+  rw [← hfr, List.map_map]
+  exact List.map_congr_left fun i _ => digit_packMarks hn W i
+
+/-- **Injectivity of the packing, at the full domain**: distinct numerals below `n ^ n` decode to
+distinct `n`-digit tables — the converse of `candTable_packMarks`, via the reconstruction identity
+`digitAt_sum_eq`. This is what turns "the valid numerals inject into the stabilizer coset" into an
+actual cardinality bound rather than a many-to-one count. -/
+private theorem candTable_injOn : Set.InjOn (candTable n) {w | w < n ^ n} := by
+  intro w1 hw1 w2 hw2 heq
+  have h1 : ∑ j ∈ Finset.range n, digitAt n w1 j * n ^ j = w1 := digitAt_sum_eq n w1 hw1
+  have h2 : ∑ j ∈ Finset.range n, digitAt n w2 j * n ^ j = w2 := digitAt_sum_eq n w2 hw2
+  have hdig : ∀ j ∈ Finset.range n, digitAt n w1 j = digitAt n w2 j := by
+    intro j hj
+    have hjn : j < n := Finset.mem_range.mp hj
+    have heq' : (List.range n).map (digitAt n w1) = (List.range n).map (digitAt n w2) := heq
+    exact List.map_eq_map_iff.mp heq' j (List.mem_range.mpr hjn)
+  rw [← h1, ← h2]
+  exact Finset.sum_congr rfl fun j hj => by rw [hdig j hj]
+
+/-- **A candidate is valid** when its table is a genuine permutation AND transports `ℓ₁`'s table to
+`ℓ₀`'s — the two conditions the coset argument needs: `candBijBool` certifies bijectivity, and the
+bounded search certifies `ℓ₁ (W i) = ℓ₀ i` for every `i`, read straight off the two tables. -/
+private def isValid (n t0 t1 w : ℕ) : Prop :=
+  candBijBool n w = true ∧
+    ∀ i < n, List.getD (rawTable t1) (digitAt n w i) 0 = List.getD (rawTable t0) i 0
+
+private instance decIsValid (n t0 t1 w : ℕ) : Decidable (isValid n t0 t1 w) := by
+  unfold isValid; infer_instance
+
+/-- **Duplicating a bound into the pair a `PrimrecRel.forall_lt` needs.** `forall_lt` bounds its
+quantifier by the FIRST coordinate of a pair; when the bound is itself computed from the same
+parameter the body needs, pairing the parameter with its own bound (via `Primrec.pair`) and
+composing supplies exactly that first coordinate. Reused for both nested bounds `isValid` needs. -/
+private theorem primrecPred_dup_nat {R : ℕ → ℕ → Prop} {b : ℕ → ℕ}
+    (hR : PrimrecRel R) (hb : Primrec b) : PrimrecPred fun p : ℕ => ∀ i < b p, R i p := by
+  have hdup : Primrec fun p : ℕ => ((b p, p) : ℕ × ℕ) := Primrec.pair hb Primrec.id
+  have hcast : PrimrecPred fun q : ℕ × ℕ => ∀ i < q.1, R i q.2 := PrimrecRel.forall_lt hR
+  exact hcast.comp hdup
+
+/-- **`isValid` is primitive recursive**, over the packed program `⟨n, t0, t1, w⟩`. -/
+private theorem primrec_isValid :
+    PrimrecPred fun p : ℕ => isValid p.unpair.1 p.unpair.2.unpair.1
+      p.unpair.2.unpair.2.unpair.1 p.unpair.2.unpair.2.unpair.2 := by
+  have hN : Primrec fun p : ℕ => p.unpair.1 := Primrec.fst.comp Primrec.unpair
+  have hR1 : Primrec fun p : ℕ => p.unpair.2 := Primrec.snd.comp Primrec.unpair
+  have hT0 : Primrec fun p : ℕ => p.unpair.2.unpair.1 := Primrec.fst.comp (Primrec.unpair.comp hR1)
+  have hR2 : Primrec fun p : ℕ => p.unpair.2.unpair.2 := Primrec.snd.comp (Primrec.unpair.comp hR1)
+  have hT1 : Primrec fun p : ℕ => p.unpair.2.unpair.2.unpair.1 :=
+    Primrec.fst.comp (Primrec.unpair.comp hR2)
+  have hW : Primrec fun p : ℕ => p.unpair.2.unpair.2.unpair.2 :=
+    Primrec.snd.comp (Primrec.unpair.comp hR2)
+  have hpow : Primrec₂ ((· ^ ·) : ℕ → ℕ → ℕ) := Primrec₂.unpaired'.1 Nat.Primrec.pow
+  have hBij : PrimrecPred fun p : ℕ =>
+      candBijBool p.unpair.1 p.unpair.2.unpair.2.unpair.2 = true := by
+    have hb : Primrec fun p : ℕ => candBijBool p.unpair.1 p.unpair.2.unpair.2.unpair.2 := by
+      have := primrec_candBijBool.comp hN hW
+      exact this
+    exact Primrec.eq.comp hb (Primrec.const true)
+  have hMatch : PrimrecPred fun p : ℕ => ∀ i < p.unpair.1,
+      List.getD (rawTable p.unpair.2.unpair.2.unpair.1)
+          (digitAt p.unpair.1 p.unpair.2.unpair.2.unpair.2 i) 0
+        = List.getD (rawTable p.unpair.2.unpair.1) i 0 := by
+    have hR : PrimrecRel fun (i : ℕ) (p : ℕ) =>
+        List.getD (rawTable p.unpair.2.unpair.2.unpair.1)
+            (digitAt p.unpair.1 p.unpair.2.unpair.2.unpair.2 i) 0
+          = List.getD (rawTable p.unpair.2.unpair.1) i 0 := by
+      have hdig : Primrec fun q : ℕ × ℕ =>
+          digitAt q.2.unpair.1 q.2.unpair.2.unpair.2.unpair.2 q.1 :=
+        Primrec.nat_mod.comp
+          (Primrec.nat_div.comp (hW.comp Primrec.snd)
+            (hpow.comp (hN.comp Primrec.snd) Primrec.fst))
+          (hN.comp Primrec.snd)
+      have hf : Primrec fun q : ℕ × ℕ =>
+          List.getD (rawTable q.2.unpair.2.unpair.2.unpair.1)
+            (digitAt q.2.unpair.1 q.2.unpair.2.unpair.2.unpair.2 q.1) 0 :=
+        (Primrec.list_getD 0).comp (primrec_rawTable.comp (hT1.comp Primrec.snd)) hdig
+      have hg : Primrec fun q : ℕ × ℕ =>
+          List.getD (rawTable q.2.unpair.2.unpair.1) q.1 0 :=
+        (Primrec.list_getD 0).comp (primrec_rawTable.comp (hT0.comp Primrec.snd)) Primrec.fst
+      exact PrimrecRel.comp Primrec.eq hf hg
+    exact primrecPred_dup_nat hR hN
+  exact hBij.and hMatch
+
+set_option maxHeartbeats 1000000 in
+-- Two multi-level `Nat.unpair`/`Nat.pair` chains meet in the composed term, so the kernel check
+-- needs extra headroom (the same shape as `KE_labelledMarkingLens_le`'s nested packing).
+/-- **The membership relation is primitive recursive**, over `(w, param)` with `param` packing
+`(n, t0, t1)` — `primrec_isValid` at `param` and `w` rebuilt into one packed program. -/
+private theorem primrec_isValid_rel :
+    PrimrecRel fun (w param : ℕ) =>
+      isValid param.unpair.1 param.unpair.2.unpair.1 param.unpair.2.unpair.2 w := by
+  have hn' : Primrec fun q : ℕ × ℕ => q.2.unpair.1 :=
+    Primrec.fst.comp (Primrec.unpair.comp Primrec.snd)
+  have ht0' : Primrec fun q : ℕ × ℕ => q.2.unpair.2.unpair.1 :=
+    Primrec.fst.comp (Primrec.unpair.comp (Primrec.snd.comp (Primrec.unpair.comp Primrec.snd)))
+  have ht1' : Primrec fun q : ℕ × ℕ => q.2.unpair.2.unpair.2 :=
+    Primrec.snd.comp (Primrec.unpair.comp (Primrec.snd.comp (Primrec.unpair.comp Primrec.snd)))
+  have hw' : Primrec fun q : ℕ × ℕ => q.1 := Primrec.fst
+  have hinner1 : Primrec fun q : ℕ × ℕ => Nat.pair (q.2.unpair.2.unpair.2) (q.1) :=
+    Primrec₂.natPair.comp ht1' hw'
+  have hinner2 : Primrec fun q : ℕ × ℕ =>
+      Nat.pair (q.2.unpair.2.unpair.1) (Nat.pair (q.2.unpair.2.unpair.2) (q.1)) :=
+    Primrec₂.natPair.comp ht0' hinner1
+  have hfull : Primrec fun q : ℕ × ℕ =>
+      Nat.pair (q.2.unpair.1) (Nat.pair (q.2.unpair.2.unpair.1)
+        (Nat.pair (q.2.unpair.2.unpair.2) (q.1))) :=
+    Primrec₂.natPair.comp hn' hinner2
+  have hkey := primrec_isValid.comp hfull
+  refine hkey.of_eq fun q => ?_
+  simp only [Nat.unpair_pair]
+
+/-- **The candidate list**: every numeral below `n ^ n` whose table is a valid coset element,
+in the numeral's own order. Its members are exactly the coset `U · stabilizer (ℓ₀)`'s tables
+(`candList_mem_iff`), and its length is bounded by the coset's size (`candList_length_le`). -/
+private def candList (n t0 t1 : ℕ) : List ℕ :=
+  (List.range (n ^ n)).filter (fun w => decide (isValid n t0 t1 w))
+
+private theorem primrec_candList :
+    Primrec fun p : ℕ => candList p.unpair.1 p.unpair.2.unpair.1 p.unpair.2.unpair.2 := by
+  have hpow : Primrec₂ ((· ^ ·) : ℕ → ℕ → ℕ) := Primrec₂.unpaired'.1 Nat.Primrec.pow
+  have hN : Primrec fun p : ℕ => p.unpair.1 := Primrec.fst.comp Primrec.unpair
+  have hL : Primrec fun p : ℕ => List.range (p.unpair.1 ^ p.unpair.1) :=
+    Primrec.list_range.comp (hpow.comp hN hN)
+  have hfilt := (PrimrecRel.listFilter primrec_isValid_rel).comp hL Primrec.id
+  exact hfilt.of_eq fun p => rfl
+
+/-- **The tabulation, rebuilt from the packed program** `⟨n, t0, t1, idx⟩` — ONE fixed function of a
+single natural number: filter the candidates and read off the `idx`-th one's table. -/
+private def gradedTableFn (a : ℕ) : ℕ :=
+  Encodable.encode (candTable a.unpair.1
+    (List.getD (candList a.unpair.1 a.unpair.2.unpair.1 a.unpair.2.unpair.2.unpair.1)
+      a.unpair.2.unpair.2.unpair.2 0))
+
+set_option maxHeartbeats 1000000 in
+-- same headroom reason as `primrec_isValid_rel`: multi-level packing meets `primrec_candList`.
+private theorem primrec_gradedTableFn : Primrec gradedTableFn := by
+  have hN : Primrec fun a : ℕ => a.unpair.1 := Primrec.fst.comp Primrec.unpair
+  have hT0 : Primrec fun a : ℕ => a.unpair.2.unpair.1 :=
+    Primrec.fst.comp (Primrec.unpair.comp (Primrec.snd.comp Primrec.unpair))
+  have hT1 : Primrec fun a : ℕ => a.unpair.2.unpair.2.unpair.1 :=
+    Primrec.fst.comp (Primrec.unpair.comp (Primrec.snd.comp
+      (Primrec.unpair.comp (Primrec.snd.comp Primrec.unpair))))
+  have hIdx : Primrec fun a : ℕ => a.unpair.2.unpair.2.unpair.2 :=
+    Primrec.snd.comp (Primrec.unpair.comp (Primrec.snd.comp
+      (Primrec.unpair.comp (Primrec.snd.comp Primrec.unpair))))
+  have hParam : Primrec fun a : ℕ =>
+      Nat.pair a.unpair.1 (Nat.pair a.unpair.2.unpair.1 a.unpair.2.unpair.2.unpair.1) :=
+    Primrec₂.natPair.comp hN (Primrec₂.natPair.comp hT0 hT1)
+  have hCL : Primrec fun a : ℕ =>
+      candList a.unpair.1 a.unpair.2.unpair.1 a.unpair.2.unpair.2.unpair.1 := by
+    have := primrec_candList.comp hParam
+    refine this.of_eq fun a => ?_
+    simp only [Nat.unpair_pair]
+  have hSel : Primrec fun a : ℕ =>
+      List.getD (candList a.unpair.1 a.unpair.2.unpair.1 a.unpair.2.unpair.2.unpair.1)
+        a.unpair.2.unpair.2.unpair.2 0 :=
+    (Primrec.list_getD 0).comp hCL hIdx
+  exact Primrec.encode.comp (primrec_candTable.comp hN hSel)
+
+private theorem partrec_gradedTableFn : Nat.Partrec (fun a : ℕ => (gradedTableFn a : ℕ)) :=
+  _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_gradedTableFn).partrec
+
+/-- **The fixed graded-ledger builder code.** One program, independent of `n`, the world, and the
+lens — the uniform constant the graded ledger's `O (1)` demands. -/
+noncomputable def gradedBuilder : Nat.Partrec.Code :=
+  Classical.choose (Nat.Partrec.Code.exists_code.mp partrec_gradedTableFn)
+
+private theorem eval_gradedBuilder (a : ℕ) :
+    Nat.Partrec.Code.eval gradedBuilder a = Part.some (gradedTableFn a) := by
+  have h := congrFun (Classical.choose_spec
+    (Nat.Partrec.Code.exists_code.mp partrec_gradedTableFn)) a
+  simpa [gradedBuilder] using h
+
+/-- **The world's own table, packed** — `U`, read as a bare `Fin n → Fin n` function and packed by
+`packMarks` exactly as any candidate table is. -/
+private def worldNumeral (U : Perm (Fin n)) : ℕ := packMarks (fun i : Fin n => U i)
+
+private theorem worldNumeral_lt (hn : 0 < n) (U : Perm (Fin n)) : worldNumeral U < n ^ n :=
+  packMarks_lt hn _
+
+private theorem digitAt_worldNumeral (hn : 0 < n) (U : Perm (Fin n)) (i : Fin n) :
+    digitAt n (worldNumeral U) (i : ℕ) = (U i : ℕ) :=
+  digit_packMarks hn _ i
+
+/-- **The world's own table is a valid candidate**: it is bijective (`U` is a permutation) and it
+transports `ℓ₁`'s table to `ℓ₀`'s — `permCarries_frame_one`, read through the encode/decode round
+trip and the base-`n` packing. -/
+private theorem isValid_worldNumeral (hn : 0 < n) {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m}
+    (hcar : PermCarries U ℓ) :
+    isValid n (lensCode (ℓ 0)) (lensCode (ℓ 1)) (worldNumeral U) := by
+  constructor
+  · rw [candBijBool_iff]
+    intro i hi j hj hij hcontra
+    have hdi : digitAt n (worldNumeral U) i = (U (⟨i, hi⟩ : Fin n) : ℕ) :=
+      digitAt_worldNumeral hn U ⟨i, hi⟩
+    have hdj : digitAt n (worldNumeral U) j = (U (⟨j, hj⟩ : Fin n) : ℕ) :=
+      digitAt_worldNumeral hn U ⟨j, hj⟩
+    rw [hdi, hdj] at hcontra
+    exact hij (congrArg Fin.val (U.injective (Fin.val_injective hcontra)))
+  · intro i hi
+    have hdig : digitAt n (worldNumeral U) i = (U (⟨i, hi⟩ : Fin n) : ℕ) :=
+      digitAt_worldNumeral hn U ⟨i, hi⟩
+    have hget1 : List.getD (rawTable (lensCode (ℓ 1))) (U (⟨i, hi⟩ : Fin n) : ℕ) 0
+        = (ℓ 1 (U ⟨i, hi⟩) : ℕ) := by
+      rw [rawTable_lensCode, lensTable]; exact getD_map_finRange _ _
+    have hget0 : List.getD (rawTable (lensCode (ℓ 0))) i 0 = (ℓ 0 (⟨i, hi⟩ : Fin n) : ℕ) := by
+      rw [rawTable_lensCode, lensTable]
+      exact getD_map_finRange (fun y : Fin n => (ℓ 0 y : ℕ)) ⟨i, hi⟩
+    rw [hdig, hget1, hget0]
+    have hstep := hcar.2 1 (⟨i, hi⟩ : Fin n)
+    rw [pow_one] at hstep
+    exact congrArg (fun x : Fin m => (x : ℕ)) hstep
+
+/-- **The candidate permutation**: a valid numeral's own bijective table, packaged as a genuine
+`Perm (Fin n)`. Junk (`1`) off the domain where `candBijBool` fails, since `Function.Bijective`
+needs the certificate — only its behaviour on valid numerals is ever used. -/
+private noncomputable def candPerm (n w : ℕ) : Perm (Fin n) :=
+  if h : 0 < n ∧ candBijBool n w = true then
+    Equiv.ofBijective (fun i : Fin n => (⟨digitAt n w i, Nat.mod_lt _ h.1⟩ : Fin n))
+      (candTable_bijective h.1 h.2)
+  else 1
+
+private theorem candPerm_apply {n w : ℕ} (hn : 0 < n) (hb : candBijBool n w = true) (i : Fin n) :
+    (candPerm n w i : ℕ) = digitAt n w i := by
+  rw [candPerm, dif_pos ⟨hn, hb⟩]; rfl
+
+/-- **The coset injection**: a valid numeral's candidate permutation, composed with `U⁻¹`, lands in
+`ℓ₀`'s fiber-stabilizer — the matching condition says `ℓ₁ ∘ (candPerm) = ℓ₀`, and
+`permCarries_frame_one` reads `ℓ₁` itself as `ℓ₀ ∘ U⁻¹`, so `U⁻¹ * candPerm` fixes every `ℓ₀`-fiber
+setwise. -/
+private theorem candPerm_mem_stabilizer {n w : ℕ} (hn : 0 < n) {U : Perm (Fin n)}
+    {ℓ : ℕ → Fin n → Fin m} (hcar : PermCarries U ℓ)
+    (hv : isValid n (lensCode (ℓ 0)) (lensCode (ℓ 1)) w) :
+    U⁻¹ * candPerm n w ∈ stabilizer (Perm (Fin n)) (ℓ 0) := by
+  rw [mem_stabilizer_lens]
+  intro x
+  rw [Equiv.Perm.mul_apply]
+  have hb := hv.1
+  have hmatch := hv.2
+  have h1 : ℓ 1 (candPerm n w x) = ℓ 0 x := by
+    have hi : (x : ℕ) < n := x.2
+    have hget1 : List.getD (rawTable (lensCode (ℓ 1))) (digitAt n w x) 0
+        = (ℓ 1 (⟨digitAt n w x, Nat.mod_lt _ hn⟩ : Fin n) : ℕ) := by
+      rw [rawTable_lensCode, lensTable]
+      exact getD_map_finRange (fun y : Fin n => (ℓ 1 y : ℕ)) ⟨digitAt n w x, Nat.mod_lt _ hn⟩
+    have hget0 : List.getD (rawTable (lensCode (ℓ 0))) (x : ℕ) 0 = (ℓ 0 x : ℕ) := by
+      rw [rawTable_lensCode, lensTable]; exact getD_map_finRange _ _
+    have hspec := hmatch x hi
+    rw [hget1, hget0] at hspec
+    have hval : (⟨digitAt n w x, Nat.mod_lt _ hn⟩ : Fin n) = candPerm n w x := by
+      apply Fin.val_injective
+      rw [candPerm_apply hn hb]
+    rw [hval] at hspec
+    exact Fin.val_injective hspec
+  have h2 : ℓ 1 = ℓ 0 ∘ ⇑U⁻¹ := permCarries_frame_one hcar
+  rw [h2] at h1
+  simpa using h1
+
+/-- **Injectivity of the coset map**: distinct valid numerals give distinct stabilizer cosets. Two
+valid `w₁ ≠ w₂` with the same `U⁻¹ * candPerm` would give the same `candPerm`, hence the same
+`n`-digit table (`Equiv.ext`), hence — by the base-`n` packing's injectivity — the same numeral. -/
+private theorem candPerm_injOn {n : ℕ} (hn : 0 < n) (t0 t1 : ℕ) (U : Perm (Fin n)) :
+    Set.InjOn (fun w => U⁻¹ * candPerm n w) {w | w < n ^ n ∧ isValid n t0 t1 w} := by
+  intro w1 hw1 w2 hw2 heq
+  have hb1 : candBijBool n w1 = true := hw1.2.1
+  have hb2 : candBijBool n w2 = true := hw2.2.1
+  have hcp : candPerm n w1 = candPerm n w2 := by
+    have := mul_left_cancel (a := U⁻¹) heq
+    exact this
+  have hdig : ∀ i : Fin n, digitAt n w1 (i : ℕ) = digitAt n w2 (i : ℕ) := by
+    intro i
+    rw [← candPerm_apply hn hb1 i, ← candPerm_apply hn hb2 i, hcp]
+  apply candTable_injOn hw1.1 hw2.1
+  change (List.range n).map (digitAt n w1) = (List.range n).map (digitAt n w2)
+  refine List.map_congr_left fun j hj => ?_
+  exact hdig ⟨j, List.mem_range.mp hj⟩
+
+/-- **The graded ledger's coset bound**: the coset that pins `U` down against a reference frame
+`ℓ₀` has size at most `∏ᵢ (fiberᵢ)!` — the count `card_stabilizer_lens` gives Lemma 7.1's
+stabilizer, reached here by injecting every valid candidate numeral into it. -/
+private theorem candList_length_le (hn : 0 < n) {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m}
+    (hcar : PermCarries U ℓ) :
+    (candList n (lensCode (ℓ 0)) (lensCode (ℓ 1))).length
+      ≤ Nat.card ↥(stabilizer (Perm (Fin n)) (ℓ 0)) := by
+  classical
+  set t0 := lensCode (ℓ 0) with ht0
+  set t1 := lensCode (ℓ 1) with ht1
+  haveI : Fintype ↥(stabilizer (Perm (Fin n)) (ℓ 0)) := Fintype.ofFinite _
+  have hnodup : (candList n t0 t1).Nodup := List.nodup_range.filter _
+  have hmem : ∀ w ∈ (candList n t0 t1).toFinset, w < n ^ n ∧ isValid n t0 t1 w := by
+    intro w hw
+    rw [List.mem_toFinset, candList, List.mem_filter, List.mem_range, decide_eq_true_eq] at hw
+    exact hw
+  set f : ℕ → ↥(stabilizer (Perm (Fin n)) (ℓ 0)) := fun w =>
+    if h : isValid n t0 t1 w then ⟨U⁻¹ * candPerm n w, candPerm_mem_stabilizer hn hcar h⟩
+    else ⟨1, Subgroup.one_mem _⟩ with hf
+  have hcard := Finset.card_le_card_of_injOn f
+    (s := (candList n t0 t1).toFinset) (t := Finset.univ)
+    (fun w _ => Finset.mem_univ (f w))
+    (by
+      intro w1 hw1 w2 hw2 heq
+      rw [Finset.mem_coe] at hw1 hw2
+      have h1 := hmem w1 hw1
+      have h2 := hmem w2 hw2
+      have hfw1 : f w1 = ⟨U⁻¹ * candPerm n w1, candPerm_mem_stabilizer hn hcar h1.2⟩ :=
+        dif_pos h1.2
+      have hfw2 : f w2 = ⟨U⁻¹ * candPerm n w2, candPerm_mem_stabilizer hn hcar h2.2⟩ :=
+        dif_pos h2.2
+      rw [hfw1, hfw2, Subtype.mk_eq_mk] at heq
+      exact candPerm_injOn hn t0 t1 U ⟨h1.1, h1.2⟩ ⟨h2.1, h2.2⟩ heq)
+  rw [← List.toFinset_card_of_nodup hnodup, Nat.card_eq_fintype_card]
+  simpa using hcard
+
+/-- **The graded ledger** ([Persistence] Open problem 8.4's design; Theorem 6.3's argument at
+EVERY carried family, maximal or not). The two frames pin `U` down only to a coset of `ℓ₀`'s
+fiber-stabilizer, of size `∏ᵢ (fiberᵢ)!` (`card_stabilizer_lens`): a fixed decoder recovers `U`'s
+table from the two frame tables plus a coset INDEX, and the index costs `O (Nat.size (∏ᵢ fiberᵢ!))`
+bits — logarithmic in the coset, not linear (the `bconst` loading precedent of
+`KE_markingLens_le`), no genericity, no maximality. `ledger_K` is the case `∏ᵢ (fiberᵢ)! = 1`
+(`ledger_graded_faithful`). -/
+theorem ledger_graded (hn : 0 < n) {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m}
+    (hcar : PermCarries U ℓ) :
+    KE (lensCode U) ≤ KE (lensCode (ℓ 0)) + KE (lensCode (ℓ 1))
+      + (15 + elen dbl) * Nat.size (∏ i : Fin m, (Nat.card {x : Fin n // ℓ 0 x = i})!)
+      + (15 + elen dbl) * Nat.size n
+      + (elen gradedBuilder + 2 * (15 + elen dbl) + 39) := by
+  set t0 := lensCode (ℓ 0) with ht0
+  set t1 := lensCode (ℓ 1) with ht1
+  set N := ∏ i : Fin m, (Nat.card {x : Fin n // ℓ 0 x = i})! with hNdef
+  have hvalid : isValid n t0 t1 (worldNumeral U) := isValid_worldNumeral hn hcar
+  have hlt : worldNumeral U < n ^ n := worldNumeral_lt hn U
+  have hmem : worldNumeral U ∈ candList n t0 t1 := by
+    rw [candList, List.mem_filter, List.mem_range, decide_eq_true_eq]
+    exact ⟨hlt, hvalid⟩
+  obtain ⟨idx, hidxlt, hidxeq⟩ := List.getElem_of_mem hmem
+  have hlenle : (candList n t0 t1).length ≤ N := by
+    rw [hNdef]
+    calc (candList n t0 t1).length ≤ Nat.card ↥(stabilizer (Perm (Fin n)) (ℓ 0)) :=
+          candList_length_le hn hcar
+      _ = N := card_stabilizer_lens (ℓ 0)
+  have hidxN : idx < N := lt_of_lt_of_le hidxlt hlenle
+  have hgetD : List.getD (candList n t0 t1) idx 0 = worldNumeral U := by
+    rw [List.getD_eq_getElem _ _ hidxlt]; exact hidxeq
+  have heval : gradedTableFn (Nat.pair n (Nat.pair t0 (Nat.pair t1 idx))) = lensCode U := by
+    rw [gradedTableFn]
+    simp only [Nat.unpair_pair]
+    rw [hgetD]
+    exact congrArg Encodable.encode (candTable_packMarks hn U)
+  obtain ⟨c0, hc0, hlc0⟩ := exists_min_E t0
+  obtain ⟨c1, hc1, hlc1⟩ := exists_min_E t1
+  have hz : eval zero (0 : ℕ) = Part.some 0 := rfl
+  have hn' : eval (bconst n) 0 = Part.some n := eval_bconst n 0
+  have h0 : eval (comp c0 zero) 0 = Part.some t0 := (eval_comp_some hz).trans hc0
+  have h1 : eval (comp c1 zero) 0 = Part.some t1 := (eval_comp_some hz).trans hc1
+  have hb : eval (bconst idx) 0 = Part.some idx := eval_bconst idx 0
+  have hpair3 : eval (pair (comp c1 zero) (bconst idx)) 0 = Part.some (Nat.pair t1 idx) := by
+    change Nat.pair <$> _ <*> _ = _
+    rw [h1, hb]; simp [Seq.seq]
+  have hpair2 : eval (pair (comp c0 zero) (pair (comp c1 zero) (bconst idx))) 0
+      = Part.some (Nat.pair t0 (Nat.pair t1 idx)) := by
+    change Nat.pair <$> _ <*> _ = _
+    rw [h0, hpair3]; simp [Seq.seq]
+  have hpair1 : eval (pair (bconst n) (pair (comp c0 zero) (pair (comp c1 zero) (bconst idx)))) 0
+      = Part.some (Nat.pair n (Nat.pair t0 (Nat.pair t1 idx))) := by
+    change Nat.pair <$> _ <*> _ = _
+    rw [hn', hpair2]; simp [Seq.seq]
+  have hcomp : Computes
+      (comp gradedBuilder
+        (pair (bconst n) (pair (comp c0 zero) (pair (comp c1 zero) (bconst idx)))))
+      (lensCode U) := by
+    change eval (comp gradedBuilder
+      (pair (bconst n) (pair (comp c0 zero) (pair (comp c1 zero) (bconst idx))))) 0 = _
+    rw [eval_comp_some hpair1, eval_gradedBuilder, heval]
+  have hle := KE_le hcomp
+  rw [E_len_comp, E_len_pair, E_len_pair, E_len_comp, E_len_pair, E_len_comp] at hle
+  have hzlen : elen (zero : Code) = 3 := rfl
+  have hbc := elen_bconst_le idx
+  have hbn := elen_bconst_le n
+  have hidxsize : Nat.size idx ≤ Nat.size N := Nat.size_le_size (le_of_lt hidxN)
+  have hidxsize' : (15 + elen dbl) * Nat.size idx ≤ (15 + elen dbl) * Nat.size N :=
+    Nat.mul_le_mul_left _ hidxsize
+  rw [hzlen, hlc0, hlc1] at hle
+  omega
+
+/-- **Non-vacuity: the graded ledger recovers the maximal ledger's shape.** At singleton fibers
+(`ℓ₀` bijective) the coset is trivial — `∏ᵢ (fiberᵢ)! = 1` — so the coset INDEX contributes only
+its own fixed encoding cost, and the bound collapses to `ledger_K`'s two-frames-plus-`O (1)` shape,
+up to the decoder's `O (Nat.size n)` (this decoder, unlike `ledger_K`'s table inversion, must be
+told `n` up front to bound its search). -/
+theorem ledger_graded_faithful (hn : 0 < n) {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m}
+    (hcar : PermCarries U ℓ) (hbij : Function.Bijective (ℓ 0)) :
+    KE (lensCode U) ≤ KE (lensCode (ℓ 0)) + KE (lensCode (ℓ 1))
+      + (15 + elen dbl) * Nat.size n
+      + (elen gradedBuilder + 3 * (15 + elen dbl) + 39) := by
+  have hone : ∏ i : Fin m, (Nat.card {x : Fin n // ℓ 0 x = i})! = 1 := by
+    refine Finset.prod_eq_one fun i _ => ?_
+    have hcard : Nat.card {x : Fin n // ℓ 0 x = i} = 1 := by
+      obtain ⟨x, hx, huniq⟩ := hbij.existsUnique i
+      exact Nat.card_eq_one_iff_exists.mpr ⟨⟨x, hx⟩, fun y => Subtype.ext (huniq y y.2)⟩
+    rw [hcard]; rfl
+  have hbound := ledger_graded hn hcar
+  rw [hone] at hbound
+  simp only [Nat.size_one, Nat.mul_one] at hbound
+  omega
+
+/-- **The graded ledger's capstone**: at the family attaining `C_b^H (U)`, the coset's complementary
+factor `N'` — with `C_b^H (U) · N' = n !` exactly (`card_orbit_mul_prod_fiber`, the entropic
+capacity's own currency) — prices the world's complexity: `ledger_graded` plus the attained family's
+per-frame budget caps `KE (lensCode U)` at the two-frame budget plus `N'`'s own bit-length.
+
+**Reading.** Multiplying through, this is the paper's card form
+`C_b^H (U) · 2^(KE(U)) ≤ 2^(2b+c) · n!` whenever the coset index is priced at coefficient `1` on
+`Nat.size N'`; this development's `bconst` loading prices it at coefficient `15 + elen dbl` instead
+(`elen_bconst_le`, the same loading `KE_markingLens_le`'s marks pay), which the CARD form cannot
+absorb — at any coefficient `> 1` it turns vacuous over incompressible worlds, so the capstone is
+stated here in the log-additive currency `ledger_graded` actually proves, with the
+`n!`-factorization named explicitly rather than folded into a (false) product inequality. A literal
+coefficient-`1` index encoding is future work. -/
+theorem CbH_le_pointwise (hn : 0 < n) (U : Perm (Fin n)) (b : ℕ)
+    (hne : (BudgetedEntropies U b).Nonempty) :
+    ∃ N' : ℕ, CbH U b * N' = n ! ∧
+      KE (lensCode U) ≤ 2 * b + (15 + elen dbl) * Nat.size N' + (15 + elen dbl) * Nat.size n
+        + (elen gradedBuilder + 2 * (15 + elen dbl) + 39) := by
+  obtain ⟨k, ℓ, hcar, hbud, hval⟩ : CbH U b ∈ BudgetedEntropies U b :=
+    Nat.sSup_mem hne (bddAbove_budgetedEntropies U b)
+  refine ⟨∏ i : Fin k, (Nat.card {x : Fin n // ℓ 0 x = i})!, ?_, ?_⟩
+  · rw [hval]; exact card_orbit_mul_prod_fiber (ℓ 0)
+  · have hbound := ledger_graded hn hcar
+    have hb0 := hbud 0
+    have hb1 := hbud 1
+    omega
 
 /-- **Table transport is composition with `U⁻¹`**: one step of `ownStep` against the world's own
 table is exactly one step of the canonical family. Injectivity of `U` is what makes `idx` invert the

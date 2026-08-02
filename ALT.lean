@@ -7,6 +7,7 @@ import ALT.AccretiveDecoupling
 import ALT.AdditiveComplexity
 import ALT.AxiomAuditFoundation
 import ALT.AxiomAuditMathlib
+import ALT.BasinSettling
 import ALT.BayesRedundancy
 import ALT.BinaryConstant
 import ALT.BinaryKraft
@@ -43,6 +44,7 @@ import ALT.ExcessOrderComplete
 import ALT.ExtensionalDiscovery
 import ALT.FiniteInfoTheory
 import ALT.FlooredMixture
+import ALT.FrameItinerary
 import ALT.GodelChecker
 import ALT.GodelCheckerAutomaton
 import ALT.GodelCheckerComplete
@@ -61,6 +63,7 @@ import ALT.KolmogorovBitlen
 import ALT.KolmogorovComplexity
 import ALT.KolmogorovTimeBounded
 import ALT.LearningWitness
+import ALT.LogMassEvent
 import ALT.MDLCoding
 import ALT.MDLDominance
 import ALT.MinimalityWitness
@@ -77,6 +80,7 @@ import ALT.PrefixInvariance
 import ALT.PressureWindow
 import ALT.PriorNormalization
 import ALT.QuantizationRate
+import ALT.ReadingWord
 import ALT.Realizability
 import ALT.RealizabilityCCC
 import ALT.RealizabilityCoproduct

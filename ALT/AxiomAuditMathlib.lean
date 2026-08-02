@@ -353,6 +353,47 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms WeightedFiber.toDist_wRun_sub_bayesRun_le
 
+-- The tracking form: the same bound against exact Bayes restarted at `s` from the floored run's
+-- own state there, under a co-leader at `s` that never misses inside the window — no realizable
+-- candidate anywhere. The bound above is its `s = 0` instance. Two families guard the two
+-- hypotheses: dropping co-leadership holds the discrepancy at `850/963`, dropping the
+-- never-missing candidate at `63/65`, both against a bound that vanishes in the budget.
+/-- info: 'WeightedFiber.coleader_persists' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.coleader_persists
+
+/-- info: 'WeightedFiber.expRun_eq_hitCount_sub' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.expRun_eq_hitCount_sub
+
+/-- info: 'WeightedFiber.bayesFrom_eq_pow' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.bayesFrom_eq_pow
+
+/-- info: 'WeightedFiber.bayesFrom_zero' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.bayesFrom_zero
+
+/-- info: 'WeightedFiber.toDist_wRun_sub_bayesFrom_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.toDist_wRun_sub_bayesFrom_le
+
+/-- info: 'WeightedFiber.toDist_wRun_sub_bayesFrom_preAbsorption' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.toDist_wRun_sub_bayesFrom_preAbsorption
+
+/-- info: 'WeightedFiber.toDist_wRun_sub_bayesFrom_not_le_preAbsorption' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.toDist_wRun_sub_bayesFrom_not_le_preAbsorption
+
+/-- info: 'WeightedFiber.toDist_wRun_sub_bayesFrom_sinkRecover' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.toDist_wRun_sub_bayesFrom_sinkRecover
+
+/-- info: 'WeightedFiber.toDist_wRun_sub_bayesFrom_not_le_sinkRecover' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.toDist_wRun_sub_bayesFrom_not_le_sinkRecover
+
 -- The reading settles: under realizability the ceiling set is the version space, so the reading is
 -- the least never-missing candidate — a non-decreasing index below the candidate count, hence
 -- eventually constant and moving at most `C − 1` times. The last of the three is the same statement
@@ -630,6 +671,40 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 /-- info: 'PersistenceCapacity.CbH_ge_marking'' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms PersistenceCapacity.CbH_ge_marking'
+
+-- T27, the graded ledger ([Persistence] Open problem 8.4's design). Theorem 6.3's ledger
+-- generalized to EVERY carried family, maximal or not: the two frames pin `U` down only to a coset
+-- of `ℓ₀`'s fiber-stabilizer, and the coset's counting halves (`orbitCard_ge_choose`,
+-- `card_le_marks_succ`), the general-label marking price (`KE_labelledMarkingLens_le`), the graded
+-- ledger itself (`ledger_graded`, with its non-vacuity check `ledger_graded_faithful`), and the
+-- capstone (`CbH_le_pointwise`) assemble the marking-anatomy pole of the open problem.
+/-- info: 'PersistenceCapacity.orbitCard_ge_choose' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PersistenceCapacity.orbitCard_ge_choose
+
+/-- info: 'PersistenceCapacity.orbitCard_eq_choose_of_two_fiber' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PersistenceCapacity.orbitCard_eq_choose_of_two_fiber
+
+/-- info: 'PersistenceCapacity.card_le_marks_succ' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PersistenceCapacity.card_le_marks_succ
+
+/-- info: 'PersistenceCapacity.KE_labelledMarkingLens_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PersistenceCapacity.KE_labelledMarkingLens_le
+
+/-- info: 'PersistenceCapacity.ledger_graded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PersistenceCapacity.ledger_graded
+
+/-- info: 'PersistenceCapacity.ledger_graded_faithful' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PersistenceCapacity.ledger_graded_faithful
+
+/-- info: 'PersistenceCapacity.CbH_le_pointwise' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PersistenceCapacity.CbH_le_pointwise
 
 -- Renting versus owning a reading. The uniform budget of Definition 5.1's uniform variant — one
 -- program computing every frame — with the frame-cost reduction that prices frame `t` at
@@ -3470,3 +3545,17 @@ strict subset the guard pins verbatim. -/
 /-- info: 'SubstrateClass.coupledAtRequiredDepth_reachesThresholdWithin' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms SubstrateClass.coupledAtRequiredDepth_reachesThresholdWithin
+
+-- [Inevitability] §5 Remark 5.5, the learning branch: the budgeted threshold indexed by time, and
+-- the persistence (S1) buys it. `substrate_reachesThresholdWithinAt_persists` is the first
+-- consumer of `Substrate`'s (S1) field anywhere in this development, and
+-- `reachesThresholdWithinAt_lost_on_overwrite` is the guard that makes that hypothesis
+-- load-bearing: an update that overwrites the code region holds the crossing at `t = 0` and has
+-- lost it at `t = 1`.
+/-- info: 'SubstrateClass.substrate_reachesThresholdWithinAt_persists' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms SubstrateClass.substrate_reachesThresholdWithinAt_persists
+
+/-- info: 'SubstrateClass.reachesThresholdWithinAt_lost_on_overwrite' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms SubstrateClass.reachesThresholdWithinAt_lost_on_overwrite

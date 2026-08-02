@@ -114,6 +114,19 @@ file gave [Inevitability]'s own Definitions 2.1–2.3 a Lean counterpart.
   its own capacity-bounded witness — contrast `coupledAtRequiredDepth_reachesThresholdAtDepth`,
   which discharges its reflective conjunct with the unconditionally-available
   `ReflectiveAssembly.reflective_satisfiable`.
+* `CommittedOn`, `ReachesThresholdWithinAt`: the budgeted threshold indexed by TIME — a
+  configuration committed to a pinned reference codeword on the code region, conjoined with the
+  atemporal `ReachesThresholdWithin`. Added alongside the three predicates above, all unchanged.
+* `fixes_reachesThresholdWithinAt_persists` and its class-level corollary
+  `substrate_reachesThresholdWithinAt_persists`: the crossing recurs at every later step, from a
+  read-only code region alone. The corollary is the first consumer of `Substrate`'s **(S1)** field
+  anywhere in this development — the boundary note below records what that did and did not change.
+  The bare-hypothesis form is the general statement (only `Decoupling.Fixes` is needed, none of
+  (S2)/(S3)'s parameters); the `Substrate` form is what the class supplies.
+* `reachesThresholdWithinAt_lost_on_overwrite`: the guard making that (S1) hypothesis load-bearing
+  — a one-cell world whose update overwrites its whole code region holds the crossing at `t = 0`
+  and has lost it at `t = 1`, at a static conjunct that holds throughout. [Discovery] Proposition
+  4.2's overwrite clause in deterministic skeleton.
 
 ## What this does NOT establish (flagged)
 * `ReachesThreshold` (kept as the Definition-2.1-faithful CONDITION, unchanged) still wraps
@@ -169,23 +182,26 @@ file gave [Inevitability]'s own Definitions 2.1–2.3 a Lean counterpart.
   (iv) Necessity of the paper's `2n` figure remains family-dependent — exact on `2 ^ n - 1`, false
   at `2 ^ m`, with no general characterization attempted, the same scope the coupled results have.
 * (S1) (`Decoupling.Fixes`) is carried by `Substrate`/`SubstrateL` and is exactly the
-  architectural invariant `RetentionUpperBound.retention_persists` consumes, but
-  `substrateL_reachesThreshold`'s proof does not need it: `DeliversUnderivableTruth`, as defined
-  here, is an atemporal statement (matching `ReachesThreshold`'s own atemporal nature), not a claim
-  about persistence across iteration. (S1)'s paper-level role — that the learned rule, once
-  retained, stays in `s_code` across the operational lifetime — is exactly what
-  `RetentionUpperBound.retention_persists` already machine-checks; composing it with a
-  temporally-indexed strengthening of the threshold predicate is a natural next target, not
-  attempted here.
+  architectural invariant `RetentionUpperBound.retention_persists` consumes, but no theorem on the
+  ATEMPORAL route needs it: `DeliversUnderivableTruth` and `ReachesThresholdWithin` alike are
+  statements about a configuration (matching `ReachesThreshold`'s own atemporal nature), not claims
+  about persistence across iteration, so `substrateL_reachesThreshold` and
+  `substrateL_reachesThresholdWithin` neither consume (S1) nor could. Where it IS consumed is the
+  time-indexed section at the end of this file — `substrate_reachesThresholdWithinAt_persists`,
+  with `reachesThresholdWithinAt_lost_on_overwrite` showing the hypothesis load-bearing. What that
+  buys is RETENTION only, and its scope is stated there: a commitment already held is kept.
 * (S2) (`RegimeWithDepth`) is likewise carried by `Substrate`/`SubstrateL` but unused by
   `substrateL_reachesThreshold`'s proof: the capacity bridge draws only on (S3).
 * `SubstrateL`'s five learning-specific fields (`realizability`, `windowSufficiency`,
   `assumptionA`, `benignSeparation`, `e1`) are likewise CARRIED but UNUSED by
   `substrateL_reachesThreshold`'s proof, for the same reason: the destination type does not ask
   for them. They are present for Definition 2.3 faithfulness (a genuine `𝒮_L` membership needs
-  all five), not because the headline theorem's Lean proof consumes them. Reaching them needs a
-  temporally-indexed threshold plus [Discovery]'s concentration/retention objects — a separate
-  target; this file does not manufacture a field-consuming proof by weakening the conclusion.
+  all five), not because the headline theorem's Lean proof consumes them. The time-indexed section
+  at the end of this file does NOT reach them either, and does not claim to: it consumes (S1) and
+  buys retention, whereas these five would be consumed by the complementary *discovery* half —
+  that learning PRODUCES the committed configuration — which needs the learner inside the
+  substrate's own dynamics, an object no module here supplies. This file does not manufacture a
+  field-consuming proof by weakening the conclusion.
 * `SubstrateE`'s two fields (`growsLawfulGuest`, `witnessKappaCondition`) are CARRIED as opaque
   Props, not connected to `PersistenceCapacity.witness_world`: that theorem lives on the SPECIFIC
   carrier `Decoupling.Mem (Fin κ) Bool` built by `witnessWorld κ k G π`, not on `Substrate`'s
@@ -973,5 +989,158 @@ theorem substrate_satisfiable :
       by norm_num, by norm_num⟩, ?_⟩
   have hcap : GodelInternalization.capacity (Nat.clog 2 (2 + 1)) = 4 := by decide
   refine ⟨by rw [hcap]; norm_num, trivial, trivial, trivial, trivial⟩
+
+/-! ### The time-indexed form: a committed configuration, and what (S1) buys it
+
+Everything above is atemporal, and Definition 2.1 stays that way: [Inevitability] §5 Remark 5.5 is
+explicit that a time-indexed *definition* would demand an unbounded persistence neither route can
+prove, so the crossing is defined instantaneously and its persistence priced separately. That
+remark also fixes what the learning branch's price is — "(S1) makes the code region read-only, so
+the committed rule survives iteration ([Decoupling] Lemma 3.1) and [Discovery] Proposition 4.2
+bounds forgetting by the probability that the code region is itself overwritten: the reflective
+configuration recurs at every later step on which (S3) still holds."
+
+This section renders exactly that sentence, as a predicate added ALONGSIDE the three above (the
+`ReachesThresholdAtDepth`/`ReachesThresholdWithin` precedent — none of them is modified). It is
+where (S1) attaches: `substrate_reachesThresholdWithinAt_persists` is the first theorem in this
+development to consume `Substrate`'s `s1` field at all, the boundary note above having recorded
+that field as carried and unconsumed.
+
+**Scope, deliberately narrow.** (S2) and `SubstrateL`'s five learning fields are still unconsumed
+here, and nothing below moves toward them. Consuming those is the *discovery* half — that learning
+PRODUCES the committed configuration — which needs the learner inside the substrate's own
+dynamics; no object in this development supplies that, and the predicate below neither states nor
+approximates it. What it states is retention only: given a commitment, read-only code keeps it. -/
+
+/-- **A configuration committed to a reference codeword on the code region.** `s` agrees with the
+pinned `ρ` at every cell of `R` — "the code region carries *this* model", stated on raw memories
+rather than through a decoder, so it composes directly with `Decoupling.fixes_iterate`.
+
+**The pin carries the whole content.** With `ρ` left free this predicate says nothing: every
+configuration is committed to its own content (`CommittedOn R s s` holds by `rfl`, at every `R`),
+so an unpinned reading of the time-indexed threshold below would be satisfied by any orbit
+whatsoever at `t = 0`. It acquires content only against a `ρ` fixed independently of the orbit —
+as `LearningWitness.witness_reachesThresholdWithinAt` pins it to the loaded rule encoding, on the
+region whose contents that witness's update provably reads. This is the same lesson `SubstrateL`'s
+`e1` field records for E1's mixing constant: a free or existentially-quantified parameter can
+carry a hypothesis's entire weight. -/
+def CommittedOn {ι V : Type*} (R : Set ι) (ρ s : Decoupling.Mem ι V) : Prop :=
+  ∀ a ∈ R, s a = ρ a
+
+/-- **Definition 2.1's budgeted form, indexed by time.** The system, started at `s₀` and run `t`
+steps of `U`, is *committed* to the reference codeword `ρ` on its code region `R`, and its
+subsystem meets `ReachesThresholdWithin` at the work budget `w`. Added alongside
+`ReachesThreshold`, `ReachesThresholdAtDepth` and `ReachesThresholdWithin`, none of which changes.
+
+Two things this rendering makes explicit rather than hiding:
+
+* the commitment conjunct is only as strong as its pin — see `CommittedOn`;
+* Remark 5.5's qualifier "at every later step **on which (S3) still holds**" is automatic here,
+  and for a structural reason rather than a proved one: (S3) enters through
+  `ReachesThresholdWithin`, a condition on the pair `(w, g(T_S))` that carries no time index at
+  all. A rendering in which (S3) could lapse would have to index the budget by time too; this one
+  does not, and so cannot be read as having settled that case.
+
+What is time-indexed is therefore the commitment alone. That is precisely the half Remark 5.5
+assigns to (S1), and `substrate_reachesThresholdWithinAt_persists` is what (S1) buys for it. -/
+def ReachesThresholdWithinAt {ι V : Type*} (U : Decoupling.Mem ι V → Decoupling.Mem ι V)
+    (R : Set ι) (ρ s₀ : Decoupling.Mem ι V) (t : ℕ)
+    (Consistent NSound Delta1Axiomatized InterpretsR0 : Prop) (w gTS : ℕ) : Prop :=
+  CommittedOn R ρ (U^[t] s₀) ∧
+    ReachesThresholdWithin Consistent NSound Delta1Axiomatized InterpretsR0 w gTS
+
+/-- **Commitment is inherited along the orbit of a read-only code region.** The core step, stated
+once: under (S1) `Decoupling.fixes_iterate` makes every iterate agree with its starting
+configuration pointwise on `R`, so a commitment held by `s` is held by `U^[k] s`. -/
+private theorem committedOn_iterate_of_fixes {ι V : Type*}
+    {U : Decoupling.Mem ι V → Decoupling.Mem ι V} {R : Set ι} {ρ s : Decoupling.Mem ι V}
+    (hU : DecoupledSubstrate U R) (k : ℕ) (h : CommittedOn R ρ s) :
+    CommittedOn R ρ (U^[k] s) := by
+  intro a ha
+  rw [Decoupling.fixes_iterate hU k s a ha]
+  exact h a ha
+
+/-- **The crossing recurs at every later step — from (S1) alone.** Remark 5.5's learning-branch
+sentence, at the bare `Decoupling.Fixes` hypothesis: a crossing held at time `t` is held at every
+`t + dt`. Stated in the forward form the prose uses ("recurs at every later step"); under a
+read-only code region commitment is in fact time-*invariant*, since `fixes_iterate` compares every
+iterate with `s₀` rather than with its predecessor, so the backward direction holds too and is not
+what needed proving.
+
+The static conjunct is untouched: it carries no time index, so the whole of the temporal content
+sits in `CommittedOn`, and the whole of the price in (S1). -/
+theorem fixes_reachesThresholdWithinAt_persists {ι V : Type*}
+    {U : Decoupling.Mem ι V → Decoupling.Mem ι V} {R : Set ι} {ρ s₀ : Decoupling.Mem ι V}
+    {Consistent NSound Delta1Axiomatized InterpretsR0 : Prop} {t w gTS : ℕ}
+    (hU : DecoupledSubstrate U R)
+    (h : ReachesThresholdWithinAt U R ρ s₀ t Consistent NSound Delta1Axiomatized InterpretsR0
+      w gTS) (dt : ℕ) :
+    ReachesThresholdWithinAt U R ρ s₀ (t + dt) Consistent NSound Delta1Axiomatized
+      InterpretsR0 w gTS := by
+  refine ⟨?_, h.2⟩
+  have hc := committedOn_iterate_of_fixes hU dt h.1
+  rwa [← Function.iterate_add_apply U dt t s₀, Nat.add_comm dt t] at hc
+
+/-- **(S1) consumed, at the class level.** `(M, U) ∈ 𝒮` whose configuration crosses the threshold
+at time `t` still crosses it at every `t + dt`: `Substrate`'s own `s1` field — (S1), the read-only
+code region — is exactly what the previous theorem asks for.
+
+This is the theorem the time-indexed predicate exists for. Before it, every `Substrate` field
+except (S3) was carried and consumed by nothing that touches the threshold; this consumes (S1),
+and it is still the *only* threshold-coupled consumer of a substrate field other than (S3). (S2)
+and `SubstrateL`'s five learning fields remain unconsumed, for the reason the section note gives.
+
+That the (S1) hypothesis is load-bearing rather than decorative is
+`reachesThresholdWithinAt_lost_on_overwrite` below, which is [Discovery] Proposition 4.2's
+"forgetting is bounded by the probability that the code region is overwritten" in deterministic
+skeleton. -/
+theorem substrate_reachesThresholdWithinAt_persists {ι V : Type*}
+    {U : Decoupling.Mem ι V → Decoupling.Mem ι V} {R : Set ι} {ρ s₀ : Decoupling.Mem ι V}
+    {r K L c₀ c₁ c₂ δ : ℝ} {sCodeSize gTS : ℕ}
+    {Consistent NSound Delta1Axiomatized InterpretsR0 : Prop} {t w : ℕ}
+    (hS : Substrate U R r K L c₀ c₁ c₂ δ sCodeSize gTS Consistent NSound Delta1Axiomatized
+      InterpretsR0)
+    (h : ReachesThresholdWithinAt U R ρ s₀ t Consistent NSound Delta1Axiomatized InterpretsR0
+      w gTS) :
+    ∀ dt, ReachesThresholdWithinAt U R ρ s₀ (t + dt) Consistent NSound Delta1Axiomatized
+      InterpretsR0 w gTS :=
+  fun dt => fixes_reachesThresholdWithinAt_persists hS.s1 h dt
+
+/-- **The overwrite guard: (S1) is load-bearing, and the predicate can lose its crossing.**
+[Discovery] Proposition 4.2 bounds forgetting by the probability that the code region is itself
+overwritten; in a deterministic skeleton that reads: overwrite ⇒ lost, read-only ⇒ kept. The
+previous two theorems are the second half. This is the first.
+
+The witness is a one-cell world (`ι = Fin 1`, `V = Bool`) whose whole memory is code
+(`R = Set.univ`) and whose update complements it. Started at the all-`true` configuration and
+pinned to it, the system is committed at `t = 0` — trivially, which is exactly `CommittedOn`'s own
+caveat — and has lost the commitment at `t = 1`, while the static conjunct, being time-free, holds
+throughout: `g(T_S) = 2` at a budget of `4 = capacity ⌈log₂ 3⌉` work bits, the parameters
+`CategoricalThreshold.reflectiveWithin_at_capacity` inhabits, with the four theory conditions at
+`True` as everywhere on this route.
+
+So `substrate_reachesThresholdWithinAt_persists` cannot be proved without its (S1) hypothesis: the
+same predicate, at the same static parameters, flips from held to lost in one step as soon as the
+code region is writable — and this update is writable, `¬ DecoupledSubstrate` being the guard's
+third conjunct rather than a remark about it. -/
+theorem reachesThresholdWithinAt_lost_on_overwrite :
+    ∃ (ι V : Type) (U : Decoupling.Mem ι V → Decoupling.Mem ι V) (R : Set ι)
+      (ρ s₀ : Decoupling.Mem ι V) (w gTS : ℕ),
+      ReachesThresholdWithinAt U R ρ s₀ 0 True True True True w gTS ∧
+        ¬ ReachesThresholdWithinAt U R ρ s₀ 1 True True True True w gTS ∧
+        ¬ DecoupledSubstrate U R := by
+  have hcap : GodelInternalization.capacity (Nat.clog 2 (2 + 1)) = 4 := by decide
+  have hstatic : ReachesThresholdWithin True True True True 4 2 := by
+    refine ⟨?_, trivial, trivial, trivial, trivial⟩
+    have h := CategoricalThreshold.reflectiveWithin_at_capacity (gTS := 2) (le_refl 2)
+    rwa [hcap] at h
+  refine ⟨Fin 1, Bool, fun s a => !(s a), Set.univ, fun _ => true, fun _ => true, 4, 2,
+    ⟨by intro a _; rfl, hstatic⟩, ?_, ?_⟩
+  · rintro ⟨hcom, -⟩
+    have h1 := hcom 0 (Set.mem_univ 0)
+    simp at h1
+  · intro hfix
+    have h1 := hfix (fun _ => true) 0 (Set.mem_univ 0)
+    simp at h1
 
 end SubstrateClass

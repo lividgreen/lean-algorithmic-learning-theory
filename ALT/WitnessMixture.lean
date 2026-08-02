@@ -48,6 +48,11 @@ miss at the noise rate.
 * `noiseCount` — how often the noise bit has fired in the window's own offset.
 * `witMiss_zero`, `missCount_witMiss_zero` — the identity and its count form.
 * `witness_floorSurprise_card_mul_le` — **the pathwise capstone**.
+* `witness_floorSurprise_card_lt` — the non-vacuity guard: a strict gap forces the surprise count
+  below the horizon, beating the trivial `card ≤ n` bound.
+* `witness_floorSurprise_bound_ge_n_of_le` — the complementary vacuity: below the gate the bound's
+  own right-hand side is no better than the horizon.
+* `witness_floorSurprise_card_lt_of_rate` — the guard in [Inevitability] §6's rate form.
 * `integral_noiseCount` — the noise count's mean, `ηn`, under `LearningWitness.noiseLaw`.
 * `witness_integral_floorSurprise_le` — **the expectation corollary**.
 
@@ -121,6 +126,48 @@ theorem witness_floorSurprise_card_mul_le {k : ℕ} [NeZero k] (ξ : ℕ → Boo
       ≤ 4 * ((k : ℚ) - 1) + 2 * (k : ℚ) * (noiseCount ξ k n : ℚ) := by
   have h := floorSurprise_card_mul_le_missCount (witMiss k ξ) b θ hbudget 0 n
   rwa [missCount_witMiss_zero] at h
+
+/-! ## Non-vacuity: when the tracking bound beats the trivial one
+
+The pathwise capstone bounds the surprise count by `(4(k−1) + 2k·noiseCount)/θ`, but every count
+over a horizon `n` is already at most `n`; the bound says something only where its own right-hand
+side, divided by `θ`, falls strictly below `n`. [Inevitability] §6 reads that boundary as
+`η < θ/(2k)`: the guard below states the strict side, the statement after it the failing side, so
+the hypothesis is shown load-bearing rather than decorative. -/
+
+/-- **The guard**: a strict gap between the pathwise bound and `θ·n` forces the surprise count
+strictly below the horizon — the tracking bound beats the trivial `card ≤ n` bound outright. -/
+theorem witness_floorSurprise_card_lt {k : ℕ} [NeZero k] (ξ : ℕ → Bool) (b : ℕ) (θ : ℚ)
+    (hθ : 0 < θ) (hbudget : 2 * ((k : ℚ) - 1) ≤ θ * 2 ^ b) (n : ℕ)
+    (hgap : 4 * ((k : ℚ) - 1) + 2 * (k : ℚ) * (noiseCount ξ k n : ℚ) < θ * n) :
+    (floorSurpriseSet (witMiss k ξ) b θ n).card < n := by
+  have hle := witness_floorSurprise_card_mul_le ξ b θ hbudget n
+  have hlt : ((floorSurpriseSet (witMiss k ξ) b θ n).card : ℚ) * θ < (n : ℚ) * θ := by
+    calc ((floorSurpriseSet (witMiss k ξ) b θ n).card : ℚ) * θ
+        ≤ 4 * ((k : ℚ) - 1) + 2 * (k : ℚ) * (noiseCount ξ k n : ℚ) := hle
+      _ < θ * n := hgap
+      _ = (n : ℚ) * θ := mul_comm θ n
+  exact_mod_cast lt_of_mul_lt_mul_right hlt hθ.le
+
+/-- **The complementary vacuity.** Below the gate — `θ·n ≤ 4(k−1) + 2k·noiseCount` — the bound's own
+right-hand side, divided by `θ`, is at least the horizon `n`: it permits every step to be a
+surprise, exactly what the trivial `card ≤ n` bound already says, so
+`witness_floorSurprise_card_lt`'s hypothesis is reachable and its failure is not vacuous either.
+Arithmetic only, on the numbers `θ`, `n` and `noiseCount`, no system involved. -/
+theorem witness_floorSurprise_bound_ge_n_of_le {k : ℕ} (ξ : ℕ → Bool) (θ : ℚ) (hθ : 0 < θ)
+    (n : ℕ) (hgap : θ * n ≤ 4 * ((k : ℚ) - 1) + 2 * (k : ℚ) * (noiseCount ξ k n : ℚ)) :
+    (n : ℚ) ≤ (4 * ((k : ℚ) - 1) + 2 * (k : ℚ) * (noiseCount ξ k n : ℚ)) / θ := by
+  rw [le_div_iff₀' hθ]
+  exact hgap
+
+/-- **The rate form.** Since the noise count never exceeds the horizon, the guard already fires
+once `noiseCount`'s own coefficient clears the gap — the "slope `2kη/θ` below one" reading
+[Inevitability] §6 states the bound in. -/
+theorem witness_floorSurprise_card_lt_of_rate {k : ℕ} [NeZero k] (ξ : ℕ → Bool) (b : ℕ)
+    (θ : ℚ) (hθ : 0 < θ) (hbudget : 2 * ((k : ℚ) - 1) ≤ θ * 2 ^ b) (n : ℕ)
+    (hgap : 2 * (k : ℚ) * (noiseCount ξ k n : ℚ) < θ * n - 4 * ((k : ℚ) - 1)) :
+    (floorSurpriseSet (witMiss k ξ) b θ n).card < n :=
+  witness_floorSurprise_card_lt ξ b θ hθ hbudget n (by linarith)
 
 /-! ## Measurability: the surprise count is a cylinder function
 
@@ -333,6 +380,18 @@ end WitnessMixture
 /-- info: 'WitnessMixture.witness_floorSurprise_card_mul_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms WitnessMixture.witness_floorSurprise_card_mul_le
+
+/-- info: 'WitnessMixture.witness_floorSurprise_card_lt' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WitnessMixture.witness_floorSurprise_card_lt
+
+/-- info: 'WitnessMixture.witness_floorSurprise_bound_ge_n_of_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WitnessMixture.witness_floorSurprise_bound_ge_n_of_le
+
+/-- info: 'WitnessMixture.witness_floorSurprise_card_lt_of_rate' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WitnessMixture.witness_floorSurprise_card_lt_of_rate
 
 /-- info: 'WitnessMixture.witness_integral_floorSurprise_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in

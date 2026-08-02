@@ -205,7 +205,7 @@ entry points, if you want a sense of the range before reading the list:
 - No `sorry`, `admit`, or `native_decide`; standard axioms only
   (`propext`, `Classical.choice`, `Quot.sound`) — several cores are
   choice-free, and the structural capstone depends on no axioms at all.
-- **Build-enforced axiom hygiene**: 689 `#guard_msgs in #print axioms` guards
+- **Build-enforced axiom hygiene**: 737 `#guard_msgs in #print axioms` guards
   assert each capstone's exact axiom set; `lake build` fails on any drift.
 - **Targeted imports throughout**: every module names exactly the Mathlib
   files it uses — no monolith `import Mathlib`, one vendored port excepted —

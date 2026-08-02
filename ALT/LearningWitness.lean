@@ -65,16 +65,22 @@ therefore lives in the NAMES its clauses are instantiated at:
 * `witness_reachesThresholdWithin`, `witness_truth_survives` — the two payoffs: the learning branch
   reaching Definition 2.1's threshold end-to-end on a concrete system, and the witness's own oracle
   never `2τ`-pruning the true rule.
+* `witness_reachesThresholdWithinAt` — the first payoff at EVERY step of the orbit, in
+  `SubstrateClass.ReachesThresholdWithinAt`'s time-indexed form, with the reference codeword pinned
+  to the loaded rule encoding.
 * `not_mixingHoeffding_frozen_schedule` — at `η = 0` the scheduled E1 fails at a cross-class query
   of the schedule's own shape, at every positive constant.  The noise is load-bearing for the
   witness, not only for the abstract chain.
 
 ## Scope
 
-The threshold reached is the ATEMPORAL one of Definition 2.1 (`ReachesThresholdWithin`); no
-time-indexed strengthening is attempted, and the four theory conditions stay carried and
-uninterpreted at `True`, as everywhere on this route.  The regime parameters are named concrete
-values: nothing in Definition 2.2's Lean form ties `r` to the rule's own complexity.
+Definition 2.1 itself is the ATEMPORAL condition (`ReachesThresholdWithin`), and stays so.  What
+`witness_reachesThresholdWithinAt` adds is the time index on the *committed configuration* alone —
+the budget and the four theory conditions carry none — so it is retention on this witness, not a
+learning-produces-the-commitment claim, which nothing here attempts.  The four theory conditions
+stay carried and uninterpreted at `True`, as everywhere on this route.  The regime parameters are
+named concrete values: nothing in Definition 2.2's Lean form ties `r` to the rule's own
+complexity.
 -/
 
 namespace LearningWitness
@@ -591,6 +597,33 @@ theorem witness_reachesThresholdWithin [NeZero k] {Ω : Type*} [MeasurableSpace 
     (witness_substrateL hmeas hindep hη0 hη1 hmean hbudget) (le_refl 2)
   rwa [witness_headroom k] at h
 
+/-- **Payoff 1, at every step of the orbit.**  The same crossing in the time-indexed form
+(`SubstrateClass.ReachesThresholdWithinAt`), held at EVERY `t` — not merely at one configuration —
+under `witness_reachesThresholdWithin`'s own hypothesis list, unchanged.
+
+The reference codeword is pinned to `loadChain ω`'s own code cells, and that pin is what makes the
+commitment conjunct carry something: `CommittedOn`'s docstring records that a configuration is
+committed to its own content trivially, so what has to be true of the pin is that the update's
+behaviour *depends* on the region it names — which on this witness is a theorem
+(`chainUpdate_reads_code`: two memories agreeing off the code region can have different updates),
+not an unfolding.  The commitment then persists because `chainUpdate` never writes that region
+(`code_persists`, i.e. (S1)), and the static conjunct is `witness_reachesThresholdWithin` verbatim,
+carrying no time index.
+
+The four theory conditions stay carried at `True`, and the threshold's *budget* is still the
+atemporal one: what has become time-indexed is the committed configuration alone, exactly the half
+the substrate class's (S1) field pays for. -/
+theorem witness_reachesThresholdWithinAt [NeZero k] {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    [IsProbabilityMeasure P] {ξ : ℕ → Ω → Bool} (hmeas : ∀ i, Measurable (ξ i))
+    (hindep : iIndepFun ξ P) {η τ : ℝ} (hη0 : 0 < η) (hη1 : η ≤ 1 / 2)
+    (hmean : ∀ u, ∫ ω, ParityWalk.zeta (ξ (u + k) ω) ∂P = 2 * η - 1) (hbudget : 2 * η ≤ τ)
+    (ω : ℕ → Bool) (t : ℕ) :
+    SubstrateClass.ReachesThresholdWithinAt (chainUpdate (k := k)) (codeRegion k)
+      (loadChain (k := k) ω) (loadChain (k := k) ω) t True True True True 100 2 := by
+  refine ⟨?_, witness_reachesThresholdWithin hmeas hindep hη0 hη1 hmean hbudget⟩
+  rintro _ ⟨i, rfl⟩
+  exact code_persists t (loadChain (k := k) ω) i
+
 /-- **Payoff 2: the witness's own oracle never prunes the truth.**  On the rule's own query — the
 same-class pair at `a = 0` — the single-orbit empirical answer stays within `2τ` of the answer the
 NOISELESS rule predicts, with probability `≥ 1 − δ`, at the sample bound
@@ -736,6 +769,10 @@ set_option linter.style.longLine false
 /-- info: 'LearningWitness.witness_reachesThresholdWithin' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms LearningWitness.witness_reachesThresholdWithin
+
+/-- info: 'LearningWitness.witness_reachesThresholdWithinAt' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms LearningWitness.witness_reachesThresholdWithinAt
 
 /-- info: 'LearningWitness.witness_truth_survives' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in

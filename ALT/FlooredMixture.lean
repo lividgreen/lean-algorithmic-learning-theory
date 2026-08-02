@@ -102,6 +102,24 @@ predictions are all abstracted into `M`, so the results hold of any instantiatio
   bound that vanishes in the budget. What the floor buys is `tracking` the recent leader, and
   tracking is not approximating exact Bayes; the exact-Bayes comparison exists only in the one
   regime where the leader never changes.
+* `toDist_wRun_sub_bayesFrom_le` — **the tracking form of that bound**, and it is the answer to the
+  guard above rather than a retreat from it. Change the comparator: `bayesFrom` is exact Bayes
+  **restarted at a time `s`** from the floored run's own state there. Against it the same
+  `2(C−1)/2^b` holds, uniformly in the elapsed time, with no realizable candidate anywhere — the
+  hypotheses are carried by one candidate over the window `[s, t)` alone, that it is a running
+  co-leader at `s` and misses at no step inside. `coleader_persists` makes the first hypothesis
+  propagate, and `expRun_eq_hitCount_sub` is the window's own normal form: the state at `s` plus the
+  restarted hit count, less the rescales the window paid. The bound above is the `s = 0` instance
+  (`bayesFrom_zero`), proved as such and not separately.
+* `toDist_wRun_sub_bayesFrom_not_le_preAbsorption` and
+  `toDist_wRun_sub_bayesFrom_not_le_sinkRecover` — **the two hypotheses are independent, and both
+  load-bearing**. Each family drops exactly one and holds the discrepancy at a constant while the
+  bound vanishes: `preAbsorption` (`C = 3`) offers the window a never-missing candidate
+  (`preAbsorption_never_misses_one`) that is a whole budget short of co-leadership at `s`
+  (`preAbsorption_not_coleader`), and reaches `850/963`; `sinkRecover` (`C = 2`) offers a genuine
+  co-leader at `s` (`sinkRecover_coleader`) that later quits, and reaches `63/65`.
+  `preAbsorption_misses_of_ne_one` and `sinkRecover_no_survivor` close the escape in each case: no
+  other candidate could have been taken instead.
 * `raw_wRun_eq_wMax_iff` / `argmax_wRun_eq_least_consistent` — **the ceiling set is the version
   space**. Under realizability a candidate carries the maximum weight exactly when its miss count is
   zero, so the reading — `argmax`, whose fold keeps the incumbent on ties — is the least-indexed
@@ -122,27 +140,34 @@ predictions are all abstracted into `M`, so the results hold of any instantiatio
 
 ## Scope
 
-The regime above is the whole of what is claimed. General `W` is **not** covered: the exactness of
-the normal form is what a power-of-two budget buys, and outside it the rounding residual returns and
-the per-step rate of `QuantizationRate` remains the only tool. Neither is a general fitness ceiling,
-nor stochastic candidates, nor a weighted start. The event bound's constant is linear in the
-candidate count where [Discovery] §3.3's is the description length of the truth; that is the price
-of the uniform prior `wRun` starts from, and no sharpening of it is attempted. The miss-count
+The regime above is the whole of what is claimed. General `W` is **not** covered *here*: the
+exactness of the normal form is what a power-of-two budget buys, and outside it the rounding
+residual returns and the per-step rate of `QuantizationRate` remains the only tool. (The one thing
+that does hold at a general budget is the *settling* of the reading, which needs no closed form —
+`BasinSettling`.) Neither is a general fitness ceiling, nor stochastic candidates. The event
+bound's constant is linear in the candidate count where [Discovery] §3.3's is the description
+length of the truth; that is the price of the uniform prior `wRun` starts from, and no sharpening
+of it is attempted. The miss-count
 coefficient is likewise linear in `C` where the logarithmic potential argument gives one free of it:
 that is the price of an additive accounting in ℚ, and the sharpness readings above bound how much is
-being given away. The tracking form of the *accumulation* bound is not attempted at all — there the
-guards say what is false without realizability, not what is true in its place. The floored process
-is treated abstractly through `M`, and
+being given away. The tracking form of the *accumulation* bound reaches only the comparator
+restarted at a co-leader point: what is false against exact Bayes from the beginning of time stays
+false, and the restarted form's own guards say what is false without each of its hypotheses.
+No bound against a comparator restarted at an *arbitrary* time is claimed, and the two families
+show why one is not available. The floored process is treated abstractly through `M`, and
 [Discovery] §3.3's own fixed-mixture bound is untouched, exported exactly as before.
 
 The convergence at the end is the **discovery** half only, and it is pathwise: the reading settles
-on a candidate consistent with the observed trajectory, at every trajectory that carries one. It
-gives no **basin** — which initial conditions let discovery outrun damage is a question about the
-race, and the survival half of that race is priced elsewhere; nothing for the winner-take-all fiber,
-whose fixed pool is not this dynamics; and nothing on a noisy base, where even the best candidate
-misses and realizability fails. Nor is it a **coverage** statement: the pricing assembly's
-hypothesis quantifies over initial states of the base coordinate, and neither condition implies the
-other.
+on a candidate consistent with the observed trajectory, at every trajectory that carries one. It is
+stated from the fiber's own all-ones start, and everything it says *about which candidate* the
+reading settles on is a privilege of that start — `BasinSettling` carries settling to every initial
+weight vector and every budget, and refutes the version-space characterization, the reading's
+monotonicity and the `C − 1` change count there. What neither gives is the **race**: which initial
+conditions let discovery outrun damage turns on the survival half, priced elsewhere; nothing here
+covers the winner-take-all fiber, whose fixed pool is not this dynamics, nor a noisy base, where
+even the best candidate misses and realizability fails. Nor is any of it a **coverage** statement:
+the pricing assembly's hypothesis quantifies over initial states of the base coordinate, and neither
+condition implies the other.
 
 Both statements are in ℚ wrong-mass form rather than squared-Hellinger form. For deterministic
 point-predicting candidates the translation is arithmetic — the mixture's probability of the
@@ -465,6 +490,174 @@ private theorem missCount_mono (M : ℕ → Fin C → Bool) (i : Fin C) {t t' : 
     missCount M i t ≤ missCount M i t' := by
   rw [missCount, missCount]
   exact Finset.card_le_card (Finset.filter_subset_filter _ (Finset.range_mono h))
+
+/-! ### The restarted normal form
+
+Everything above reads the run from its own start. The *tracking* question reads it from an
+arbitrary time `s`: how does the floored run at `t` compare with exact Bayes continued from the
+state the floored run itself held at `s`? Two facts answer it, and neither needs a realizable
+candidate. The first is that **co-leadership persists** while its holder keeps hitting. The second
+is that under that hypothesis the window `[s, t)` is again one exponent automaton, run from the
+state at `s`: each candidate's exponent is its restarted hit count less the rescales the window
+paid, and the rescale count is determined by the co-leader's own distance from the ceiling. -/
+
+/-- Over a window the miss count grows by at most the window's own length. -/
+private theorem missCount_le_add (M : ℕ → Fin C → Bool) (i : Fin C) (s d : ℕ) :
+    missCount M i (s + d) ≤ missCount M i s + d := by
+  induction d with
+  | zero => simp
+  | succ d ih =>
+      rw [show s + (d + 1) = (s + d) + 1 from rfl, missCount_succ]
+      split <;> omega
+
+/-- A window with no miss in it leaves the miss count where it found it. -/
+private theorem missCount_eq_of_no_miss (M : ℕ → Fin C → Bool) (i : Fin C) (s d : ℕ) :
+    (∀ u, s ≤ u → u < s + d → M u i = false) → missCount M i (s + d) = missCount M i s := by
+  induction d with
+  | zero => intro _; rfl
+  | succ d ih =>
+      intro h
+      rw [show s + (d + 1) = (s + d) + 1 from rfl, missCount_succ,
+        ih (fun u hu hlt => h u hu (by omega)),
+        if_neg (by simp [h (s + d) (by omega) (by omega)])]
+      omega
+
+/-- How often candidate `i` has **hit** over the window `[s, t)`: the window's length, less the
+misses inside it. At `s = 0` it is the whole run's hit count `t − missCount M i t`. -/
+def hitCount (M : ℕ → Fin C → Bool) (i : Fin C) (s t : ℕ) : ℕ :=
+  (t - s) - (missCount M i t - missCount M i s)
+
+private theorem hitCount_self (M : ℕ → Fin C → Bool) (i : Fin C) (s : ℕ) :
+    hitCount M i s s = 0 := by
+  rw [hitCount]; omega
+
+private theorem hitCount_zero (M : ℕ → Fin C → Bool) (i : Fin C) (t : ℕ) :
+    hitCount M i 0 t = t - missCount M i t := by
+  rw [hitCount, missCount_zero]; omega
+
+private theorem hitCount_succ (M : ℕ → Fin C → Bool) (i : Fin C) {s t : ℕ} (h : s ≤ t) :
+    hitCount M i s (t + 1) = hitCount M i s t + (if M t i then 0 else 1) := by
+  have h1 : missCount M i s ≤ missCount M i t := missCount_mono M i h
+  have h2 : missCount M i t ≤ missCount M i s + (t - s) := by
+    have := missCount_le_add M i s (t - s)
+    rwa [show s + (t - s) = t from by omega] at this
+  rw [hitCount, hitCount, missCount_succ]
+  by_cases hM : M t i
+  · rw [if_pos hM, if_pos hM]; omega
+  · rw [if_neg hM, if_neg hM]; omega
+
+/-- A candidate that never misses inside the window hits at every one of its steps. -/
+private theorem hitCount_of_no_miss (M : ℕ → Fin C → Bool) (i : Fin C) {s t : ℕ} (hst : s ≤ t)
+    (h : ∀ u, s ≤ u → u < t → M u i = false) : hitCount M i s t = t - s := by
+  have := missCount_eq_of_no_miss M i s (t - s) (fun u hu hlt => h u hu (by omega))
+  rw [show s + (t - s) = t from by omega] at this
+  rw [hitCount, this]
+  omega
+
+/-- **Co-leadership persists while its holder keeps hitting.** If `iL` carries a maximal exponent
+at time `s` and misses at no step of `[s, t)`, then it carries a maximal exponent throughout
+`[s, t]`. One induction does it, and it needs nothing else about the run: the rescale is charged to
+everyone alike, a hit adds at most one exponent to anyone, and `iL` collects that one at every
+step. -/
+theorem coleader_persists (M : ℕ → Fin C → Bool) (b : ℕ) {iL : Fin C} {s t : ℕ}
+    (hlead : ∀ j, expRun M b s j ≤ expRun M b s iL)
+    (hiL : ∀ u, s ≤ u → u < t → M u iL = false) :
+    ∀ u, s ≤ u → u ≤ t → ∀ j, expRun M b u j ≤ expRun M b u iL := by
+  suffices h : ∀ d, s + d ≤ t → ∀ j, expRun M b (s + d) j ≤ expRun M b (s + d) iL by
+    intro u hsu hut
+    obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hsu
+    exact h d hut
+  intro d
+  induction d with
+  | zero => intro _ j; simpa using hlead j
+  | succ d ih =>
+      intro hd j
+      have hj := ih (by omega) j
+      have hms : M (s + d) iL = false := hiL (s + d) (by omega) (by omega)
+      change expStep b (M (s + d)) (expRun M b (s + d)) j
+        ≤ expStep b (M (s + d)) (expRun M b (s + d)) iL
+      simp only [expStep]
+      rw [if_neg (by simp [hms] : ¬ (M (s + d) iL = true))]
+      by_cases hδ : ∃ k, expRun M b (s + d) k = b ∧ M (s + d) k = false
+      · rw [if_pos hδ]
+        by_cases hjm : M (s + d) j
+        · rw [if_pos hjm]; omega
+        · rw [if_neg hjm]; omega
+      · rw [if_neg hδ]
+        by_cases hjm : M (s + d) j
+        · rw [if_pos hjm]; omega
+        · rw [if_neg hjm]; omega
+
+/-- **The window is again one automaton.** Under a co-leader that never misses, the exponent at
+`s + d` is the state at `s` plus the window's hit count, less the window's rescale count — and that
+rescale count is `d` beyond the co-leader's own distance `b − expRun M b s iL` from the ceiling,
+because until the co-leader reaches the ceiling nobody is at it and no step rescales, and from then
+on the co-leader is at it and hits, so every step does. -/
+private theorem expRun_restart (M : ℕ → Fin C → Bool) (b : ℕ) {iL : Fin C} {s t : ℕ}
+    (hlead : ∀ j, expRun M b s j ≤ expRun M b s iL)
+    (hiL : ∀ u, s ≤ u → u < t → M u iL = false) :
+    ∀ d, s + d ≤ t →
+      expRun M b (s + d) iL = min (expRun M b s iL + d) b ∧
+      ∀ i, expRun M b (s + d) i
+        = (expRun M b s i + hitCount M i s (s + d)) - (d - (b - expRun M b s iL)) := by
+  have hcb : expRun M b s iL ≤ b := expRun_le M b s iL
+  intro d
+  induction d with
+  | zero =>
+      intro _
+      refine ⟨by rw [Nat.add_zero, Nat.add_zero]; omega, ?_⟩
+      intro i
+      rw [Nat.add_zero, hitCount_self]
+      omega
+  | succ d ih =>
+      intro hd
+      obtain ⟨ihL, ihi⟩ := ih (by omega)
+      have hms : M (s + d) iL = false := hiL (s + d) (by omega) (by omega)
+      have hcol : ∀ j, expRun M b (s + d) j ≤ expRun M b (s + d) iL :=
+        coleader_persists M b hlead hiL (s + d) (by omega) (by omega)
+      have hδ : (∃ k, expRun M b (s + d) k = b ∧ M (s + d) k = false)
+          ↔ b ≤ expRun M b s iL + d := by
+        constructor
+        · rintro ⟨k, hk, -⟩
+          have hkl := hcol k
+          rw [hk, ihL] at hkl
+          omega
+        · intro hb
+          exact ⟨iL, by rw [ihL]; omega, hms⟩
+      have hstep : ∀ i, expRun M b (s + (d + 1)) i
+          = (expRun M b (s + d) i + (if M (s + d) i then 0 else 1))
+            - (if b ≤ expRun M b s iL + d then 1 else 0) := by
+        intro i
+        change expStep b (M (s + d)) (expRun M b (s + d)) i = _
+        rw [expStep]
+        congr 1
+        by_cases h : b ≤ expRun M b s iL + d
+        · rw [if_pos h, if_pos (hδ.mpr h)]
+        · rw [if_neg h, if_neg (fun hh => h (hδ.mp hh))]
+      have hhc : ∀ i, hitCount M i s (s + (d + 1))
+          = hitCount M i s (s + d) + (if M (s + d) i then 0 else 1) :=
+        fun i => hitCount_succ M i (by omega : s ≤ s + d)
+      clear hδ hcol ih hiL hlead
+      refine ⟨?_, ?_⟩
+      · rw [hstep iL, if_neg (by simp [hms] : ¬ (M (s + d) iL = true)), ihL]
+        clear hstep ihi ihL hms
+        split <;> omega
+      · intro i
+        rw [hstep i, ihi i, hhc i]
+        clear hstep ihi ihL hms hhc
+        have hh : (if M (s + d) i then (0 : ℕ) else 1) ≤ 1 := by split <;> omega
+        by_cases hbc : b ≤ expRun M b s iL + d
+        · rw [if_pos hbc]; omega
+        · rw [if_neg hbc]; omega
+
+/-- The restarted normal form, read at the window's far end. -/
+theorem expRun_eq_hitCount_sub (M : ℕ → Fin C → Bool) (b : ℕ) {iL : Fin C} {s t : ℕ}
+    (hst : s ≤ t) (hlead : ∀ j, expRun M b s j ≤ expRun M b s iL)
+    (hiL : ∀ u, s ≤ u → u < t → M u iL = false) (i : Fin C) :
+    expRun M b t i
+      = (expRun M b s i + hitCount M i s t) - ((t - s) - (b - expRun M b s iL)) := by
+  have h := (expRun_restart M b hlead hiL (t - s) (by omega)).2 i
+  rwa [show s + (t - s) = t from by omega] at h
 
 end Normal
 
@@ -1518,6 +1711,164 @@ theorem toDist_mul_left {a : ℕ} (ha : 0 < a) (v : Fin C → ℕ) :
   rw [← Finset.mul_sum]
   exact mul_div_mul_left _ _ (Nat.cast_ne_zero.mpr ha.ne')
 
+/-! ### The restarted comparator -/
+
+/-- **Exact Bayes restarted at time `s`**, from the floored run's own state there: the weights the
+floored run holds at `s`, updated by the exact rule — no carrier, no projection — over `[s, t)`.
+At `s = 0` this is `bayesRun` itself, the all-ones start being the floored run's own. -/
+def bayesFrom (M : ℕ → Fin C → Bool) (b s t : ℕ) (i : Fin C) : ℕ :=
+  raw (wRun (2 ^ b) (missFit M) s) i * 2 ^ hitCount M i s t
+
+/-- The restarted comparator in exponent form, off the general normal form. -/
+theorem bayesFrom_eq_pow (M : ℕ → Fin C → Bool) (b s t : ℕ) (i : Fin C) :
+    bayesFrom M b s t i = 2 ^ (expRun M b s i + hitCount M i s t) := by
+  rw [bayesFrom, wRun_eq_pow_expRun, ← pow_add]
+
+/-- **At `s = 0` the restarted comparator is the exact run.** The floored run's state at time `0`
+is the uniform start the exact run also begins from, so nothing has been restarted yet. -/
+theorem bayesFrom_zero (M : ℕ → Fin C → Bool) (b t : ℕ) (i : Fin C) :
+    bayesFrom M b 0 t i = bayesRun (missFit M) t i := by
+  rw [bayesFrom_eq_pow, bayesRun_missFit, hitCount_zero]
+  congr 1
+  simp [expRun]
+
+/-- **The tracking form of the accumulation bound**, and it asks for no realizable candidate.
+
+Compare the floored run at `t` not with exact Bayes from the beginning of time — which
+`toDist_wRun_sub_bayesRun_not_le_mirrorMiss` refutes outright without realizability — but with
+exact Bayes **restarted at `s` from the floored run's own state there**. Then the same
+`2(C−1)/2^b` holds, uniformly in the elapsed time, under two hypotheses carried by one candidate
+over the window alone: `iL` is a running co-leader at `s`, and it misses at no step of `[s, t)`.
+Nothing is assumed about the run before `s`, nothing about the other candidates, and nothing about
+whether any candidate is consistent with the whole history.
+
+The proof splits at the first time the co-leader reaches the ceiling. Before it no candidate is at
+the ceiling, so no step rescales and the floored run *is* the restarted exact run, coordinate for
+coordinate. From it the co-leader sits at the ceiling and hits at every step, so every step
+rescales, and the argument is `toDist_wRun_sub_bayesRun_le`'s: scaled up by the common factor the
+clip cost it, the two runs agree except on the candidates the clip has floored, of which there are
+at most `C−1`, and each is off by at most the scale factor itself.
+
+This is the mixture-currency instance of the tracking bounds of the weighted-majority and
+fixed-share family — Littlestone and Warmuth (1994) §3 for the floored variant's weight floor,
+recovery invariant and per-segment accounting, and Herbster and Warmuth (1998) for bounds against a
+shifting comparator. That a weight floor buys recovery, that the weight ratios stay bounded, and
+that a shifting comparator is trackable at all are theirs and are not claimed here. What is
+machine-checked here is the comparator: exact Bayes restarted at a co-leader point, in total
+variation on the quantized carrier, at the exact constant `2(C−1)/2^b`. -/
+theorem toDist_wRun_sub_bayesFrom_le (M : ℕ → Fin C → Bool) (b : ℕ) {iL : Fin C} {s t : ℕ}
+    (hst : s ≤ t) (hlead : ∀ j, expRun M b s j ≤ expRun M b s iL)
+    (hiL : ∀ u, s ≤ u → u < t → M u iL = false) :
+    ∑ i, |toDist (raw (wRun (2 ^ b) (missFit M) t)) i - toDist (bayesFrom M b s t) i|
+      ≤ 2 * ((C : ℚ) - 1) / 2 ^ b := by
+  have hC1 : 1 ≤ C := iL.pos
+  have hCQ : (0 : ℚ) ≤ (C : ℚ) - 1 := by
+    have : (1 : ℚ) ≤ (C : ℚ) := by exact_mod_cast hC1
+    linarith
+  have hpow : (0 : ℚ) < (2 : ℚ) ^ b := by positivity
+  have hcb : expRun M b s iL ≤ b := expRun_le M b s iL
+  have hhL : hitCount M iL s t = t - s := hitCount_of_no_miss M iL hst hiL
+  have hexp : ∀ i, expRun M b t i
+      = (expRun M b s i + hitCount M i s t) - ((t - s) - (b - expRun M b s iL)) :=
+    expRun_eq_hitCount_sub M b hst hlead hiL
+  by_cases hcase : b - expRun M b s iL ≤ t - s
+  · -- past the ceiling: the co-leader is saturated, and the clip's cost is the whole residual
+    set R := (t - s) - (b - expRun M b s iL) with hRdef
+    have hFL : expRun M b s iL + hitCount M iL s t = R + b := by rw [hhL, hRdef]; omega
+    set u : Fin C → ℕ := fun i => 2 ^ R * raw (wRun (2 ^ b) (missFit M) t) i with hu
+    have hui : ∀ i, u i = 2 ^ (R + ((expRun M b s i + hitCount M i s t) - R)) := by
+      intro i
+      rw [hu]
+      change 2 ^ R * raw (wRun (2 ^ b) (missFit M) t) i = _
+      rw [wRun_eq_pow_expRun, hexp i, ← pow_add]
+    have hconv : toDist (raw (wRun (2 ^ b) (missFit M) t)) = toDist u := by
+      rw [hu]
+      exact (toDist_mul_left (a := 2 ^ R) (by positivity) _).symm
+    have hdiff : ∀ i, |((u i : ℕ) : ℚ) - ((bayesFrom M b s t i : ℕ) : ℚ)|
+        ≤ if i = iL then 0 else (2 : ℚ) ^ R := by
+      intro i
+      by_cases hsat : R ≤ expRun M b s i + hitCount M i s t
+      · have heq : u i = bayesFrom M b s t i := by
+          rw [hui i, bayesFrom_eq_pow]
+          congr 1
+          omega
+        rw [heq, sub_self, abs_zero]
+        split
+        · exact le_refl 0
+        · positivity
+      · have hne : i ≠ iL := by
+          intro h
+          rw [h] at hsat
+          omega
+        have huQ : ((u i : ℕ) : ℚ) = (2 : ℚ) ^ R := by
+          rw [hui i, show R + ((expRun M b s i + hitCount M i s t) - R) = R from by omega]
+          push_cast
+          ring
+        have hbQ : ((bayesFrom M b s t i : ℕ) : ℚ) ≤ (2 : ℚ) ^ R := by
+          have hble : bayesFrom M b s t i ≤ 2 ^ R := by
+            rw [bayesFrom_eq_pow]
+            exact Nat.pow_le_pow_right (by norm_num) (by omega)
+          calc ((bayesFrom M b s t i : ℕ) : ℚ) ≤ ((2 ^ R : ℕ) : ℚ) := by exact_mod_cast hble
+            _ = (2 : ℚ) ^ R := by push_cast; ring
+        have hbnn : (0 : ℚ) ≤ ((bayesFrom M b s t i : ℕ) : ℚ) := by positivity
+        rw [if_neg hne, huQ, abs_of_nonneg (by linarith)]
+        linarith
+    have hsum : ∑ i, |((u i : ℕ) : ℚ) - ((bayesFrom M b s t i : ℕ) : ℚ)|
+        ≤ ((C : ℚ) - 1) * (2 : ℚ) ^ R := by
+      calc ∑ i, |((u i : ℕ) : ℚ) - ((bayesFrom M b s t i : ℕ) : ℚ)|
+          ≤ ∑ i, if i = iL then 0 else (2 : ℚ) ^ R := Finset.sum_le_sum fun i _ => hdiff i
+        _ = ((C : ℚ) - 1) * (2 : ℚ) ^ R := by
+            rw [← Finset.sum_erase (f := fun i => if i = iL then (0 : ℚ) else (2 : ℚ) ^ R)
+                Finset.univ (if_pos rfl),
+              Finset.sum_congr rfl (fun j hj => if_neg (Finset.ne_of_mem_erase hj)),
+              Finset.sum_const, nsmul_eq_mul, Finset.card_erase_of_mem (Finset.mem_univ iL),
+              Finset.card_univ, Fintype.card_fin, Nat.cast_sub hC1, Nat.cast_one]
+    have hbL : ((bayesFrom M b s t iL : ℕ) : ℚ) = (2 : ℚ) ^ R * 2 ^ b := by
+      rw [bayesFrom_eq_pow, hFL]
+      push_cast
+      rw [pow_add]
+    have hRB : (0 : ℚ) < (2 : ℚ) ^ R * 2 ^ b := by positivity
+    have hBge : (2 : ℚ) ^ R * 2 ^ b ≤ ∑ j, ((bayesFrom M b s t j : ℕ) : ℚ) := by
+      rw [← hbL]
+      exact Finset.single_le_sum (f := fun j => ((bayesFrom M b s t j : ℕ) : ℚ))
+        (fun j _ => by positivity) (Finset.mem_univ iL)
+    have hBpos : (0 : ℚ) < ∑ j, ((bayesFrom M b s t j : ℕ) : ℚ) := lt_of_lt_of_le hRB hBge
+    have hAge : (2 : ℚ) ^ R * 2 ^ b ≤ ∑ j, ((u j : ℕ) : ℚ) := by
+      have huL : ((u iL : ℕ) : ℚ) = (2 : ℚ) ^ R * 2 ^ b := by
+        rw [hui iL, show R + ((expRun M b s iL + hitCount M iL s t) - R) = R + b from by omega]
+        push_cast
+        rw [pow_add]
+      rw [← huL]
+      exact Finset.single_le_sum (f := fun j => ((u j : ℕ) : ℚ))
+        (fun j _ => by positivity) (Finset.mem_univ iL)
+    have hApos : (0 : ℚ) < ∑ j, ((u j : ℕ) : ℚ) := lt_of_lt_of_le hRB hAge
+    rw [hconv]
+    calc ∑ i, |toDist u i - toDist (bayesFrom M b s t) i|
+        ≤ 2 * (∑ i, |((u i : ℕ) : ℚ) - ((bayesFrom M b s t i : ℕ) : ℚ)|)
+            / ∑ j, ((bayesFrom M b s t j : ℕ) : ℚ) :=
+          l1_normalize_le (fun i => ((u i : ℕ) : ℚ)) (fun i => ((bayesFrom M b s t i : ℕ) : ℚ))
+            (fun i => by positivity) (fun i => by positivity) hApos hBpos
+      _ ≤ 2 * ((C : ℚ) - 1) / 2 ^ b := by
+          have hSle : (∑ i, |((u i : ℕ) : ℚ) - ((bayesFrom M b s t i : ℕ) : ℚ)|) * 2 ^ b
+              ≤ ((C : ℚ) - 1) * ((2 : ℚ) ^ R * 2 ^ b) := by
+            calc (∑ i, |((u i : ℕ) : ℚ) - ((bayesFrom M b s t i : ℕ) : ℚ)|) * 2 ^ b
+                ≤ ((C : ℚ) - 1) * (2 : ℚ) ^ R * 2 ^ b :=
+                  mul_le_mul_of_nonneg_right hsum hpow.le
+              _ = ((C : ℚ) - 1) * ((2 : ℚ) ^ R * 2 ^ b) := by ring
+          have hmul : ((C : ℚ) - 1) * ((2 : ℚ) ^ R * 2 ^ b)
+              ≤ ((C : ℚ) - 1) * ∑ j, ((bayesFrom M b s t j : ℕ) : ℚ) :=
+            mul_le_mul_of_nonneg_left hBge hCQ
+          rw [div_le_div_iff₀ hBpos hpow]
+          linarith
+  · -- short of the ceiling: no step rescales, and the two runs are equal on the nose
+    have hzero : (t - s) - (b - expRun M b s iL) = 0 := by omega
+    have heq : raw (wRun (2 ^ b) (missFit M) t) = bayesFrom M b s t := by
+      funext i
+      rw [wRun_eq_pow_expRun, bayesFrom_eq_pow, hexp i, hzero, Nat.sub_zero]
+    rw [heq]
+    simp only [sub_self, abs_zero, Finset.sum_const_zero]
+    exact div_nonneg (by linarith) hpow.le
+
 /-- **The drift does not accumulate.** In the saturating regime the floored run's reading stays
 within `2(C−1)/2^b` of the exact Bayes run's, *uniformly in `t`*: the right-hand side mentions no
 horizon at all.
@@ -1533,104 +1884,12 @@ theorem toDist_wRun_sub_bayesRun_le (M : ℕ → Fin C → Bool) {iR : Fin C}
     (hR : ∀ t, M t iR = false) (b t : ℕ) :
     ∑ i, |toDist (raw (wRun (2 ^ b) (missFit M) t)) i - toDist (bayesRun (missFit M) t) i|
       ≤ 2 * ((C : ℚ) - 1) / 2 ^ b := by
-  have hC1 : 1 ≤ C := iR.pos
-  have hCQ : (0 : ℚ) ≤ (C : ℚ) - 1 := by
-    have : (1 : ℚ) ≤ (C : ℚ) := by exact_mod_cast hC1
-    linarith
-  have hpow : (0 : ℚ) < (2 : ℚ) ^ b := by positivity
-  have hmiR : missCount M iR t = 0 := missCount_eq_zero M hR t
-  set u : Fin C → ℕ := fun i => 2 ^ (t - min t b) * raw (wRun (2 ^ b) (missFit M) t) i with hu
-  have hui : ∀ i, u i = 2 ^ (t - min (missCount M i t) b) := by
-    intro i
-    have hm := missCount_le M i t
-    rw [hu]
-    change 2 ^ (t - min t b) * raw (wRun (2 ^ b) (missFit M) t) i = _
-    rw [wRun_eq_pow_deficit M hR b t i, ← pow_add]
-    congr 1
-    omega
-  have hconv : toDist (raw (wRun (2 ^ b) (missFit M) t)) = toDist u := by
-    rw [hu]
-    exact (toDist_mul_left (a := 2 ^ (t - min t b)) (by positivity) _).symm
-  -- the two runs agree except on the saturated candidates, and there the gap is at most `2^t/2^b`
-  have hdiff : ∀ i, |((u i : ℕ) : ℚ) - ((bayesRun (missFit M) t i : ℕ) : ℚ)|
-      ≤ if i = iR then 0 else (2 : ℚ) ^ t / 2 ^ b := by
-    intro i
-    have hm := missCount_le M i t
-    by_cases hsat : missCount M i t ≤ b
-    · have heq : u i = bayesRun (missFit M) t i := by
-        rw [hui i, bayesRun_missFit, min_eq_left hsat]
-      rw [heq, sub_self, abs_zero]
-      split
-      · exact le_refl 0
-      · positivity
-    · have hmin : min (missCount M i t) b = b := min_eq_right (not_le.mp hsat).le
-      have hbt : b ≤ t := by omega
-      have hne : i ≠ iR := by
-        intro h
-        rw [h, hmiR] at hsat
-        omega
-      have hle : bayesRun (missFit M) t i ≤ u i := by
-        rw [hui i, bayesRun_missFit, hmin]
-        exact Nat.pow_le_pow_right (by norm_num) (by omega)
-      have hleQ : ((bayesRun (missFit M) t i : ℕ) : ℚ) ≤ ((u i : ℕ) : ℚ) := by exact_mod_cast hle
-      have huQ : ((u i : ℕ) : ℚ) = (2 : ℚ) ^ t / 2 ^ b := by
-        rw [hui i, hmin]
-        push_cast
-        rw [eq_div_iff hpow.ne', ← pow_add]
-        congr 1
-        omega
-      rw [if_neg hne, abs_of_nonneg (by linarith), ← huQ]
-      have : (0 : ℚ) ≤ ((bayesRun (missFit M) t i : ℕ) : ℚ) := by positivity
-      linarith
-  have hsum : ∑ i, |((u i : ℕ) : ℚ) - ((bayesRun (missFit M) t i : ℕ) : ℚ)|
-      ≤ ((C : ℚ) - 1) * ((2 : ℚ) ^ t / 2 ^ b) := by
-    calc ∑ i, |((u i : ℕ) : ℚ) - ((bayesRun (missFit M) t i : ℕ) : ℚ)|
-        ≤ ∑ i, if i = iR then 0 else (2 : ℚ) ^ t / 2 ^ b := Finset.sum_le_sum fun i _ => hdiff i
-      _ = ((C : ℚ) - 1) * ((2 : ℚ) ^ t / 2 ^ b) := by
-          rw [← Finset.sum_erase (f := fun i => if i = iR then (0 : ℚ) else (2 : ℚ) ^ t / 2 ^ b)
-              Finset.univ (if_pos rfl),
-            Finset.sum_congr rfl (fun j hj => if_neg (Finset.ne_of_mem_erase hj)),
-            Finset.sum_const, nsmul_eq_mul, Finset.card_erase_of_mem (Finset.mem_univ iR),
-            Finset.card_univ, Fintype.card_fin, Nat.cast_sub hC1, Nat.cast_one]
-  have hbR : ((bayesRun (missFit M) t iR : ℕ) : ℚ) = (2 : ℚ) ^ t := by
-    rw [bayesRun_missFit, hmiR, Nat.sub_zero]
-    push_cast
-    ring
-  have hBge : (2 : ℚ) ^ t ≤ ∑ j, ((bayesRun (missFit M) t j : ℕ) : ℚ) := by
-    rw [← hbR]
-    exact Finset.single_le_sum (f := fun j => ((bayesRun (missFit M) t j : ℕ) : ℚ))
-      (fun j _ => by positivity) (Finset.mem_univ iR)
-  have htpow : (0 : ℚ) < (2 : ℚ) ^ t := by positivity
-  have hBpos : (0 : ℚ) < ∑ j, ((bayesRun (missFit M) t j : ℕ) : ℚ) := lt_of_lt_of_le htpow hBge
-  have hAge : (2 : ℚ) ^ t ≤ ∑ j, ((u j : ℕ) : ℚ) := by
-    have huR : ((u iR : ℕ) : ℚ) = (2 : ℚ) ^ t := by
-      rw [hui iR, hmiR, show t - min 0 b = t by omega]
-      push_cast
-      ring
-    rw [← huR]
-    exact Finset.single_le_sum (f := fun j => ((u j : ℕ) : ℚ))
-      (fun j _ => by positivity) (Finset.mem_univ iR)
-  have hApos : (0 : ℚ) < ∑ j, ((u j : ℕ) : ℚ) := lt_of_lt_of_le htpow hAge
-  rw [hconv]
-  calc ∑ i, |toDist u i - toDist (bayesRun (missFit M) t) i|
-      ≤ 2 * (∑ i, |((u i : ℕ) : ℚ) - ((bayesRun (missFit M) t i : ℕ) : ℚ)|)
-          / ∑ j, ((bayesRun (missFit M) t j : ℕ) : ℚ) :=
-        l1_normalize_le (fun i => ((u i : ℕ) : ℚ)) (fun i => ((bayesRun (missFit M) t i : ℕ) : ℚ))
-          (fun i => by positivity) (fun i => by positivity) hApos hBpos
-    _ ≤ 2 * ((C : ℚ) - 1) / 2 ^ b := by
-        have hSnn : (0 : ℚ) ≤ ∑ i, |((u i : ℕ) : ℚ) - ((bayesRun (missFit M) t i : ℕ) : ℚ)| :=
-          Finset.sum_nonneg fun i _ => abs_nonneg _
-        have hSle : (∑ i, |((u i : ℕ) : ℚ) - ((bayesRun (missFit M) t i : ℕ) : ℚ)|) * 2 ^ b
-            ≤ ((C : ℚ) - 1) * 2 ^ t := by
-          calc (∑ i, |((u i : ℕ) : ℚ) - ((bayesRun (missFit M) t i : ℕ) : ℚ)|) * 2 ^ b
-              ≤ ((C : ℚ) - 1) * ((2 : ℚ) ^ t / 2 ^ b) * 2 ^ b :=
-                mul_le_mul_of_nonneg_right hsum hpow.le
-            _ = ((C : ℚ) - 1) * 2 ^ t := by field_simp
-        have hmul : ((C : ℚ) - 1) * 2 ^ t
-            ≤ ((C : ℚ) - 1) * ∑ j, ((bayesRun (missFit M) t j : ℕ) : ℚ) :=
-          mul_le_mul_of_nonneg_left hBge hCQ
-        rw [div_le_div_iff₀ hBpos hpow]
-        linarith
+  have hbf : bayesRun (missFit M) t = bayesFrom M b 0 t := by
+    funext i
+    exact (bayesFrom_zero M b t i).symm
+  rw [hbf]
+  exact toDist_wRun_sub_bayesFrom_le (iL := iR) M b (Nat.zero_le t)
+    (fun j => by simp [expRun]) (fun u _ _ => hR u)
 
 /-! ### The guard on realizability: no accumulation is *false* without it
 
@@ -1878,6 +2137,496 @@ theorem toDist_wRun_sub_bayesRun_not_le_mirrorMiss_two :
   rw [Fin.sum_univ_two, hd 0, hd 1, hbd 0, hbd 1, he0, he1]
   norm_num
 
+/-! ### The guards on the tracking hypotheses: both are load-bearing
+
+`toDist_wRun_sub_bayesFrom_le` asks two things of one candidate over the window `[s, t)`: that it
+is a running co-leader at `s`, and that it misses at no step inside. Neither is slack. The two
+families below satisfy every other condition of the theorem — a power-of-two budget, the `2`-vs-`1`
+fitness, the all-ones start — and each drops exactly one hypothesis; each then holds the
+discrepancy above a fixed positive constant while the bound vanishes in the budget.
+
+The mechanism is the same clip in both, read at the restart point. `preAbsorption` gives the window
+a candidate that never misses, but one whose earlier debt the ceiling has already erased: the
+restarted comparator credits it from a floor it did not earn, while the run credits the incumbent.
+`sinkRecover` gives the window a co-leader, but one that later quits; the candidate that recovers
+does so from a floor that has swallowed its own misses, and the restarted comparator, starting from
+that floor, cannot see them either. -/
+
+/-- **The pre-absorption family** (`C = 3`): candidate `0` climbs alone to the ceiling over `b`
+steps; then for `8` steps candidate `1` hits alongside it and candidate `2` misses, both pinned at
+the floor, so that everything those `8` steps decide is erased; then for `b + 2` steps candidate
+`0` quits and `1` and `2` climb together. Read from `s = b`, candidate `1` is the window's only
+never-missing candidate — and it is exactly `b` exponents short of being a co-leader there. -/
+def preAbsorption (b : ℕ) : ℕ → Fin 3 → Bool := fun t i =>
+  if t < b then decide (i ≠ 0) else if t < b + 8 then decide (i = 2) else decide (i = 0)
+
+/-- Candidate `1` misses at no step from `b` on: it hits through the middle phase and the last. -/
+theorem preAbsorption_never_misses_one (b : ℕ) {u : ℕ} (hu : b ≤ u) :
+    preAbsorption b u 1 = false := by
+  simp [preAbsorption]
+  omega
+
+/-- And it is the window's *only* never-missing candidate: `0` quits at `b + 8`, `2` misses from
+the start. So no other choice of co-leader is available to rescue the theorem here. -/
+theorem preAbsorption_misses_of_ne_one (b : ℕ) (i : Fin 3) (hi : i ≠ 1) :
+    ∃ u, b ≤ u ∧ u < 2 * b + 10 ∧ preAbsorption b u i = true := by
+  fin_cases i
+  · exact ⟨b + 8, by omega, by omega, by simp [preAbsorption]⟩
+  · exact absurd rfl hi
+  · exact ⟨b, by omega, by omega, by simp [preAbsorption]⟩
+
+/-- The first two phases: candidate `0` climbs to the ceiling and holds it, `1` and `2` are pinned
+at the floor — `1`'s eight hits absorbed by the rescale exactly as `2`'s eight misses are. -/
+private theorem expRun_preAbsorption_early (b : ℕ) : ∀ n, n ≤ b + 8 →
+    expRun (preAbsorption b) b n 0 = min n b ∧ expRun (preAbsorption b) b n 1 = 0
+      ∧ expRun (preAbsorption b) b n 2 = 0 := by
+  intro n
+  induction n with
+  | zero => exact fun _ => ⟨by simp [expRun], by simp [expRun], by simp [expRun]⟩
+  | succ n ih =>
+      intro hn
+      obtain ⟨h0, h1, h2⟩ := ih (by omega)
+      have hm0 : preAbsorption b n 0 = false := by simp [preAbsorption]; omega
+      have hδ : (∃ j : Fin 3, expRun (preAbsorption b) b n j = b
+          ∧ preAbsorption b n j = false) ↔ b ≤ n := by
+        constructor
+        · rintro ⟨j, hj, -⟩
+          fin_cases j
+          · have hj' : expRun (preAbsorption b) b n 0 = b := hj
+            rw [h0] at hj'; omega
+          · have hj' : expRun (preAbsorption b) b n 1 = b := hj
+            rw [h1] at hj'; omega
+          · have hj' : expRun (preAbsorption b) b n 2 = b := hj
+            rw [h2] at hj'; omega
+        · exact fun hbn => ⟨0, by rw [h0]; omega, hm0⟩
+      have hstep : ∀ i : Fin 3, expRun (preAbsorption b) b (n + 1) i
+          = (expRun (preAbsorption b) b n i + (if preAbsorption b n i then 0 else 1))
+            - (if b ≤ n then 1 else 0) := by
+        intro i
+        change expStep b (preAbsorption b n) (expRun (preAbsorption b) b n) i = _
+        rw [expStep]
+        congr 1
+        by_cases h : b ≤ n
+        · rw [if_pos h, if_pos (hδ.mpr h)]
+        · rw [if_neg h, if_neg (fun hh => h (hδ.mp hh))]
+      clear hδ
+      refine ⟨?_, ?_, ?_⟩
+      · rw [hstep 0, if_neg (by simp [hm0]), h0]
+        split <;> omega
+      · rw [hstep 1, h1]
+        by_cases hnb : n < b
+        · rw [if_pos (show preAbsorption b n 1 = true by simp [preAbsorption]; omega),
+            if_neg (by omega : ¬ b ≤ n)]
+        · rw [if_neg (show ¬ (preAbsorption b n 1 = true) by simp [preAbsorption]; omega),
+            if_pos (by omega : b ≤ n)]
+      · rw [hstep 2, h2,
+          if_pos (show preAbsorption b n 2 = true by simp [preAbsorption]; omega)]
+        split <;> omega
+
+/-- The last phase: candidate `0` quits and is charged one exponent per rescale, while `1` and `2`
+climb together — `2` carrying misses the floor has already erased. -/
+private theorem expRun_preAbsorption_late (b : ℕ) : ∀ k, k ≤ b + 2 →
+    expRun (preAbsorption b) b (b + 8 + k) 0 = b - (k - b)
+      ∧ expRun (preAbsorption b) b (b + 8 + k) 1 = min k b
+      ∧ expRun (preAbsorption b) b (b + 8 + k) 2 = min k b := by
+  intro k
+  induction k with
+  | zero =>
+      intro _
+      obtain ⟨h0, h1, h2⟩ := expRun_preAbsorption_early b (b + 8) (le_refl _)
+      exact ⟨by rw [Nat.add_zero, h0]; omega, by rw [Nat.add_zero, h1]; omega,
+        by rw [Nat.add_zero, h2]; omega⟩
+  | succ k ih =>
+      intro hk
+      obtain ⟨h0, h1, h2⟩ := ih (by omega)
+      have hm0 : preAbsorption b (b + 8 + k) 0 = true := by simp [preAbsorption]; omega
+      have hm1 : preAbsorption b (b + 8 + k) 1 = false := by simp [preAbsorption]; omega
+      have hδ : (∃ j : Fin 3, expRun (preAbsorption b) b (b + 8 + k) j = b
+          ∧ preAbsorption b (b + 8 + k) j = false) ↔ b ≤ k := by
+        constructor
+        · rintro ⟨j, hj, hjm⟩
+          fin_cases j
+          · have hjm' : preAbsorption b (b + 8 + k) 0 = false := hjm
+            rw [hm0] at hjm'; exact absurd hjm' (by simp)
+          · have hj' : expRun (preAbsorption b) b (b + 8 + k) 1 = b := hj
+            rw [h1] at hj'; omega
+          · have hj' : expRun (preAbsorption b) b (b + 8 + k) 2 = b := hj
+            rw [h2] at hj'; omega
+        · exact fun hbk => ⟨1, by rw [h1]; omega, hm1⟩
+      have hstep : ∀ i : Fin 3, expRun (preAbsorption b) b (b + 8 + (k + 1)) i
+          = (expRun (preAbsorption b) b (b + 8 + k) i
+              + (if preAbsorption b (b + 8 + k) i then 0 else 1))
+            - (if b ≤ k then 1 else 0) := by
+        intro i
+        change expStep b (preAbsorption b (b + 8 + k))
+          (expRun (preAbsorption b) b (b + 8 + k)) i = _
+        rw [expStep]
+        congr 1
+        by_cases h : b ≤ k
+        · rw [if_pos h, if_pos (hδ.mpr h)]
+        · rw [if_neg h, if_neg (fun hh => h (hδ.mp hh))]
+      clear hδ
+      refine ⟨?_, ?_, ?_⟩
+      · rw [hstep 0, if_pos hm0, h0]
+        split <;> omega
+      · rw [hstep 1, if_neg (by simp [hm1]), h1]
+        split <;> omega
+      · rw [hstep 2, h2,
+          if_neg (show ¬ (preAbsorption b (b + 8 + k) 2 = true) by simp [preAbsorption]; omega)]
+        split <;> omega
+
+private theorem missCount_preAbsorption_zero (b n : ℕ) :
+    missCount (preAbsorption b) 0 n = n - (b + 8) := by
+  induction n with
+  | zero => rw [missCount_zero]; omega
+  | succ n ih =>
+      rw [missCount_succ, ih]
+      by_cases h : b + 8 ≤ n
+      · rw [if_pos (show preAbsorption b n 0 = true by simp [preAbsorption]; omega)]
+        omega
+      · rw [if_neg (show ¬ (preAbsorption b n 0 = true) by simp [preAbsorption]; omega)]
+        omega
+
+private theorem missCount_preAbsorption_one (b n : ℕ) :
+    missCount (preAbsorption b) 1 n = min n b := by
+  induction n with
+  | zero => rw [missCount_zero]; omega
+  | succ n ih =>
+      rw [missCount_succ, ih]
+      by_cases h : n < b
+      · rw [if_pos (show preAbsorption b n 1 = true by simp [preAbsorption]; omega)]
+        omega
+      · rw [if_neg (show ¬ (preAbsorption b n 1 = true) by simp [preAbsorption]; omega)]
+        omega
+
+private theorem missCount_preAbsorption_two (b n : ℕ) :
+    missCount (preAbsorption b) 2 n = min n (b + 8) := by
+  induction n with
+  | zero => rw [missCount_zero]; omega
+  | succ n ih =>
+      rw [missCount_succ, ih]
+      by_cases h : n < b + 8
+      · rw [if_pos (show preAbsorption b n 2 = true by simp [preAbsorption]; omega)]
+        omega
+      · rw [if_neg (show ¬ (preAbsorption b n 2 = true) by simp [preAbsorption]; omega)]
+        omega
+
+/-- **Co-leadership fails at the restart point**, and it fails by the whole budget: at `s = b` the
+window's only never-missing candidate sits at exponent `0` against the incumbent's `b`. -/
+theorem preAbsorption_not_coleader (b : ℕ) (hb : 1 ≤ b) :
+    ¬ (∀ j : Fin 3, expRun (preAbsorption b) b b j ≤ expRun (preAbsorption b) b b 1) := by
+  intro h
+  obtain ⟨h0, h1, -⟩ := expRun_preAbsorption_early b b (by omega)
+  have hj := h 0
+  rw [h0, h1] at hj
+  omega
+
+/-- **The discrepancy without co-leadership: `850/963`, at every budget `b = k + 3`.** The floored
+run reads `(1/9, 4/9, 4/9)` — the incumbent has been charged for quitting, and the two climbers are
+level. The comparator restarted at `s = b` reads `(64/321, 256/321, 1/321)`: it starts from the
+same floored state, but it then credits every one of the window's hits, including the eight the
+ceiling erased for candidate `1` and the eight misses it erased for candidate `2`. The gap does not
+move with the budget, and the ratios are fixed by the phase lengths alone. -/
+theorem toDist_wRun_sub_bayesFrom_preAbsorption (k : ℕ) :
+    ∑ i, |toDist (raw (wRun (2 ^ (k + 3)) (missFit (preAbsorption (k + 3))) (2 * k + 16))) i
+        - toDist (bayesFrom (preAbsorption (k + 3)) (k + 3) (k + 3) (2 * k + 16)) i|
+      = 850 / 963 := by
+  obtain ⟨he0, he1, he2⟩ := expRun_preAbsorption_late (k + 3) ((k + 3) + 2) (le_refl _)
+  rw [show (k + 3) + 8 + ((k + 3) + 2) = 2 * k + 16 by omega] at he0 he1 he2
+  have he0' : expRun (preAbsorption (k + 3)) (k + 3) (2 * k + 16) 0 = k + 1 := by rw [he0]; omega
+  have he1' : expRun (preAbsorption (k + 3)) (k + 3) (2 * k + 16) 1 = k + 3 := by rw [he1]; omega
+  have he2' : expRun (preAbsorption (k + 3)) (k + 3) (2 * k + 16) 2 = k + 3 := by rw [he2]; omega
+  obtain ⟨hs0, hs1, hs2⟩ := expRun_preAbsorption_early (k + 3) (k + 3) (by omega)
+  have hs0' : expRun (preAbsorption (k + 3)) (k + 3) (k + 3) 0 = k + 3 := by rw [hs0]; omega
+  have hh0 : hitCount (preAbsorption (k + 3)) 0 (k + 3) (2 * k + 16) = 8 := by
+    rw [hitCount, missCount_preAbsorption_zero, missCount_preAbsorption_zero]; omega
+  have hh1 : hitCount (preAbsorption (k + 3)) 1 (k + 3) (2 * k + 16) = k + 13 := by
+    rw [hitCount, missCount_preAbsorption_one, missCount_preAbsorption_one]; omega
+  have hh2 : hitCount (preAbsorption (k + 3)) 2 (k + 3) (2 * k + 16) = k + 5 := by
+    rw [hitCount, missCount_preAbsorption_two, missCount_preAbsorption_two]; omega
+  have hpk : (0 : ℚ) < (2 : ℚ) ^ (k + 1) := by positivity
+  have hpk5 : (0 : ℚ) < (2 : ℚ) ^ (k + 5) := by positivity
+  -- the floored run
+  have hw : ∀ i : Fin 3,
+      ((raw (wRun (2 ^ (k + 3)) (missFit (preAbsorption (k + 3))) (2 * k + 16)) i : ℕ) : ℚ)
+        = (2 : ℚ) ^ expRun (preAbsorption (k + 3)) (k + 3) (2 * k + 16) i := by
+    intro i
+    rw [wRun_eq_pow_expRun]
+    push_cast
+    ring
+  have hwsum : ∑ j, ((raw (wRun (2 ^ (k + 3)) (missFit (preAbsorption (k + 3)))
+      (2 * k + 16)) j : ℕ) : ℚ) = 9 * 2 ^ (k + 1) := by
+    rw [Fin.sum_univ_three, hw 0, hw 1, hw 2, he0', he1', he2',
+      show k + 3 = (k + 1) + 2 by omega, pow_add]
+    ring
+  have hd : ∀ i : Fin 3,
+      toDist (raw (wRun (2 ^ (k + 3)) (missFit (preAbsorption (k + 3))) (2 * k + 16))) i
+        = (2 : ℚ) ^ expRun (preAbsorption (k + 3)) (k + 3) (2 * k + 16) i / (9 * 2 ^ (k + 1)) := by
+    intro i
+    change ((raw (wRun (2 ^ (k + 3)) (missFit (preAbsorption (k + 3))) (2 * k + 16)) i : ℕ) : ℚ)
+      / ∑ j, ((raw (wRun (2 ^ (k + 3)) (missFit (preAbsorption (k + 3)))
+        (2 * k + 16)) j : ℕ) : ℚ) = _
+    rw [hw i, hwsum]
+  -- the comparator restarted at `s = b`
+  have hb : ∀ i : Fin 3,
+      ((bayesFrom (preAbsorption (k + 3)) (k + 3) (k + 3) (2 * k + 16) i : ℕ) : ℚ)
+        = (2 : ℚ) ^ (expRun (preAbsorption (k + 3)) (k + 3) (k + 3) i
+            + hitCount (preAbsorption (k + 3)) i (k + 3) (2 * k + 16)) := by
+    intro i
+    rw [bayesFrom_eq_pow]
+    push_cast
+    ring
+  have hbsum : ∑ j, ((bayesFrom (preAbsorption (k + 3)) (k + 3) (k + 3)
+      (2 * k + 16) j : ℕ) : ℚ) = 321 * 2 ^ (k + 5) := by
+    rw [Fin.sum_univ_three, hb 0, hb 1, hb 2, hs0', hs1, hs2, hh0, hh1, hh2,
+      show k + 3 + 8 = (k + 5) + 6 by omega,
+      show (0 : ℕ) + (k + 13) = (k + 5) + 8 by omega,
+      show (0 : ℕ) + (k + 5) = k + 5 by omega, pow_add, pow_add]
+    ring
+  have hbd : ∀ i : Fin 3, toDist (bayesFrom (preAbsorption (k + 3)) (k + 3) (k + 3)
+      (2 * k + 16)) i
+        = (2 : ℚ) ^ (expRun (preAbsorption (k + 3)) (k + 3) (k + 3) i
+            + hitCount (preAbsorption (k + 3)) i (k + 3) (2 * k + 16)) / (321 * 2 ^ (k + 5)) := by
+    intro i
+    change ((bayesFrom (preAbsorption (k + 3)) (k + 3) (k + 3) (2 * k + 16) i : ℕ) : ℚ)
+      / ∑ j, ((bayesFrom (preAbsorption (k + 3)) (k + 3) (k + 3) (2 * k + 16) j : ℕ) : ℚ) = _
+    rw [hb i, hbsum]
+  rw [Fin.sum_univ_three, hd 0, hd 1, hd 2, hbd 0, hbd 1, hbd 2, he0', he1', he2',
+    hs0', hs1, hs2, hh0, hh1, hh2]
+  rw [show (2 : ℚ) ^ (k + 1) / (9 * 2 ^ (k + 1)) = 1 / 9 by field_simp,
+    show (2 : ℚ) ^ (k + 3) / (9 * 2 ^ (k + 1)) = 4 / 9 by
+      rw [show k + 3 = (k + 1) + 2 by omega, pow_add]; field_simp; ring,
+    show (2 : ℚ) ^ (k + 3 + 8) / (321 * 2 ^ (k + 5)) = 64 / 321 by
+      rw [show k + 3 + 8 = (k + 5) + 6 by omega, pow_add]; field_simp; ring,
+    show (2 : ℚ) ^ ((0 : ℕ) + (k + 13)) / (321 * 2 ^ (k + 5)) = 256 / 321 by
+      rw [show (0 : ℕ) + (k + 13) = (k + 5) + 8 by omega, pow_add]; field_simp; ring,
+    show (2 : ℚ) ^ ((0 : ℕ) + (k + 5)) / (321 * 2 ^ (k + 5)) = 1 / 321 by
+      rw [show (0 : ℕ) + (k + 5) = k + 5 by omega]; field_simp]
+  norm_num
+
+/-- **The tracking bound is refutable without co-leadership.** With `iL = 1` — the window's only
+never-missing candidate — every other hypothesis of `toDist_wRun_sub_bayesFrom_le` holds and the
+conclusion fails at every budget `b = k + 3`, the discrepancy staying at `850/963` against a bound
+that is already `1/2` at `b = 3`. `preAbsorption_misses_of_ne_one` closes the escape: no other
+candidate could have been taken as `iL`. -/
+theorem toDist_wRun_sub_bayesFrom_not_le_preAbsorption (k : ℕ) :
+    ¬ (∑ i, |toDist (raw (wRun (2 ^ (k + 3)) (missFit (preAbsorption (k + 3))) (2 * k + 16))) i
+          - toDist (bayesFrom (preAbsorption (k + 3)) (k + 3) (k + 3) (2 * k + 16)) i|
+        ≤ 2 * (((3 : ℕ) : ℚ) - 1) / 2 ^ (k + 3)) := by
+  rw [toDist_wRun_sub_bayesFrom_preAbsorption k]
+  have h8 : (8 : ℚ) ≤ (2 : ℚ) ^ (k + 3) := by
+    calc (8 : ℚ) = 2 ^ 3 := by norm_num
+      _ ≤ 2 ^ (k + 3) := pow_le_pow_right₀ (by norm_num) (by omega)
+  intro hle
+  rw [le_div_iff₀ (by positivity : (0 : ℚ) < (2 : ℚ) ^ (k + 3))] at hle
+  push_cast at hle
+  linarith
+
+/-- **The sink-and-recover family** (`C = 2`): candidate `0` climbs to the ceiling and holds it for
+`b + 6` steps while candidate `1` is pinned at the floor, its every miss absorbed there; then `0`
+quits for `b` steps and `1` climbs back to the ceiling. Read from `s = b`, candidate `0` *is* a
+co-leader — and it is the six steps of debt the floor swallowed for `1`, invisible from the
+restart state, that the comparator then cannot price. -/
+def sinkRecover (b : ℕ) : ℕ → Fin 2 → Bool :=
+  fun t i => if t < b + 6 then decide (i = 1) else decide (i = 0)
+
+/-- **No candidate survives the window**: `1` misses through the middle phase, `0` through the
+last. So the never-missing hypothesis fails for *every* choice of `iL`, and it is the only
+hypothesis that does. -/
+theorem sinkRecover_no_survivor (b : ℕ) (hb : 1 ≤ b) (i : Fin 2) :
+    ∃ u, b ≤ u ∧ u < 2 * b + 6 ∧ sinkRecover b u i = true := by
+  fin_cases i
+  · exact ⟨b + 6, by omega, by omega, by simp [sinkRecover]⟩
+  · exact ⟨b, by omega, by omega, by simp [sinkRecover]⟩
+
+/-- The first phase: candidate `0` climbs to the ceiling and holds it; `1` is pinned at the
+floor. -/
+private theorem expRun_sinkRecover_early (b : ℕ) : ∀ n, n ≤ b + 6 →
+    expRun (sinkRecover b) b n 0 = min n b ∧ expRun (sinkRecover b) b n 1 = 0 := by
+  intro n
+  induction n with
+  | zero => exact fun _ => ⟨by simp [expRun], by simp [expRun]⟩
+  | succ n ih =>
+      intro hn
+      obtain ⟨h0, h1⟩ := ih (by omega)
+      have hm0 : sinkRecover b n 0 = false := by simp [sinkRecover]; omega
+      have hm1 : sinkRecover b n 1 = true := by simp [sinkRecover]; omega
+      have hδ : (∃ j : Fin 2, expRun (sinkRecover b) b n j = b
+          ∧ sinkRecover b n j = false) ↔ b ≤ n := by
+        rw [Fin.exists_fin_two]
+        simp [hm0, hm1, h0]
+      have hstep : ∀ i : Fin 2, expRun (sinkRecover b) b (n + 1) i
+          = (expRun (sinkRecover b) b n i + (if sinkRecover b n i then 0 else 1))
+            - (if b ≤ n then 1 else 0) := by
+        intro i
+        change expStep b (sinkRecover b n) (expRun (sinkRecover b) b n) i = _
+        rw [expStep]
+        congr 1
+        by_cases h : b ≤ n
+        · rw [if_pos h, if_pos (hδ.mpr h)]
+        · rw [if_neg h, if_neg (fun hh => h (hδ.mp hh))]
+      clear hδ
+      refine ⟨?_, ?_⟩
+      · rw [hstep 0, if_neg (by simp [hm0]), h0]
+        split <;> omega
+      · rw [hstep 1, if_pos hm1, h1]
+        split <;> omega
+
+/-- The second phase: candidate `1` climbs back to the ceiling out of the floor, while `0` holds
+it — no rescale fires until `1` arrives, so `0` is never charged for quitting. -/
+private theorem expRun_sinkRecover_late (b : ℕ) : ∀ j, j ≤ b →
+    expRun (sinkRecover b) b (b + 6 + j) 0 = b
+      ∧ expRun (sinkRecover b) b (b + 6 + j) 1 = min j b := by
+  intro j
+  induction j with
+  | zero =>
+      intro _
+      obtain ⟨h0, h1⟩ := expRun_sinkRecover_early b (b + 6) (le_refl _)
+      exact ⟨by rw [Nat.add_zero, h0]; omega, by rw [Nat.add_zero, h1]; omega⟩
+  | succ j ih =>
+      intro hj
+      obtain ⟨h0, h1⟩ := ih (by omega)
+      have hm0 : sinkRecover b (b + 6 + j) 0 = true := by simp [sinkRecover]
+      have hm1 : sinkRecover b (b + 6 + j) 1 = false := by simp [sinkRecover]
+      have hδ : (∃ i : Fin 2, expRun (sinkRecover b) b (b + 6 + j) i = b
+          ∧ sinkRecover b (b + 6 + j) i = false) ↔ b ≤ j := by
+        rw [Fin.exists_fin_two]
+        simp [hm0, hm1, h1]
+      have hstep : ∀ i : Fin 2, expRun (sinkRecover b) b (b + 6 + (j + 1)) i
+          = (expRun (sinkRecover b) b (b + 6 + j) i
+              + (if sinkRecover b (b + 6 + j) i then 0 else 1))
+            - (if b ≤ j then 1 else 0) := by
+        intro i
+        change expStep b (sinkRecover b (b + 6 + j)) (expRun (sinkRecover b) b (b + 6 + j)) i = _
+        rw [expStep]
+        congr 1
+        by_cases h : b ≤ j
+        · rw [if_pos h, if_pos (hδ.mpr h)]
+        · rw [if_neg h, if_neg (fun hh => h (hδ.mp hh))]
+      clear hδ
+      refine ⟨?_, ?_⟩
+      · rw [hstep 0, if_pos hm0, h0]
+        split <;> omega
+      · rw [hstep 1, if_neg (by simp [hm1]), h1]
+        split <;> omega
+
+private theorem missCount_sinkRecover_zero (b n : ℕ) :
+    missCount (sinkRecover b) 0 n = n - (b + 6) := by
+  induction n with
+  | zero => rw [missCount_zero]; omega
+  | succ n ih =>
+      rw [missCount_succ, ih]
+      by_cases h : b + 6 ≤ n
+      · rw [if_pos (show sinkRecover b n 0 = true by simp [sinkRecover]; omega)]
+        omega
+      · rw [if_neg (show ¬ (sinkRecover b n 0 = true) by simp [sinkRecover]; omega)]
+        omega
+
+private theorem missCount_sinkRecover_one (b n : ℕ) :
+    missCount (sinkRecover b) 1 n = min n (b + 6) := by
+  induction n with
+  | zero => rw [missCount_zero]; omega
+  | succ n ih =>
+      rw [missCount_succ, ih]
+      by_cases h : n < b + 6
+      · rw [if_pos (show sinkRecover b n 1 = true by simp [sinkRecover]; omega)]
+        omega
+      · rw [if_neg (show ¬ (sinkRecover b n 1 = true) by simp [sinkRecover]; omega)]
+        omega
+
+/-- **Co-leadership does hold at the restart point** here: candidate `0` is at the ceiling at
+`s = b`, so it is the never-missing hypothesis alone that the family drops. -/
+theorem sinkRecover_coleader (b : ℕ) :
+    ∀ j : Fin 2, expRun (sinkRecover b) b b j ≤ expRun (sinkRecover b) b b 0 := by
+  obtain ⟨h0, h1⟩ := expRun_sinkRecover_early b b (by omega)
+  rw [Fin.forall_fin_two]
+  exact ⟨le_refl _, by rw [h0, h1]; omega⟩
+
+/-- **The discrepancy without a surviving candidate: `63/65`, at every budget `b = k + 2`.** The
+floored run ends symmetric — `1` has climbed all the way back, and `0` was never charged for
+quitting, because no rescale fires until `1` arrives. The comparator restarted at `s = b` reads
+`(64/65, 1/65)`: it inherits `0`'s ceiling and `1`'s floor as the *prior*, then credits `0` the six
+hits it takes before quitting and holds `1`'s six misses against it — misses the floor had already
+absorbed, so the run itself has forgotten them. -/
+theorem toDist_wRun_sub_bayesFrom_sinkRecover (k : ℕ) :
+    ∑ i, |toDist (raw (wRun (2 ^ (k + 2)) (missFit (sinkRecover (k + 2))) (2 * k + 10))) i
+        - toDist (bayesFrom (sinkRecover (k + 2)) (k + 2) (k + 2) (2 * k + 10)) i|
+      = 63 / 65 := by
+  obtain ⟨he0, he1⟩ := expRun_sinkRecover_late (k + 2) (k + 2) (le_refl _)
+  rw [show (k + 2) + 6 + (k + 2) = 2 * k + 10 by omega] at he0 he1
+  have he1' : expRun (sinkRecover (k + 2)) (k + 2) (2 * k + 10) 1 = k + 2 := by rw [he1]; omega
+  obtain ⟨hs0, hs1⟩ := expRun_sinkRecover_early (k + 2) (k + 2) (by omega)
+  have hs0' : expRun (sinkRecover (k + 2)) (k + 2) (k + 2) 0 = k + 2 := by rw [hs0]; omega
+  have hh0 : hitCount (sinkRecover (k + 2)) 0 (k + 2) (2 * k + 10) = 6 := by
+    rw [hitCount, missCount_sinkRecover_zero, missCount_sinkRecover_zero]; omega
+  have hh1 : hitCount (sinkRecover (k + 2)) 1 (k + 2) (2 * k + 10) = k + 2 := by
+    rw [hitCount, missCount_sinkRecover_one, missCount_sinkRecover_one]; omega
+  have hpk : (0 : ℚ) < (2 : ℚ) ^ (k + 2) := by positivity
+  have hw : ∀ i : Fin 2,
+      ((raw (wRun (2 ^ (k + 2)) (missFit (sinkRecover (k + 2))) (2 * k + 10)) i : ℕ) : ℚ)
+        = (2 : ℚ) ^ expRun (sinkRecover (k + 2)) (k + 2) (2 * k + 10) i := by
+    intro i
+    rw [wRun_eq_pow_expRun]
+    push_cast
+    ring
+  have hwsum : ∑ j, ((raw (wRun (2 ^ (k + 2)) (missFit (sinkRecover (k + 2)))
+      (2 * k + 10)) j : ℕ) : ℚ) = 2 * 2 ^ (k + 2) := by
+    rw [Fin.sum_univ_two, hw 0, hw 1, he0, he1']
+    ring
+  have hd : ∀ i : Fin 2,
+      toDist (raw (wRun (2 ^ (k + 2)) (missFit (sinkRecover (k + 2))) (2 * k + 10))) i
+        = (2 : ℚ) ^ expRun (sinkRecover (k + 2)) (k + 2) (2 * k + 10) i / (2 * 2 ^ (k + 2)) := by
+    intro i
+    change ((raw (wRun (2 ^ (k + 2)) (missFit (sinkRecover (k + 2))) (2 * k + 10)) i : ℕ) : ℚ)
+      / ∑ j, ((raw (wRun (2 ^ (k + 2)) (missFit (sinkRecover (k + 2)))
+        (2 * k + 10)) j : ℕ) : ℚ) = _
+    rw [hw i, hwsum]
+  have hb : ∀ i : Fin 2,
+      ((bayesFrom (sinkRecover (k + 2)) (k + 2) (k + 2) (2 * k + 10) i : ℕ) : ℚ)
+        = (2 : ℚ) ^ (expRun (sinkRecover (k + 2)) (k + 2) (k + 2) i
+            + hitCount (sinkRecover (k + 2)) i (k + 2) (2 * k + 10)) := by
+    intro i
+    rw [bayesFrom_eq_pow]
+    push_cast
+    ring
+  have hbsum : ∑ j, ((bayesFrom (sinkRecover (k + 2)) (k + 2) (k + 2)
+      (2 * k + 10) j : ℕ) : ℚ) = 65 * 2 ^ (k + 2) := by
+    rw [Fin.sum_univ_two, hb 0, hb 1, hs0', hs1, hh0, hh1,
+      show k + 2 + 6 = (k + 2) + 6 by omega, show (0 : ℕ) + (k + 2) = k + 2 by omega, pow_add]
+    ring
+  have hbd : ∀ i : Fin 2, toDist (bayesFrom (sinkRecover (k + 2)) (k + 2) (k + 2)
+      (2 * k + 10)) i
+        = (2 : ℚ) ^ (expRun (sinkRecover (k + 2)) (k + 2) (k + 2) i
+            + hitCount (sinkRecover (k + 2)) i (k + 2) (2 * k + 10)) / (65 * 2 ^ (k + 2)) := by
+    intro i
+    change ((bayesFrom (sinkRecover (k + 2)) (k + 2) (k + 2) (2 * k + 10) i : ℕ) : ℚ)
+      / ∑ j, ((bayesFrom (sinkRecover (k + 2)) (k + 2) (k + 2) (2 * k + 10) j : ℕ) : ℚ) = _
+    rw [hb i, hbsum]
+  rw [Fin.sum_univ_two, hd 0, hd 1, hbd 0, hbd 1, he0, he1', hs0', hs1, hh0, hh1]
+  rw [show (2 : ℚ) ^ (k + 2) / (2 * 2 ^ (k + 2)) = 1 / 2 by field_simp,
+    show (2 : ℚ) ^ (k + 2 + 6) / (65 * 2 ^ (k + 2)) = 64 / 65 by
+      rw [pow_add]; field_simp; ring,
+    show (2 : ℚ) ^ ((0 : ℕ) + (k + 2)) / (65 * 2 ^ (k + 2)) = 1 / 65 by
+      rw [show (0 : ℕ) + (k + 2) = k + 2 by omega]; field_simp]
+  norm_num
+
+/-- **The tracking bound is refutable without a never-missing candidate.** Co-leadership at `s`
+holds — `sinkRecover_coleader` — and the conclusion still fails at every budget `b = k + 2`, the
+discrepancy staying at `63/65` against a bound already `1/2` at `b = 2`. So the two hypotheses of
+`toDist_wRun_sub_bayesFrom_le` are independent, and neither can be dropped. -/
+theorem toDist_wRun_sub_bayesFrom_not_le_sinkRecover (k : ℕ) :
+    ¬ (∑ i, |toDist (raw (wRun (2 ^ (k + 2)) (missFit (sinkRecover (k + 2))) (2 * k + 10))) i
+          - toDist (bayesFrom (sinkRecover (k + 2)) (k + 2) (k + 2) (2 * k + 10)) i|
+        ≤ 2 * (((2 : ℕ) : ℚ) - 1) / 2 ^ (k + 2)) := by
+  rw [toDist_wRun_sub_bayesFrom_sinkRecover k]
+  have h4 : (4 : ℚ) ≤ (2 : ℚ) ^ (k + 2) := by
+    calc (4 : ℚ) = 2 ^ 2 := by norm_num
+      _ ≤ 2 ^ (k + 2) := pow_le_pow_right₀ (by norm_num) (by omega)
+  intro hle
+  rw [le_div_iff₀ (by positivity : (0 : ℚ) < (2 : ℚ) ^ (k + 2))] at hle
+  push_cast at hle
+  linarith
+
 end Accumulation
 
 /-! ## The reading settles
@@ -1978,8 +2727,11 @@ theorem argmax_wRun_mono [NeZero C] (M : ℕ → Fin C → Bool) {iR : Fin C} (h
       (Nat.le_zero.mp ((missCount_mono M _ h).trans hz.le))
 
 /-- A non-decreasing `ℕ`-valued sequence below a fixed bound is eventually constant. The bound is
-what makes the supremum attained; without it `ℕ`'s `sSup` would answer `0`. -/
-private theorem exists_eventually_const_of_monotone {K : ℕ} (g : ℕ → ℕ)
+what makes the supremum attained; without it `ℕ`'s `sSup` would answer `0`.
+
+Stated of a bare sequence and used twice: here for the reading's index, bounded by the candidate
+count, and in `BasinSettling` for a never-missing candidate's weight, bounded by the budget. -/
+theorem exists_eventually_const_of_monotone {K : ℕ} (g : ℕ → ℕ)
     (hmono : ∀ {t t' : ℕ}, t ≤ t' → g t ≤ g t') (hlt : ∀ t, g t < K) :
     ∃ T, ∀ t, T ≤ t → g t = g T := by
   have hbdd : BddAbove (Set.range g) := ⟨K, by rintro _ ⟨t, rfl⟩; exact (hlt t).le⟩
