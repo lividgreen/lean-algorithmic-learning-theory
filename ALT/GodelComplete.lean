@@ -14,8 +14,9 @@ set_option linter.style.longLine false
 # Discharging the Gödel `Incompleteness` hypothesis via Foundation
 
 Provenance: closes the imported hypothesis of `ALT/GodelCore.lean` — and hence the capstone
-`ALT/Reflective.lean` — using upstream `FormalizedFormalLogic/Foundation` (pinned rev `b47cf447`,
-Lean 4.31 + Mathlib v4.31), via `LO.FirstOrder.Arithmetic.exists_true_but_unprovable_sentence` (Gödel's first
+`ALT/Reflective.lean` — using upstream `FormalizedFormalLogic/Foundation`, first discharged at
+rev `b47cf447` on Lean 4.31 + Mathlib v4.31 and re-verified at each pin bump since, via
+`LO.FirstOrder.Arithmetic.exists_true_but_unprovable_sentence` (Gödel's first
 incompleteness theorem for arithmetic theories `T` with `[T.Δ₁] [𝗥₀ ⪯ T] [T.SoundOnHierarchy 𝚺 1]`).
 
 ## The shared `Incompleteness` symbol

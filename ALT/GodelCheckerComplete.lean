@@ -51,8 +51,9 @@ certified.
 ## The computable-AND-complete decider: a documented WALL
 Merging FV-8's *computable* checker (`GodelChecker.Prf`, which `#eval`s but is incomplete) with this
 file's *complete* decision (`Decide`, over `Bootstrapping.Proof`, but `noncomputable`) into ONE
-computable-and-complete bounded decider is **walled** against the pinned Foundation (rev `b47cf447`,
-Lean 4.31). The two probe routes and their precise gaps:
+computable-and-complete bounded decider is **walled**; first probed against Foundation rev
+`b47cf447` on Lean 4.31, and the wall stands at every pin since. The two probe routes and their
+precise gaps:
 
 * **(a) reflection over the arithmetized predicate.** `Bootstrapping.Proof T p (⌜φ⌝)` unfolds to
   `DerivationOf`, a **`noncomputable` Δ₁ FIXPOINT** — `Derivation T := (construction T).Fixpoint ![]`

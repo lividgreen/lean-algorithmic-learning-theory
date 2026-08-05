@@ -1,5 +1,5 @@
 name = "alt"
-version = "1.5.0"
+version = "1.6.0"
 keywords = ["math", "learning-theory", "probability", "computability", "realizability"]
 defaultTargets = ["ALT"]
 
@@ -12,12 +12,12 @@ maxSynthPendingDepth = 3
 [[require]]
 name = "mathlib"
 scope = "leanprover-community"
-rev = "v4.31.0"
+rev = "v4.32.2"
 
 [[require]]
 name = "Foundation"
 git = "https://github.com/FormalizedFormalLogic/Foundation"
-rev = "1534fd85d563926bbf96b3147a548b9506ca7e3f"
+rev = "dbf334e5f393f93f9ea8d59f09cbb00da6fc1ecc"
 
 [[lean_lib]]
 name = "ALT"

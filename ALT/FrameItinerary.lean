@@ -28,6 +28,12 @@ than a generalization of `gradedBuilder`, and the boundary this module states is
 `ledger_graded` already draws for Theorem 6.4. What this module machine-checks is the display's
 counting core, the block-to-block bijection Lemma 7.1's stabilizer computation gives when read at a
 joint partition instead of at the reference frame alone.
+
+A sharper fact holds at an injective itinerary ([Persistence] §8, Proposition 8.38(i)): when
+`itinerary ℓ S` is injective, `U` is the ONLY permutation consistent with the frames held at `S`,
+not merely the count's own witness — `consistent_unique_of_injective`, with
+`consistent_unique_of_injective_bminus` its instance at `S = Bminus B`, the set Proposition 8.38's
+own argument reads.
 -/
 
 namespace FrameItinerary
@@ -155,6 +161,23 @@ theorem consistent_card {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m} (hcar
   rw [Nat.card_congr (consistentEquivStab hcar hS)]
   exact card_stabilizer_lens_dom (itinerary ℓ S)
 
+/-! ### Proposition 8.38(i): uniqueness at a separating set -/
+
+/-- **At a separating set the world is the unique consistent permutation** ([Persistence] §8,
+Proposition 8.38(i)): when `itinerary ℓ S` is injective, `x` and `U x` share exactly the pattern
+`itinerary ℓ S` assigns to `x`'s predecessor under any `V ∈ Consistent ℓ S` — since both `U` and `V`
+carry the frames at `S` back to the frames one step earlier — so injectivity forces `V x = U x` at
+every `x` directly, with no appeal to `consistent_card`'s counting route. -/
+theorem consistent_unique_of_injective {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m}
+    (hcar : PermCarries U ℓ) {S : Finset ℕ} (hS : 0 ∉ S)
+    (hinj : Function.Injective (itinerary ℓ S)) :
+    Consistent ℓ S = {U} := by
+  have hU : U ∈ Consistent ℓ S := mem_consistent_of_permCarries hcar hS
+  refine Set.eq_singleton_iff_unique_mem.mpr ⟨hU, fun V hV => Equiv.ext fun x => hinj ?_⟩
+  funext t
+  change ℓ (t : ℕ) (V x) = ℓ (t : ℕ) (U x)
+  rw [hV (t : ℕ) t.2 x, hU (t : ℕ) t.2 x]
+
 /-! ### Theorem 6.5(ii): any frames at all -/
 
 /-- **`B^-`** ([Persistence] §6, Theorem 6.5(ii)): the members of `B` whose predecessor is also in
@@ -176,6 +199,15 @@ theorem consistent_card_bminus {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m
     Nat.card ↥(Consistent ℓ (Bminus B))
       = ∏ z : (↥(Bminus B) → Fin m), (Nat.card {x : Fin n // itinerary ℓ (Bminus B) x = z})! :=
   consistent_card hcar (zero_not_mem_Bminus B)
+
+/-- **The decoder at `Bminus B`** ([Persistence] §8, Proposition 8.38(i), read at the times
+Theorem 6.5(ii) and Proposition 8.20's proof draw from): `consistent_unique_of_injective` at
+`S := Bminus B`, which already excludes `0` (`zero_not_mem_Bminus`). -/
+theorem consistent_unique_of_injective_bminus {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m}
+    (hcar : PermCarries U ℓ) (B : Finset ℕ)
+    (hinj : Function.Injective (itinerary ℓ (Bminus B))) :
+    Consistent ℓ (Bminus B) = {U} :=
+  consistent_unique_of_injective hcar (zero_not_mem_Bminus B) hinj
 
 /-! ### Theorem 6.5(i): consecutive frames, at the truncated itinerary -/
 
@@ -298,6 +330,66 @@ theorem consistent_card_one {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m} (
   rw [hcard]
   exact card_stabilizer_lens (ℓ 0)
 
+/-! ### Proposition 8.30: a reading constant off an invariant region -/
+
+/-- **A region left unread carries no constraint** ([Persistence] §8, Proposition 8.30's own
+reading, generalized off its specific construction): when the reference frame is constant off a
+`U`-invariant block `B`, EVERY frame is constant off `B`, and at the SAME value — `B`'s complement
+is closed under `U` and hence under every `(U ^ t)⁻¹` (`image_perm_eq`/`mem_iff_apply_mem`,
+[PersistenceCapacity]), so `permCarries_step`'s identity `ℓ t z = ℓ 0 ((U ^ t)⁻¹ z)` reads the same
+off-`B` value at every `t`. `Bᶜ` therefore sits inside a single block of the joint partition
+`itinerary ℓ S` induces, and the whole symmetric group of `Bᶜ` stays consistent with the frames held
+at `S`: the frames pin down nothing at all on the complement. -/
+theorem consistent_card_ge_factorial_compl {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m}
+    (hcar : PermCarries U ℓ) {S : Finset ℕ} (hS : 0 ∉ S)
+    {B : Finset (Fin n)} (hB : ∀ i ∈ B, U i ∈ B)
+    (hconst : ∀ x ∉ B, ∀ y ∉ B, ℓ 0 x = ℓ 0 y) :
+    (Bᶜ.card)! ≤ Nat.card ↥(Consistent ℓ S) := by
+  rw [consistent_card hcar hS]
+  rcases Finset.eq_empty_or_nonempty (Bᶜ : Finset (Fin n)) with hEmpty | ⟨x0, hx0⟩
+  · simp only [hEmpty, Finset.card_empty, Nat.factorial_zero]
+    exact Finset.one_le_prod' fun z _ => Nat.one_le_iff_ne_zero.mpr (Nat.factorial_ne_zero _)
+  · have hx0' : x0 ∉ B := Finset.mem_compl.mp hx0
+    have hBcInv : ∀ i ∈ (Bᶜ : Finset (Fin n)), U⁻¹ i ∈ (Bᶜ : Finset (Fin n)) := by
+      intro i hi
+      simp only [Finset.mem_compl] at hi ⊢
+      intro hmem
+      exact hi (by simpa using (mem_iff_apply_mem hB (U⁻¹ i)).mpr hmem)
+    have hpowBc : ∀ (t : ℕ) (x : Fin n), x ∈ (Bᶜ : Finset (Fin n)) →
+        (U⁻¹ ^ t) x ∈ (Bᶜ : Finset (Fin n)) := fun t x hx => pow_mem_of_closed hBcInv t hx
+    have hconstall : ∀ (t : ℕ) (y : Fin n), y ∈ (Bᶜ : Finset (Fin n)) → ℓ t y = ℓ 0 x0 := by
+      intro t y hy
+      have hyB : (U ^ t)⁻¹ y ∈ (Bᶜ : Finset (Fin n)) := by
+        rw [← inv_pow]; exact hpowBc t y hy
+      have hstep : ℓ t y = ℓ 0 ((U ^ t)⁻¹ y) := by
+        have h := hcar.2 t ((U ^ t)⁻¹ y)
+        have happly : (U ^ t) ((U ^ t)⁻¹ y) = y := Equiv.apply_symm_apply (U ^ t) y
+        rwa [happly] at h
+      rw [hstep]
+      exact hconst _ (Finset.mem_compl.mp hyB) x0 hx0'
+    have hitfib : ∀ y ∈ (Bᶜ : Finset (Fin n)), itinerary ℓ S y = itinerary ℓ S x0 := by
+      intro y hy
+      funext t
+      change ℓ (t : ℕ) y = ℓ (t : ℕ) x0
+      rw [hconstall (t : ℕ) y hy, hconstall (t : ℕ) x0 hx0]
+    have hinj : Function.Injective (fun x : ↥(Bᶜ : Finset (Fin n)) =>
+        (⟨x.1, hitfib x.1 x.2⟩ : {z : Fin n // itinerary ℓ S z = itinerary ℓ S x0})) := by
+      intro a b hab
+      exact Subtype.ext (by simpa using hab)
+    have hcard_le : Nat.card ↥(Bᶜ : Finset (Fin n))
+        ≤ Nat.card {z : Fin n // itinerary ℓ S z = itinerary ℓ S x0} :=
+      Nat.card_le_card_of_injective _ hinj
+    have hBcNatCard : Nat.card ↥(Bᶜ : Finset (Fin n)) = Bᶜ.card := by
+      rw [Nat.card_eq_fintype_card, Fintype.card_coe]
+    have hle : Bᶜ.card ≤ Nat.card {z : Fin n // itinerary ℓ S z = itinerary ℓ S x0} :=
+      hBcNatCard ▸ hcard_le
+    calc (Bᶜ.card)! ≤ (Nat.card {z : Fin n // itinerary ℓ S z = itinerary ℓ S x0})! :=
+          Nat.factorial_le hle
+      _ ≤ ∏ z : (↥S → Fin m), (Nat.card {x : Fin n // itinerary ℓ S x = z})! :=
+          Finset.single_le_prod' (f := fun z => (Nat.card {x : Fin n // itinerary ℓ S x = z})!)
+            (fun z _ => Nat.one_le_iff_ne_zero.mpr (Nat.factorial_ne_zero _))
+            (Finset.mem_univ (itinerary ℓ S x0))
+
 /-! ### Two load-bearing hypotheses
 
 Both witnesses are checked exhaustively over the concrete family below (`n = 3`, `m = 2`): each
@@ -362,11 +454,66 @@ private theorem guard_permCarries_load_bearing :
   rw [hempty, Nat.card_of_isEmpty]
   exact hpos.symm
 
+private def guardOtherV : Perm (Fin 3) := Equiv.swap 1 2 * Equiv.swap 0 1
+
+/-- **Injectivity of `itinerary ℓ S` is load-bearing** ([Persistence] §8, Proposition 8.38(i)'s
+hypothesis): at the family above, `S = {1}` has a non-injective `itinerary guardSkewLens S` — both
+`1` and `2` read the pattern `0` — and `Consistent guardSkewLens S` holds the two DISTINCT
+permutations `guardSkewU` and `guardOtherV`, the 3-cycle sending `0 ↦ 2 ↦ 1 ↦ 0`, so
+`consistent_unique_of_injective`'s conclusion fails without the hypothesis. -/
+private theorem guard_hinj_load_bearing :
+    ¬ Function.Injective (itinerary guardSkewLens ({1} : Finset ℕ)) ∧
+      guardSkewU ≠ guardOtherV ∧
+      guardOtherV ∈ Consistent guardSkewLens ({1} : Finset ℕ) := by
+  refine ⟨?_, by decide, ?_⟩
+  · intro hinj
+    have h12 : itinerary guardSkewLens ({1} : Finset ℕ) 1
+        = itinerary guardSkewLens ({1} : Finset ℕ) 2 := by decide
+    exact absurd (hinj h12) (by decide)
+  · simp only [Consistent, Set.mem_setOf_eq]
+    decide
+
+private def guardRegionU : Perm (Fin 4) := Equiv.swap 0 1 * Equiv.swap 2 3
+private def guardRegionFrame : Fin 4 → Fin 3 := ![0, 1, 2, 2]
+private def guardRegionLens : ℕ → Fin 4 → Fin 3 := fun t => guardRegionFrame ∘ ⇑(guardRegionU ^ t)⁻¹
+private def guardRegionB : Finset (Fin 4) := {0, 1}
+private def guardRegionV : Perm (Fin 4) := Equiv.swap 0 1
+
+private theorem guardRegionLens_carries : PermCarries guardRegionU guardRegionLens := by
+  refine ⟨by decide, fun t x => ?_⟩
+  change guardRegionFrame ((guardRegionU ^ t)⁻¹ ((guardRegionU ^ t) x)) = guardRegionFrame x
+  simp
+
+/-- **`consistent_card_ge_factorial_compl` is non-vacuous, and contrasts with Proposition 8.38(i)**
+([Persistence] §8, Proposition 8.30's own reading — Remark 8.19's degenerate case made concrete): at
+`n = 4`, `U = swap 0 1 * swap 2 3`, `ℓ 0 = ![0, 1, 2, 2]`, `ℓ t := ℓ 0 ∘ (U ^ t)⁻¹` — a genuine
+`PermCarries` family (`guardRegionLens_carries`) — the block `B = {0, 1}` is `U`-closed and `ℓ 0` is
+constant off it (both checked exhaustively below), so `consistent_card_ge_factorial_compl` applies
+here with a genuinely nontrivial floor: `Bᶜ = {2, 3}` forces at least `2! = 2`, not merely `1`.
+Read at `S = {1, 2}`, the itinerary sends both `2` and `3` to the pattern `(2, 2)` — non-injective —
+so `consistent_unique_of_injective` does not apply; and unlike there, `Consistent ℓ S` is genuinely
+NOT a singleton: `guardRegionV := swap 0 1`, distinct from `U` (it leaves `2` and `3` alone), is a
+second permutation consistent with the frames held at `S`. The freedom is exactly the region left
+unread, not injectivity failing in the abstract. -/
+private theorem guard_region_nonvacuous :
+    ¬ Function.Injective (itinerary guardRegionLens ({1, 2} : Finset ℕ)) ∧
+      (∀ i ∈ guardRegionB, guardRegionU i ∈ guardRegionB) ∧
+      (∀ x ∉ guardRegionB, ∀ y ∉ guardRegionB, guardRegionLens 0 x = guardRegionLens 0 y) ∧
+      guardRegionV ≠ guardRegionU ∧
+      guardRegionV ∈ Consistent guardRegionLens ({1, 2} : Finset ℕ) := by
+  refine ⟨?_, by decide, by decide, by decide, ?_⟩
+  · intro hinj
+    have h23 : itinerary guardRegionLens ({1, 2} : Finset ℕ) 2
+        = itinerary guardRegionLens ({1, 2} : Finset ℕ) 3 := by decide
+    exact absurd (hinj h23) (by decide)
+  · simp only [Consistent, Set.mem_setOf_eq]
+    decide
+
 end FrameItinerary
 
 /-! ## Axiom audit
 
-The five capstones above are `#print axioms`-clean on the standard triple, and the guards below
+The eight capstones above are `#print axioms`-clean on the standard triple, and the guards below
 make that build-enforced. -/
 
 set_option linter.style.longLine false
@@ -379,9 +526,17 @@ set_option linter.style.longLine false
 #guard_msgs (whitespace := lax) in
 #print axioms FrameItinerary.consistent_card
 
+/-- info: 'FrameItinerary.consistent_unique_of_injective' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms FrameItinerary.consistent_unique_of_injective
+
 /-- info: 'FrameItinerary.consistent_card_bminus' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms FrameItinerary.consistent_card_bminus
+
+/-- info: 'FrameItinerary.consistent_unique_of_injective_bminus' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms FrameItinerary.consistent_unique_of_injective_bminus
 
 /-- info: 'FrameItinerary.consistent_card_consecutive' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
@@ -390,3 +545,7 @@ set_option linter.style.longLine false
 /-- info: 'FrameItinerary.consistent_card_one' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms FrameItinerary.consistent_card_one
+
+/-- info: 'FrameItinerary.consistent_card_ge_factorial_compl' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms FrameItinerary.consistent_card_ge_factorial_compl

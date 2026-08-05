@@ -702,6 +702,48 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms PersistenceCapacity.ledger_graded_faithful
 
+-- Remark 6.6: the paired frame — an address is paid once. The paired frame as a lens
+-- (`pairLens`), its projections and descent-transport clause, the zip bound
+-- (`KE_lensCode_pairLens_le`), and the graded ledger read at the paired frame instead of the two
+-- separate frames (`ledger_graded_paired`, with `ledger_graded_paired_faithful` its non-vacuity
+-- check at singleton fibres).
+
+/-- info: 'PersistenceCapacity.pairLens_left' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PersistenceCapacity.pairLens_left
+
+/-- info: 'PersistenceCapacity.pairLens_right' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PersistenceCapacity.pairLens_right
+
+/-- info: 'PersistenceCapacity.pairLens_comp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PersistenceCapacity.pairLens_comp
+
+/-- info: 'PersistenceCapacity.pairLens_descends_iff' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PersistenceCapacity.pairLens_descends_iff
+
+/-- info: 'PersistenceCapacity.zipLists_eq_lensTable' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PersistenceCapacity.zipLists_eq_lensTable
+
+/-- info: 'PersistenceCapacity.zipTableFn_eq' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PersistenceCapacity.zipTableFn_eq
+
+/-- info: 'PersistenceCapacity.KE_lensCode_pairLens_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PersistenceCapacity.KE_lensCode_pairLens_le
+
+/-- info: 'PersistenceCapacity.ledger_graded_paired' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PersistenceCapacity.ledger_graded_paired
+
+/-- info: 'PersistenceCapacity.ledger_graded_paired_faithful' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PersistenceCapacity.ledger_graded_paired_faithful
+
 /-- info: 'PersistenceCapacity.CbH_le_pointwise' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms PersistenceCapacity.CbH_le_pointwise

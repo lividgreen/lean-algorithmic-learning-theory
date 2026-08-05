@@ -3623,6 +3623,367 @@ theorem ledger_graded_faithful (hn : 0 < n) {U : Perm (Fin n)} {ℓ : ℕ → Fi
   simp only [Nat.size_one, Nat.mul_one] at hbound
   omega
 
+/-! ## Remark 6.6: the paired frame — an address is paid once
+
+[Persistence] §6, Remark 6.6: Theorem 6.4's decoder never needs its two frames separately, only the
+two tables *together*. Writing `ℓ₀ ⊗ ℓ₁ : [n] → M × M` for the paired frame and pricing it via
+`Nat.pair` rather than a genuine product type keeps the loaded alphabet at `m * m` — no size
+parameter beyond `m` itself enters, which is what keeps the decoder's constant absolute.
+The remark's two displays are `K(U) ≤ K(ℓ₀ ⊗ ℓ₁) + log₂ ∏ᵢ fᵢ! + O(1)` and
+`K(ℓ₀ ⊗ ℓ₁) ≤ K(ℓ₀) + K(ℓ₁) + O(1)`; the first is `ledger_graded_paired` below, reusing
+`ledger_graded`'s own decoder read off one table instead of two, and the second is
+`KE_lensCode_pairLens_le`. Both are machine-checked; the boundary is FV-17's, unchanged — the
+display's unit-coefficient length-conditional index field stays paper-level,
+exactly as it does at two separate frames. -/
+
+private theorem pair_lt_mul_self {a b k : ℕ} (ha : a < k) (hb : b < k) : Nat.pair a b < k * k := by
+  rw [Nat.pair]
+  split
+  · next h => nlinarith
+  · next h => nlinarith
+
+/-- **The paired frame, as a lens** ([Persistence] §6, Remark 6.6): the two frames read together,
+`x ↦ Nat.pair (ℓ₀ x) (ℓ₁ x)`, landing in `Fin (m * m)` by `pair_lt_mul_self`. The pairing fills
+that alphabet rather than embedding into a larger one, so `M × M` is the honest
+codomain; only the upper bound is proved here, which is all the ledger below consumes.
+`Nat.pair`, not `finProdFinEquiv`, is a fidelity
+requirement: a `finProdFinEquiv` pairing would have to LOAD `m` to reconstruct itself, charging
+`Nat.size m` and turning the remark's `O(1)` into an `O(log₂ m)` the paper does not claim. -/
+def pairLens (ℓ₀ ℓ₁ : Fin n → Fin m) : Fin n → Fin (m * m) :=
+  fun x => ⟨Nat.pair (ℓ₀ x : ℕ) (ℓ₁ x : ℕ), pair_lt_mul_self (ℓ₀ x).2 (ℓ₁ x).2⟩
+
+/-- Projection recovers the first frame. -/
+theorem pairLens_left (ℓ₀ ℓ₁ : Fin n → Fin m) (x : Fin n) :
+    (Nat.unpair (pairLens ℓ₀ ℓ₁ x : ℕ)).1 = (ℓ₀ x : ℕ) := by
+  simp [pairLens]
+
+/-- Projection recovers the second frame. -/
+theorem pairLens_right (ℓ₀ ℓ₁ : Fin n → Fin m) (x : Fin n) :
+    (Nat.unpair (pairLens ℓ₀ ℓ₁ x : ℕ)).2 = (ℓ₁ x : ℕ) := by
+  simp [pairLens]
+
+/-- **Composing on the right commutes with pairing**: the paired frame of two precomposed lenses is
+the precomposition of the paired frame — near-definitional, and the reason one description of a
+region serves both frames at once (consumed by `pairLens_descends_iff`). -/
+theorem pairLens_comp {k : ℕ} (ℓ₀ ℓ₁ : Fin n → Fin m) (φ : Fin k → Fin n) :
+    pairLens ℓ₀ ℓ₁ ∘ φ = pairLens (ℓ₀ ∘ φ) (ℓ₁ ∘ φ) := by
+  funext x
+  simp [pairLens, Function.comp_apply]
+
+/-- **The transport clause, as descent** ([Persistence] §6, Remark 6.6: "the quotient of the pair is
+the pair of the quotients"): a map descends the paired frame exactly when it descends both frames
+separately. The economy is exactly `pairLens_comp`'s: composing on the right commutes with pairing,
+so a single description of the region or the quotient carries both frames' descent conditions at
+once, and the address for one is the address for the other. -/
+theorem pairLens_descends_iff {α : Type*} (κ : Fin n → α) (ℓ₀ ℓ₁ : Fin n → Fin m) :
+    (∀ x y, κ x = κ y → pairLens ℓ₀ ℓ₁ x = pairLens ℓ₀ ℓ₁ y) ↔
+      ((∀ x y, κ x = κ y → ℓ₀ x = ℓ₀ y) ∧ (∀ x y, κ x = κ y → ℓ₁ x = ℓ₁ y)) := by
+  constructor
+  · intro h
+    refine ⟨fun x y hxy => ?_, fun x y hxy => ?_⟩
+    · have hp := congrArg (fun z : Fin (m * m) => (Nat.unpair (z : ℕ)).1) (h x y hxy)
+      simp only [pairLens_left] at hp
+      exact Fin.val_injective hp
+    · have hp := congrArg (fun z : Fin (m * m) => (Nat.unpair (z : ℕ)).2) (h x y hxy)
+      simp only [pairLens_right] at hp
+      exact Fin.val_injective hp
+  · rintro ⟨h0, h1⟩ x y hxy
+    apply Fin.val_injective
+    change Nat.pair (ℓ₀ x : ℕ) (ℓ₁ x : ℕ) = Nat.pair (ℓ₀ y : ℕ) (ℓ₁ y : ℕ)
+    rw [h0 x y hxy, h1 x y hxy]
+
+/-- **Two tables, zipped**: entrywise `Nat.pair`, read off the position each shares — the list
+operation the paired frame's builder performs on two lens tables. Both operands here are always
+equal-length (two `lensTable`s of the same domain `Fin n`), so `List.range T₀.length` indexes every
+shared position. -/
+def zipLists (T₀ T₁ : List ℕ) : List ℕ := (List.range T₀.length).map fun i => Nat.pair (T₀.getD i 0)
+  (T₁.getD i 0)
+
+private theorem primrec_zipLists : Primrec fun q : List ℕ × List ℕ => zipLists q.1 q.2 := by
+  have hrange : Primrec fun q : List ℕ × List ℕ => List.range q.1.length :=
+    Primrec.list_range.comp (Primrec.list_length.comp Primrec.fst)
+  have hg : Primrec fun p : (List ℕ × List ℕ) × ℕ =>
+      Nat.pair (p.1.1.getD p.2 0) (p.1.2.getD p.2 0) := by
+    have hl0 : Primrec fun p : (List ℕ × List ℕ) × ℕ => p.1.1 := Primrec.fst.comp Primrec.fst
+    have hl1 : Primrec fun p : (List ℕ × List ℕ) × ℕ => p.1.2 := Primrec.snd.comp Primrec.fst
+    have hi : Primrec fun p : (List ℕ × List ℕ) × ℕ => p.2 := Primrec.snd
+    have hg0 : Primrec fun p : (List ℕ × List ℕ) × ℕ => p.1.1.getD p.2 0 :=
+      (Primrec.list_getD 0).comp hl0 hi
+    have hg1 : Primrec fun p : (List ℕ × List ℕ) × ℕ => p.1.2.getD p.2 0 :=
+      (Primrec.list_getD 0).comp hl1 hi
+    exact Primrec₂.natPair.comp hg0 hg1
+  exact Primrec.list_map hrange hg
+
+/-- **Zipping the two tables is tabulating the paired frame**: the fidelity fact that lets the
+paired-frame builder work on the two ordinary `lensTable`s. -/
+theorem zipLists_eq_lensTable (ℓ₀ ℓ₁ : Fin n → Fin m) :
+    zipLists (lensTable ℓ₀) (lensTable ℓ₁) = lensTable (pairLens ℓ₀ ℓ₁) := by
+  have hlen : (lensTable ℓ₀).length = n := by simp [lensTable]
+  rw [zipLists, hlen, lensTable, lensTable, lensTable]
+  have hfr : (List.finRange n).map Fin.val = List.range n := by simp
+  rw [← hfr, List.map_map]
+  refine List.map_congr_left fun i _ => ?_
+  simp only [Function.comp_apply]
+  rw [getD_map_finRange (fun x : Fin n => (ℓ₀ x : ℕ)) i,
+    getD_map_finRange (fun x : Fin n => (ℓ₁ x : ℕ)) i]
+  rfl
+
+/-- **The zip builder's table function**: reads `p`'s two halves as encoded lists and returns their
+`Nat.pair`-zip, encoded — the fixed function `KE_lensCode_pairLens_le`'s builder runs on the two
+given frame codes. -/
+private def zipTableFn (p : ℕ) : ℕ :=
+  Encodable.encode
+    (zipLists ((Encodable.decode (α := List ℕ) p.unpair.1).getD [])
+      ((Encodable.decode (α := List ℕ) p.unpair.2).getD []))
+
+private theorem primrec_zipTableFn : Primrec zipTableFn := by
+  have hdec1 : Primrec fun p : ℕ => (Encodable.decode (α := List ℕ) p.unpair.1).getD [] :=
+    Primrec.option_getD.comp (Primrec.decode.comp (Primrec.fst.comp Primrec.unpair))
+      (Primrec.const [])
+  have hdec2 : Primrec fun p : ℕ => (Encodable.decode (α := List ℕ) p.unpair.2).getD [] :=
+    Primrec.option_getD.comp (Primrec.decode.comp (Primrec.snd.comp Primrec.unpair))
+      (Primrec.const [])
+  exact Primrec.encode.comp (primrec_zipLists.comp (Primrec.pair hdec1 hdec2))
+
+/-- **The builder is correct**: on `⟨ℓ₀'s table, ℓ₁'s table⟩` it outputs the paired frame's encoded
+tabulation. -/
+theorem zipTableFn_eq (ℓ₀ ℓ₁ : Fin n → Fin m) :
+    zipTableFn (Nat.pair (lensCode ℓ₀) (lensCode ℓ₁)) = lensCode (pairLens ℓ₀ ℓ₁) := by
+  have hd0 : (Encodable.decode (α := List ℕ) (lensCode ℓ₀)).getD [] = lensTable ℓ₀ := by
+    rw [lensCode, Encodable.encodek]; rfl
+  have hd1 : (Encodable.decode (α := List ℕ) (lensCode ℓ₁)).getD [] = lensTable ℓ₁ := by
+    rw [lensCode, Encodable.encodek]; rfl
+  rw [zipTableFn]
+  simp only [Nat.unpair_pair]
+  rw [hd0, hd1, zipLists_eq_lensTable]
+  rfl
+
+private theorem partrec_zipTableFn : Nat.Partrec (fun p : ℕ => (zipTableFn p : ℕ)) :=
+  _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_zipTableFn).partrec
+
+/-- **The fixed zip-builder code.** One program, independent of `n`, `m`, and the two lenses. -/
+noncomputable def zipBuilder : Nat.Partrec.Code :=
+  Classical.choose (Nat.Partrec.Code.exists_code.mp partrec_zipTableFn)
+
+private theorem eval_zipBuilder (p : ℕ) :
+    Nat.Partrec.Code.eval zipBuilder p = Part.some (zipTableFn p) := by
+  have h := congrFun (Classical.choose_spec
+    (Nat.Partrec.Code.exists_code.mp partrec_zipTableFn)) p
+  simpa [zipBuilder] using h
+
+/-- **A fixed program zips two tables** ([Persistence] §6, Remark 6.6): `K(ℓ₀ ⊗ ℓ₁) ≤ K(ℓ₀) + K(ℓ₁)
++ O(1)`, with the constant a closed numeral in `elen` — no `Nat.size n` or `Nat.size m` term, which
+is what makes the paired display a strengthening rather than a trade. -/
+noncomputable def pairZipConst : ℕ := elen zipBuilder + 6
+
+theorem KE_lensCode_pairLens_le (ℓ₀ ℓ₁ : Fin n → Fin m) :
+    KE (lensCode (pairLens ℓ₀ ℓ₁)) ≤ KE (lensCode ℓ₀) + KE (lensCode ℓ₁) + pairZipConst := by
+  obtain ⟨c₀, hc₀, hlc₀⟩ := exists_min_E (lensCode ℓ₀)
+  obtain ⟨c₁, hc₁, hlc₁⟩ := exists_min_E (lensCode ℓ₁)
+  have hp : eval (pair c₀ c₁) 0 = Part.some (Nat.pair (lensCode ℓ₀) (lensCode ℓ₁)) := by
+    change Nat.pair <$> _ <*> _ = _
+    rw [hc₀, hc₁]; simp [Seq.seq]
+  have hcomp : Computes (comp zipBuilder (pair c₀ c₁)) (lensCode (pairLens ℓ₀ ℓ₁)) := by
+    change eval (comp zipBuilder (pair c₀ c₁)) 0 = _
+    rw [eval_comp_some hp, eval_zipBuilder, zipTableFn_eq]
+  have hle := KE_le hcomp
+  rw [E_len_comp, E_len_pair] at hle
+  rw [pairZipConst]
+  omega
+
+/-! ### Remark 6.6's display: the frame term at one address -/
+
+/-- Recovering the first frame's table from a zipped one: `Nat.unpair` applied entrywise. -/
+private def unzipFst (T : List ℕ) : List ℕ := T.map fun e => (Nat.unpair e).1
+
+/-- Recovering the second frame's table from a zipped one. -/
+private def unzipSnd (T : List ℕ) : List ℕ := T.map fun e => (Nat.unpair e).2
+
+private theorem primrec_unzipFst : Primrec unzipFst :=
+  Primrec.list_map Primrec.id (Primrec.fst.comp (Primrec.unpair.comp Primrec.snd))
+
+private theorem primrec_unzipSnd : Primrec unzipSnd :=
+  Primrec.list_map Primrec.id (Primrec.snd.comp (Primrec.unpair.comp Primrec.snd))
+
+/-- Unzipping the paired frame's table recovers the first frame's table — the converse fidelity
+fact to `zipLists_eq_lensTable`. -/
+private theorem unzipFst_lensTable_pairLens (ℓ₀ ℓ₁ : Fin n → Fin m) :
+    unzipFst (lensTable (pairLens ℓ₀ ℓ₁)) = lensTable ℓ₀ := by
+  rw [unzipFst, lensTable, lensTable, List.map_map]
+  refine List.map_congr_left fun i _ => ?_
+  simp only [Function.comp_apply]
+  exact pairLens_left ℓ₀ ℓ₁ i
+
+/-- Unzipping the paired frame's table recovers the second frame's table. -/
+private theorem unzipSnd_lensTable_pairLens (ℓ₀ ℓ₁ : Fin n → Fin m) :
+    unzipSnd (lensTable (pairLens ℓ₀ ℓ₁)) = lensTable ℓ₁ := by
+  rw [unzipSnd, lensTable, lensTable, List.map_map]
+  refine List.map_congr_left fun i _ => ?_
+  simp only [Function.comp_apply]
+  exact pairLens_right ℓ₀ ℓ₁ i
+
+/-- **The paired-frame tabulation, rebuilt from the packed program** `⟨n, pairCode, idx⟩`: unzip
+the paired table back into the two frame tables and hand them to `gradedTableFn`'s own decoder — ONE
+fixed function reusing Theorem 6.4's decoder rather than duplicating it, so the frame term the
+resulting bound pays occurs exactly once. -/
+private def pairedGradedTableFn (a : ℕ) : ℕ :=
+  gradedTableFn
+    (Nat.pair a.unpair.1
+      (Nat.pair
+        (Encodable.encode
+          (unzipFst ((Encodable.decode (α := List ℕ) a.unpair.2.unpair.1).getD [])))
+        (Nat.pair
+          (Encodable.encode
+            (unzipSnd ((Encodable.decode (α := List ℕ) a.unpair.2.unpair.1).getD [])))
+          a.unpair.2.unpair.2)))
+
+set_option maxHeartbeats 1000000 in
+-- multi-level packing meets `primrec_gradedTableFn`, the same headroom reason as
+-- `primrec_gradedTableFn` itself needs against `primrec_candList`.
+private theorem primrec_pairedGradedTableFn : Primrec pairedGradedTableFn := by
+  have hN : Primrec fun a : ℕ => a.unpair.1 := Primrec.fst.comp Primrec.unpair
+  have hPC : Primrec fun a : ℕ => a.unpair.2.unpair.1 :=
+    Primrec.fst.comp (Primrec.unpair.comp (Primrec.snd.comp Primrec.unpair))
+  have hIdx : Primrec fun a : ℕ => a.unpair.2.unpair.2 :=
+    Primrec.snd.comp (Primrec.unpair.comp (Primrec.snd.comp Primrec.unpair))
+  have hDec : Primrec fun a : ℕ => (Encodable.decode (α := List ℕ) a.unpair.2.unpair.1).getD [] :=
+    Primrec.option_getD.comp (Primrec.decode.comp hPC) (Primrec.const [])
+  have hT0 : Primrec fun a : ℕ => Encodable.encode (unzipFst
+      ((Encodable.decode (α := List ℕ) a.unpair.2.unpair.1).getD [])) :=
+    Primrec.encode.comp (primrec_unzipFst.comp hDec)
+  have hT1 : Primrec fun a : ℕ => Encodable.encode (unzipSnd
+      ((Encodable.decode (α := List ℕ) a.unpair.2.unpair.1).getD [])) :=
+    Primrec.encode.comp (primrec_unzipSnd.comp hDec)
+  have hPacked : Primrec fun a : ℕ =>
+      Nat.pair a.unpair.1 (Nat.pair (Encodable.encode (unzipFst
+        ((Encodable.decode (α := List ℕ) a.unpair.2.unpair.1).getD [])))
+        (Nat.pair (Encodable.encode (unzipSnd
+          ((Encodable.decode (α := List ℕ) a.unpair.2.unpair.1).getD [])))
+          a.unpair.2.unpair.2)) :=
+    Primrec₂.natPair.comp hN (Primrec₂.natPair.comp hT0 (Primrec₂.natPair.comp hT1 hIdx))
+  exact primrec_gradedTableFn.comp hPacked
+
+/-- **The builder is correct**: unzipping the paired code before running `gradedTableFn`'s decoder
+is the same as running it on the two separate frame codes — this is the whole content of "an address
+is paid once". -/
+private theorem pairedGradedTableFn_eq (n idx : ℕ) {m : ℕ} (ℓ₀ ℓ₁ : Fin n → Fin m) :
+    pairedGradedTableFn (Nat.pair n (Nat.pair (lensCode (pairLens ℓ₀ ℓ₁)) idx))
+      = gradedTableFn (Nat.pair n (Nat.pair (lensCode ℓ₀) (Nat.pair (lensCode ℓ₁) idx))) := by
+  have hpc : (Encodable.decode (α := List ℕ) (lensCode (pairLens ℓ₀ ℓ₁))).getD []
+      = lensTable (pairLens ℓ₀ ℓ₁) := by rw [lensCode, Encodable.encodek]; rfl
+  rw [pairedGradedTableFn]
+  simp only [Nat.unpair_pair]
+  rw [hpc, unzipFst_lensTable_pairLens, unzipSnd_lensTable_pairLens]
+  rfl
+
+private theorem partrec_pairedGradedTableFn :
+    Nat.Partrec (fun a : ℕ => (pairedGradedTableFn a : ℕ)) :=
+  _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_pairedGradedTableFn).partrec
+
+/-- **The fixed paired-graded-ledger builder code.** One program, independent of `n`, the world, and
+the two lenses. -/
+noncomputable def pairedGradedBuilder : Nat.Partrec.Code :=
+  Classical.choose (Nat.Partrec.Code.exists_code.mp partrec_pairedGradedTableFn)
+
+private theorem eval_pairedGradedBuilder (a : ℕ) :
+    Nat.Partrec.Code.eval pairedGradedBuilder a = Part.some (pairedGradedTableFn a) := by
+  have h := congrFun (Classical.choose_spec
+    (Nat.Partrec.Code.exists_code.mp partrec_pairedGradedTableFn)) a
+  simpa [pairedGradedBuilder] using h
+
+/-- **The paired ledger's constant**: one fixed builder plus the assembly's opcodes — `n`, the
+paired frame code, and the coset index, three loaded pieces against `ledger_graded`'s four. -/
+noncomputable def pairedLedgerConst : ℕ := elen pairedGradedBuilder + 2 * (15 + elen dbl) + 15
+
+/-- **The graded ledger, at the paired frame** ([Persistence] §6, Remark 6.6): Theorem 6.4's own
+decoder, unzipping the paired frame's table before running `ledger_graded`'s search, so the frame
+term occurs ONCE — `KE (lensCode (pairLens (ℓ 0) (ℓ 1)))` rather than the two separate frame prices
+`ledger_graded` charges. Everything upstream of the code assembly — the coset argument, the world's
+own numeral as a valid candidate, the index bound by the coset size — is `ledger_graded`'s own,
+unchanged; only where the candidate table's two halves come from differs. -/
+theorem ledger_graded_paired (hn : 0 < n) {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m}
+    (hcar : PermCarries U ℓ) :
+    KE (lensCode U) ≤ KE (lensCode (pairLens (ℓ 0) (ℓ 1)))
+      + (15 + elen dbl) * Nat.size (∏ i : Fin m, (Nat.card {x : Fin n // ℓ 0 x = i})!)
+      + (15 + elen dbl) * Nat.size n
+      + pairedLedgerConst := by
+  set t0 := lensCode (ℓ 0) with ht0
+  set t1 := lensCode (ℓ 1) with ht1
+  set N := ∏ i : Fin m, (Nat.card {x : Fin n // ℓ 0 x = i})! with hNdef
+  have hvalid : isValid n t0 t1 (worldNumeral U) := isValid_worldNumeral hn hcar
+  have hlt : worldNumeral U < n ^ n := worldNumeral_lt hn U
+  have hmem : worldNumeral U ∈ candList n t0 t1 := by
+    rw [candList, List.mem_filter, List.mem_range, decide_eq_true_eq]
+    exact ⟨hlt, hvalid⟩
+  obtain ⟨idx, hidxlt, hidxeq⟩ := List.getElem_of_mem hmem
+  have hlenle : (candList n t0 t1).length ≤ N := by
+    rw [hNdef]
+    calc (candList n t0 t1).length ≤ Nat.card ↥(stabilizer (Perm (Fin n)) (ℓ 0)) :=
+          candList_length_le hn hcar
+      _ = N := card_stabilizer_lens (ℓ 0)
+  have hidxN : idx < N := lt_of_lt_of_le hidxlt hlenle
+  have hgetD : List.getD (candList n t0 t1) idx 0 = worldNumeral U := by
+    rw [List.getD_eq_getElem _ _ hidxlt]; exact hidxeq
+  have heval : gradedTableFn (Nat.pair n (Nat.pair t0 (Nat.pair t1 idx))) = lensCode U := by
+    rw [gradedTableFn]
+    simp only [Nat.unpair_pair]
+    rw [hgetD]
+    exact congrArg Encodable.encode (candTable_packMarks hn U)
+  have hevalp : pairedGradedTableFn (Nat.pair n (Nat.pair (lensCode (pairLens (ℓ 0) (ℓ 1))) idx))
+      = lensCode U := by
+    rw [pairedGradedTableFn_eq]
+    exact heval
+  obtain ⟨cp, hcp, hlcp⟩ := exists_min_E (lensCode (pairLens (ℓ 0) (ℓ 1)))
+  have hz : eval zero (0 : ℕ) = Part.some 0 := rfl
+  have hn' : eval (bconst n) 0 = Part.some n := eval_bconst n 0
+  have hp0 : eval (comp cp zero) 0 = Part.some (lensCode (pairLens (ℓ 0) (ℓ 1))) :=
+    (eval_comp_some hz).trans hcp
+  have hb : eval (bconst idx) 0 = Part.some idx := eval_bconst idx 0
+  have hpair3 : eval (pair (comp cp zero) (bconst idx)) 0
+      = Part.some (Nat.pair (lensCode (pairLens (ℓ 0) (ℓ 1))) idx) := by
+    change Nat.pair <$> _ <*> _ = _
+    rw [hp0, hb]; simp [Seq.seq]
+  have hpair1 : eval (pair (bconst n) (pair (comp cp zero) (bconst idx))) 0
+      = Part.some (Nat.pair n (Nat.pair (lensCode (pairLens (ℓ 0) (ℓ 1))) idx)) := by
+    change Nat.pair <$> _ <*> _ = _
+    rw [hn', hpair3]; simp [Seq.seq]
+  have hcomp : Computes
+      (comp pairedGradedBuilder (pair (bconst n) (pair (comp cp zero) (bconst idx))))
+      (lensCode U) := by
+    change eval (comp pairedGradedBuilder
+      (pair (bconst n) (pair (comp cp zero) (bconst idx)))) 0 = _
+    rw [eval_comp_some hpair1, eval_pairedGradedBuilder, hevalp]
+  have hle := KE_le hcomp
+  rw [E_len_comp, E_len_pair, E_len_pair, E_len_comp] at hle
+  have hzlen : elen (zero : Code) = 3 := rfl
+  have hbc := elen_bconst_le idx
+  have hbn := elen_bconst_le n
+  have hidxsize : Nat.size idx ≤ Nat.size N := Nat.size_le_size (le_of_lt hidxN)
+  have hidxsize' : (15 + elen dbl) * Nat.size idx ≤ (15 + elen dbl) * Nat.size N :=
+    Nat.mul_le_mul_left _ hidxsize
+  rw [hzlen, hlcp] at hle
+  rw [pairedLedgerConst]
+  omega
+
+/-- **Non-vacuity: the paired ledger recovers the maximal ledger's shape.** At singleton fibres
+(`ℓ 0` bijective) the coset is trivial, exactly as in `ledger_graded_faithful`, and the paired bound
+collapses the same way — with the frame term paid once. -/
+theorem ledger_graded_paired_faithful (hn : 0 < n) {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m}
+    (hcar : PermCarries U ℓ) (hbij : Function.Bijective (ℓ 0)) :
+    KE (lensCode U) ≤ KE (lensCode (pairLens (ℓ 0) (ℓ 1)))
+      + (15 + elen dbl) * Nat.size n
+      + pairedLedgerConst + (15 + elen dbl) := by
+  have hone : ∏ i : Fin m, (Nat.card {x : Fin n // ℓ 0 x = i})! = 1 := by
+    refine Finset.prod_eq_one fun i _ => ?_
+    have hcard : Nat.card {x : Fin n // ℓ 0 x = i} = 1 := by
+      obtain ⟨x, hx, huniq⟩ := hbij.existsUnique i
+      exact Nat.card_eq_one_iff_exists.mpr ⟨⟨x, hx⟩, fun y => Subtype.ext (huniq y y.2)⟩
+    rw [hcard]; rfl
+  have hbound := ledger_graded_paired hn hcar
+  rw [hone] at hbound
+  simp only [Nat.size_one, Nat.mul_one] at hbound
+  omega
+
 /-- **The graded ledger's capstone**: at the family attaining `C_b^H (U)`, the coset's complementary
 factor `N'` — with `C_b^H (U) · N' = n !` exactly (`card_orbit_mul_prod_fiber`, the entropic
 capacity's own currency) — prices the world's complexity: `ledger_graded` plus the attained family's

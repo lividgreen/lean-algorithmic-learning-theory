@@ -205,8 +205,16 @@ entry points, if you want a sense of the range before reading the list:
 - No `sorry`, `admit`, or `native_decide`; standard axioms only
   (`propext`, `Classical.choice`, `Quot.sound`) — several cores are
   choice-free, and the structural capstone depends on no axioms at all.
-- **Build-enforced axiom hygiene**: 737 `#guard_msgs in #print axioms` guards
+- **Build-enforced axiom hygiene**: 756 `#guard_msgs in #print axioms` guards
   assert each capstone's exact axiom set; `lake build` fails on any drift.
+- **CI-enforced whole-library audit**: every declaration under `ALT` — not only
+  the guarded capstones — is checked against the same allowlist by
+  [`axiom-audit`](https://github.com/leanprover-community/axiom-audit) on each
+  CI run, so a `sorry`, a `native_decide`, or a home-rolled axiom anywhere in
+  the library fails the build. The two are complementary: the guards pin each
+  capstone's *exact* axiom set in source, where it renders into the API docs;
+  the audit covers everything the guards do not name. Reproduce it locally with
+  `lake exe axiom-audit --root ALT` after a build.
 - **Targeted imports throughout**: every module names exactly the Mathlib
   files it uses — no monolith `import Mathlib`, one vendored port excepted —
   so the dependency surface is explicit and the build/docs closure stays

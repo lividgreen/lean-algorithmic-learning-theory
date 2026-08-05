@@ -1,7 +1,8 @@
 name: CI
 
-# Snapshot-release repo: build + docs on pushes to main (rare, curated) and
-# manual dispatch. Docs are built with the lake-native doc-gen4 facet
+# Snapshot-release repo: build + whole-library axiom audit + docs on pushes to
+# main (rare, curated) and manual dispatch. Docs are built with the lake-native
+# doc-gen4 facet
 # (`ALT:docs` — doc-gen4 is an inherited, pinned dependency via Foundation)
 # and deployed to Pages directly, the shape FormalizedFormalLogic/Foundation
 # runs. docgen-action was dropped 2026-07-22 after its stack (extra scaffold
@@ -42,6 +43,19 @@ jobs:
       - uses: leanprover/lean-action@v1
         with:
           use-github-cache: false
+      # Whole-library axiom audit, run BEFORE the expensive docs step so a
+      # violation fails fast. It checks EVERY declaration under `ALT` — not only
+      # the guarded capstones — against the same allowlist, so a `sorry`, a
+      # `native_decide`, or a home-rolled axiom anywhere fails CI. This
+      # complements the `#guard_msgs in #print axioms` guards rather than
+      # replacing them: the guards pin each capstone's EXACT axiom set in-source
+      # and render into the API docs; the audit covers everything they do not
+      # name. The tool is an INHERITED dependency (it arrives via Foundation), so
+      # nothing is added to lakefile.toml and `lake exe` resolves it as-is. It
+      # also exits non-zero when it audits NOTHING, so a misconfigured root
+      # cannot pass silently — the "green that never tested anything" failure.
+      - name: Axiom audit (whole library)
+        run: ~/.elan/bin/lake exe axiom-audit --root ALT
       # Docs for the closure are heavy; a killed run must not start over.
       # Restore prior progress, cap the step below GitHub's 6 h job kill, and
       # save progress EVEN ON FAILURE — successive runs then converge instead
