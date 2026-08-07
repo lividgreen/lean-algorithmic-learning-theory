@@ -23,11 +23,13 @@ coset, `card_stabilizer_lens (ℓ 0)` (`consistent_card_one`), so the general st
 Theorem 6.4 at its bottom end.
 
 Theorem 6.5's `K (U) ≤ …` display itself — the decoder that loads a variable-length list of frame
-codes and pays `elen` per element — is NOT built here: it is a new `Primrec` construction rather
-than a generalization of `gradedBuilder`, and the boundary this module states is exactly the one
-`ledger_graded` already draws for Theorem 6.4. What this module machine-checks is the display's
-counting core, the block-to-block bijection Lemma 7.1's stabilizer computation gives when read at a
-joint partition instead of at the reference frame alone.
+codes and pays `elen` per element — is machine-checked too, in `PersistenceCapacity.lean`
+(`ledger_itinerary`, `ledger_itinerary_consecutive`): a new `Primrec` construction rather than a
+generalization of `gradedBuilder`, over an explicit `List ℕ` of held times. This module's own
+`consistentWith_sort_eq_consistent_bminus`/`consistentWith_range_eq_consistent_ico` identify that
+list-indexed set with `Consistent` at `Bminus B`/`Finset.Ico 1 k` exactly, so
+`ledger_itinerary_bminus`/`ledger_itinerary_range` below restate the two displays at `B`/`k`
+directly, with `N` supplied by `consistent_card_bminus`/`consistent_card_consecutive`.
 
 A sharper fact holds at an injective itinerary ([Persistence] §8, Proposition 8.38(i)): when
 `itinerary ℓ S` is injective, `U` is the ONLY permutation consistent with the frames held at `S`,
@@ -38,7 +40,7 @@ own argument reads.
 
 namespace FrameItinerary
 
-open PersistenceCapacity Equiv Equiv.Perm MulAction Nat
+open PersistenceCapacity AdditiveComplexity Equiv Equiv.Perm MulAction Nat
 
 -- `•` on lenses is the relabelling action `U • ℓ = ℓ ∘ U⁻¹` ([Persistence] §7, Lemma 7.1's
 -- convention); `PersistenceCapacity`'s own local instance of it does not export past that file's
@@ -330,6 +332,106 @@ theorem consistent_card_one {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m} (
   rw [hcard]
   exact card_stabilizer_lens (ℓ 0)
 
+/-! ### Theorem 6.5's `K (U) ≤ …` display
+
+`PersistenceCapacity.ConsistentWith` reads the same consistency condition as `Consistent` here, but
+over an explicit `List ℕ` of held times rather than a `Finset ℕ` — the currency the decoder's
+`Primrec` construction needs. The two bridge lemmas below identify the sets exactly, so
+`PersistenceCapacity.ledger_itinerary`/`ledger_itinerary_consecutive` — the machine-checked decoder,
+built there — apply here with `N` supplied from
+`consistent_card_bminus`/`consistent_card_consecutive`. -/
+
+/-- **`ConsistentWith` at a sorted `B`, `Consistent` at `Bminus B`, are the same set**: both name
+exactly the pairs `t = t' + 1` with `t, t' ∈ B`, `ConsistentWith` over the pair directly and
+`Consistent` over `t ∈ Bminus B` with `t' := t - 1` read off the definition. Sortedness is not
+load-bearing for the identity — only for which `List ℕ` the decoder below is handed. -/
+theorem consistentWith_sort_eq_consistent_bminus (ℓ : ℕ → Fin n → Fin m) (B : Finset ℕ) :
+    ConsistentWith ℓ (B.sort (· ≤ ·)) = Consistent ℓ (Bminus B) := by
+  ext V
+  simp only [ConsistentWith, Consistent, Set.mem_setOf_eq, Finset.mem_sort, Bminus,
+    Finset.mem_filter]
+  constructor
+  · intro h t ⟨htB, ht1, ht1B⟩ x
+    exact h t htB (t - 1) ht1B (by omega) x
+  · intro h t htB t' ht'B hstep x
+    have ht1B' : t - 1 ∈ B := by rwa [show t - 1 = t' from by omega]
+    have hstep' := h t ⟨htB, by omega, ht1B'⟩ x
+    rwa [show t - 1 = t' from by omega] at hstep'
+
+/-- **`ConsistentWith` at `List.range k`, `Consistent` at `Finset.Ico 1 k`, are the same set**: the
+pairs `t = t' + 1` inside `[0, k)` are exactly the times `t ∈ [1, k)`, `t' := t - 1`. -/
+theorem consistentWith_range_eq_consistent_ico (ℓ : ℕ → Fin n → Fin m) (k : ℕ) :
+    ConsistentWith ℓ (List.range k) = Consistent ℓ (Finset.Ico 1 k) := by
+  ext V
+  simp only [ConsistentWith, Consistent, Set.mem_setOf_eq, List.mem_range, Finset.mem_Ico]
+  constructor
+  · intro h t ⟨ht1, htk⟩ x
+    exact h t htk (t - 1) (by omega) (by omega) x
+  · intro h t htk t' ht'k hstep x
+    have hstep' := h t ⟨by omega, htk⟩ x
+    rwa [show t - 1 = t' from by omega] at hstep'
+
+/-- A `List.map`/`List.sum` over a `Finset`'s sort is that `Finset`'s own sum — the bridge from
+`ledger_itinerary`'s list-indexed frame/size sums to the `Finset`-indexed sums Theorem 6.5(ii)'s
+own `∑_{t∈B}` notation writes. -/
+private theorem sum_map_sort_eq_finset_sum (B : Finset ℕ) (f : ℕ → ℕ) :
+    ((B.sort (· ≤ ·)).map f).sum = ∑ t ∈ B, f t := by
+  rw [Finset.sum_eq_multiset_sum, ← Finset.sort_eq (r := (· ≤ ·)) B]
+  rfl
+
+/-- **The ledger at any frames** ([Persistence] §6, Theorem 6.5(ii)'s display), read at `B`
+directly: `ledger_itinerary` at `bs := B.sort (· ≤ ·)`, with the frame/size sums restated as
+`Finset` sums over `B`, the length as `B.card`, and `N` supplied exactly by
+`consistent_card_bminus`. -/
+theorem ledger_itinerary_bminus (hn : 0 < n) {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m}
+    (hcar : PermCarries U ℓ) (B : Finset ℕ)
+    (c : ℕ → Nat.Partrec.Code)
+    (hc : ∀ t ∈ B, (c t).eval 0 = Part.some (lensCode (ℓ t))) :
+    KE (lensCode U)
+      ≤ (∑ t ∈ B, elen (c t))
+        + (15 + elen dbl) * (∑ t ∈ B, Nat.size t)
+        + (39 + elen dbl) * B.card
+        + (15 + elen dbl) * Nat.size (∏ z : (↥(Bminus B) → Fin m),
+            (Nat.card {x : Fin n // itinerary ℓ (Bminus B) x = z})!)
+        + (15 + elen dbl) * Nat.size n
+        + (elen itinBuilder + 2 * (15 + elen dbl) + 18) := by
+  have hUmem : U ∈ ConsistentWith ℓ (B.sort (· ≤ ·)) := by
+    rw [consistentWith_sort_eq_consistent_bminus]
+    exact mem_consistent_of_permCarries hcar (zero_not_mem_Bminus B)
+  have hc' : ∀ t ∈ B.sort (· ≤ ·), (c t).eval 0 = Part.some (lensCode (ℓ t)) := by
+    intro t ht
+    exact hc t (Finset.mem_sort (· ≤ ·) |>.mp ht)
+  have hN : Nat.card ↥(ConsistentWith ℓ (B.sort (· ≤ ·)))
+      ≤ ∏ z : (↥(Bminus B) → Fin m), (Nat.card {x : Fin n // itinerary ℓ (Bminus B) x = z})! := by
+    rw [consistentWith_sort_eq_consistent_bminus, consistent_card_bminus hcar]
+  have hbound := ledger_itinerary hn (B.sort (· ≤ ·)) hUmem c hc' _ hN
+  rwa [sum_map_sort_eq_finset_sum B (fun t => elen (c t)), sum_map_sort_eq_finset_sum B Nat.size,
+    Finset.length_sort] at hbound
+
+/-- **The ledger at `k` consecutive frames** ([Persistence] §6, Theorem 6.5(i)'s display):
+`ledger_itinerary_consecutive` at `bs := List.range k`, with `N` supplied exactly by
+`consistent_card_consecutive`, so the index is read at the truncated itinerary `R_{k−1}` itself. -/
+theorem ledger_itinerary_range (hn : 0 < n) {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m}
+    (hcar : PermCarries U ℓ) {k : ℕ} (hk : 2 ≤ k)
+    (c : ℕ → Nat.Partrec.Code)
+    (hc : ∀ t < k, (c t).eval 0 = Part.some (lensCode (ℓ t))) :
+    KE (lensCode U)
+      ≤ ((List.range k).map fun t => elen (c t)).sum
+        + 15 * k
+        + (15 + elen dbl) * Nat.size k
+        + (15 + elen dbl) * Nat.size (∏ z : (Fin (k - 1) → Fin m),
+            (Nat.card {x : Fin n // (fun j : Fin (k - 1) => ℓ (j : ℕ) x) = z})!)
+        + (15 + elen dbl) * Nat.size n
+        + (elen itinBuilder + elen rangeCode + 3 * (15 + elen dbl) + 18) := by
+  have hUmem : U ∈ ConsistentWith ℓ (List.range k) := by
+    rw [consistentWith_range_eq_consistent_ico]
+    exact mem_consistent_of_permCarries hcar (by simp)
+  have hN : Nat.card ↥(ConsistentWith ℓ (List.range k))
+      ≤ ∏ z : (Fin (k - 1) → Fin m),
+          (Nat.card {x : Fin n // (fun j : Fin (k - 1) => ℓ (j : ℕ) x) = z})! := by
+    rw [consistentWith_range_eq_consistent_ico, consistent_card_consecutive hcar hk]
+  exact ledger_itinerary_consecutive hn k hUmem c hc _ hN
+
 /-! ### Proposition 8.30: a reading constant off an invariant region -/
 
 /-- **A region left unread carries no constraint** ([Persistence] §8, Proposition 8.30's own
@@ -513,7 +615,7 @@ end FrameItinerary
 
 /-! ## Axiom audit
 
-The eight capstones above are `#print axioms`-clean on the standard triple, and the guards below
+The ten capstones above are `#print axioms`-clean on the standard triple, and the guards below
 make that build-enforced. -/
 
 set_option linter.style.longLine false
@@ -549,3 +651,11 @@ set_option linter.style.longLine false
 /-- info: 'FrameItinerary.consistent_card_ge_factorial_compl' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms FrameItinerary.consistent_card_ge_factorial_compl
+
+/-- info: 'FrameItinerary.ledger_itinerary_bminus' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms FrameItinerary.ledger_itinerary_bminus
+
+/-- info: 'FrameItinerary.ledger_itinerary_range' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms FrameItinerary.ledger_itinerary_range

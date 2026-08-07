@@ -19,8 +19,9 @@ set_option linter.style.longLine false
 Provenance: the native cost model (`ALT/TimeCost.lean`). Builds on `ALT/DecisionListData.lean`
 (the data layer:
 `readM`/`readK`, `peel`/`cPeel`, `headL`/`tailL`, `WF`, `readM_le_size`/`readK_le_size`,
-`encodeList`, `peel_encode`) and `ALT/PolyTime.lean` (`PolyTime`, `PolyBounded`, `polyTime_loop`,
-`tc_prec_le'`, the closure toolkit).
+`encodeList`, `peel_encode`, and the labelled bit-example accessors `lblOf`/`fvOf`/`featOf`/`WFBits`)
+and `ALT/PolyTime.lean` (`PolyTime`, `PolyBounded`, `polyTime_loop`, `tc_prec_le'`, the closure
+toolkit).
 
 The numbered layers below start at 2: layer 1 is the bit-logic gate library — `cIsPos`, `cNot`,
 `cOr`, `cAnd`, `cEqBit`, `cSwap`, `cShape0` with their value laws, `rfind'`-freeness and `tc`
@@ -48,7 +49,7 @@ tracks two bits over the covered examples: `sawZero` (some covered example is la
 `sawOne` (some covered example is labelled `1`); then `isPure = ¬(sawZero ∧ sawOne)` and
 `commonLabel = sawOne`. Realized as a carried-suffix `prec` loop over `i < readM inst`. -/
 
-/-! ### The semantic bit-ops (mirror the gate `val` laws) and example accessors -/
+/-! ### The semantic bit-ops (mirror the gate `val` laws) -/
 
 /-- `¬` on a bit — mirrors `val_cNot`. -/
 def bNot (n : ℕ) : ℕ := if n = 0 then 1 else 0
@@ -64,13 +65,6 @@ private theorem bAnd_le_one (a b : ℕ) : bAnd a b ≤ 1 := by unfold bAnd; spli
 private theorem bOr_le_one (a b : ℕ) : bOr a b ≤ 1 := by unfold bOr; split <;> [split <;> simp; simp]
 private theorem bEq_le_one (a b : ℕ) : bEq a b ≤ 1 := by
   unfold bEq; split <;> split <;> simp
-
-/-- The label of an example `e = ⟨label, fv⟩`. -/
-def lblOf (e : ℕ) : ℕ := e.unpair.1
-/-- The feature-vector of an example. -/
-def fvOf (e : ℕ) : ℕ := e.unpair.2
-/-- Feature `j` of example `e`: peel its feature-vector `j` cells and read the head bit. -/
-def featOf (e j : ℕ) : ℕ := headL (peel (fvOf e) j)
 
 /-! ### Reads as `Code`s -/
 
@@ -762,12 +756,6 @@ private theorem inv_exOf_peel (j p mask data i : ℕ) :
   | succ k ih =>
       rw [Function.iterate_succ_apply', exOf_stepFn, ih]
       simp only [peel, Function.iterate_succ_apply']
-
-/-- **Binary well-formedness of the instance.** `WF` plus: every example's label and every feature bit
-is `≤ 1` (the binary-1-DL regime), over the `List` model of the example data. -/
-def WFBits (inst : ℕ) : Prop :=
-  WF inst ∧ ∃ exs : List ℕ, readData inst = encodeList exs ∧ exs.length = readM inst ∧
-    (∀ e ∈ exs, lblOf e ≤ 1) ∧ (∀ e ∈ exs, ∀ j, featOf e j ≤ 1)
 
 /-- **Mask validity.** The mask is a genuine length-`m` flag-cons list of bits. -/
 def MaskValid (mask m : ℕ) : Prop :=

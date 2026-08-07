@@ -130,6 +130,16 @@ predictions are all abstracted into `M`, so the results hold of any instantiatio
   `argmax_wRun_mono` (which needs no guard — before the first rescale the pool ties and the reading
   sits at `0`) and then `argmax_wRun_card_changes_le`, the `C − 1` bound on how often it moves. What
   drives it is the **fitness alone**; the fiber has no variation rule to impose a settled shape.
+* `rotMiss` / `argmax_wRun_rotMiss` / `wrongMass_rotMiss` — **the least-recently-wrong rotation**:
+  `C` candidates, candidate `i` missing exactly at `t ≡ i (mod C)`. The reading is exactly the
+  candidate about to miss (`argmax_wRun_rotMiss`), so it is dethroned at *every* step once `C ≥ 2`
+  (`argmax_wRun_rotMiss_ne_succ`); yet the wrong mass never exceeds `2/(C+1)` (`wrongMass_rotMiss`),
+  so the surprise set stays empty at any threshold at or above that floor
+  (`floorSurpriseSet_rotMiss_eq_empty`). `rotMiss_prediction_identification_separation` assembles
+  both halves, and `rotMiss_prediction_identification_separation_witness` is the concrete,
+  non-vacuous instance. The reading is the classical follow-the-leader rule, already cited
+  in-corpus via Lattimore–Hutter–Sunehag ([Discovery] §3.3); what is exhibited is the separation of
+  two repair counters this file already carries, not a new reading.
 * `argmaxFrame_wWorld_eventually_const` — **the fiber's own reading settles**, along a base
   trajectory and through the frame the pricing assembly uses. `predMiss` instantiates the abstract
   indicator at `predFitPos` scored against the base's next state, `missFit_predMiss` is the bridge,
@@ -174,6 +184,12 @@ point-predicting candidates the translation is arithmetic — the mixture's prob
 realized symbol is `1 −` the wrong mass — and keeping it out of the Lean statement avoids a real
 square root for no added content, at the same abstraction level at which [Inevitability] §6 consumes
 the fixed-mixture surprise set.
+
+The rotation family sits inside the same below-the-horizon regime as the general normal form: its
+closed forms hold for `t ≤ b`, and no claim is made past it. What it claims is exactly the
+separation of two repair counters this file already carries — nothing about observer
+synchronization, stored structure, or program-running-time depth, none of which any result here
+characterizes, contrasts with, or bears on.
 -/
 
 namespace WeightedFiber
@@ -485,6 +501,34 @@ theorem raw_wRun_eq_bayesRun_missFit (M : ℕ → Fin C → Bool) {iR : Fin C} (
     {b t : ℕ} (ht : t ≤ b) (i : Fin C) :
     raw (wRun (2 ^ b) (missFit M) t) i = bayesRun (missFit M) t i := by
   rw [wRun_eq_pow_deficit M hR b t i, bayesRun_missFit, min_eq_left ht]
+
+/-- **Below the horizon, realizability was never needed.** The clip has not bitten while `t ≤ b`, so
+no candidate — realizable or not — can yet sit at the ceiling and trigger a rescale: the exponent is
+the plain hit count for *any* miss indicator. `raw_wRun_eq_bayesRun_missFit` is this fact composed
+with `bayesRun_missFit`'s own closed form; realizability only starts to matter once some candidate
+could be at the ceiling, i.e. past the horizon. -/
+theorem expRun_eq_sub_missCount_of_le (M : ℕ → Fin C → Bool) (b : ℕ) :
+    ∀ t, t ≤ b → ∀ i, expRun M b t i = t - missCount M i t := by
+  intro t
+  induction t with
+  | zero => intro _ i; rw [missCount_zero]; simp [expRun]
+  | succ t ih =>
+      intro ht i
+      have ht' : t ≤ b := by omega
+      have hall : ∀ j, expRun M b t j ≤ t := by
+        intro j
+        rw [ih ht' j]
+        omega
+      have hnodelta : ¬ ∃ j, expRun M b t j = b ∧ M t j = false := by
+        rintro ⟨j, hj, -⟩
+        have := hall j
+        omega
+      change expStep b (M t) (expRun M b t) i = _
+      rw [expStep, if_neg hnodelta, ih ht' i, missCount_succ]
+      have hmc := missCount_le M i t
+      by_cases h : M t i
+      · rw [if_pos h, if_pos h]; omega
+      · rw [if_neg h, if_neg h]; omega
 
 private theorem missCount_mono (M : ℕ → Fin C → Bool) (i : Fin C) {t t' : ℕ} (h : t ≤ t') :
     missCount M i t ≤ missCount M i t' := by
@@ -2793,6 +2837,313 @@ theorem argmax_wRun_card_changes_le [NeZero C] (M : ℕ → Fin C → Bool) {iR 
         omega
 
 end Settling
+
+/-! ## The (P)/(I) separation: the least-recently-wrong rotation
+
+Two repair counters have read the same trajectory throughout this file without ever being compared:
+`argmax_wRun_card_changes_le`'s count of reading changes, and `floorSurpriseSet`'s count of
+wrong-mass surprises. Nothing proved above ties them together, and the family below is the witness
+that they are not tied — a run whose reading is dethroned at **every** step while the surprise set
+stays **empty**, so no bound in one counter transfers to the other.
+
+The construction: `C` candidates on a round-robin, candidate `i` missing exactly at the times
+`t ≡ i (mod C)`. At every step the heaviest candidate is the one that missed longest ago — which is
+exactly the one about to miss next — so the reading changes every step; and because the wrong mass
+is spread over one candidate among `C` near-uniform weights, it never climbs past a fixed floor. The
+two counters read the same run and disagree completely: `C − 1` reading changes forced into `T`, and
+a wrong-mass surprise count forced to `0`.
+
+The reading is the classical follow-the-leader rule, and its oscillation under an adversarial,
+round-robin schedule is textbook — the reason online prediction is done with the *mixture* rather
+than the leader — already cited in-corpus via Lattimore–Hutter–Sunehag ([Discovery] §3.3). What is
+new here is not the reading but the pairing: one family exhibiting both counters at their opposite
+extremes simultaneously, where the families already in this file (`everyMiss`, `allMiss`) each move
+only one counter. -/
+
+section Rotation
+
+variable {C : ℕ} [NeZero C]
+
+/-- **The least-recently-wrong rotation.** Candidate `i` misses exactly at the times `t` with
+`t ≡ i (mod C)`, so no candidate is realizable (`rotMiss_not_realizable`) and every candidate misses
+on a period of exactly `C`. -/
+def rotMiss (C : ℕ) : ℕ → Fin C → Bool := fun t i => decide ((i : ℕ) = t % C)
+
+omit [NeZero C] in
+theorem rotMiss_not_realizable (i : Fin C) : ¬ ∀ t, rotMiss C t i = false := by
+  intro h
+  have := h (i : ℕ)
+  simp only [rotMiss, decide_eq_false_iff_not] at this
+  exact this (Nat.mod_eq_of_lt i.2).symm
+
+omit [NeZero C] in
+private theorem rotMiss_periodic (i : Fin C) (t : ℕ) : rotMiss C (C + t) i = rotMiss C t i := by
+  simp [rotMiss, Nat.add_mod_left]
+
+omit [NeZero C] in
+private theorem missCount_rotMiss_base (i : Fin C) {t : ℕ} (ht : t ≤ C) :
+    missCount (rotMiss C) i t = if (i : ℕ) < t then 1 else 0 := by
+  induction t with
+  | zero => simp [missCount_zero]
+  | succ t ih =>
+      have ht' : t ≤ C := by omega
+      rw [missCount_succ, ih ht']
+      have hmod : t % C = t := Nat.mod_eq_of_lt (by omega)
+      change _ + (if (decide ((i : ℕ) = t % C) = true) then 1 else 0) = _
+      rw [hmod]
+      by_cases h : (i : ℕ) = t
+      · simp [h]
+      · by_cases h2 : (i : ℕ) < t
+        · simp [h, h2]; omega
+        · simp [h, h2]; omega
+
+omit [NeZero C] in
+private theorem missCount_rotMiss_peel (i : Fin C) (t : ℕ) :
+    missCount (rotMiss C) i (C + t) = missCount (rotMiss C) i t + 1 := by
+  induction t with
+  | zero =>
+      have hb := missCount_rotMiss_base (C := C) i (le_refl C)
+      simp only [Nat.add_zero]
+      rw [hb]
+      have : (i : ℕ) < C := i.2
+      simp [this, missCount_zero]
+  | succ t ih =>
+      have step1 : C + (t + 1) = (C + t) + 1 := by omega
+      rw [step1, missCount_succ, ih, missCount_succ, rotMiss_periodic]
+      omega
+
+/-- **The rotation's miss count, in closed form.** Candidate `i` has missed `⌊t/C⌋` times by time
+`t`, plus one more exactly when its own residue has already come up in the current partial
+period — the general-`C` analogue of `expRun_altMiss`'s exponents, one level down. -/
+theorem missCount_rotMiss (i : Fin C) (t : ℕ) :
+    missCount (rotMiss C) i t = t / C + (if (i : ℕ) < t % C then 1 else 0) := by
+  have hCpos : 0 < C := Nat.pos_of_ne_zero (NeZero.ne C)
+  induction t using Nat.strong_induction_on with
+  | _ t ih =>
+      rcases lt_or_ge t C with hlt | hge
+      · rw [missCount_rotMiss_base i hlt.le, Nat.div_eq_of_lt hlt, Nat.mod_eq_of_lt hlt]
+        simp
+      · obtain ⟨s, rfl⟩ := Nat.exists_eq_add_of_le hge
+        have hlts : s < C + s := by omega
+        rw [missCount_rotMiss_peel, ih s hlts, Nat.add_comm C s, Nat.add_div_right s hCpos,
+          Nat.add_mod_right]
+        omega
+
+/-- **The rotation's exponents below the horizon.** Composes the hypothesis-free hub
+(`expRun_eq_sub_missCount_of_le`) with the miss count above: candidate `i` sits one doubling behind
+the leader exactly while its own residue has already come up this period. -/
+theorem expRun_rotMiss_of_le (b : ℕ) {t : ℕ} (ht : t ≤ b) (i : Fin C) :
+    expRun (rotMiss C) b t i = t - (t / C + (if (i : ℕ) < t % C then 1 else 0)) := by
+  rw [expRun_eq_sub_missCount_of_le (rotMiss C) b t ht i, missCount_rotMiss i t]
+
+/-- **The running ceiling, below the horizon.** Every candidate whose residue has not yet come up
+this period ties for the maximum, at `t − ⌊t/C⌋` — in particular the candidate about to miss, whose
+own residue is exactly `t % C` and so is never `< t % C`. -/
+theorem wMax_wRun_rotMiss (b : ℕ) {t : ℕ} (ht : t ≤ b) :
+    wMax (raw (wRun (2 ^ b) (missFit (rotMiss C)) t)) = 2 ^ (t - t / C) := by
+  have hCpos : 0 < C := Nat.pos_of_ne_zero (NeZero.ne C)
+  refine le_antisymm (Finset.sup_le fun i _ => ?_) ?_
+  · rw [wRun_eq_pow_expRun, expRun_rotMiss_of_le b ht i]
+    exact Nat.pow_le_pow_right (by norm_num) (by omega)
+  · have h := le_wMax (raw (wRun (2 ^ b) (missFit (rotMiss C)) t))
+      (⟨t % C, Nat.mod_lt t hCpos⟩ : Fin C)
+    rwa [wRun_eq_pow_expRun, expRun_rotMiss_of_le b ht, if_neg (lt_irrefl _)] at h
+
+private theorem raw_wRun_rotMiss_eq_wMax_iff (b : ℕ) {t : ℕ} (ht : t ≤ b) (i : Fin C) :
+    raw (wRun (2 ^ b) (missFit (rotMiss C)) t) i
+      = wMax (raw (wRun (2 ^ b) (missFit (rotMiss C)) t)) ↔ ¬ (i : ℕ) < t % C := by
+  have hmc := missCount_le (rotMiss C) i t
+  rw [missCount_rotMiss] at hmc
+  rw [wRun_eq_pow_expRun, expRun_rotMiss_of_le b ht i, wMax_wRun_rotMiss b ht]
+  constructor
+  · intro h
+    have := Nat.pow_right_injective (le_refl 2) h
+    by_contra hlt
+    rw [if_pos hlt] at this hmc
+    omega
+  · intro h
+    rw [if_neg h, Nat.add_zero]
+
+/-- **The reading is the candidate about to miss.** Among the tied ceiling-holders `argmax`'s own
+tie-break keeps the least index, and that index is exactly `t % C` — the maximum weight sits on
+whoever missed longest ago, which is precisely who misses next. -/
+theorem argmax_wRun_rotMiss (b : ℕ) {t : ℕ} (ht : t ≤ b) :
+    argmax (raw (wRun (2 ^ b) (missFit (rotMiss C)) t))
+      = (⟨t % C, Nat.mod_lt t (Nat.pos_of_ne_zero (NeZero.ne C))⟩ : Fin C) := by
+  set rIdx : Fin C := ⟨t % C, Nat.mod_lt t (Nat.pos_of_ne_zero (NeZero.ne C))⟩ with hrIdx
+  have hR : raw (wRun (2 ^ b) (missFit (rotMiss C)) t) rIdx
+      = wMax (raw (wRun (2 ^ b) (missFit (rotMiss C)) t)) :=
+    (raw_wRun_rotMiss_eq_wMax_iff b ht rIdx).mpr (lt_irrefl _)
+  have hle1 : argmax (raw (wRun (2 ^ b) (missFit (rotMiss C)) t)) ≤ rIdx :=
+    argmax_le_of_eq_wMax hR
+  have hA : raw (wRun (2 ^ b) (missFit (rotMiss C)) t)
+      (argmax (raw (wRun (2 ^ b) (missFit (rotMiss C)) t)))
+      = wMax (raw (wRun (2 ^ b) (missFit (rotMiss C)) t)) :=
+    argmax_eq_wMax _
+  have hle2 : rIdx ≤ argmax (raw (wRun (2 ^ b) (missFit (rotMiss C)) t)) :=
+    Fin.not_lt.mp ((raw_wRun_rotMiss_eq_wMax_iff b ht _).mp hA)
+  exact le_antisymm hle1 hle2
+
+/-- **The (I) side: the reading is dethroned at every single step.** Consecutive residues mod `C`
+never coincide once `C ≥ 2`, so the least-recently-wrong index moves at every step — the change
+count `argmax_wRun_card_changes_le` bounds by `C − 1` is realized maximally on any horizon inside
+the budget, one change per step rather than merely a nonzero rate. -/
+theorem argmax_wRun_rotMiss_ne_succ (hC2 : 2 ≤ C) (b : ℕ) {t : ℕ} (ht : t + 1 ≤ b) :
+    argmax (raw (wRun (2 ^ b) (missFit (rotMiss C)) (t + 1)))
+      ≠ argmax (raw (wRun (2 ^ b) (missFit (rotMiss C)) t)) := by
+  rw [argmax_wRun_rotMiss b ht, argmax_wRun_rotMiss b (by omega : t ≤ b)]
+  intro hcontra
+  have hval : (t + 1) % C = t % C := congrArg Fin.val hcontra
+  have hCpos : 0 < C := Nat.pos_of_ne_zero (NeZero.ne C)
+  have hr : t % C < C := Nat.mod_lt t hCpos
+  have hstep : (t + 1) % C = (t % C + 1) % C := by
+    conv_lhs => rw [← Nat.mod_add_div t C]
+    rw [Nat.add_right_comm, Nat.add_mul_mod_self_left]
+  rw [hstep] at hval
+  rcases Nat.lt_or_ge (t % C + 1) C with h | h
+  · rw [Nat.mod_eq_of_lt h] at hval
+    omega
+  · have heqC : t % C + 1 = C := by omega
+    rw [heqC, Nat.mod_self] at hval
+    omega
+
+/-- **The sum of weights, below the horizon.** The `t % C` candidates whose residue has already come
+up this period hold one doubling less than the rest. -/
+theorem sum_raw_wRun_rotMiss (b : ℕ) {t : ℕ} (ht : t ≤ b) :
+    ∑ i, raw (wRun (2 ^ b) (missFit (rotMiss C)) t) i
+      = (t % C) * 2 ^ (t - t / C - 1) + (C - t % C) * 2 ^ (t - t / C) := by
+  have hCpos : 0 < C := Nat.pos_of_ne_zero (NeZero.ne C)
+  have hrC : t % C ≤ C := (Nat.mod_lt t hCpos).le
+  have hcongr : ∀ i : Fin C, raw (wRun (2 ^ b) (missFit (rotMiss C)) t) i
+      = 2 ^ (t - t / C - (if (i : ℕ) < t % C then 1 else 0)) := by
+    intro i
+    rw [wRun_eq_pow_expRun, expRun_rotMiss_of_le b ht i]
+    congr 1
+    omega
+  rw [Finset.sum_congr rfl (fun i _ => hcongr i), Fin.sum_univ_eq_sum_range
+    (fun j => 2 ^ (t - t / C - (if j < t % C then 1 else 0)))]
+  rw [show Finset.range C = Finset.range (t % C) ∪ Finset.Ico (t % C) C by
+    rw [Finset.range_eq_Ico, Finset.range_eq_Ico]; exact (Finset.Ico_union_Ico_eq_Ico
+      (Nat.zero_le _) hrC).symm]
+  rw [Finset.sum_union (by
+    rw [Finset.range_eq_Ico]
+    exact Finset.Ico_disjoint_Ico_consecutive 0 (t % C) C)]
+  have hleft : ∑ j ∈ Finset.range (t % C), (2 : ℕ) ^ (t - t / C - (if j < t % C then 1 else 0))
+      = (t % C) * 2 ^ (t - t / C - 1) := by
+    rw [Finset.sum_congr rfl (fun j hj => by
+      rw [if_pos (Finset.mem_range.mp hj)]), Finset.sum_const, Finset.card_range, smul_eq_mul]
+  have hright : ∑ j ∈ Finset.Ico (t % C) C, (2 : ℕ) ^ (t - t / C - (if j < t % C then 1 else 0))
+      = (C - t % C) * 2 ^ (t - t / C) := by
+    rw [Finset.sum_congr rfl (fun j hj => by
+      rw [if_neg (not_lt.mpr (Finset.mem_Ico.mp hj).1), Nat.sub_zero]), Finset.sum_const,
+      Nat.card_Ico, smul_eq_mul]
+  rw [hleft, hright]
+
+/-- **The (P) side, in closed form.** The candidate about to miss carries the whole ceiling weight,
+so the wrong mass at time `t` is exactly `2 / (2C − t % C)` — bounded, uniformly in `t`, well below
+`1`. -/
+theorem wrongMass_rotMiss (b : ℕ) {t : ℕ} (ht : t ≤ b) :
+    wrongMass (rotMiss C) b t = 2 / (2 * (C : ℚ) - ((t % C : ℕ) : ℚ)) := by
+  have hCpos : 0 < C := Nat.pos_of_ne_zero (NeZero.ne C)
+  have hrC : t % C < C := Nat.mod_lt t hCpos
+  have hcond : rotMiss C t (⟨t % C, hrC⟩ : Fin C) = true := by simp [rotMiss]
+  have hsingle : wrongMass (rotMiss C) b t
+      = toDist (raw (wRun (2 ^ b) (missFit (rotMiss C)) t)) (⟨t % C, hrC⟩ : Fin C) := by
+    rw [wrongMass, Finset.sum_eq_single (⟨t % C, hrC⟩ : Fin C)]
+    · rw [if_pos hcond]
+    · intro i _ hi
+      rw [if_neg]
+      simp only [rotMiss, decide_eq_true_eq]
+      intro hcontra
+      exact hi (Fin.ext hcontra)
+    · intro h
+      exact absurd (Finset.mem_univ _) h
+  rw [hsingle]
+  have hnum : raw (wRun (2 ^ b) (missFit (rotMiss C)) t) (⟨t % C, hrC⟩ : Fin C)
+      = 2 ^ (t - t / C) := by
+    rw [wRun_eq_pow_expRun, expRun_rotMiss_of_le b ht, if_neg (lt_irrefl (t % C)), Nat.add_zero]
+  have hden : ∑ i, raw (wRun (2 ^ b) (missFit (rotMiss C)) t) i
+      = (t % C) * 2 ^ (t - t / C - 1) + (C - t % C) * 2 ^ (t - t / C) := sum_raw_wRun_rotMiss b ht
+  rcases Nat.eq_zero_or_pos (t % C) with hr0 | hrpos
+  · rw [show toDist (raw (wRun (2 ^ b) (missFit (rotMiss C)) t)) (⟨t % C, hrC⟩ : Fin C)
+      = (raw (wRun (2 ^ b) (missFit (rotMiss C)) t) (⟨t % C, hrC⟩ : Fin C) : ℚ)
+        / ∑ j, (raw (wRun (2 ^ b) (missFit (rotMiss C)) t) j : ℚ) from rfl]
+    rw [hnum, ← Nat.cast_sum, hden, hr0]
+    have hCQ : (C : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr hCpos.ne'
+    push_cast [Nat.sub_zero]
+    field_simp
+    ring
+  · have hmiss0 : missCount (rotMiss C) 0 t = t / C + 1 := by
+      rw [missCount_rotMiss]
+      simp only [Fin.val_zero]
+      rw [if_pos hrpos]
+    have hK1 : 1 ≤ t - t / C := by
+      have := missCount_le (rotMiss C) 0 t
+      rw [hmiss0] at this
+      omega
+    rw [show toDist (raw (wRun (2 ^ b) (missFit (rotMiss C)) t)) (⟨t % C, hrC⟩ : Fin C)
+      = (raw (wRun (2 ^ b) (missFit (rotMiss C)) t) (⟨t % C, hrC⟩ : Fin C) : ℚ)
+        / ∑ j, (raw (wRun (2 ^ b) (missFit (rotMiss C)) t) j : ℚ) from rfl]
+    rw [hnum, ← Nat.cast_sum, hden]
+    have hpow : (2 : ℕ) ^ (t - t / C) = 2 * 2 ^ (t - t / C - 1) := by
+      obtain ⟨K', hK'⟩ := Nat.exists_eq_add_of_le hK1
+      rw [hK']
+      simp [pow_add, pow_succ]
+    have hCQ : (C : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr hCpos.ne'
+    have hCQpos : (0 : ℚ) < C := Nat.cast_pos.mpr hCpos
+    have hpowQ : (0 : ℚ) < 2 ^ (t - t / C - 1) := by positivity
+    have hrCQ : ((t % C : ℕ) : ℚ) ≤ C := by exact_mod_cast hrC.le
+    have hrposQ : (0 : ℚ) < ((t % C : ℕ) : ℚ) := by exact_mod_cast hrpos
+    push_cast [hpow, Nat.cast_sub hrC.le]
+    rw [div_eq_div_iff (by nlinarith) (by nlinarith)]
+    ring
+
+/-- **The (P) side: the surprise set stays empty.** The wrong mass peaks at `2/(C+1)` — attained
+when the candidate about to miss is the highest-indexed one, `t % C = C − 1` — so any threshold at
+or above that floor never sees a surprise, on any horizon inside the budget. -/
+theorem floorSurpriseSet_rotMiss_eq_empty (b : ℕ) {θ : ℚ} (hθ : 2 / ((C : ℚ) + 1) ≤ θ) {n : ℕ}
+    (hn : n ≤ b) : floorSurpriseSet (rotMiss C) b θ n = ∅ := by
+  rw [floorSurpriseSet, Finset.filter_eq_empty_iff]
+  intro t ht
+  rw [Finset.mem_range] at ht
+  rw [wrongMass_rotMiss b (by omega : t ≤ b)]
+  have hCpos : 0 < C := Nat.pos_of_ne_zero (NeZero.ne C)
+  have hrC : t % C < C := Nat.mod_lt t hCpos
+  have hCQpos : (0 : ℚ) < C := Nat.cast_pos.mpr hCpos
+  have hrCQ : ((t % C : ℕ) : ℚ) + 1 ≤ C := by exact_mod_cast hrC
+  have hbound : (2 : ℚ) / (2 * (C : ℚ) - ((t % C : ℕ) : ℚ)) ≤ 2 / ((C : ℚ) + 1) := by
+    apply div_le_div_of_nonneg_left (by norm_num) (by linarith) (by linarith)
+  intro hlt
+  linarith
+
+/-- **The separation, as one theorem.** At any horizon inside the budget, the identification counter
+increments at every step while the prediction-repair set stays empty — so no functional bound in
+either currency of [Discovery] §3.3's product form transfers to the other, agnostically. Compare
+`everyMiss`/`allMiss` above, each of which moves only one of the two counters. -/
+theorem rotMiss_prediction_identification_separation (hC2 : 2 ≤ C) (b n : ℕ) (hn : n ≤ b)
+    {θ : ℚ} (hθ : 2 / ((C : ℚ) + 1) ≤ θ) :
+    (∀ t < n, argmax (raw (wRun (2 ^ b) (missFit (rotMiss C)) (t + 1)))
+        ≠ argmax (raw (wRun (2 ^ b) (missFit (rotMiss C)) t)))
+      ∧ floorSurpriseSet (rotMiss C) b θ n = ∅ :=
+  ⟨fun t htn => argmax_wRun_rotMiss_ne_succ hC2 b (by omega),
+    floorSurpriseSet_rotMiss_eq_empty b hθ hn⟩
+
+/-- **The witness, non-vacuous, at the gate-satisfying parameters `C = 8`, `b = 6`, `θ = 1/4`.** The
+reading changes at both ends of the six-step window shown, and — by
+`rotMiss_prediction_identification_separation` — at every step in between, so the rotation genuinely
+rotates over this range; the surprise set is empty for the reason the theorem above gives, the wrong
+mass bounded away from `1/4` by the pricing, not because the range itself is empty. -/
+theorem rotMiss_prediction_identification_separation_witness :
+    (argmax (raw (wRun (2 ^ 6) (missFit (rotMiss 8)) 1))
+        ≠ argmax (raw (wRun (2 ^ 6) (missFit (rotMiss 8)) 0))
+      ∧ argmax (raw (wRun (2 ^ 6) (missFit (rotMiss 8)) 6))
+        ≠ argmax (raw (wRun (2 ^ 6) (missFit (rotMiss 8)) 5)))
+      ∧ floorSurpriseSet (rotMiss 8) 6 (1 / 4) 6 = ∅ := by
+  have h := rotMiss_prediction_identification_separation (C := 8) (by norm_num) 6 6 le_rfl
+    (θ := 1 / 4) (by norm_num)
+  exact ⟨⟨h.1 0 (by norm_num), h.1 5 (by norm_num)⟩, h.2⟩
+
+end Rotation
 
 /-! ## The fiber's reading along a base trajectory
 

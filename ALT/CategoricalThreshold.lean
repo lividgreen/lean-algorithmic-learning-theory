@@ -241,4 +241,50 @@ theorem reflectiveWithin_at_capacity {gTS : ℕ} (hg : 2 ≤ gTS) :
   exact CapacityLayer.recursorAsm_fitsIn _ _
     (GodelInternalization.capacity_bound gTS (gTS ^ 2) (le_refl _))
 
+/-! ### The reflection ladder's capacity bound ([Inevitability] §6 Remark 6.4)
+
+A fixed host's reflection ladder appends, at each rung, a Gödel sentence for its own
+currently-internalized theory; Remark 6.4 bounds how many such rungs a host of a given work-memory
+budget can climb. `ReflectiveWithin w g` already states the per-rung threshold at Gödel size `g`;
+`ladder_card_le` is the counting step Remark 6.4 draws from it, a pigeonhole over
+`not_reflectiveWithin_below_sentence_size` and nothing more.
+
+Not built here: the identification of a ladder rung's guest with a decoupled subsystem carrying an
+internal theory ([Inevitability] §2's own modelling step), and Remark 6.4's two entropy-side
+clauses (the one-point guest's maximality, the coarsening/bijective dichotomy). Both stay
+paper-level. -/
+
+/-- **The ladder's capacity bound** ([Inevitability] §6 Remark 6.4; over [Decoupling] Proposition
+5.4, machine-checked there as FV-8 `prop_5_4`, in its budget-indexed form
+`not_reflectiveWithin_below_sentence_size` above). A finite set of Gödel numbers, each reaching the
+threshold within a common work budget of `w` bits, has at most `2 ^ w` elements: distinct elements
+of `s` are distinct Gödel numbers, and none of them can reach `2 ^ w` or above.
+
+Inherits [Decoupling] §5.4's representation condition rather than sidestepping it:
+`ReflectiveWithin` is stated for the §5.3 orbit-value indexing, so this count is
+representation-relative in exactly the sense Proposition 5.4 is, not a
+representation-independent bound. -/
+theorem ladder_card_le {w : ℕ} (s : Finset ℕ)
+    (hs : ∀ g ∈ s, ReflectiveWithin w g) : s.card ≤ 2 ^ w := by
+  have hsub : s ⊆ Finset.range (2 ^ w) := by
+    intro g hg
+    rw [Finset.mem_range]
+    by_contra hge
+    have hlt : w < Nat.clog 2 (g + 1) := (Nat.lt_clog_iff_pow_lt (by norm_num)).mpr (by omega)
+    exact not_reflectiveWithin_below_sentence_size hlt (hs g hg)
+  calc s.card ≤ (Finset.range (2 ^ w)).card := Finset.card_le_card hsub
+    _ = 2 ^ w := Finset.card_range _
+
+/-- **Non-vacuity**: `ladder_card_le`'s hypothesis is satisfiable, not merely vacuous on the empty
+set. At Gödel size `2` the threshold is reached exactly at capacity
+(`reflectiveWithin_at_capacity`), so the singleton `{2}` is a genuine one-rung instance of the
+hypothesis. -/
+theorem ladder_card_le_nonvacuous :
+    ∀ g ∈ ({2} : Finset ℕ),
+      ReflectiveWithin (GodelInternalization.capacity (Nat.clog 2 3)) g := by
+  intro g hg
+  simp only [Finset.mem_singleton] at hg
+  subst hg
+  exact reflectiveWithin_at_capacity (le_refl 2)
+
 end CategoricalThreshold

@@ -419,6 +419,241 @@ theorem argmax_wRunFrom_eventually_const_consistent_of_eventually_realizable [Ne
     rw [hshift T']
     exact h2 s (by omega)
 
+/-! ## The lock shape: which vector the run actually reaches
+
+The theorems above settle the *reading*; none of them says which weight vector the run itself
+converges to. From the uniform start, under one persistent candidate, the vector is pinned down
+exactly by two more facts about the generation: the persistent candidate dominates every other
+coordinate pointwise, so the rescale divisor is a function of its own value alone, and that value
+climbs by doubling until the budget stops it — landing on the largest power of two the budget holds,
+not on the budget itself. `settled` is not this shape in general — the guard family below exhibits
+budgets where the run's own fixed point is a different vector, at every candidate — but on a
+power-of-two budget the two coincide, which is the corollary that follows. -/
+
+/-- **The persistent candidate dominates the whole vector, pointwise, from the uniform start.** Both
+start at the reserve; the exact step multiplies the persistent candidate by exactly `2` and every
+other candidate by at most `2`, and the common rescale — one divisor, one floor, applied alike to
+every coordinate — cannot disturb an inequality that already held before it. -/
+private theorem raw_wRunFrom_le_leader (hW : 1 ≤ W) {M : ℕ → Fin C → Bool} {iR : Fin C}
+    (hR : ∀ t, M t iR = false) (i : Fin C) (t : ℕ) :
+    raw (wRunFrom W (missFit M) (pack W fun _ => 1) t) i
+      ≤ raw (wRunFrom W (missFit M) (pack W fun _ => 1) t) iR := by
+  induction t with
+  | zero => exact le_of_eq rfl
+  | succ t ih =>
+      rw [raw_wRunFrom_succ hW, project, project]
+      have hstepR : bayesStep (missFit M t)
+          (raw (wRunFrom W (missFit M) (pack W fun _ => 1) t)) iR
+          = 2 * raw (wRunFrom W (missFit M) (pack W fun _ => 1) t) iR := by
+        rw [bayesStep, missFit_eq_two (hR t)]; ring
+      have hstepI : bayesStep (missFit M t)
+          (raw (wRunFrom W (missFit M) (pack W fun _ => 1) t)) i
+          ≤ 2 * raw (wRunFrom W (missFit M) (pack W fun _ => 1) t) iR := by
+        rw [bayesStep]
+        calc raw (wRunFrom W (missFit M) (pack W fun _ => 1) t) i * missFit M t i
+            ≤ raw (wRunFrom W (missFit M) (pack W fun _ => 1) t) iR * 2 :=
+              Nat.mul_le_mul ih (missFit_le_two M t i)
+          _ = 2 * raw (wRunFrom W (missFit M) (pack W fun _ => 1) t) iR := Nat.mul_comm _ _
+      rw [hstepR]
+      exact max_le_max le_rfl (Nat.div_le_div_right hstepI)
+
+/-- The persistent candidate's raw weight, isolated for the recursion below. -/
+private abbrev leaderVal (W : ℕ) (M : ℕ → Fin C → Bool) (iR : Fin C) (t : ℕ) : ℕ :=
+  raw (wRunFrom W (missFit M) (pack W fun _ => 1) t) iR
+
+private theorem leaderVal_zero (hW : 1 ≤ W) (M : ℕ → Fin C → Bool) (iR : Fin C) :
+    leaderVal W M iR 0 = 1 := by
+  change raw (pack W (fun _ => (1 : ℕ)) : WVec C W) iR = 1
+  rw [raw, pack]
+  exact min_eq_left hW
+
+private theorem leaderVal_le (W : ℕ) (M : ℕ → Fin C → Bool) (iR : Fin C) (t : ℕ) :
+    leaderVal W M iR t ≤ W := raw_le_budget _ iR
+
+/-- The pre-rescale maximum is exactly twice the persistent candidate's own weight: dominance makes
+it both the upper bound and, at its own coordinate, the value attained. -/
+private theorem wMax_bayesStep_wRunFrom_eq_leader (hW : 1 ≤ W) {M : ℕ → Fin C → Bool} {iR : Fin C}
+    (hR : ∀ t, M t iR = false) (t : ℕ) :
+    wMax (bayesStep (missFit M t) (raw (wRunFrom W (missFit M) (pack W fun _ => 1) t)))
+      = 2 * leaderVal W M iR t := by
+  refine le_antisymm (Finset.sup_le fun i _ => ?_) ?_
+  · rw [bayesStep]
+    calc raw (wRunFrom W (missFit M) (pack W fun _ => 1) t) i * missFit M t i
+        ≤ leaderVal W M iR t * 2 :=
+          Nat.mul_le_mul (raw_wRunFrom_le_leader hW hR i t) (missFit_le_two M t i)
+      _ = 2 * leaderVal W M iR t := Nat.mul_comm _ _
+  · change 2 * raw (wRunFrom W (missFit M) (pack W fun _ => 1) t) iR ≤ _
+    have h := le_wMax (bayesStep (missFit M t)
+      (raw (wRunFrom W (missFit M) (pack W fun _ => 1) t))) iR
+    rw [bayesStep, missFit_eq_two (hR t)] at h
+    omega
+
+private theorem scaleDiv_wRunFrom_eq (hW : 1 ≤ W) {M : ℕ → Fin C → Bool} {iR : Fin C}
+    (hR : ∀ t, M t iR = false) (t : ℕ) :
+    scaleDiv W (bayesStep (missFit M t) (raw (wRunFrom W (missFit M) (pack W fun _ => 1) t)))
+      = max 1 ((2 * leaderVal W M iR t + W - 1) / W) := by
+  rw [scaleDiv, wMax_bayesStep_wRunFrom_eq_leader hW hR t]
+
+private theorem scaleDiv_wRunFrom_eq_one (hW : 1 ≤ W) {M : ℕ → Fin C → Bool} {iR : Fin C}
+    (hR : ∀ t, M t iR = false) {t : ℕ} (h1 : 1 ≤ leaderVal W M iR t)
+    (h2 : 2 * leaderVal W M iR t ≤ W) :
+    scaleDiv W (bayesStep (missFit M t)
+        (raw (wRunFrom W (missFit M) (pack W fun _ => 1) t))) = 1 := by
+  rw [scaleDiv_wRunFrom_eq hW hR t]
+  have hq : (2 * leaderVal W M iR t + W - 1) / W = 1 := Nat.div_eq_of_lt_le (by omega) (by omega)
+  omega
+
+private theorem scaleDiv_wRunFrom_eq_two (hW : 1 ≤ W) {M : ℕ → Fin C → Bool} {iR : Fin C}
+    (hR : ∀ t, M t iR = false) {t : ℕ} (_h1 : 1 ≤ leaderVal W M iR t)
+    (h2 : W < 2 * leaderVal W M iR t) (h3 : leaderVal W M iR t ≤ W) :
+    scaleDiv W (bayesStep (missFit M t)
+        (raw (wRunFrom W (missFit M) (pack W fun _ => 1) t))) = 2 := by
+  rw [scaleDiv_wRunFrom_eq hW hR t]
+  have hq : (2 * leaderVal W M iR t + W - 1) / W = 2 := Nat.div_eq_of_lt_le (by omega) (by omega)
+  omega
+
+/-- **The persistent candidate's own recursion**: it doubles while doubling still fits the budget,
+and stands still the moment it does not. The rescale is the whole mechanism — no other coordinate's
+behavior enters, because dominance already priced the divisor in terms of this value alone. -/
+private theorem leaderVal_succ (hW : 1 ≤ W) {M : ℕ → Fin C → Bool} {iR : Fin C}
+    (hR : ∀ t, M t iR = false) (t : ℕ) :
+    leaderVal W M iR (t + 1)
+      = if 2 * leaderVal W M iR t ≤ W then 2 * leaderVal W M iR t else leaderVal W M iR t := by
+  have hL1 : 1 ≤ leaderVal W M iR t := by
+    rcases Nat.eq_zero_or_pos t with ht0 | ht0
+    · subst ht0; rw [leaderVal_zero hW]
+    · exact one_le_raw_wRunFrom hW _ _ ht0 iR
+  have hLW : leaderVal W M iR t ≤ W := leaderVal_le W M iR t
+  have hbase : leaderVal W M iR (t + 1)
+      = max 1 (2 * leaderVal W M iR t
+          / scaleDiv W (bayesStep (missFit M t)
+              (raw (wRunFrom W (missFit M) (pack W fun _ => 1) t)))) := by
+    change raw (wRunFrom W (missFit M) (pack W fun _ => 1) (t + 1)) iR = _
+    rw [raw_wRunFrom_succ hW, project, bayesStep, missFit_eq_two (hR t), Nat.mul_comm]
+  split
+  · rename_i h
+    rw [hbase, scaleDiv_wRunFrom_eq_one hW hR hL1 h, Nat.div_one]
+    omega
+  · rename_i h
+    rw [not_le] at h
+    rw [hbase, scaleDiv_wRunFrom_eq_two hW hR hL1 h hLW,
+      Nat.mul_div_cancel_left _ (by norm_num : (0 : ℕ) < 2)]
+    omega
+
+/-- **The closed form**: the persistent candidate's weight is a power of two at every step, the
+smaller of the step count and the budget's own binary exponent. -/
+private theorem leaderVal_eq_pow_min (hW : 1 ≤ W) {M : ℕ → Fin C → Bool} {iR : Fin C}
+    (hR : ∀ t, M t iR = false) (t : ℕ) :
+    leaderVal W M iR t = 2 ^ min t (Nat.log 2 W) := by
+  induction t with
+  | zero => rw [leaderVal_zero hW]; simp
+  | succ t ih =>
+      rw [leaderVal_succ hW hR, ih]
+      rcases Nat.lt_or_ge t (Nat.log 2 W) with hlt | hge
+      · have hmin1 : min t (Nat.log 2 W) = t := min_eq_left hlt.le
+        have hmin2 : min (t + 1) (Nat.log 2 W) = t + 1 := min_eq_left (by omega)
+        have h2 : 2 * 2 ^ min t (Nat.log 2 W) ≤ W := by
+          rw [hmin1]
+          calc 2 * 2 ^ t = 2 ^ (t + 1) := by rw [pow_succ]; ring
+            _ ≤ 2 ^ Nat.log 2 W := Nat.pow_le_pow_right (by norm_num) (by omega)
+            _ ≤ W := Nat.pow_log_le_self 2 (by omega)
+        rw [if_pos h2, hmin1, hmin2, pow_succ]; ring
+      · have hmin1 : min t (Nat.log 2 W) = Nat.log 2 W := min_eq_right hge
+        have hmin2 : min (t + 1) (Nat.log 2 W) = Nat.log 2 W := min_eq_right (by omega)
+        have hlog : W < 2 ^ Nat.log 2 W * 2 := by
+          have h := Nat.lt_pow_succ_log_self (b := 2) (by norm_num) W
+          simpa [pow_succ] using h
+        have h2 : ¬ 2 * 2 ^ min t (Nat.log 2 W) ≤ W := by rw [hmin1]; omega
+        rw [if_neg h2, hmin1, hmin2]
+
+private theorem leaderVal_eq_pow_of_ge (hW : 1 ≤ W) {M : ℕ → Fin C → Bool} {iR : Fin C}
+    (hR : ∀ t, M t iR = false) {t : ℕ} (ht : Nat.log 2 W ≤ t) :
+    leaderVal W M iR t = 2 ^ Nat.log 2 W := by
+  rw [leaderVal_eq_pow_min hW hR, min_eq_right ht]
+
+private theorem scaleDiv_wRunFrom_eq_two_of_ge_log (hW : 1 ≤ W) {M : ℕ → Fin C → Bool} {iR : Fin C}
+    (hR : ∀ t, M t iR = false) {t : ℕ} (ht : Nat.log 2 W ≤ t) :
+    scaleDiv W (bayesStep (missFit M t)
+        (raw (wRunFrom W (missFit M) (pack W fun _ => 1) t))) = 2 := by
+  have hLeq := leaderVal_eq_pow_of_ge hW hR ht
+  have hL1 : 1 ≤ leaderVal W M iR t := by rw [hLeq]; exact Nat.one_le_two_pow
+  have hLW : leaderVal W M iR t ≤ W := leaderVal_le W M iR t
+  refine scaleDiv_wRunFrom_eq_two hW hR hL1 ?_ hLW
+  rw [hLeq]
+  have h := Nat.lt_pow_succ_log_self (b := 2) (by norm_num) W
+  have h' : W < 2 ^ Nat.log 2 W * 2 := by simpa [pow_succ] using h
+  omega
+
+/-- **The run reaches the lock shape, not merely a settled candidate.** Under a persistent candidate
+and every other candidate missing infinitely often, the run's own weight vector — from the uniform
+start — is eventually exactly the persistent candidate raised to the largest power of two the budget
+holds, and every other coordinate at the one-quantum floor. Neither conclusion needs the budget to
+be a power of two: `raw_wRunFrom_eventually_settled` below is what that extra hypothesis buys. -/
+theorem raw_wRunFrom_eventually_lock (hW : 1 ≤ W) {M : ℕ → Fin C → Bool} {iR : Fin C}
+    (hR : ∀ t, M t iR = false) (hOther : ∀ i, i ≠ iR → ∀ s, ∃ t, s ≤ t ∧ M t i = true) :
+    ∃ T, ∀ t, T ≤ t →
+      raw (wRunFrom W (missFit M) (pack W fun _ => 1) t)
+        = fun i => if i = iR then 2 ^ Nat.log 2 W else 1 := by
+  obtain ⟨T, hT1, hT⟩ := raw_wRunFrom_eventually_const hW M hR (pack W fun _ => 1)
+  have hTge : Nat.log 2 W ≤ T := by
+    by_contra hcon
+    rw [not_le] at hcon
+    have hEq : leaderVal W M iR (T + 1) = leaderVal W M iR T :=
+      congrFun (hT (T + 1) (by omega)) iR
+    have hLT := leaderVal_eq_pow_min hW hR T
+    have hLT1 := leaderVal_eq_pow_min hW hR (T + 1)
+    rw [min_eq_left hcon.le] at hLT
+    rw [min_eq_left (by omega : T + 1 ≤ Nat.log 2 W)] at hLT1
+    rw [hLT, hLT1] at hEq
+    rw [pow_succ] at hEq
+    have hpos : 0 < (2 : ℕ) ^ T := pow_pos (by norm_num) T
+    omega
+  refine ⟨T, fun t ht => ?_⟩
+  have hRawEq : raw (wRunFrom W (missFit M) (pack W fun _ => 1) t)
+      = raw (wRunFrom W (missFit M) (pack W fun _ => 1) T) := hT t ht
+  rw [hRawEq]
+  funext i
+  by_cases hi : i = iR
+  · subst hi
+    rw [if_pos rfl]
+    exact leaderVal_eq_pow_of_ge hW hR hTge
+  · rw [if_neg hi]
+    obtain ⟨t', ht', hmiss⟩ := hOther i hi T
+    have heq1 : raw (wRunFrom W (missFit M) (pack W fun _ => 1) t') i
+        = raw (wRunFrom W (missFit M) (pack W fun _ => 1) T) i := congrFun (hT t' ht') i
+    have heq2 : raw (wRunFrom W (missFit M) (pack W fun _ => 1) (t' + 1)) i
+        = raw (wRunFrom W (missFit M) (pack W fun _ => 1) T) i :=
+      congrFun (hT (t' + 1) (by omega)) i
+    have hlockAt : scaleDiv W (bayesStep (missFit M t')
+        (raw (wRunFrom W (missFit M) (pack W fun _ => 1) t'))) = 2 :=
+      scaleDiv_wRunFrom_eq_two_of_ge_log hW hR (le_trans hTge ht')
+    have hstep : raw (wRunFrom W (missFit M) (pack W fun _ => 1) (t' + 1)) i
+        = max 1 (raw (wRunFrom W (missFit M) (pack W fun _ => 1) t') i / 2) := by
+      rw [raw_wRunFrom_succ hW, project, hlockAt, bayesStep, missFit_eq_one hmiss, Nat.mul_one]
+    rw [heq1] at hstep
+    rw [heq2] at hstep
+    have hpos : 1 ≤ raw (wRunFrom W (missFit M) (pack W fun _ => 1) T) i :=
+      one_le_raw_wRunFrom hW _ _ hT1 i
+    omega
+
+/-- **At a power-of-two budget the lock shape is `settled`.** The identification the paper's
+formalization asks for, with the exact hypotheses under which it holds: a persistent candidate,
+every other candidate missing infinitely often, and a budget that is a power of two. -/
+theorem raw_wRunFrom_eventually_settled {k : ℕ} {M : ℕ → Fin C → Bool} {iR : Fin C}
+    (hR : ∀ t, M t iR = false) (hOther : ∀ i, i ≠ iR → ∀ s, ∃ t, s ≤ t ∧ M t i = true)
+    (hWk : W = 2 ^ k) :
+    ∃ T, ∀ t, T ≤ t →
+      raw (wRunFrom W (missFit M) (pack W fun _ => 1) t) = settled W iR := by
+  have hW : 1 ≤ W := by rw [hWk]; exact Nat.one_le_two_pow
+  obtain ⟨T, hT⟩ := raw_wRunFrom_eventually_lock hW hR hOther
+  refine ⟨T, fun t ht => ?_⟩
+  rw [hT t ht]
+  funext i
+  rw [settled]
+  by_cases hi : i = iR
+  · rw [if_pos hi, if_pos hi, hWk, Nat.log_pow (by norm_num : 1 < 2)]
+  · rw [if_neg hi, if_neg hi]
+
 end Basin
 
 /-! ## The fiber's own reading, from an arbitrary fiber state
@@ -920,6 +1155,57 @@ theorem argmax_wRunFrom_altMiss_not_eventually_const {b : ℕ} (hb : 1 ≤ b) (T
         ≠ argmax (raw (wRunFrom (2 ^ b) (missFit altMiss) (pack (2 ^ b) fun _ => 1) T)) := by
   simpa only [wRunFrom_pack_one] using argmax_wRun_altMiss_not_eventually_const hb T
 
+/-! ### `settled` is not the only shape the run reaches
+
+Two mechanisms, each at a fixed instance, exhibit a vector the run reaches from the uniform start
+that is not `settled W c` for *any* `c` — so the lock shape is what transports off a power-of-two
+budget or off a single persistent candidate, and `settled` itself does not. -/
+
+/-- **The persistent candidate stalls below a non-power-of-two budget.** `zeroMiss`'s candidate `1`
+never misses; at `W = 3` the run is already a fixed point one step in, and the persistent candidate
+has climbed to `2`, the last doubling the budget holds — not to `3`, the whole budget. -/
+theorem raw_wRunFrom_zeroMiss_eq (t : ℕ) :
+    raw (wRunFrom 3 (missFit zeroMiss) (pack 3 fun _ => 1) (t + 1)) = ![1, 2] := by
+  induction t with
+  | zero => decide
+  | succ t ih =>
+      rw [raw_wRunFrom_succ (by norm_num : (1 : ℕ) ≤ 3), ih]
+      have hF : missFit zeroMiss (t + 1) = missFit zeroMiss 0 := rfl
+      rw [hF]
+      decide
+
+/-- **The fixed point is not `settled`, at either candidate.** `settled 3 c` puts the whole budget
+`3` on `c`; the run above never reaches coordinate `3` at all. -/
+theorem raw_wRunFrom_zeroMiss_ne_settled (t : ℕ) (c : Fin 2) :
+    raw (wRunFrom 3 (missFit zeroMiss) (pack 3 fun _ => 1) (t + 1)) ≠ settled 3 c := by
+  rw [raw_wRunFrom_zeroMiss_eq t]
+  fin_cases c <;> decide
+
+/-- **Both candidates never miss** — the weakest realizable instance, and the second mechanism: a
+candidate that stops missing keeps whatever weight it already holds. -/
+def bothLead : ℕ → Fin 2 → Bool := fun _ _ => false
+
+theorem bothLead_realizable (t : ℕ) : bothLead t 0 = false := rfl
+
+/-- **A second candidate that stops missing keeps whatever weight it had.** At `W = 4`, with neither
+candidate ever missing, the run from the uniform start settles at `![4, 4]` — outside the settled
+family at every budget, since `settled` never puts the whole budget on more than one coordinate. -/
+theorem raw_wRunFrom_bothLead_eq (t : ℕ) :
+    raw (wRunFrom 4 (missFit bothLead) (pack 4 fun _ => 1) (t + 2)) = ![4, 4] := by
+  induction t with
+  | zero => decide
+  | succ t ih =>
+      have he : t + 1 + 2 = t + 2 + 1 := by omega
+      rw [he, raw_wRunFrom_succ (by norm_num : (1 : ℕ) ≤ 4), ih]
+      have hF : missFit bothLead (t + 2) = missFit bothLead 0 := rfl
+      rw [hF]
+      decide
+
+theorem raw_wRunFrom_bothLead_ne_settled (t : ℕ) (c : Fin 2) :
+    raw (wRunFrom 4 (missFit bothLead) (pack 4 fun _ => 1) (t + 2)) ≠ settled 4 c := by
+  rw [raw_wRunFrom_bothLead_eq t]
+  fin_cases c <;> decide
+
 end Guards
 
 end WeightedFiber
@@ -959,3 +1245,19 @@ end WeightedFiber
 /-- info: 'WeightedFiber.argmaxFrame_wWorld_eventually_const_wStartFrom' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms WeightedFiber.argmaxFrame_wWorld_eventually_const_wStartFrom
+
+/-- info: 'WeightedFiber.raw_wRunFrom_eventually_lock' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.raw_wRunFrom_eventually_lock
+
+/-- info: 'WeightedFiber.raw_wRunFrom_eventually_settled' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.raw_wRunFrom_eventually_settled
+
+/-- info: 'WeightedFiber.raw_wRunFrom_zeroMiss_ne_settled' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.raw_wRunFrom_zeroMiss_ne_settled
+
+/-- info: 'WeightedFiber.raw_wRunFrom_bothLead_ne_settled' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.raw_wRunFrom_bothLead_ne_settled

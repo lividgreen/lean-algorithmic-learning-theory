@@ -10,12 +10,18 @@ set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-!
-# Data layer for the 1-DL consistency solver
+# Data layer for the 1-DL and conjunction consistency solvers
 
 Provenance: the native cost model (`ALT/TimeCost.lean`). Builds on `ALT/PolyTime.lean` (`PolyTime`,
 `PolyBounded`, the base/`comp` closures, `polyTime_loop`, `tc_prec_le'`, `exists_two_pow_gt_poly`).
-Downstream: the greedy 1-decision-list consistency solver (`DecisionListSolver.lean`), whose scan/peel loops iterate
-over the `m` examples and `k` features.
+Downstream: the greedy 1-decision-list consistency solver (`DecisionListSolver.lean`) and the
+conjunction consistency solver (`ConjunctionSolver.lean`), whose scan/peel loops iterate over the
+`m` examples and `k` features.
+
+Besides the instance encoding (`WF`, the flat/indexed accessors, `peel`/`cPeel`), this module also
+carries the labelled bit-example layer shared by every rule-class solver that reads examples
+against a Boolean feature vector: `lblOf`/`fvOf`/`featOf` (an example's label, feature vector, and
+`j`-th feature bit) and `WFBits` (the binary well-formedness regime both solvers assume).
 
 ## The decode-cost verdict, and the flag-cons PIVOT
 An offset-cons encoding `cons e r = Nat.pair e r + 1` would need a predecessor to decode. There is no
@@ -347,5 +353,26 @@ theorem getExample_encode (xs : List ℕ) (i : ℕ) (h : i < xs.length) :
 theorem getLabel_encode (xs : List ℕ) (i : ℕ) (h : i < xs.length) :
     (headL (peel (encodeList xs) i)).unpair.1 = (xs[i]).unpair.1 := by
   rw [getExample_encode xs i h]
+
+/-! ## The labelled bit-example encoding
+
+Shared by every consumer that reads a `⟨label, fv⟩`-encoded example against a Boolean feature
+vector — the 1-DL solver (`DecisionListSolver.lean`, `DecisionListPredictor.lean`) and the
+conjunction solver (`ConjunctionSolver.lean`) alike. Moved here (from `DecisionListSolver.lean`)
+since none of it is about decision lists: it is the shared instance-encoding layer every rule-class
+solver reads examples through. -/
+
+/-- The label of an example `e = ⟨label, fv⟩`. -/
+def lblOf (e : ℕ) : ℕ := e.unpair.1
+/-- The feature-vector of an example. -/
+def fvOf (e : ℕ) : ℕ := e.unpair.2
+/-- Feature `j` of example `e`: peel its feature-vector `j` cells and read the head bit. -/
+def featOf (e j : ℕ) : ℕ := headL (peel (fvOf e) j)
+
+/-- **Binary well-formedness of the instance.** `WF` plus: every example's label and every feature bit
+is `≤ 1` (the binary regime), over the `List` model of the example data. -/
+def WFBits (inst : ℕ) : Prop :=
+  WF inst ∧ ∃ exs : List ℕ, readData inst = encodeList exs ∧ exs.length = readM inst ∧
+    (∀ e ∈ exs, lblOf e ≤ 1) ∧ (∀ e ∈ exs, ∀ j, featOf e j ≤ 1)
 
 end OneDL

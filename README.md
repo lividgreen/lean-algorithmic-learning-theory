@@ -20,7 +20,12 @@ self-reference and Gödel's theorem starts to bite.
 
 Everything here is proved, not sketched: no `sorry`, no `native_decide`,
 standard axioms only, with each capstone's exact axiom footprint asserted by a
-guard that fails the build if it ever drifts.
+guard that fails the build if it ever drifts. And where a theorem needs a
+system to hold *of*, the library builds one and proves the construction is that
+system — abstract inhabitants that merely typecheck are ruled out by explicit
+junk-satisfiability guards, which prove the class in question is satisfiable by
+degenerate instantiations and so make the real witness's named ones the thing
+that carries the content.
 
 **Start here:** the [**API reference**](https://lividgreen.github.io/lean-algorithmic-learning-theory/)
 is generated from the source and is the best way in — every definition and
@@ -32,8 +37,10 @@ entry points, if you want a sense of the range before reading the list:
 | [`Ville.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/Ville.html) | Ville's inequality — the anytime-valid tail bound Mathlib does not carry |
 | [`SQEnvelope.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/SQEnvelope.html) | statistical-query learning, to our knowledge the first such formalization in any prover |
 | [`DecisionListSolver.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/DecisionListSolver.html) | a learner verified **correct *and* polynomial-step**, against a cost model built here |
+| [`DecisionListPredictor.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/DecisionListPredictor.html) | asking that learner twice decides what the surviving candidates agree on — or that they do not |
 | [`Decoupling.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/Decoupling.html) | when a model a system holds of itself survives the system running |
 | [`GodelThreshold.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/GodelThreshold.html) | the capacity threshold at which self-representation turns into incompleteness |
+| [`LearningWitness.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/LearningWitness.html) | an explicit system that meets those prerequisites — built, not assumed to exist |
 
 ## What is proved here
 
@@ -64,6 +71,23 @@ entry points, if you want a sense of the range before reading the list:
   learner verified **both correct and `poly(m,k)`-step**
   (`DecisionListSolver.lean`); we believe this is the first learning algorithm
   mechanically verified for correctness and complexity at once.
+  Built over it, a **version-space read-off** (`DecisionListPredictor.lean`):
+  extending the instance by the query point labelled each way and asking the
+  verified solver twice **classifies** the surviving candidates — none consistent,
+  all agreeing at the query (so the answer is forced, and it is returned), or
+  two of them disagreeing — with its own explicit step bound. The agreement
+  case is therefore detected rather than assumed, and the classification needs
+  no restriction on the candidates' output labels: one predicting a non-label
+  value has its deciding rule firing first on no example, so that label moves
+  freely.
+  A **second class** carries both theorems (`ConjunctionSolver.lean`,
+  `ConjunctionPredictor.lean`): conjunctions over `k` Boolean features get
+  their own poly-step consistency decider and the same forced-symbol read-off
+  built over it. It is structurally cheaper — a conjunction's output is a bit
+  by construction, so the relabelling argument the decision-list case needs is
+  not ported — and it was built in a separate module against the solver's
+  public API alone, with no `Code`-level bridge across the boundary, so the
+  transfer between classes is exercised rather than asserted.
   Honest boundary: time is unit-cost AST steps (arithmetic is value-linear,
   hence the solver's binary bit-gate setting); space is value bit-width.
 - **A priced universal interpreter** (`BoundedInterp.lean`, `CodeArith.lean`,
@@ -88,6 +112,25 @@ entry points, if you want a sense of the range before reading the list:
   majority voting saturating the bound exactly); and sub-systems hosting
   sub-systems compose squares with added budgets — stacking buys structure,
   never generic capacity (`tower_no_free_lunch`).
+  Under those results sits a counting core with its decoder on top. A family
+  read at any finite set of times is priced by one bijection per block of the
+  joint partition its frames induce; where that itinerary is injective the
+  world's own rule is the *unique* permutation consistent with the frames, not
+  merely the count's witness; and one fixed program turns that count into a
+  description of the world, built from the frame codes, the held times and an
+  index into the consistent set (`FrameItinerary.lean`, over
+  `ledger_itinerary` in `PersistenceCapacity.lean`). Declining a move up the
+  pricing order costs at most twice the declined address, and exactly twice is
+  attained — by an incompressible world read through its own canonical-form
+  map with two fixed points merged — so that cap's constant is settled rather
+  than bracketed (`CanonicalFormLens.lean`). Past the crossover where a lens's
+  own address exceeds the fibre freedom it removes, "the composite is
+  stronger" is **false**, by a double pigeonhole over an incompressible cycle
+  read by position modulo `z` (`ExpensiveLens.lean`). And on the cyclic word a
+  reading traces along an orbit, the positions where the word disagrees with
+  its own `d`-shift are exactly the run boundaries of its `d`-decimation, at
+  any alphabet and — averaged over starting points — with no condition on `d`
+  whatever (`ReadingWord.lean`).
 - **A realizability (assembly) category over Kleene's first algebra**
   (`Realizability*.lean`, `CapacityLayer.lean`, `RealizerLength.lean`, …):
   Cartesian closed with finite coproducts, a subobject classifier and
@@ -108,7 +151,13 @@ entry points, if you want a sense of the range before reading the list:
 - **Evolution in a skew-product fiber** (`SkewFiber.lean`,
   `WeightedFiber.lean`, `QuantizationRate.lean`): a skew product is priced by
   its ingredients' codes plus a constant, with nothing scaling in the state
-  count; and a fiber whose state is a weight vector over candidate rules,
+  count — and a `P`-fold blockwise population over one base is priced the same
+  way, the population entering only through its binary numeral, so a fiber
+  carrier exponential in `P` costs the base's code, *one* copy of the fiber's,
+  and the numerals of `n₁` and `P` (`powFiber`,
+  `KE_skewWorldFin_powFiber_le`), where iterating the binary product bound
+  would have paid one copy's code `P` times; and a fiber whose state is a
+  weight vector over candidate rules,
   updated by fitness-proportional selection, has an update that *is* Bayes'
   rule — normalizing the integer multiplicative step gives exactly the
   posterior, term for term, with no division, because the posterior depends on
@@ -116,7 +165,14 @@ entry points, if you want a sense of the range before reading the list:
   priced both ways: below an exactness horizon the finite run **equals** the
   exact Bayes run (the projection has nothing to do, and the horizon is sharp),
   and past it one generation stays within `4C/W` of the exact posterior in
-  total variation. Honest boundary: no projection onto a finite carrier is a
+  total variation. Which repairs such a host can offer is then settled
+  negatively (`EvoAbsorption.lean`): the evolutionary step is *expansive*
+  whenever selection does anything at all — one changed slot can flip the
+  winner, and a flip moves every slot — one-step erasure fails inside the
+  construction's own coverage regime rather than at its edge, and a robustness
+  margin at a settled point forces that point's codeword to be the strict
+  fitness maximum, so margin and full coverage cannot both hold once there are
+  two candidates. Honest boundary: no projection onto a finite carrier is a
   replicator step, the residual does not telescope over a run, and no
   accumulated bound is claimed.
 - **A surprise budget, and decoupling on a growing code region**
@@ -124,8 +180,32 @@ entry points, if you want a sense of the range before reading the list:
   on how often a prequential mixture is surprised, priced per event against a
   reading's robustness margin — and the formalization corrected the assembly it
   was built from, since a margin does *not* compose across consecutive
-  perturbations: two independent structural conditions on the host each rescue
-  it, and a small counterexample shows neither may be dropped. Separately, the
+  perturbations, and a small counterexample shows a repair cannot simply be
+  dropped. Three independent repairs are proved, and the third asks nothing of
+  the host's dynamics at all: the host never separates two states, or it
+  *erases* a bounded perturbation, or the reading is constant on a set closed
+  under both the host and the damage — the last needing no Hamming distance, no
+  finiteness and no margin, since the reading has nowhere to move to
+  (`survives_of_invariant`). The erasure repair is in turn the minimum of a
+  family: erasure within `T` steps, under a schedule whose hits land more than
+  `T` apart, makes the damaged and undamaged trajectories *equal* outside the
+  correction windows, so every reading agrees and no margin is consumed
+  (`traj_eq_of_correctsWithin_of_spaced`), with the spacing hypothesis proved
+  load-bearing by a host erasing within two steps and hit one step apart.
+  Nothing is claimed *inside* a window, so the family contains the one-step
+  condition rather than replacing it.
+  A separate question is what a host that merely **settles** buys, and both
+  halves of the answer are machine-checked. If damage keeps the run inside a
+  basin every state of which settles, the damaged reading settles too
+  (`settles_traj_of_settles`) — on the damage model's own finiteness, with no
+  margin, no erasure and no condition on the reading, and with a purely
+  dynamical form under a faithful decode whose host is read-only on its own
+  ω-limit set (`settles_traj_of_readOnly`). But the reading stops changing
+  without necessarily stopping at the *undamaged* value
+  (`settles_traj_not_agreement`), and a host can erase every one-cell
+  perturbation while its reading alternates forever (`corrects_not_settles`) —
+  so settling is parallel to the three repairs rather than a fourth one, in
+  both directions and on witnesses rather than on inspection. Separately, the
   decoupling equivalence holds verbatim on a monotonically *growing* code
   region, with an append-only witness on which the limit region is not
   read-only, so the statement does not reduce to one fixed partition.
@@ -140,6 +220,58 @@ entry points, if you want a sense of the range before reading the list:
   no general characterization is claimed. Also machine-checked: the regularity
   regime does not imply the capacity clause, a separation the informal
   presentation is easy to elide.
+- **A constructed learner that meets those prerequisites, and survives damage**
+  (`LearningWitness.lean`, `LearningWitnessComplete.lean`,
+  `FlooredMixture.lean`, `WitnessMixture.lean`, `BasinSettling.lean`,
+  `RedundantFiber.lean`, `DamageGate.lean`): the class above is inhabited by an
+  explicit system — a Bernoulli-noise window chain, embedded so that its code
+  region is never written — rather than by an abstract witness whose fields are
+  asserted. What rules out that gluing is a realization theorem: the
+  observation read off the substrate's own cell along its own orbit *is* the
+  chain's observation, pointwise, so every statistical clause is stated on the
+  substrate's process and proved by rewriting along it. A junk-inhabitation
+  guard (`substrateL_junk_satisfiable`) shows the class is satisfiable by
+  degenerate instantiations — `True` for its propositional fields, an empty
+  family, a vacuous rate constant — which is what makes the real witness's
+  named ones carry content rather than merely typecheck. Its theory
+  conditions are then discharged at Foundation's finite `𝗣𝗔⁻` — ℕ-soundness at
+  the faithful "every provable sentence is true" form, consistency derived from
+  that rather than assumed beside it — by a *single* incompleteness invocation
+  whose Gödel size is threaded through both the capacity threshold and the
+  underivable-truth payload (`witness_crossing_genuine_paMinus`).
+  The learner riding it is a mixture floored at one quantum per candidate, and
+  its dynamics has an exact normal form carrying no hypothesis at all: the run
+  **is** an exponent automaton, every weight a power of two throughout, the
+  floor being ℕ-subtraction's clip at exponent zero (`wRun_eq_pow_expRun`). Off
+  that identity come a surprise bound against *any* reference candidate's own
+  errors — with refuting families showing realizability is load-bearing rather
+  than convenient — settling of the whole weight vector from every carrier
+  vector at every budget of at least one quantum (`BasinSettling.lean`), and,
+  on the witness's own trajectory, the identity that the true rule's miss count
+  *is* the noise count (`witMiss_zero`), so its damage budget is a rate where a
+  never-missing candidate's stays lifetime-free.
+  Survival under corruption is proved, not assumed: a damaged fiber settles
+  exactly as an undamaged run restarted after its last hit, at a price paid
+  once per hit; `P` copies reading one stream, decoded by the least-indexed
+  copy whose prediction the base confirms, agree wherever two of them verify;
+  and a schedule touching fewer than `P` copies leaves one untouched, so the
+  composite reads the base's own next state (`RedundantFiber.lean`). That
+  composite's decode is priced as well, and is the cheaper half to name: its
+  three ingredient codes carry every structural number but the population size,
+  so `P`'s binary numeral is the only one loaded (`KE_compFrameFlat_le`) —
+  though both halves are priced on the flat carrier `Fin (n₁ * n₂ ^ P)`, and
+  that this is the composite guest's own state space is the standard encoding
+  rather than a theorem here.
+  Honest boundary: the damage model — which perturbations are allowed, and how
+  far one reaches — is a **named hypothesis of the companion paper, not a
+  theorem of this library**, and `DamageGate.lean` states precisely what that
+  costs. A gate a host could actually apply, phrased on the noise stream and so
+  naming the same times before and after any damage, buys the same conclusion
+  (`compPredFrame_eq_next_of_noiseGated`) — but is provably empty on a
+  noise-free stream (`noiseGated_eq_empty_of_quiet`), which is exactly the
+  branch whose budget is lifetime-free. Host-checkable and lifetime-free are
+  therefore met on disjoint branches, and that obstruction is itself a theorem
+  here rather than a caveat.
 - **A dependency audit of the reflection chain**
   (`ChainDependencyAudit.lean`): which imports each conclusion actually
   consumes, with unused-binder marking so that "off the critical path" is
@@ -190,6 +322,21 @@ entry points, if you want a sense of the range before reading the list:
   its host's law and represents a true-but-underivable sentence, the
   incompleteness antecedent discharged rather than hypothesized
   (`witness_outgrows_paMinus`).
+- **Kolmogorov complexity at two measures, and the load-bearing one is bits**
+  (`KolmogorovComplexity.lean`, `KolmogorovTimeBounded.lean`,
+  `KolmogorovBitlen.lean`, `KReconnection.lean`): the least-index measure `K` is
+  uncomputable by the recursion theorem — and so, separately, is the
+  **bit-length** measure `Nat.size ∘ encode`, which is the one the
+  description-length results are stated at (`K_bitlen_not_computable`). That
+  second proof re-runs the argument from scratch rather than reducing to the
+  first, because `Nat.size` is not injective and the reduction genuinely fails;
+  `Nat.size`'s own computability is built here, Mathlib having no such lemma.
+  The load-bearing MDL theorems are then instantiated at the bit-length
+  complexity of a concrete rule (`ruleComplexity`), so their description-length
+  parameter is a real complexity rather than an abstract real left in prose.
+  Honest boundary: two-machine invariance is deferred with a documented
+  obstruction — Mathlib exposes a single fixed universal machine, and the
+  classical bound needs two, one simulating the other.
 - Supporting infrastructure: prefix-complexity semimeasure (`∑ 2^{−KP} ≤ 1`),
   an additive self-delimiting program-length measure with a length-efficient
   binary constant, binary index-form Kraft–McMillan bridges
@@ -205,7 +352,7 @@ entry points, if you want a sense of the range before reading the list:
 - No `sorry`, `admit`, or `native_decide`; standard axioms only
   (`propext`, `Classical.choice`, `Quot.sound`) — several cores are
   choice-free, and the structural capstone depends on no axioms at all.
-- **Build-enforced axiom hygiene**: 756 `#guard_msgs in #print axioms` guards
+- **Build-enforced axiom hygiene**: 833 `#guard_msgs in #print axioms` guards
   assert each capstone's exact axiom set; `lake build` fails on any drift.
 - **CI-enforced whole-library audit**: every declaration under `ALT` — not only
   the guarded capstones — is checked against the same allowlist by
@@ -240,7 +387,7 @@ A declaration is public when something requires it to be —
 
 Rules 4 and 5 are a transitive closure, and rule 5 stops at
 `Nat.Partrec.Code`-valued definitions on purpose: the code constructions are
-meant to be opaque, characterized by their exported `val_`/`tc_` lemmas rather
+meant to be opaque, characterized by their exported `val_*`/`tc_*` lemmas rather
 than by their syntax trees. So `OneDL.ExistsConsistentDL` is public because it
 *is* what `OneDL.solve_decides` claims, while `OneDL.cSolve` is public as a
 cited object whose internals are not.
@@ -300,8 +447,8 @@ dominance and finite-time rule discovery), **[SQ]** (polynomial-time
 convergence under statistical queries), **[Persistence]** (resource-bounded
 persistence capacity: the priced decoder), and **[Inevitability]** (the
 realization-synthesis capstone: two independent routes to a reflective
-subsystem, and the open problem of realizing both on one
-witness) — so "[Discovery] §2.2" names a section of that paper. `FV-*` tags name
+subsystem, and their assembly on one constructed witness in pathwise
+and budget form, conditional on a named damage model) — so "[Discovery] §2.2" names a section of that paper. `FV-*` tags name
 rows of the papers' formal-verification tables, mirrored by the axiom-audit
 guard files, so a claim in a paper can be traced to the exact theorem that
 carries it. Preprints are forthcoming — this README will link arXiv IDs as they

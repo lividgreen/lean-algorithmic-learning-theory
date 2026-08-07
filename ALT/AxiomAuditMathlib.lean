@@ -165,13 +165,48 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms SurpriseBudget.survives_of_corrects
 
+/-- info: 'SurpriseBudget.traj_eq_of_correctsWithin_of_spaced' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms SurpriseBudget.traj_eq_of_correctsWithin_of_spaced
+
+/-- info: 'SurpriseBudget.survives_of_correctsWithin' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms SurpriseBudget.survives_of_correctsWithin
+
+/-- info: 'SurpriseBudget.survives_of_invariant' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms SurpriseBudget.survives_of_invariant
+
 /-- info: 'SurpriseBudget.badWorld_not_survives' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms SurpriseBudget.badWorld_not_survives
 
+/-- info: 'SurpriseBudget.correctsWithin_needs_spaced' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms SurpriseBudget.correctsWithin_needs_spaced
+
 /-- info: 'SurpriseBudget.capacity_price' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms SurpriseBudget.capacity_price
+
+-- The settling companion: the damaged trajectory settles whenever the undamaged reading does, in
+-- both the abstract and the purely dynamical form, plus guard families showing this is a
+-- companion question to Proposition 6.1(iii) rather than a fourth sufficient condition.
+/-- info: 'SurpriseBudget.settles_traj_of_settles' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms SurpriseBudget.settles_traj_of_settles
+
+/-- info: 'SurpriseBudget.settles_traj_of_readOnly' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms SurpriseBudget.settles_traj_of_readOnly
+
+/-- info: 'SurpriseBudget.settles_traj_not_agreement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms SurpriseBudget.settles_traj_not_agreement
+
+/-- info: 'SurpriseBudget.corrects_not_settles' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms SurpriseBudget.corrects_not_settles
 
 -- The weighted fiber: fitness-proportional selection on a frequency-independent likelihood, whose
 -- exact step IS Bayesian update; the carrier projection that a finite host forces; the transported
@@ -406,6 +441,55 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms WeightedFiber.argmax_wRun_card_changes_le
 
+-- The (P)/(I) separation: the least-recently-wrong rotation. The hypothesis-free hub below the
+-- horizon, the rotation's closed forms for its miss count and exponents, the running ceiling and
+-- the reading identity it forces (the candidate about to miss holds the maximum weight), the
+-- change-every-step and surprise-set-empty halves, and their assembly into one theorem plus a
+-- concrete non-vacuous witness at the gate-satisfying parameters `C = 8`, `b = 6`, `θ = 1/4`.
+/-- info: 'WeightedFiber.expRun_eq_sub_missCount_of_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.expRun_eq_sub_missCount_of_le
+
+/-- info: 'WeightedFiber.missCount_rotMiss' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.missCount_rotMiss
+
+/-- info: 'WeightedFiber.expRun_rotMiss_of_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.expRun_rotMiss_of_le
+
+/-- info: 'WeightedFiber.wMax_wRun_rotMiss' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.wMax_wRun_rotMiss
+
+/-- info: 'WeightedFiber.argmax_wRun_rotMiss' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.argmax_wRun_rotMiss
+
+/-- info: 'WeightedFiber.argmax_wRun_rotMiss_ne_succ' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.argmax_wRun_rotMiss_ne_succ
+
+/-- info: 'WeightedFiber.sum_raw_wRun_rotMiss' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.sum_raw_wRun_rotMiss
+
+/-- info: 'WeightedFiber.wrongMass_rotMiss' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.wrongMass_rotMiss
+
+/-- info: 'WeightedFiber.floorSurpriseSet_rotMiss_eq_empty' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.floorSurpriseSet_rotMiss_eq_empty
+
+/-- info: 'WeightedFiber.rotMiss_prediction_identification_separation' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.rotMiss_prediction_identification_separation
+
+/-- info: 'WeightedFiber.rotMiss_prediction_identification_separation_witness' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.rotMiss_prediction_identification_separation_witness
+
 /-- info: 'WeightedFiber.argmaxFrame_wWorld_eventually_const' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms WeightedFiber.argmaxFrame_wWorld_eventually_const
@@ -575,6 +659,17 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms PersistenceCapacity.card_stabilizer_lens
 
+-- [Persistence] §8, Corollary 8.11(i)'s own count: the permutations descending through a lens with
+-- a given law are one coset of that lens's fiber-stabilizer, at a different translate — corrected
+-- against §8's verification note, which had listed this as machine-checked already.
+/-- info: 'PersistenceCapacity.card_descentCoset' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PersistenceCapacity.card_descentCoset
+
+/-- info: 'PersistenceCapacity.card_descentCoset_id' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PersistenceCapacity.card_descentCoset_id
+
 /-- info: 'PersistenceCapacity.mem_orbit_lens_iff' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms PersistenceCapacity.mem_orbit_lens_iff
@@ -701,6 +796,13 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 /-- info: 'PersistenceCapacity.ledger_graded_faithful' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms PersistenceCapacity.ledger_graded_faithful
+
+-- [Persistence] §8, Corollary 8.11(i): the factor ledger's display, `ledger_graded`'s own decoder
+-- at a different coset — `κ`'s table, `W`'s table, and an index into the descent set in place of
+-- the two carried frames.
+/-- info: 'PersistenceCapacity.ledger_descent' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PersistenceCapacity.ledger_descent
 
 -- Remark 6.6: the paired frame — an address is paid once. The paired frame as a lens
 -- (`pairLens`), its projections and descent-transport clause, the zip bound
@@ -1827,6 +1929,16 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 /-- info: 'CategoricalThreshold.reflectiveWithin_at_capacity' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms CategoricalThreshold.reflectiveWithin_at_capacity
+
+-- [Inevitability] §6 Remark 6.4: the reflection ladder's capacity bound — a pigeonhole over
+-- `not_reflectiveWithin_below_sentence_size`, then a non-vacuity witness at Gödel size 2.
+/-- info: 'CategoricalThreshold.ladder_card_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms CategoricalThreshold.ladder_card_le
+
+/-- info: 'CategoricalThreshold.ladder_card_le_nonvacuous' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms CategoricalThreshold.ladder_card_le_nonvacuous
 
 -- §6.5 Proposition 6.5 (FV-19): the reflective decision automaton — a shared-memory update whose
 -- code cell is read-only (§3 Decoupling) and whose work cell runs the §6.3 bounded proof search,

@@ -53,6 +53,12 @@ miss at the noise rate.
 * `witness_floorSurprise_bound_ge_n_of_le` — the complementary vacuity: below the gate the bound's
   own right-hand side is no better than the horizon.
 * `witness_floorSurprise_card_lt_of_rate` — the guard in [Inevitability] §6's rate form.
+* `witness_toDist_wRun_sub_bayesFrom_le` — **the composed drift bound** ([Inevitability] §7), at a
+  restart point the noise stream supplies as noise-freedom but not as co-leadership.
+* `witness_toDist_wRun_sub_bayesRun_le` — the start-of-run corollary: co-leadership holds for free
+  at `s = 0`, leaving the noise-free prefix as the only hypothesis.
+* `singleNoiseBit`, `witness_singleNoiseBit_not_coleader` — the guard: a fixed instance where the
+  witness does not supply co-leadership at a later restart point.
 * `integral_noiseCount` — the noise count's mean, `ηn`, under `LearningWitness.noiseLaw`.
 * `witness_integral_floorSurprise_le` — **the expectation corollary**.
 
@@ -63,6 +69,10 @@ law-level external randomness. No skew-product embedding of the noisy base is at
 mixing base with its invariant measure stays unformalized — [Inevitability] §8's recorded boundary.
 The bound's miss-count coefficient is the `2C` that `FlooredMixture` proves, not the `[θ, 2θ]` its
 sharpness pair brackets; that gap is inherited, not opened here.
+
+The drift-bound composition carries its own boundary. Its co-leadership hypothesis is not something
+the noise stream supplies at a general restart point — `witness_singleNoiseBit_not_coleader` fixes
+an instance where it fails — and it is discharged for free only at the run's own start.
 -/
 
 namespace WitnessMixture
@@ -168,6 +178,85 @@ theorem witness_floorSurprise_card_lt_of_rate {k : ℕ} [NeZero k] (ξ : ℕ →
     (hgap : 2 * (k : ℚ) * (noiseCount ξ k n : ℚ) < θ * n - 4 * ((k : ℚ) - 1)) :
     (floorSurpriseSet (witMiss k ξ) b θ n).card < n :=
   witness_floorSurprise_card_lt ξ b θ hθ hbudget n (by linarith)
+
+/-! ## The drift bound on the witness's own trajectory ([Inevitability] §7)
+
+`FlooredMixture.toDist_wRun_sub_bayesFrom_le` compares the floored run not with exact Bayes from
+the beginning but with exact Bayes **restarted** at a running co-leader that misses at no step of
+the window, and it asks nothing about the run before the restart point. Composed with `witMiss_zero`
+the miss-freedom hypothesis becomes a statement about the noise stream: the reference candidate
+misses at no step of `[s, t)` exactly when the noise bit has not fired there.
+
+Co-leadership is a different matter. It is **not** supplied by the witness in general: the exponent
+ceiling caps how far ahead the true rule's own running total can get, so one noise bit can hand a
+competitor the whole budget outright, at a restart point well inside the run.
+`witness_singleNoiseBit_not_coleader` proves this for a fixed instance — the construction fails the
+hypothesis, not merely the general theorem's proof.
+
+At the run's own start, `s = 0`, co-leadership holds for free: every candidate starts at exponent
+`0`, leaving the noise-free prefix as the composition's only remaining hypothesis. That is
+`witness_toDist_wRun_sub_bayesRun_le`, the one form of the composition that carries nothing beyond
+the noise stream itself. -/
+
+/-- **The drift bound on the witness's own trajectory, composed at a restart point.**
+
+`FlooredMixture.toDist_wRun_sub_bayesFrom_le` read at `iL = 0`, with `witMiss_zero` rewriting the
+reference candidate's miss-freedom hypothesis into a statement about the noise stream alone: no
+noise bit fires in `[s, t)`. The running-co-leader hypothesis is carried unchanged — the witness
+does not discharge it, and `witness_singleNoiseBit_not_coleader` shows a fixed instance where it
+fails. Under both, the floored run's reading at `t` stays within `2(k−1)/2^b` of exact Bayes
+restarted at `s` from the floored run's own state there. -/
+theorem witness_toDist_wRun_sub_bayesFrom_le {k : ℕ} [NeZero k] (ξ : ℕ → Bool) (b : ℕ) {s t : ℕ}
+    (hst : s ≤ t) (hlead : ∀ j, expRun (witMiss k ξ) b s j ≤ expRun (witMiss k ξ) b s 0)
+    (hnoise : ∀ u, s ≤ u → u < t → ξ (u + k) = false) :
+    ∑ i, |toDist (raw (wRun (2 ^ b) (missFit (witMiss k ξ)) t)) i
+        - toDist (bayesFrom (witMiss k ξ) b s t) i| ≤ 2 * ((k : ℚ) - 1) / 2 ^ b :=
+  toDist_wRun_sub_bayesFrom_le (witMiss k ξ) b (iL := 0) hst hlead
+    (fun u hu1 hu2 => by rw [witMiss_zero]; exact hnoise u hu1 hu2)
+
+/-- **The start-of-run corollary: the one form that carries nothing beyond the noise stream.**
+
+`expRun (witMiss k ξ) b 0` is identically zero, so at `s = 0` every candidate starts as a running
+co-leader and the composition above's other hypothesis discharges outright. The floored run's
+reading at `t` then stays within `2(k−1)/2^b` of exact Bayes run from the start, provided only that
+the noise stream has not fired anywhere in `[0, t)`. -/
+theorem witness_toDist_wRun_sub_bayesRun_le {k : ℕ} [NeZero k] (ξ : ℕ → Bool) (b t : ℕ)
+    (hnoise : ∀ u, u < t → ξ (u + k) = false) :
+    ∑ i, |toDist (raw (wRun (2 ^ b) (missFit (witMiss k ξ)) t)) i
+        - toDist (bayesRun (missFit (witMiss k ξ)) t) i| ≤ 2 * ((k : ℚ) - 1) / 2 ^ b := by
+  have hbf : bayesRun (missFit (witMiss k ξ)) t = bayesFrom (witMiss k ξ) b 0 t := by
+    funext i
+    exact (bayesFrom_zero (witMiss k ξ) b t i).symm
+  rw [hbf]
+  exact witness_toDist_wRun_sub_bayesFrom_le ξ b (Nat.zero_le t) (fun j => by simp [expRun])
+    (fun u _ hu => hnoise u hu)
+
+/-! ### The guard: co-leadership is not free at a general restart point
+
+The pathwise capstone above needs no hypothesis on the other candidates, but the drift bound's
+co-leader hypothesis is a real constraint on the witness, not a bookkeeping formality. The instance
+below fixes `k = 2`, `b = 1` and a noise stream firing at one position, and shows the running
+co-leader condition failing at the step right after the reference candidate's own miss: one noise
+bit is enough to hand the whole exponent budget to the other candidate. -/
+
+/-- **A noise stream firing once, at position `3`.** Read against the length-`2` window: both
+candidates hit at time `0` and at time `1`, but the reference candidate's own miss at time `1` (its
+window reads the fired bit) leaves it at exponent `0` a step later, while the other candidate — who
+read past the noise bit and kept hitting — holds the ceiling. -/
+def singleNoiseBit : ℕ → Bool := fun u => decide (u = 3)
+
+/-- **Co-leadership fails at the step after the reference candidate's own miss.** At `s = 2` the
+exponent vector is `(0, 1)`: the reference candidate the composition above always reads as `iL` is
+no longer a co-leader, so its hypothesis is not something the witness supplies — it is refuted by
+this fixed instance, not merely absent from what is proved. -/
+theorem witness_singleNoiseBit_not_coleader :
+    ¬ (∀ j : Fin 2, expRun (witMiss 2 singleNoiseBit) 1 2 j
+        ≤ expRun (witMiss 2 singleNoiseBit) 1 2 0) := by
+  intro h
+  have hj := h 1
+  have h0 : expRun (witMiss 2 singleNoiseBit) 1 2 0 = 0 := by decide
+  have h1 : expRun (witMiss 2 singleNoiseBit) 1 2 1 = 1 := by decide
+  omega
 
 /-! ## Measurability: the surprise count is a cylinder function
 
@@ -392,6 +481,18 @@ end WitnessMixture
 /-- info: 'WitnessMixture.witness_floorSurprise_card_lt_of_rate' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms WitnessMixture.witness_floorSurprise_card_lt_of_rate
+
+/-- info: 'WitnessMixture.witness_toDist_wRun_sub_bayesFrom_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WitnessMixture.witness_toDist_wRun_sub_bayesFrom_le
+
+/-- info: 'WitnessMixture.witness_toDist_wRun_sub_bayesRun_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WitnessMixture.witness_toDist_wRun_sub_bayesRun_le
+
+/-- info: 'WitnessMixture.witness_singleNoiseBit_not_coleader' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WitnessMixture.witness_singleNoiseBit_not_coleader
 
 /-- info: 'WitnessMixture.witness_integral_floorSurprise_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in

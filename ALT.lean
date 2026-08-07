@@ -15,6 +15,7 @@ import ALT.Birkhoff.AxiomAudit
 import ALT.Birkhoff.PointwiseBirkhoff
 import ALT.BirkhoffTool
 import ALT.BoundedInterp
+import ALT.CanonicalFormLens
 import ALT.CapacityBoundedEval
 import ALT.CapacityLayer
 import ALT.CapacityThreshold
@@ -30,17 +31,23 @@ import ALT.CodeArith
 import ALT.CodePacking
 import ALT.Collector
 import ALT.CommitmentSeam
+import ALT.ConjunctionPredictor
+import ALT.ConjunctionSolver
 import ALT.CountableDiscovery
 import ALT.CounterLearner
+import ALT.DamageGate
 import ALT.DecisionListData
+import ALT.DecisionListPredictor
 import ALT.DecisionListSolver
 import ALT.DecoupledSimulation
 import ALT.Decoupling
 import ALT.DeterministicDiscovery
 import ALT.EpsilonZeroBound
+import ALT.EvoAbsorption
 import ALT.ExactBreakeven
 import ALT.ExcessOrder
 import ALT.ExcessOrderComplete
+import ALT.ExpensiveLens
 import ALT.ExtensionalDiscovery
 import ALT.FiniteInfoTheory
 import ALT.FlooredMixture
@@ -63,6 +70,7 @@ import ALT.KolmogorovBitlen
 import ALT.KolmogorovComplexity
 import ALT.KolmogorovTimeBounded
 import ALT.LearningWitness
+import ALT.LearningWitnessComplete
 import ALT.LogMassEvent
 import ALT.MDLCoding
 import ALT.MDLDominance
@@ -88,6 +96,7 @@ import ALT.RealizabilityRecursor
 import ALT.RealizabilitySubobject
 import ALT.RealizerLength
 import ALT.RecursorAlgebra
+import ALT.RedundantFiber
 import ALT.Reflective
 import ALT.ReflectiveAutomaton
 import ALT.RegimeConsistency

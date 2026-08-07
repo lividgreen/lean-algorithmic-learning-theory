@@ -57,6 +57,10 @@ resulting bound would be vacuous.
   codeword frame's hypothesis once `2 ≤ C`, and leaves the base-reading frame's standing.
 * `surjective_predFrame_of_faithful` / `predFrame_emergence_pricing` — the base-reading frame's own
   satisfiability witness, and the pricing assembly restated over it at the same constant.
+* `powFiber` / `powFibBuilder` / `KE_skewWorldFin_powFiber_le` — **[Inevitability] Theorem 6.6(vi),
+  "P copies"**: `P` copies of one fiber, product over the fiber coordinate per base index, cost the
+  *one-copy* fiber's code plus `O (log n₁ + log P)` for the two loaded numerals — a `P`-fold larger
+  population is a `log P`-more expensive description, not a `P`-times-more expensive one.
 
 ## Scope
 
@@ -86,7 +90,11 @@ its invariant measure are analytic objects that this finite, combinatorial layer
 the host here is of fixed size, so nothing about a *growing* host — code accreting on a frontier
 while the written region stays fixed — is represented. This file is the pricing skeleton only.
 
-No numbered result is claimed machine-checked by this file.
+`KE_skewWorldFin_powFiber_le` machine-checks the "P copies" half of [Inevitability] Theorem
+6.6(vi)'s remaining step — the composite guest's code is `P` copies of one fiber's code, at the
+stated price. The clause's other half, the decode (a bounded search over the copies), is a separate
+construction addressed elsewhere, and is not touched by this file. Every other result here remains
+combinatorial skeleton only, with no numbered result claimed machine-checked.
 -/
 
 namespace SkewFiber
@@ -294,6 +302,348 @@ theorem KE_skewWorldFin_le (S : Fin n₁ → Fin n₁) (F : Fin n₁ → Fin n�
   rw [elen_skewCode] at hle
   omega
 
+/-! ### The blockwise `P`-fold fiber ([Inevitability] Theorem 6.6(vi), "P copies")
+
+The composite guest clause (vi) prices is `P` copies of one fiber over one base: the product acts
+on the fiber coordinate only, per base index. `powFiber` self-composes `skewWorldFin`'s own fiber
+argument along a fresh coordinate rather than along the clock. -/
+
+/-- **`P` copies of one fiber, product over the fiber coordinate, per base index.** At `P = 0` the
+fiber carrier is `Fin 1` and every base index maps the sole point to itself; at `P + 1` the low
+`Fin n₂` copy runs `F` and the remaining `Fin (n₂ ^ P)` copies run one level down, woven by
+`finProdFinEquiv` exactly as `skewWorldFin` weaves base and fiber. -/
+def powFiber (F : Fin n₁ → Fin n₂ → Fin n₂) : (P : ℕ) → Fin n₁ → Fin (n₂ ^ P) → Fin (n₂ ^ P)
+  | 0 => fun _ => id
+  | P + 1 => fun i w =>
+      finProdFinEquiv (powFiber F P i (finProdFinEquiv.symm w).1, F i (finProdFinEquiv.symm w).2)
+
+/-- A table read back through its own range recovers itself. The reconstruction `powFibTable_one`
+needs, at the base case where the accumulator table is trivial. -/
+private theorem range_map_getD (l : List ℕ) :
+    (List.range l.length).map (fun i => l.getD i 0) = l := by
+  apply List.ext_getElem
+  · simp
+  · intro i h1 h2
+    rw [List.getElem_map, List.getElem_range]
+    exact List.getD_eq_getElem l 0 h2
+
+/-- **Weaving one more copy in**: entry `q` of the `P + 1`-copy table is the `P`-copy table's own
+entry at the same base block, shifted by `n₂` (the width one more fiber copy adds) and combined with
+the fresh copy's entry — `skewAppend`'s weave, replayed inside every base block rather than once
+globally. `n₁` is carried explicitly: it is not recoverable from `Tk.length` and `T₁.length` alone
+(`powFibTable`'s guard below exhibits two legal choices of `n₁` at the same table giving different
+lengths after two weaves). -/
+def fibProdAppend (n₁ : ℕ) (Tk T₁ : List ℕ) : List ℕ :=
+  (List.range (n₁ * ((Tk.length / n₁) * (T₁.length / n₁)))).map fun q =>
+    let wk := Tk.length / n₁
+    let n₂ := T₁.length / n₁
+    let i := q / (wk * n₂)
+    let w₁ := (q % (wk * n₂)) / n₂
+    let w₂ := q % n₂
+    Tk.getD (i * wk + w₁) 0 * n₂ + T₁.getD (i * n₂ + w₂) 0
+
+/-- **The `P`-copy composite table**, by iterating `fibProdAppend` from the trivial `P = 0` table (a
+single point per base index, i.e. `n₁` zeros — `Fin (n₂ ^ 0) = Fin 1` has one element). -/
+def powFibTable (n₁ : ℕ) (T₁ : List ℕ) (P : ℕ) : List ℕ :=
+  Nat.rec (List.replicate n₁ 0) (fun _ IH => fibProdAppend n₁ IH T₁) P
+
+/-- **`n₁` is load-bearing**: `[0,1,0,1]` is a legal fiber table both at `(n₁, n₂) = (2, 2)` and
+at `(1, 4)`, and its `P = 2` powers differ in length — so `n₁` cannot be recovered from `T₁` and
+must be carried, as `powFibTable` carries it. -/
+example : (powFibTable 2 [0,1,0,1] 2).length ≠ (powFibTable 1 [0,1,0,1] 2).length := by decide
+
+/-- **The grading check**: one copy is the table itself. -/
+theorem powFibTable_one (n₁ : ℕ) (T₁ : List ℕ) (h : n₁ ∣ T₁.length) :
+    powFibTable n₁ T₁ 1 = T₁ := by
+  rcases Nat.eq_zero_or_pos n₁ with hn₁ | hn₁
+  · subst hn₁
+    have hT : T₁.length = 0 := Nat.zero_dvd.mp h
+    simp [powFibTable, fibProdAppend, List.length_eq_zero_iff.mp hT]
+  obtain ⟨n₂, hn₂⟩ := h
+  have hwk : (List.replicate n₁ 0).length / n₁ = 1 := by
+    rw [List.length_replicate, Nat.div_self hn₁]
+  have hn₂' : T₁.length / n₁ = n₂ := by rw [hn₂, Nat.mul_div_cancel_left n₂ hn₁]
+  change fibProdAppend n₁ (List.replicate n₁ 0) T₁ = T₁
+  simp only [fibProdAppend, hwk, hn₂', one_mul, mul_one]
+  rw [← hn₂]
+  trans (List.range T₁.length).map (fun q => T₁.getD q 0)
+  swap
+  · exact range_map_getD T₁
+  refine List.map_congr_left fun q hq => ?_
+  have hqlt : q < n₁ * n₂ := by simpa [hn₂] using List.mem_range.mp hq
+  have hn₂pos : 0 < n₂ := Nat.pos_of_ne_zero fun h0 => by simp [h0] at hqlt
+  have hidiv : q / n₂ < n₁ := Nat.div_lt_of_lt_mul (by rwa [Nat.mul_comm] at hqlt)
+  have hmod : q % n₂ / n₂ = 0 := Nat.div_eq_of_lt (Nat.mod_lt _ hn₂pos)
+  have hqi : q / n₂ * n₂ + q % n₂ = q := Nat.div_add_mod' q n₂
+  rw [hmod, Nat.add_zero, List.getD_replicate 0 hidiv, hqi, Nat.zero_mul, Nat.zero_add]
+
+/-- A table over the trivial fiber `Fin 1` is all zeros: `Fin 1`'s sole value reads back as
+`0`. -/
+private theorem lensTable_const_zero {m : ℕ} (f : Fin m → Fin 1) :
+    lensTable f = List.replicate m 0 := by
+  have hf : (fun i : Fin m => (f i : ℕ)) = fun _ => 0 :=
+    funext fun i => Fin.val_eq_zero (f i)
+  rw [lensTable, hf, List.map_const', List.length_finRange]
+
+/-- A `fiberFlat` table's entry at the flat index a base/fiber pair weaves to, read directly. -/
+private theorem lensTable_getD_fiberFlat {n₁ n₂ : ℕ} (G : Fin n₁ → Fin n₂ → Fin n₂)
+    (i : Fin n₁) (w : Fin n₂) :
+    (lensTable (fiberFlat G)).getD ((i : ℕ) * n₂ + w) 0 = (G i w : ℕ) := by
+  have hval : (i : ℕ) * n₂ + w = (finProdFinEquiv (i, w) : ℕ) := by
+    rw [finProdFinEquiv_apply_val]; ring
+  rw [hval, lensTable_getD _ (finProdFinEquiv (i, w)).isLt, fiberFlat_apply]
+
+/-- **`powFiber`'s successor step, in raw values**: the new copy's contribution is read off the
+low `n₂` bits and the accumulated `P` copies off the rest — `skewWorldFin`'s own weave, replayed on
+the fiber coordinate. The unfolding is `rfl` (`Nat.pow`'s recursion equation is exactly
+`finProdFinEquiv`'s domain-matching identity); the surrounding `congrArg`/`.trans` keep the proof at
+the value level throughout, since `rw` on the underlying `Fin`-typed equation does not survive the
+`n₂ ^ (P + 1)` vs `n₂ ^ P * n₂` mismatch under the tactic framework's reduced transparency. -/
+private theorem powFiber_succ_val {n₁ n₂ : ℕ} (F : Fin n₁ → Fin n₂ → Fin n₂) (P : ℕ)
+    (i : Fin n₁) (w : Fin (n₂ ^ (P + 1))) :
+    (powFiber F (P + 1) i w : ℕ)
+      = (F i w.modNat : ℕ) + n₂ * (powFiber F P i w.divNat : ℕ) := by
+  have h : powFiber F (P + 1) i w = finProdFinEquiv (powFiber F P i w.divNat, F i w.modNat) := rfl
+  exact (congrArg Fin.val h).trans (finProdFinEquiv_apply_val _)
+
+/-- **The composite table is the iterated weave** ([Inevitability] Theorem 6.6(vi), "`P` copies"):
+`powFiber`'s own table, built by `finProdFinEquiv` at every level, is exactly `fibProdAppend`
+iterated `P` times from the trivial table — the argument of `lensTable_skewWorldFin`, replayed one
+level down at each step. -/
+theorem lensTable_powFiber (F : Fin n₁ → Fin n₂ → Fin n₂) (P : ℕ) :
+    lensTable (fiberFlat (powFiber F P)) = powFibTable n₁ (lensTable (fiberFlat F)) P := by
+  induction P with
+  | zero =>
+      simpa [pow_zero, mul_one, powFibTable] using lensTable_const_zero (fiberFlat (powFiber F 0))
+  | succ P ih =>
+      change lensTable (fiberFlat (powFiber F (P + 1)))
+        = fibProdAppend n₁ (powFibTable n₁ (lensTable (fiberFlat F)) P) (lensTable (fiberFlat F))
+      rw [← ih]
+      rcases Nat.eq_zero_or_pos n₁ with hn₁ | hn₁
+      · subst hn₁
+        simp [fibProdAppend, lensTable]
+      have hwk : (lensTable (fiberFlat (powFiber F P))).length / n₁ = n₂ ^ P := by
+        rw [lensTable_length, Nat.mul_div_cancel_left _ hn₁]
+      have hn2 : (lensTable (fiberFlat F)).length / n₁ = n₂ := by
+        rw [lensTable_length, Nat.mul_div_cancel_left _ hn₁]
+      simp only [fibProdAppend, hwk, hn2]
+      rw [lensTable_range]
+      refine List.map_congr_left fun q hq => ?_
+      have hqlt : q < n₁ * n₂ ^ (P + 1) := List.mem_range.mp hq
+      have hqlt2 : q < n₁ * (n₂ ^ P * n₂) := by rw [pow_succ] at hqlt; exact hqlt
+      have hn2pos : 0 < n₂ := by
+        rcases Nat.eq_zero_or_pos n₂ with h0 | h0
+        · exact absurd hqlt2 (by simp [h0])
+        · exact h0
+      have hplen : 0 < n₂ ^ P * n₂ := Nat.mul_pos (pow_pos hn2pos P) hn2pos
+      have hilt : q / (n₂ ^ P * n₂) < n₁ :=
+        Nat.div_lt_of_lt_mul (by rw [Nat.mul_comm n₁ (n₂ ^ P * n₂)] at hqlt2; exact hqlt2)
+      have hrlt : q % (n₂ ^ P * n₂) < n₂ ^ P * n₂ := Nat.mod_lt _ hplen
+      have hw1lt : q % (n₂ ^ P * n₂) / n₂ < n₂ ^ P :=
+        Nat.div_lt_of_lt_mul (by rw [Nat.mul_comm n₂ (n₂ ^ P)]; exact hrlt)
+      have hw2lt : q % n₂ < n₂ := Nat.mod_lt _ hn2pos
+      have hmm : q % (n₂ ^ P * n₂) % n₂ = q % n₂ :=
+        Nat.mod_mod_of_dvd q ⟨n₂ ^ P, by ring⟩
+      have hilt' : q / n₂ ^ (P + 1) < n₁ := Nat.div_lt_of_lt_mul (by rwa [Nat.mul_comm] at hqlt)
+      have hrlt' : q % n₂ ^ (P + 1) < n₂ ^ (P + 1) := Nat.mod_lt _ (pow_pos hn2pos (P + 1))
+      rw [dif_pos hqlt]
+      have hidx' : (⟨q, hqlt⟩ : Fin (n₁ * n₂ ^ (P + 1)))
+          = finProdFinEquiv (⟨q / n₂ ^ (P + 1), hilt'⟩, ⟨q % n₂ ^ (P + 1), hrlt'⟩) := by
+        apply Fin.ext
+        simp only [finProdFinEquiv_apply_val]
+        exact (Nat.mod_add_div q (n₂ ^ (P + 1))).symm
+      rw [hidx', fiberFlat_apply, powFiber_succ_val]
+      have hival : (⟨q / n₂ ^ (P + 1), hilt'⟩ : Fin n₁) = ⟨q / (n₂ ^ P * n₂), hilt⟩ := by
+        apply Fin.ext
+        change q / n₂ ^ (P + 1) = q / (n₂ ^ P * n₂)
+        rw [pow_succ]
+      have hdival : (⟨q % n₂ ^ (P + 1), hrlt'⟩ : Fin (n₂ ^ (P + 1))).divNat
+          = (⟨q % (n₂ ^ P * n₂) / n₂, hw1lt⟩ : Fin (n₂ ^ P)) := by
+        apply Fin.ext
+        change ((⟨q % n₂ ^ (P + 1), hrlt'⟩ : Fin (n₂ ^ (P + 1))).divNat : ℕ)
+          = q % (n₂ ^ P * n₂) / n₂
+        rw [Fin.coe_divNat]
+        congr 1
+      have hmodval : (⟨q % n₂ ^ (P + 1), hrlt'⟩ : Fin (n₂ ^ (P + 1))).modNat
+          = (⟨q % n₂, hw2lt⟩ : Fin n₂) := by
+        apply Fin.ext
+        change ((⟨q % n₂ ^ (P + 1), hrlt'⟩ : Fin (n₂ ^ (P + 1))).modNat : ℕ) = q % n₂
+        rw [Fin.coe_modNat, ← hmm]
+        congr 1
+      rw [hival, hdival, hmodval,
+        lensTable_getD_fiberFlat (powFiber F P) ⟨q / (n₂ ^ P * n₂), hilt⟩
+          ⟨q % (n₂ ^ P * n₂) / n₂, hw1lt⟩,
+        lensTable_getD_fiberFlat F ⟨q / (n₂ ^ P * n₂), hilt⟩ ⟨q % n₂, hw2lt⟩]
+      ring
+
+/-! ### The builder: one fixed program that weaves any fiber table `P` times over itself -/
+
+/-- `fibProdAppend` is primitive recursive in its base index, its accumulator table, and its
+one-copy table — `n₁` is a loaded numeral, not a table, so it enters as plain `ℕ` data. -/
+private theorem primrec_fibProdAppend :
+    Primrec fun q : ℕ × List ℕ × List ℕ => fibProdAppend q.1 q.2.1 q.2.2 := by
+  have hn1 : Primrec fun q : ℕ × List ℕ × List ℕ => q.1 := Primrec.fst
+  have hTk : Primrec fun q : ℕ × List ℕ × List ℕ => q.2.1 := Primrec.fst.comp Primrec.snd
+  have hT1 : Primrec fun q : ℕ × List ℕ × List ℕ => q.2.2 := Primrec.snd.comp Primrec.snd
+  have hwk : Primrec fun q : ℕ × List ℕ × List ℕ => q.2.1.length / q.1 :=
+    Primrec.nat_div.comp (Primrec.list_length.comp hTk) hn1
+  have hn2 : Primrec fun q : ℕ × List ℕ × List ℕ => q.2.2.length / q.1 :=
+    Primrec.nat_div.comp (Primrec.list_length.comp hT1) hn1
+  refine Primrec.list_map
+    (Primrec.list_range.comp (Primrec.nat_mul.comp hn1 (Primrec.nat_mul.comp hwk hn2))) ?_
+  refine Primrec₂.mk ?_
+  have hqfst : Primrec fun p : (ℕ × List ℕ × List ℕ) × ℕ => p.1 := Primrec.fst
+  have hidx : Primrec fun p : (ℕ × List ℕ × List ℕ) × ℕ => p.2 := Primrec.snd
+  have hwk' : Primrec fun p : (ℕ × List ℕ × List ℕ) × ℕ => p.1.2.1.length / p.1.1 := hwk.comp hqfst
+  have hn2' : Primrec fun p : (ℕ × List ℕ × List ℕ) × ℕ => p.1.2.2.length / p.1.1 := hn2.comp hqfst
+  have hwkn2 : Primrec fun p : (ℕ × List ℕ × List ℕ) × ℕ =>
+      p.1.2.1.length / p.1.1 * (p.1.2.2.length / p.1.1) := Primrec.nat_mul.comp hwk' hn2'
+  have hi : Primrec fun p : (ℕ × List ℕ × List ℕ) × ℕ =>
+      p.2 / (p.1.2.1.length / p.1.1 * (p.1.2.2.length / p.1.1)) :=
+    Primrec.nat_div.comp hidx hwkn2
+  have hmodwkn2 : Primrec fun p : (ℕ × List ℕ × List ℕ) × ℕ =>
+      p.2 % (p.1.2.1.length / p.1.1 * (p.1.2.2.length / p.1.1)) :=
+    Primrec.nat_mod.comp hidx hwkn2
+  have hw1 : Primrec fun p : (ℕ × List ℕ × List ℕ) × ℕ =>
+      p.2 % (p.1.2.1.length / p.1.1 * (p.1.2.2.length / p.1.1)) / (p.1.2.2.length / p.1.1) :=
+    Primrec.nat_div.comp hmodwkn2 hn2'
+  have hw2 : Primrec fun p : (ℕ × List ℕ × List ℕ) × ℕ => p.2 % (p.1.2.2.length / p.1.1) :=
+    Primrec.nat_mod.comp hidx hn2'
+  have hiwk : Primrec fun p : (ℕ × List ℕ × List ℕ) × ℕ =>
+      p.2 / (p.1.2.1.length / p.1.1 * (p.1.2.2.length / p.1.1)) * (p.1.2.1.length / p.1.1)
+        + p.2 % (p.1.2.1.length / p.1.1 * (p.1.2.2.length / p.1.1)) / (p.1.2.2.length / p.1.1) :=
+    Primrec.nat_add.comp (Primrec.nat_mul.comp hi hwk') hw1
+  have hin2 : Primrec fun p : (ℕ × List ℕ × List ℕ) × ℕ =>
+      p.2 / (p.1.2.1.length / p.1.1 * (p.1.2.2.length / p.1.1)) * (p.1.2.2.length / p.1.1)
+        + p.2 % (p.1.2.2.length / p.1.1) :=
+    Primrec.nat_add.comp (Primrec.nat_mul.comp hi hn2') hw2
+  exact Primrec.nat_add.comp
+    (Primrec.nat_mul.comp ((Primrec.list_getD 0).comp (hTk.comp hqfst) hiwk) hn2')
+    ((Primrec.list_getD 0).comp (hT1.comp hqfst) hin2)
+
+/-- **`powFibTable` is primitive recursive**, jointly in `n₁` (fixed across iterations) and `T₁`
+(fixed across iterations), by `Nat.rec` on `P`. The two landed precedents for this shape are
+`primrec_iterTable` and `primrec_ownIter`. -/
+private theorem primrec_powFibTable :
+    Primrec₂ fun (a : ℕ × List ℕ) (P : ℕ) => powFibTable a.1 a.2 P := by
+  have hbase : Primrec fun a : ℕ × List ℕ => List.replicate a.1 0 :=
+    (Primrec.list_map (Primrec.list_range.comp Primrec.fst) (Primrec.const 0).to₂).of_eq
+      fun a => by rw [List.map_const', List.length_range]
+  have hstep : Primrec₂ fun (a : ℕ × List ℕ) (p : ℕ × List ℕ) => fibProdAppend a.1 p.2 a.2 :=
+    (primrec_fibProdAppend.comp
+      (Primrec.pair (Primrec.fst.comp Primrec.fst) (Primrec.pair (Primrec.snd.comp Primrec.snd)
+        (Primrec.snd.comp Primrec.fst)))).to₂
+  exact (Primrec.nat_rec hbase hstep).of_eq fun a P => rfl
+
+/-- **The `P`-fold fiber builder, from `⟨fiber table code, ⟨n₁, P⟩⟩`** — ONE fixed function, with
+no size parameters loaded except the two raw numerals `n₁` and `P`. -/
+private def powFibTableFn (p : ℕ) : ℕ :=
+  Encodable.encode
+    (powFibTable p.unpair.2.unpair.1
+      ((Encodable.decode (α := List ℕ) p.unpair.1).getD []) p.unpair.2.unpair.2)
+
+private theorem primrec_powFibTableFn : Primrec powFibTableFn := by
+  have hdecT : Primrec fun p : ℕ => (Encodable.decode (α := List ℕ) p.unpair.1).getD [] :=
+    Primrec.option_getD.comp
+      (Primrec.decode.comp (Primrec.fst.comp Primrec.unpair)) (Primrec.const [])
+  have hn1 : Primrec fun p : ℕ => p.unpair.2.unpair.1 :=
+    Primrec.fst.comp (Primrec.unpair.comp (Primrec.snd.comp Primrec.unpair))
+  have hP : Primrec fun p : ℕ => p.unpair.2.unpair.2 :=
+    Primrec.snd.comp (Primrec.unpair.comp (Primrec.snd.comp Primrec.unpair))
+  exact Primrec.encode.comp (primrec_powFibTable.comp (Primrec.pair hn1 hdecT) hP)
+
+private theorem partrec_powFibTableFn : Nat.Partrec (fun p : ℕ => (powFibTableFn p : ℕ)) :=
+  _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_powFibTableFn).partrec
+
+/-- **The fixed `P`-fold builder code.** One program, independent of the fiber, of `n₁`, and
+of `P`. -/
+noncomputable def powFibBuilder : Nat.Partrec.Code :=
+  Classical.choose (Nat.Partrec.Code.exists_code.mp partrec_powFibTableFn)
+
+private theorem eval_powFibBuilder (p : ℕ) :
+    Nat.Partrec.Code.eval powFibBuilder p = Part.some (powFibTableFn p) := by
+  have h := congrFun (Classical.choose_spec
+    (Nat.Partrec.Code.exists_code.mp partrec_powFibTableFn)) p
+  simpa [powFibBuilder] using h
+
+/-- **The builder is correct**: on `⟨the one-copy fiber table's code, ⟨n₁, P⟩⟩` it outputs the
+`P`-fold fiber's encoded table. -/
+theorem powFibTableFn_eq (F : Fin n₁ → Fin n₂ → Fin n₂) (P : ℕ) :
+    powFibTableFn (Nat.pair (lensCode (fiberFlat F)) (Nat.pair n₁ P))
+      = lensCode (fiberFlat (powFiber F P)) := by
+  rw [powFibTableFn]
+  simp only [Nat.unpair_pair, decode_lensCode]
+  rw [← lensTable_powFiber]
+  rfl
+
+/-! ### The price: `P` copies cost the one-copy code plus `O (log n₁ + log P)`
+
+`n₁` and `P` are loaded as numerals via `bconst`, not as tables — the composition shape
+(`comp powFibBuilder (pair cF (pair (bconst n₁) (bconst P)))`), never the load-the-value shape. -/
+
+/-- **The `P`-fold fiber's cheap code**: run the one-copy fiber's code, load `n₁` and `P` as binary
+numerals, hand all three to the fixed builder. -/
+noncomputable def powFibCode (cF : Nat.Partrec.Code) (n₁ P : ℕ) : Nat.Partrec.Code :=
+  Nat.Partrec.Code.comp powFibBuilder
+    (Nat.Partrec.Code.pair cF (Nat.Partrec.Code.pair (bconst n₁) (bconst P)))
+
+/-- The composed code's length is the one-copy code's, plus `O (log n₁ + log P)` for the two
+loaded numerals, plus one absolute constant. -/
+theorem elen_powFibCode_le (cF : Nat.Partrec.Code) (n₁ P : ℕ) :
+    elen (powFibCode cF n₁ P)
+      ≤ elen cF + (15 + elen dbl) * (Nat.size n₁ + Nat.size P)
+        + (elen powFibBuilder + 2 * (15 + elen dbl) + 9) := by
+  rw [powFibCode, E_len_comp, E_len_pair, E_len_pair]
+  have h1 := elen_bconst_le n₁
+  have h2 := elen_bconst_le P
+  have hsum : (15 + elen dbl) * Nat.size n₁ + (15 + elen dbl) * Nat.size P
+      = (15 + elen dbl) * (Nat.size n₁ + Nat.size P) := by ring
+  omega
+
+/-- The composed code computes the `P`-fold fiber's table. -/
+theorem eval_powFibCode (F : Fin n₁ → Fin n₂ → Fin n₂) (cF : Nat.Partrec.Code)
+    (hF : cF.eval 0 = Part.some (lensCode (fiberFlat F))) (P : ℕ) :
+    (powFibCode cF n₁ P).eval 0 = Part.some (lensCode (fiberFlat (powFiber F P))) := by
+  have hpn : Nat.Partrec.Code.eval (Nat.Partrec.Code.pair (bconst n₁) (bconst P)) 0
+      = Part.some (Nat.pair n₁ P) := by
+    change Nat.pair <$> _ <*> _ = _
+    rw [eval_bconst, eval_bconst]; simp [Seq.seq]
+  have hp : Nat.Partrec.Code.eval
+      (Nat.Partrec.Code.pair cF (Nat.Partrec.Code.pair (bconst n₁) (bconst P))) 0
+      = Part.some (Nat.pair (lensCode (fiberFlat F)) (Nat.pair n₁ P)) := by
+    change Nat.pair <$> _ <*> _ = _
+    rw [hF, hpn]; simp [Seq.seq]
+  rw [powFibCode, eval_comp_some hp, eval_powFibBuilder, powFibTableFn_eq]
+
+/-- **`P` copies of a fiber cost one copy plus `O (log n₁ + log P)`** ([Inevitability] Theorem
+6.6(vi), "P copies" — the theorem's one remaining paper-level step, save for the decode).
+
+Assembled from `KE_skewWorldFin_le` with the fiber code replaced by `powFibCode cF n₁ P`: the base
+rule's code, the *one-copy* fiber code, plus the two loaded numerals `n₁` and `P` at
+`(15 + elen dbl) · (log n₁ + log P)`, plus an absolute constant independent of the world, of `n₁`,
+of `n₂`, and of `P`.
+
+`n₁` and `P` enter through `Nat.size` and nowhere else — a `P`-fold larger population is a
+`log P`-more expensive description, not a `P`-times-more expensive one, because the composed code
+*runs* the one-copy fiber's code `P` times over rather than carrying a `P`-fold table. This is the
+"P copies" half of clause (vi); "and the decode" is `ALT/RedundantFiber.lean`'s construction and is
+untouched here. -/
+theorem KE_skewWorldFin_powFiber_le (S : Fin n₁ → Fin n₁) (F : Fin n₁ → Fin n₂ → Fin n₂)
+    (cS cF : Nat.Partrec.Code) (hS : cS.eval 0 = Part.some (lensCode S))
+    (hF : cF.eval 0 = Part.some (lensCode (fiberFlat F))) (P : ℕ) :
+    KE (lensCode (skewWorldFin S (powFiber F P)))
+      ≤ elen cS + elen cF + (15 + elen dbl) * (Nat.size n₁ + Nat.size P)
+        + (elen skewBuilder + elen powFibBuilder + 2 * (15 + elen dbl) + 15) := by
+  have hle := KE_skewWorldFin_le S (powFiber F P) cS (powFibCode cF n₁ P) hS
+    (eval_powFibCode F cF hF P)
+  have hb := elen_powFibCode_le cF n₁ P
+  omega
+
+set_option linter.style.longLine false in
+/-- info: 'SkewFiber.KE_skewWorldFin_powFiber_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms KE_skewWorldFin_powFiber_le
+
 end Skew
 
 /-! ## Evolution in the fiber
@@ -319,6 +669,52 @@ abbrev Pop (P C : ℕ) := Fin P → Fin C
 ties. Deterministic, and total on a nonempty population. -/
 def fittest [NeZero P] (fit : Fin C → ℕ) (p : Pop P C) : Fin C :=
   (List.finRange P).foldl (fun c i => if fit c < fit (p i) then p i else c) (p 0)
+
+/-- The fold underlying `fittest` never drops below its starting fitness, and never below any slot
+it has already visited: the fitness invariant one induction step of `fittest_ge`/`fittest_mem`
+needs. -/
+private theorem foldl_fittest_ge (fit : Fin C → ℕ) (p : Pop P C) (l : List (Fin P)) (c : Fin C) :
+    fit c ≤ fit (l.foldl (fun c i => if fit c < fit (p i) then p i else c) c) ∧
+      ∀ j ∈ l, fit (p j) ≤ fit (l.foldl (fun c i => if fit c < fit (p i) then p i else c) c) := by
+  induction l generalizing c with
+  | nil => simp
+  | cons i l ih =>
+      simp only [List.foldl_cons, List.mem_cons]
+      by_cases hcond : fit c < fit (p i)
+      · rw [if_pos hcond]
+        obtain ⟨hge, hall⟩ := ih (p i)
+        refine ⟨hcond.le.trans hge, fun j hj => ?_⟩
+        rcases hj with rfl | hj
+        · exact hge
+        · exact hall j hj
+      · rw [if_neg hcond]
+        obtain ⟨hge, hall⟩ := ih c
+        refine ⟨hge, fun j hj => ?_⟩
+        rcases hj with rfl | hj
+        · exact (not_lt.mp hcond).trans hge
+        · exact hall j hj
+
+/-- **`fittest` attains the population's maximum fitness**: no slot beats the fold's winner. -/
+theorem fittest_ge [NeZero P] (fit : Fin C → ℕ) (p : Pop P C) (i : Fin P) :
+    fit (p i) ≤ fit (fittest fit p) :=
+  (foldl_fittest_ge fit p (List.finRange P) (p 0)).2 i (List.mem_finRange i)
+
+/-- The fold underlying `fittest` never leaves the population: starting from a slot's value, it
+stays a slot's value. -/
+private theorem foldl_fittest_mem (fit : Fin C → ℕ) (p : Pop P C) (l : List (Fin P)) (i₀ : Fin P) :
+    ∃ i, l.foldl (fun c i => if fit c < fit (p i) then p i else c) (p i₀) = p i := by
+  induction l generalizing i₀ with
+  | nil => exact ⟨i₀, rfl⟩
+  | cons i l ih =>
+      simp only [List.foldl_cons]
+      split
+      · exact ih i
+      · exact ih i₀
+
+/-- **`fittest` returns one of the population's own members**: the fold never invents a
+codeword. -/
+theorem fittest_mem [NeZero P] (fit : Fin C → ℕ) (p : Pop P C) : ∃ i, fittest fit p = p i :=
+  foldl_fittest_mem fit p (List.finRange P) 0
 
 /-- **One generation** ([Inevitability] §6, "variation and selection"): vary, then select. Every
 slot is mutated by its own base-driven mutation, the mutants are scored, and the fittest is copied

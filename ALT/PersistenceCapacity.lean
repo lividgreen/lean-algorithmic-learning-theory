@@ -1478,6 +1478,55 @@ theorem card_stabilizer_lens {α : Type*} [Finite α] (ℓ : α → Fin m) :
     Nat.card ↥(stabilizer (Perm α) ℓ) = ∏ i : Fin m, (Nat.card {x : α // ℓ x = i})! :=
   card_stabilizer_lens_dom ℓ
 
+/-- **The descent coset, as a bijection onto the stabilizer** ([Persistence] §8, Corollary
+8.11(i)'s own count): `V ↦ V * U⁻¹` bijects the permutations descending through `κ` with law `W`
+onto `stabilizer (Perm (Fin n)) κ`, `U` itself supplying the non-emptiness witness — the identical
+move `FrameItinerary.consistentEquivStab` runs for the joint itinerary's stabilizer. -/
+private noncomputable def descentEquivStab {z : ℕ} (κ : Fin n → Fin z) (W : Fin z → Fin z)
+    {U : Perm (Fin n)} (hU : ∀ x, κ (U x) = W (κ x)) :
+    ↥{V : Perm (Fin n) | ∀ x, κ (V x) = W (κ x)} ≃ ↥(stabilizer (Perm (Fin n)) κ) where
+  toFun V := ⟨V.1 * U⁻¹, by
+    rw [mem_stabilizer_lens]
+    intro x
+    have h1 : κ (V.1 (U⁻¹ x)) = W (κ (U⁻¹ x)) := V.2 (U⁻¹ x)
+    have hux : U (U⁻¹ x) = x := by simp
+    have h2 : κ x = W (κ (U⁻¹ x)) := by
+      conv_lhs => rw [← hux]
+      exact hU (U⁻¹ x)
+    rw [Equiv.Perm.mul_apply, h1]
+    exact h2.symm⟩
+  invFun V' := ⟨V'.1 * U, by
+    intro x
+    have hV' : κ (V'.1 (U x)) = κ (U x) := mem_stabilizer_lens.mp V'.2 (U x)
+    rw [Equiv.Perm.mul_apply, hV']
+    exact hU x⟩
+  left_inv V := Subtype.ext (by group)
+  right_inv V' := Subtype.ext (by group)
+
+/-- **The descent coset** ([Persistence] §8, Corollary 8.11(i)'s own count, corrected against §8's
+verification note — the note had listed this as machine-checked already, and it is one coset short
+of `card_stabilizer_lens_dom`, the `W = id` case). Given `κ` and a law `W` through which some
+permutation `U` descends, the permutations descending through `κ` with that SAME law number exactly
+`∏ᵢ (fiberᵢ)!` — Lemma 7.1's count read at `κ` rather than at a stabilizer's own defining lens.
+`W` preserving `κ`'s fiber sizes is not an extra hypothesis: it follows from `U` being a permutation
+that descends, so no such hypothesis appears below. -/
+theorem card_descentCoset {z : ℕ} (κ : Fin n → Fin z) (W : Fin z → Fin z) {U : Perm (Fin n)}
+    (hU : ∀ x, κ (U x) = W (κ x)) :
+    Nat.card ↥{V : Perm (Fin n) | ∀ x, κ (V x) = W (κ x)}
+      = ∏ i : Fin z, (Nat.card {x : Fin n // κ x = i})! := by
+  rw [Nat.card_congr (descentEquivStab κ W hU)]
+  exact card_stabilizer_lens_dom κ
+
+/-- **Non-vacuity: at `W = id` the descent coset is the fiber-stabilizer itself**, agreeing with
+`card_stabilizer_lens_dom` exactly — the check the design round asked for, since nothing in the
+tree previously counted the descent set at a general law. -/
+theorem card_descentCoset_id {z : ℕ} (κ : Fin n → Fin z) :
+    Nat.card ↥{V : Perm (Fin n) | ∀ x, κ (V x) = κ x}
+      = Nat.card ↥(stabilizer (Perm (Fin n)) κ) := by
+  have h := card_descentCoset κ id (U := 1) (fun x => by simp)
+  simp only [id] at h
+  rw [h, card_stabilizer_lens_dom]
+
 /-- **The orbit of a lens is the set of lenses with its fiber sizes** ([Persistence] §7, Lemma 7.1,
 the surjectivity half). Precomposing with a permutation cannot change how many states a value is
 read from; conversely, any lens with the same fiber sizes is reached by matching the fibers up. -/
@@ -3621,6 +3670,1031 @@ theorem ledger_graded_faithful (hn : 0 < n) {U : Perm (Fin n)} {ℓ : ℕ → Fi
   have hbound := ledger_graded hn hcar
   rw [hone] at hbound
   simp only [Nat.size_one, Nat.mul_one] at hbound
+  omega
+
+/-! ## The ledger at any frames ([Persistence] §6, Theorem 6.5) -/
+
+/-- **Consistency with the frames held at `bs`** ([Persistence] §6, Theorem 6.5): a permutation `V`
+is consistent when it carries every held time `t`'s frame back to the frame at any OTHER held time
+`t'` one step earlier — no ordering, sortedness, or `Nodup` requirement on `bs`, since a repeated or
+misordered time imposes no different a constraint than the times it duplicates. -/
+def ConsistentWith (ℓ : ℕ → Fin n → Fin m) (bs : List ℕ) : Set (Perm (Fin n)) :=
+  {V | ∀ t ∈ bs, ∀ t' ∈ bs, t = t' + 1 → ∀ x, ℓ t (V x) = ℓ t' x}
+
+/-- **One pair's transport test**, `Bool`-valued: skip the pair when `bs`'s `j`-th and `j'`-th
+entries are not one apart, else require the `j`-th frame's table to transport the `j'`-th frame's
+table exactly as `pairsOK`'s bounded search over `Fin n` reads it — `pairOK`'s own shape, one level
+further from the raw digits. -/
+private def triOK (n : ℕ) (Ts bs : List ℕ) (w j j' : ℕ) : Bool :=
+  (!decide (bs.getD j 0 = bs.getD j' 0 + 1)) ||
+    (List.range n).all fun i =>
+      decide ((rawTable (Ts.getD j 0)).getD (digitAt n w i) 0
+        = (rawTable (Ts.getD j' 0)).getD i 0)
+
+set_option maxHeartbeats 1000000 in
+-- Multi-level packing meets the (now triple, not double) nested fold — the same headroom
+-- `primrec_isValid_rel`/`primrec_gradedTableFn` need for their own packed compositions.
+private theorem primrec_triOK :
+    Primrec fun p : (ℕ × List ℕ × List ℕ × ℕ) × ℕ × ℕ =>
+      triOK p.1.1 p.1.2.1 p.1.2.2.1 p.1.2.2.2 p.2.1 p.2.2 := by
+  have hn : Primrec fun p : (ℕ × List ℕ × List ℕ × ℕ) × ℕ × ℕ => p.1.1 :=
+    Primrec.fst.comp Primrec.fst
+  have hTs : Primrec fun p : (ℕ × List ℕ × List ℕ × ℕ) × ℕ × ℕ => p.1.2.1 :=
+    Primrec.fst.comp (Primrec.snd.comp Primrec.fst)
+  have hbs : Primrec fun p : (ℕ × List ℕ × List ℕ × ℕ) × ℕ × ℕ => p.1.2.2.1 :=
+    Primrec.fst.comp (Primrec.snd.comp (Primrec.snd.comp Primrec.fst))
+  have hw : Primrec fun p : (ℕ × List ℕ × List ℕ × ℕ) × ℕ × ℕ => p.1.2.2.2 :=
+    Primrec.snd.comp (Primrec.snd.comp (Primrec.snd.comp Primrec.fst))
+  have hj : Primrec fun p : (ℕ × List ℕ × List ℕ × ℕ) × ℕ × ℕ => p.2.1 :=
+    Primrec.fst.comp Primrec.snd
+  have hj' : Primrec fun p : (ℕ × List ℕ × List ℕ × ℕ) × ℕ × ℕ => p.2.2 :=
+    Primrec.snd.comp Primrec.snd
+  have hbsj : Primrec fun p : (ℕ × List ℕ × List ℕ × ℕ) × ℕ × ℕ => p.1.2.2.1.getD p.2.1 0 :=
+    (Primrec.list_getD 0).comp hbs hj
+  have hbsj' : Primrec fun p : (ℕ × List ℕ × List ℕ × ℕ) × ℕ × ℕ => p.1.2.2.1.getD p.2.2 0 :=
+    (Primrec.list_getD 0).comp hbs hj'
+  have hcond : Primrec fun p : (ℕ × List ℕ × List ℕ × ℕ) × ℕ × ℕ =>
+      decide (p.1.2.2.1.getD p.2.1 0 = p.1.2.2.1.getD p.2.2 0 + 1) :=
+    Primrec.eq.decide.comp hbsj (Primrec.succ.comp hbsj')
+  have hTj : Primrec fun p : (ℕ × List ℕ × List ℕ × ℕ) × ℕ × ℕ =>
+      rawTable (p.1.2.1.getD p.2.1 0) :=
+    primrec_rawTable.comp ((Primrec.list_getD 0).comp hTs hj)
+  have hTj' : Primrec fun p : (ℕ × List ℕ × List ℕ × ℕ) × ℕ × ℕ =>
+      rawTable (p.1.2.1.getD p.2.2 0) :=
+    primrec_rawTable.comp ((Primrec.list_getD 0).comp hTs hj')
+  have hinner : Primrec fun p : ((ℕ × List ℕ × List ℕ × ℕ) × ℕ × ℕ) × ℕ =>
+      decide ((rawTable (p.1.1.2.1.getD p.1.2.1 0)).getD (digitAt p.1.1.1 p.1.1.2.2.2 p.2) 0
+        = (rawTable (p.1.1.2.1.getD p.1.2.2 0)).getD p.2 0) := by
+    have hn2 : Primrec fun p : ((ℕ × List ℕ × List ℕ × ℕ) × ℕ × ℕ) × ℕ => p.1.1.1 :=
+      hn.comp Primrec.fst
+    have hw2 : Primrec fun p : ((ℕ × List ℕ × List ℕ × ℕ) × ℕ × ℕ) × ℕ => p.1.1.2.2.2 :=
+      hw.comp Primrec.fst
+    have hi : Primrec fun p : ((ℕ × List ℕ × List ℕ × ℕ) × ℕ × ℕ) × ℕ => p.2 := Primrec.snd
+    have hpow : Primrec₂ ((· ^ ·) : ℕ → ℕ → ℕ) := Primrec₂.unpaired'.1 Nat.Primrec.pow
+    have hdig : Primrec fun p : ((ℕ × List ℕ × List ℕ × ℕ) × ℕ × ℕ) × ℕ =>
+        digitAt p.1.1.1 p.1.1.2.2.2 p.2 :=
+      Primrec.nat_mod.comp (Primrec.nat_div.comp hw2 (hpow.comp hn2 hi)) hn2
+    have hTj2 : Primrec fun p : ((ℕ × List ℕ × List ℕ × ℕ) × ℕ × ℕ) × ℕ =>
+        rawTable (p.1.1.2.1.getD p.1.2.1 0) := hTj.comp Primrec.fst
+    have hTj'2 : Primrec fun p : ((ℕ × List ℕ × List ℕ × ℕ) × ℕ × ℕ) × ℕ =>
+        rawTable (p.1.1.2.1.getD p.1.2.2 0) := hTj'.comp Primrec.fst
+    have hL : Primrec fun p : ((ℕ × List ℕ × List ℕ × ℕ) × ℕ × ℕ) × ℕ =>
+        (rawTable (p.1.1.2.1.getD p.1.2.1 0)).getD (digitAt p.1.1.1 p.1.1.2.2.2 p.2) 0 :=
+      (Primrec.list_getD 0).comp hTj2 hdig
+    have hR : Primrec fun p : ((ℕ × List ℕ × List ℕ × ℕ) × ℕ × ℕ) × ℕ =>
+        (rawTable (p.1.1.2.1.getD p.1.2.2 0)).getD p.2 0 :=
+      (Primrec.list_getD 0).comp hTj'2 hi
+    exact Primrec.eq.decide.comp hL hR
+  have hall : Primrec fun p : (ℕ × List ℕ × List ℕ × ℕ) × ℕ × ℕ =>
+      (List.range p.1.1).all fun i =>
+        decide ((rawTable (p.1.2.1.getD p.2.1 0)).getD (digitAt p.1.1 p.1.2.2.2 i) 0
+          = (rawTable (p.1.2.1.getD p.2.2 0)).getD i 0) :=
+    primrec_list_all (Primrec.list_range.comp hn) hinner.to₂
+  exact ((Primrec.dom_bool₂ (fun (b1 b2 : Bool) => (!b1) || b2)).comp hcond hall).of_eq
+    fun p => by simp [triOK]
+
+/-- **The triple-fold check** ([Persistence] §6, Theorem 6.5's proof, `V`'s constraint at held
+times one apart): every pair of positions in `bs` whose values are one apart transports the
+earlier position's frame table to the later's — `candBijBool`'s own bounded-search style, folded
+once more, over `bs`'s own positions rather than a fixed pair. -/
+private def pairsOK (n : ℕ) (Ts bs : List ℕ) (w : ℕ) : Bool :=
+  (List.range bs.length).all fun j =>
+    (List.range bs.length).all fun j' => triOK n Ts bs w j j'
+
+set_option maxHeartbeats 1000000 in
+-- Same headroom reason as `primrec_triOK`: the packed program meets the fold twice more.
+private theorem primrec_pairsOK :
+    Primrec fun p : ℕ × List ℕ × List ℕ × ℕ => pairsOK p.1 p.2.1 p.2.2.1 p.2.2.2 := by
+  have hn : Primrec fun p : ℕ × List ℕ × List ℕ × ℕ => p.1 := Primrec.fst
+  have hTs : Primrec fun p : ℕ × List ℕ × List ℕ × ℕ => p.2.1 := Primrec.fst.comp Primrec.snd
+  have hbs : Primrec fun p : ℕ × List ℕ × List ℕ × ℕ => p.2.2.1 :=
+    Primrec.fst.comp (Primrec.snd.comp Primrec.snd)
+  have hw : Primrec fun p : ℕ × List ℕ × List ℕ × ℕ => p.2.2.2 :=
+    Primrec.snd.comp (Primrec.snd.comp Primrec.snd)
+  have hinnerAll : Primrec fun q : (ℕ × List ℕ × List ℕ × ℕ) × ℕ =>
+      (List.range q.1.2.2.1.length).all fun j' =>
+        triOK q.1.1 q.1.2.1 q.1.2.2.1 q.1.2.2.2 q.2 j' := by
+    have hq1 : Primrec fun q : (ℕ × List ℕ × List ℕ × ℕ) × ℕ => q.1 := Primrec.fst
+    have hq2 : Primrec fun q : (ℕ × List ℕ × List ℕ × ℕ) × ℕ => q.2 := Primrec.snd
+    have hbsq : Primrec fun q : (ℕ × List ℕ × List ℕ × ℕ) × ℕ => q.1.2.2.1 := hbs.comp hq1
+    have hlen : Primrec fun q : (ℕ × List ℕ × List ℕ × ℕ) × ℕ =>
+        List.range q.1.2.2.1.length := Primrec.list_range.comp (Primrec.list_length.comp hbsq)
+    have htriOK2 : Primrec₂ fun (q : (ℕ × List ℕ × List ℕ × ℕ) × ℕ) (j' : ℕ) =>
+        triOK q.1.1 q.1.2.1 q.1.2.2.1 q.1.2.2.2 q.2 j' :=
+      primrec_triOK.comp ((Primrec.fst.comp Primrec.fst).pair
+        ((Primrec.snd.comp Primrec.fst).pair Primrec.snd))
+    exact primrec_list_all hlen htriOK2
+  have houterAll : Primrec fun p : ℕ × List ℕ × List ℕ × ℕ =>
+      (List.range p.2.2.1.length).all fun j =>
+        (List.range p.2.2.1.length).all fun j' => triOK p.1 p.2.1 p.2.2.1 p.2.2.2 j j' := by
+    have hlen : Primrec fun p : ℕ × List ℕ × List ℕ × ℕ => List.range p.2.2.1.length :=
+      Primrec.list_range.comp (Primrec.list_length.comp hbs)
+    have hg : Primrec₂ fun (p : ℕ × List ℕ × List ℕ × ℕ) (j : ℕ) =>
+        (List.range p.2.2.1.length).all fun j' => triOK p.1 p.2.1 p.2.2.1 p.2.2.2 j j' :=
+      hinnerAll.comp (Primrec.pair Primrec.fst Primrec.snd)
+    exact primrec_list_all hlen hg
+  exact houterAll.of_eq fun p => rfl
+
+/-- **`pairsOK`, unfolded** — the raw pairwise-transport statement the `Bool` search certifies. -/
+private theorem pairsOK_iff (n : ℕ) (Ts bs : List ℕ) (w : ℕ) :
+    pairsOK n Ts bs w = true ↔
+      ∀ j < bs.length, ∀ j' < bs.length, bs.getD j 0 = bs.getD j' 0 + 1 →
+        ∀ i < n, (rawTable (Ts.getD j 0)).getD (digitAt n w i) 0
+          = (rawTable (Ts.getD j' 0)).getD i 0 := by
+  simp only [pairsOK, List.all_eq_true, decide_eq_true_eq, List.mem_range, triOK,
+    Bool.or_eq_true, Bool.not_eq_true', decide_eq_false_iff_not]
+  constructor
+  · intro h j hj j' hj' heq i hi
+    rcases h j hj j' hj' with hne | hok
+    · exact absurd heq hne
+    · exact hok i hi
+  · intro h j hj j' hj'
+    by_cases heq : bs.getD j 0 = bs.getD j' 0 + 1
+    · right; exact h j hj j' hj' heq
+    · left; exact heq
+
+/-- **A candidate is valid for the itinerary**: its table is a genuine permutation AND transports
+every held-time pair's frame table as `pairsOK` requires — the two-frame `isValid`'s own shape, at
+`bs`'s own list of held frames rather than a fixed pair. -/
+private def isValidItin (n : ℕ) (Ts bs : List ℕ) (w : ℕ) : Prop :=
+  candBijBool n w = true ∧ pairsOK n Ts bs w = true
+
+private instance decIsValidItin (n : ℕ) (Ts bs : List ℕ) (w : ℕ) :
+    Decidable (isValidItin n Ts bs w) := by unfold isValidItin; infer_instance
+
+/-- **The itinerary's candidate list**: every numeral below `n ^ n` whose table is a valid
+itinerary member, in the numeral's own order — `candList`'s own shape, at `bs`'s own list of held
+frames. -/
+private def candListItin (n : ℕ) (Ts bs : List ℕ) : List ℕ :=
+  (List.range (n ^ n)).filter (fun w => decide (isValidItin n Ts bs w))
+
+set_option maxHeartbeats 1000000 in
+-- multi-level packing meets the triple fold, same reason as primrec_triOK/primrec_pairsOK.
+private theorem primrec_candListItin :
+    Primrec fun p : ℕ × List ℕ × List ℕ => candListItin p.1 p.2.1 p.2.2 := by
+  have hpow : Primrec₂ ((· ^ ·) : ℕ → ℕ → ℕ) := Primrec₂.unpaired'.1 Nat.Primrec.pow
+  have hn : Primrec fun p : ℕ × List ℕ × List ℕ => p.1 := Primrec.fst
+  have hTs : Primrec fun p : ℕ × List ℕ × List ℕ => p.2.1 := Primrec.fst.comp Primrec.snd
+  have hbs : Primrec fun p : ℕ × List ℕ × List ℕ => p.2.2 := Primrec.snd.comp Primrec.snd
+  have hL : Primrec fun p : ℕ × List ℕ × List ℕ => List.range (p.1 ^ p.1) :=
+    Primrec.list_range.comp (hpow.comp hn hn)
+  have hgw : Primrec fun q : ℕ × ℕ × List ℕ × List ℕ => q.1 := Primrec.fst
+  have hgn : Primrec fun q : ℕ × ℕ × List ℕ × List ℕ => q.2.1 := Primrec.fst.comp Primrec.snd
+  have hgTs : Primrec fun q : ℕ × ℕ × List ℕ × List ℕ => q.2.2.1 :=
+    Primrec.fst.comp (Primrec.snd.comp Primrec.snd)
+  have hgbs : Primrec fun q : ℕ × ℕ × List ℕ × List ℕ => q.2.2.2 :=
+    Primrec.snd.comp (Primrec.snd.comp Primrec.snd)
+  have hBij : PrimrecPred fun q : ℕ × ℕ × List ℕ × List ℕ => candBijBool q.2.1 q.1 = true :=
+    Primrec.eq.comp (primrec_candBijBool.comp hgn hgw) (Primrec.const true)
+  have hPairs : PrimrecPred fun q : ℕ × ℕ × List ℕ × List ℕ =>
+      pairsOK q.2.1 q.2.2.1 q.2.2.2 q.1 = true :=
+    Primrec.eq.comp (primrec_pairsOK.comp (hgn.pair (hgTs.pair (hgbs.pair hgw))))
+      (Primrec.const true)
+  have hR : PrimrecRel fun (w : ℕ) (param : ℕ × List ℕ × List ℕ) =>
+      isValidItin param.1 param.2.1 param.2.2 w := hBij.and hPairs
+  have hfilt := (PrimrecRel.listFilter hR).comp hL (Primrec.pair hn (Primrec.pair hTs hbs))
+  exact hfilt.of_eq fun p => rfl
+
+/-- **The itinerary tabulation, rebuilt from the packed program** `⟨n, Ts, bs, idx⟩` — ONE fixed
+function of a single natural number, `Ts`/`bs` decoded as `List ℕ`: filter the candidates and read
+off the `idx`-th one's table — `gradedTableFn`'s own shape, at a variable-length list of held
+frames rather than a fixed pair. -/
+private def itinTableFn (a : ℕ) : ℕ :=
+  Encodable.encode (candTable a.unpair.1
+    (List.getD (candListItin a.unpair.1
+        ((Encodable.decode (α := List ℕ) a.unpair.2.unpair.1).getD [])
+        ((Encodable.decode (α := List ℕ) a.unpair.2.unpair.2.unpair.1).getD []))
+      a.unpair.2.unpair.2.unpair.2 0))
+
+private theorem primrec_itinTableFn : Primrec itinTableFn := by
+  have hN : Primrec fun a : ℕ => a.unpair.1 := Primrec.fst.comp Primrec.unpair
+  have hdecTs : Primrec fun a : ℕ =>
+      (Encodable.decode (α := List ℕ) a.unpair.2.unpair.1).getD [] :=
+    Primrec.option_getD.comp
+      (Primrec.decode.comp
+        (Primrec.fst.comp (Primrec.unpair.comp (Primrec.snd.comp Primrec.unpair))))
+      (Primrec.const [])
+  have hdecbs : Primrec fun a : ℕ =>
+      (Encodable.decode (α := List ℕ) a.unpair.2.unpair.2.unpair.1).getD [] :=
+    Primrec.option_getD.comp
+      (Primrec.decode.comp (Primrec.fst.comp (Primrec.unpair.comp
+        (Primrec.snd.comp (Primrec.unpair.comp (Primrec.snd.comp Primrec.unpair))))))
+      (Primrec.const [])
+  have hIdx : Primrec fun a : ℕ => a.unpair.2.unpair.2.unpair.2 :=
+    Primrec.snd.comp (Primrec.unpair.comp (Primrec.snd.comp
+      (Primrec.unpair.comp (Primrec.snd.comp Primrec.unpair))))
+  have hCL : Primrec fun a : ℕ => candListItin a.unpair.1
+      ((Encodable.decode (α := List ℕ) a.unpair.2.unpair.1).getD [])
+      ((Encodable.decode (α := List ℕ) a.unpair.2.unpair.2.unpair.1).getD []) :=
+    primrec_candListItin.comp (hN.pair (hdecTs.pair hdecbs))
+  have hSel : Primrec fun a : ℕ => List.getD (candListItin a.unpair.1
+      ((Encodable.decode (α := List ℕ) a.unpair.2.unpair.1).getD [])
+      ((Encodable.decode (α := List ℕ) a.unpair.2.unpair.2.unpair.1).getD []))
+      a.unpair.2.unpair.2.unpair.2 0 :=
+    (Primrec.list_getD 0).comp hCL hIdx
+  exact Primrec.encode.comp (primrec_candTable.comp hN hSel)
+
+private theorem partrec_itinTableFn : Nat.Partrec (fun a : ℕ => (itinTableFn a : ℕ)) :=
+  _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_itinTableFn).partrec
+
+/-- **The fixed itinerary builder code.** One program, independent of `n`, the world, the lens
+family, and the held times `bs`. -/
+noncomputable def itinBuilder : Nat.Partrec.Code :=
+  Classical.choose (Nat.Partrec.Code.exists_code.mp partrec_itinTableFn)
+
+private theorem eval_itinBuilder (a : ℕ) :
+    Nat.Partrec.Code.eval itinBuilder a = Part.some (itinTableFn a) := by
+  have h := congrFun (Classical.choose_spec
+    (Nat.Partrec.Code.exists_code.mp partrec_itinTableFn)) a
+  simpa [itinBuilder] using h
+
+/-- **The fixed range code**: independent of `k`, it expands `k`'s own binary numeral into the
+encoded list `List.range k` — what restores Theorem 6.5(i)'s `O (log k)` term, in place of loading
+`k` separate times. -/
+noncomputable def rangeCode : Nat.Partrec.Code :=
+  Classical.choose (Nat.Partrec.Code.exists_code.mp
+    (_root_.Partrec.nat_iff.mp (Primrec.to_comp
+      (Primrec.encode.comp Primrec.list_range)).partrec))
+
+private theorem eval_rangeCode (k : ℕ) :
+    Nat.Partrec.Code.eval rangeCode k = Part.some (Encodable.encode (List.range k)) := by
+  have h := congrFun (Classical.choose_spec (Nat.Partrec.Code.exists_code.mp
+    (_root_.Partrec.nat_iff.mp (Primrec.to_comp
+      (Primrec.encode.comp Primrec.list_range)).partrec))) k
+  simpa [rangeCode] using h
+
+/-- **The frame-table chain**, `[] ↦ zero`, `t :: r ↦ comp succ (pair (comp (c t) zero) ⟨r⟩)` —
+exploiting `Encodable.encode (a :: l) = (Nat.pair (encode a) (encode l)).succ` to compute the
+encoded list of frame tables directly, one `c t` per element. -/
+private def tableChain (c : ℕ → Nat.Partrec.Code) : List ℕ → Nat.Partrec.Code
+  | [] => Nat.Partrec.Code.zero
+  | t :: r => Nat.Partrec.Code.comp Nat.Partrec.Code.succ
+      (Nat.Partrec.Code.pair (Nat.Partrec.Code.comp (c t) Nat.Partrec.Code.zero) (tableChain c r))
+
+private theorem elen_tableChain (c : ℕ → Nat.Partrec.Code) (bs : List ℕ) :
+    elen (tableChain c bs) = 3 + 15 * bs.length + (bs.map fun t => elen (c t)).sum := by
+  induction bs with
+  | nil => rfl
+  | cons t r ih =>
+    change elen (Nat.Partrec.Code.comp Nat.Partrec.Code.succ
+      (Nat.Partrec.Code.pair (Nat.Partrec.Code.comp (c t) Nat.Partrec.Code.zero)
+        (tableChain c r))) = _
+    rw [E_len_comp, E_len_pair, E_len_comp]
+    simp only [List.length_cons, List.map_cons, List.sum_cons]
+    have hz : elen (Nat.Partrec.Code.zero : Nat.Partrec.Code) = 3 := rfl
+    have hs : elen (Nat.Partrec.Code.succ : Nat.Partrec.Code) = 3 := rfl
+    rw [hz, hs, ih]
+    ring
+
+private theorem eval_tableChain (c : ℕ → Nat.Partrec.Code) (f : ℕ → ℕ) (bs : List ℕ)
+    (hc : ∀ t ∈ bs, (c t).eval 0 = Part.some (f t)) :
+    (tableChain c bs).eval 0 = Part.some (Encodable.encode (bs.map f)) := by
+  induction bs with
+  | nil => rfl
+  | cons t r ih =>
+    change Nat.Partrec.Code.eval (Nat.Partrec.Code.comp Nat.Partrec.Code.succ
+      (Nat.Partrec.Code.pair (Nat.Partrec.Code.comp (c t) Nat.Partrec.Code.zero)
+        (tableChain c r))) 0 = _
+    have hz : Nat.Partrec.Code.eval Nat.Partrec.Code.zero (0 : ℕ) = Part.some 0 := rfl
+    have hct : Nat.Partrec.Code.eval (Nat.Partrec.Code.comp (c t) Nat.Partrec.Code.zero) 0
+        = Part.some (f t) := (eval_comp_some hz).trans (hc t List.mem_cons_self)
+    have ihr : (tableChain c r).eval 0 = Part.some (Encodable.encode (r.map f)) :=
+      ih (fun t' ht' => hc t' (List.mem_cons_of_mem t ht'))
+    have hpair : Nat.Partrec.Code.eval
+        (Nat.Partrec.Code.pair (Nat.Partrec.Code.comp (c t) Nat.Partrec.Code.zero)
+          (tableChain c r)) 0
+        = Part.some (Nat.pair (f t) (Encodable.encode (r.map f))) := by
+      change Nat.pair <$> _ <*> _ = _
+      rw [hct, ihr]; simp [Seq.seq]
+    rw [eval_comp_some hpair]
+    change Nat.Partrec.Code.eval Nat.Partrec.Code.succ
+      (Nat.pair (f t) (Encodable.encode (r.map f))) = _
+    simp only [List.map_cons, Encodable.encode_list_cons]
+    simp [Nat.Partrec.Code.eval]
+
+/-- **The held-times chain**, `[] ↦ zero`, `t :: r ↦ comp succ (pair (bconst t) ⟨r⟩)` — the same
+`encode (a :: l) = succ (pair (encode a) (encode l))` recursion as `tableChain`, over raw times
+loaded by `bconst` instead of run codes. -/
+private noncomputable def timeChain : List ℕ → Nat.Partrec.Code
+  | [] => Nat.Partrec.Code.zero
+  | t :: r => Nat.Partrec.Code.comp Nat.Partrec.Code.succ
+      (Nat.Partrec.Code.pair (bconst t) (timeChain r))
+
+private theorem elen_timeChain_le (bs : List ℕ) :
+    elen (timeChain bs)
+      ≤ 3 + 9 * bs.length + (15 + elen dbl) * (bs.map Nat.size).sum
+        + (15 + elen dbl) * bs.length := by
+  induction bs with
+  | nil => rfl
+  | cons t r ih =>
+    change elen (Nat.Partrec.Code.comp Nat.Partrec.Code.succ
+      (Nat.Partrec.Code.pair (bconst t) (timeChain r))) ≤ _
+    rw [E_len_comp, E_len_pair]
+    simp only [List.length_cons, List.map_cons, List.sum_cons]
+    have hs : elen (Nat.Partrec.Code.succ : Nat.Partrec.Code) = 3 := rfl
+    have hbc := elen_bconst_le t
+    rw [hs]
+    nlinarith [ih, hbc]
+
+private theorem eval_timeChain (bs : List ℕ) :
+    (timeChain bs).eval 0 = Part.some (Encodable.encode bs) := by
+  induction bs with
+  | nil => rfl
+  | cons t r ih =>
+    change Nat.Partrec.Code.eval (Nat.Partrec.Code.comp Nat.Partrec.Code.succ
+      (Nat.Partrec.Code.pair (bconst t) (timeChain r))) 0 = _
+    have hbc : Nat.Partrec.Code.eval (bconst t) (0 : ℕ) = Part.some t := eval_bconst t 0
+    have hpair : Nat.Partrec.Code.eval (Nat.Partrec.Code.pair (bconst t) (timeChain r)) 0
+        = Part.some (Nat.pair t (Encodable.encode r)) := by
+      change Nat.pair <$> _ <*> _ = _
+      rw [hbc, ih]; simp [Seq.seq]
+    rw [eval_comp_some hpair]
+    change Nat.Partrec.Code.eval Nat.Partrec.Code.succ (Nat.pair t (Encodable.encode r)) = _
+    simp only [Encodable.encode_list_cons]
+    simp [Nat.Partrec.Code.eval]
+
+/-- **The world's own table is a valid itinerary candidate**: it is bijective (`U` is a
+permutation) and, at every pair of held times one apart, it transports the earlier frame's table
+to the later's — `ConsistentWith`'s own defining condition, read through the table encoding
+exactly as `isValid_worldNumeral` reads `PermCarries`'s. -/
+private theorem isValidItin_worldNumeral (hn : 0 < n) {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m}
+    {bs : List ℕ} (hU : U ∈ ConsistentWith ℓ bs) :
+    isValidItin n (bs.map fun t => lensCode (ℓ t)) bs (worldNumeral U) := by
+  set Ts := bs.map fun t => lensCode (ℓ t) with hTsdef
+  have hTsGetD : ∀ j, j < bs.length → Ts.getD j 0 = lensCode (ℓ (bs.getD j 0)) := by
+    intro j hj
+    have hj' : j < Ts.length := by rw [hTsdef, List.length_map]; exact hj
+    rw [hTsdef, List.getD_eq_getElem _ _ hj', List.getD_eq_getElem _ _ hj, List.getElem_map]
+  constructor
+  · rw [candBijBool_iff]
+    intro i hi j hj hij hcontra
+    have hdi : digitAt n (worldNumeral U) i = (U (⟨i, hi⟩ : Fin n) : ℕ) :=
+      digitAt_worldNumeral hn U ⟨i, hi⟩
+    have hdj : digitAt n (worldNumeral U) j = (U (⟨j, hj⟩ : Fin n) : ℕ) :=
+      digitAt_worldNumeral hn U ⟨j, hj⟩
+    rw [hdi, hdj] at hcontra
+    exact hij (congrArg Fin.val (U.injective (Fin.val_injective hcontra)))
+  · rw [pairsOK_iff]
+    intro j hj j' hj' heq i hi
+    rw [hTsGetD j hj, hTsGetD j' hj']
+    set t := bs.getD j 0 with htdef
+    set t' := bs.getD j' 0 with ht'def
+    have hdig : digitAt n (worldNumeral U) i = (U (⟨i, hi⟩ : Fin n) : ℕ) :=
+      digitAt_worldNumeral hn U ⟨i, hi⟩
+    have hget1 : (rawTable (lensCode (ℓ t))).getD (U (⟨i, hi⟩ : Fin n) : ℕ) 0
+        = (ℓ t (U ⟨i, hi⟩) : ℕ) := by
+      rw [rawTable_lensCode, lensTable]
+      exact getD_map_finRange (fun y : Fin n => (ℓ t y : ℕ)) (U ⟨i, hi⟩)
+    have hget0 : (rawTable (lensCode (ℓ t'))).getD i 0 = (ℓ t' (⟨i, hi⟩ : Fin n) : ℕ) := by
+      rw [rawTable_lensCode, lensTable]
+      exact getD_map_finRange (fun y : Fin n => (ℓ t' y : ℕ)) ⟨i, hi⟩
+    rw [hdig, hget1, hget0]
+    have htmem : t ∈ bs := by
+      rw [htdef, List.getD_eq_getElem _ _ hj]; exact List.getElem_mem hj
+    have ht'mem : t' ∈ bs := by
+      rw [ht'def, List.getD_eq_getElem _ _ hj']; exact List.getElem_mem hj'
+    exact congrArg (fun z : Fin m => (z : ℕ)) (hU t htmem t' ht'mem heq ⟨i, hi⟩)
+
+/-- **The itinerary's coset bound**: the candidates satisfying `isValidItin` inject into the
+consistent permutations, so the candidate list is no longer than `Nat.card ↥(ConsistentWith ℓ
+bs)` — `candList_length_le`'s own shape, with `candPerm n w` landing directly in `ConsistentWith`
+rather than in a coset relative to `U`. -/
+private theorem candListItin_length_le (hn : 0 < n) {ℓ : ℕ → Fin n → Fin m} {bs : List ℕ}
+    {U : Perm (Fin n)} (hU : U ∈ ConsistentWith ℓ bs) :
+    (candListItin n (bs.map fun t => lensCode (ℓ t)) bs).length
+      ≤ Nat.card ↥(ConsistentWith ℓ bs) := by
+  classical
+  set Ts := bs.map fun t => lensCode (ℓ t) with hTsdef
+  haveI : Fintype ↥(ConsistentWith ℓ bs) := Fintype.ofFinite _
+  have hnodup : (candListItin n Ts bs).Nodup := List.nodup_range.filter _
+  have hmem : ∀ w ∈ (candListItin n Ts bs).toFinset, w < n ^ n ∧ isValidItin n Ts bs w := by
+    intro w hw
+    rw [List.mem_toFinset, candListItin, List.mem_filter, List.mem_range, decide_eq_true_eq] at hw
+    exact hw
+  have hcandmem : ∀ {w}, isValidItin n Ts bs w → candPerm n w ∈ ConsistentWith ℓ bs := by
+    intro w hv t ht t' ht' hstep x
+    obtain ⟨j, hj, hjeq⟩ := List.getElem_of_mem ht
+    obtain ⟨j', hj', hj'eq⟩ := List.getElem_of_mem ht'
+    have hTsGetD : ∀ k, k < bs.length → Ts.getD k 0 = lensCode (ℓ (bs.getD k 0)) := by
+      intro k hk
+      have hk' : k < Ts.length := by rw [hTsdef, List.length_map]; exact hk
+      rw [hTsdef, List.getD_eq_getElem _ _ hk', List.getD_eq_getElem _ _ hk, List.getElem_map]
+    have hjbs : bs.getD j 0 = t := by rw [List.getD_eq_getElem _ _ hj]; exact hjeq
+    have hj'bs : bs.getD j' 0 = t' := by rw [List.getD_eq_getElem _ _ hj']; exact hj'eq
+    have hjstep : bs.getD j 0 = bs.getD j' 0 + 1 := by rw [hjbs, hj'bs]; exact hstep
+    have hb := hv.1
+    have hpairs := (pairsOK_iff n Ts bs w).mp hv.2 j hj j' hj' hjstep (x : ℕ) x.2
+    rw [hTsGetD j hj, hTsGetD j' hj', hjbs, hj'bs] at hpairs
+    have hcx : (candPerm n w x : ℕ) = digitAt n w (x : ℕ) := candPerm_apply hn hb x
+    have hget1 : (rawTable (lensCode (ℓ t))).getD (candPerm n w x : ℕ) 0
+        = (ℓ t (candPerm n w x) : ℕ) := by
+      rw [rawTable_lensCode, lensTable]
+      exact getD_map_finRange (fun y : Fin n => (ℓ t y : ℕ)) (candPerm n w x)
+    have hget0 : (rawTable (lensCode (ℓ t'))).getD (x : ℕ) 0 = (ℓ t' x : ℕ) := by
+      rw [rawTable_lensCode, lensTable]
+      exact getD_map_finRange (fun y : Fin n => (ℓ t' y : ℕ)) x
+    rw [← hcx] at hpairs
+    rw [hget1, hget0] at hpairs
+    exact Fin.val_injective hpairs
+  set f : ℕ → ↥(ConsistentWith ℓ bs) := fun w =>
+    if h : isValidItin n Ts bs w then ⟨candPerm n w, hcandmem h⟩ else ⟨U, hU⟩ with hf
+  have hcard := Finset.card_le_card_of_injOn f
+    (s := (candListItin n Ts bs).toFinset) (t := Finset.univ)
+    (fun w _ => Finset.mem_univ (f w))
+    (by
+      intro w1 hw1 w2 hw2 heq
+      rw [Finset.mem_coe] at hw1 hw2
+      have h1 := hmem w1 hw1
+      have h2 := hmem w2 hw2
+      have hfw1 : f w1 = ⟨candPerm n w1, hcandmem h1.2⟩ := dif_pos h1.2
+      have hfw2 : f w2 = ⟨candPerm n w2, hcandmem h2.2⟩ := dif_pos h2.2
+      rw [hfw1, hfw2, Subtype.mk_eq_mk] at heq
+      have hb1 : candBijBool n w1 = true := h1.2.1
+      have hb2 : candBijBool n w2 = true := h2.2.1
+      have hdig : ∀ i : Fin n, digitAt n w1 (i : ℕ) = digitAt n w2 (i : ℕ) := by
+        intro i
+        rw [← candPerm_apply hn hb1 i, ← candPerm_apply hn hb2 i, heq]
+      apply candTable_injOn h1.1 h2.1
+      change (List.range n).map (digitAt n w1) = (List.range n).map (digitAt n w2)
+      refine List.map_congr_left fun j hj => ?_
+      exact hdig ⟨j, List.mem_range.mp hj⟩)
+  rw [← List.toFinset_card_of_nodup hnodup, Nat.card_eq_fintype_card]
+  simpa using hcard
+
+/-- **The ledger at any frames** ([Persistence] §6, Theorem 6.5(ii)). A fixed decoder recovers `U`
+from the frame codes held at `bs`, the held times themselves, and an index into the consistent set
+`ConsistentWith ℓ bs` — priced by the caller's own bound `N` on that set's size, since the set's
+card is not itself computed here (that count is `consistent_card`'s content, over `Bminus bs`).
+`bs` need not be sorted or `Nodup`; repeated or misordered entries impose no different a
+constraint. -/
+theorem ledger_itinerary (hn : 0 < n) {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m}
+    (bs : List ℕ) (hU : U ∈ ConsistentWith ℓ bs)
+    (c : ℕ → Nat.Partrec.Code)
+    (hc : ∀ t ∈ bs, (c t).eval 0 = Part.some (lensCode (ℓ t)))
+    (N : ℕ) (hN : Nat.card ↥(ConsistentWith ℓ bs) ≤ N) :
+    KE (lensCode U)
+      ≤ (bs.map fun t => elen (c t)).sum
+        + (15 + elen dbl) * (bs.map Nat.size).sum
+        + (39 + elen dbl) * bs.length
+        + (15 + elen dbl) * Nat.size N
+        + (15 + elen dbl) * Nat.size n
+        + (elen itinBuilder + 2 * (15 + elen dbl) + 18) := by
+  set Ts := bs.map fun t => lensCode (ℓ t) with hTsdef
+  have hvalid : isValidItin n Ts bs (worldNumeral U) := isValidItin_worldNumeral hn hU
+  have hlt : worldNumeral U < n ^ n := worldNumeral_lt hn U
+  have hmem : worldNumeral U ∈ candListItin n Ts bs := by
+    rw [candListItin, List.mem_filter, List.mem_range, decide_eq_true_eq]
+    exact ⟨hlt, hvalid⟩
+  obtain ⟨idx, hidxlt, hidxeq⟩ := List.getElem_of_mem hmem
+  have hlenle : (candListItin n Ts bs).length ≤ N :=
+    le_trans (candListItin_length_le hn hU) hN
+  have hidxN : idx < N := lt_of_lt_of_le hidxlt hlenle
+  have hgetD : List.getD (candListItin n Ts bs) idx 0 = worldNumeral U := by
+    rw [List.getD_eq_getElem _ _ hidxlt]; exact hidxeq
+  have heval : itinTableFn (Nat.pair n (Nat.pair (Encodable.encode Ts)
+      (Nat.pair (Encodable.encode bs) idx))) = lensCode U := by
+    rw [itinTableFn]
+    simp only [Nat.unpair_pair, Encodable.encodek, Option.getD_some]
+    rw [hgetD]
+    exact congrArg Encodable.encode (candTable_packMarks hn U)
+  have htc : (tableChain c bs).eval 0 = Part.some (Encodable.encode Ts) := by
+    rw [hTsdef]; exact eval_tableChain c (fun t => lensCode (ℓ t)) bs hc
+  have hti : (timeChain bs).eval 0 = Part.some (Encodable.encode bs) := eval_timeChain bs
+  have hbi : eval (bconst idx) (0 : ℕ) = Part.some idx := eval_bconst idx 0
+  have hbn : eval (bconst n) (0 : ℕ) = Part.some n := eval_bconst n 0
+  have hpair3 : eval (pair (timeChain bs) (bconst idx)) 0
+      = Part.some (Nat.pair (Encodable.encode bs) idx) := by
+    change Nat.pair <$> _ <*> _ = _
+    rw [hti, hbi]; simp [Seq.seq]
+  have hpair2 : eval (pair (tableChain c bs) (pair (timeChain bs) (bconst idx))) 0
+      = Part.some (Nat.pair (Encodable.encode Ts) (Nat.pair (Encodable.encode bs) idx)) := by
+    change Nat.pair <$> _ <*> _ = _
+    rw [htc, hpair3]; simp [Seq.seq]
+  have hpair1 : eval
+      (pair (bconst n) (pair (tableChain c bs) (pair (timeChain bs) (bconst idx)))) 0
+      = Part.some (Nat.pair n
+          (Nat.pair (Encodable.encode Ts) (Nat.pair (Encodable.encode bs) idx))) := by
+    change Nat.pair <$> _ <*> _ = _
+    rw [hbn, hpair2]; simp [Seq.seq]
+  have hcomp : Computes
+      (comp itinBuilder
+        (pair (bconst n) (pair (tableChain c bs) (pair (timeChain bs) (bconst idx)))))
+      (lensCode U) := by
+    change eval (comp itinBuilder
+      (pair (bconst n) (pair (tableChain c bs) (pair (timeChain bs) (bconst idx))))) 0 = _
+    rw [eval_comp_some hpair1, eval_itinBuilder, heval]
+  have hle := KE_le hcomp
+  rw [E_len_comp, E_len_pair, E_len_pair, E_len_pair] at hle
+  have htcelen := elen_tableChain c bs
+  have htielen := elen_timeChain_le bs
+  have hbnbound := elen_bconst_le n
+  have hbibound := elen_bconst_le idx
+  have hidxsize : Nat.size idx ≤ Nat.size N := Nat.size_le_size (le_of_lt hidxN)
+  have hidxsize' : (15 + elen dbl) * Nat.size idx ≤ (15 + elen dbl) * Nat.size N :=
+    Nat.mul_le_mul_left _ hidxsize
+  rw [htcelen] at hle
+  nlinarith [hle, htielen, hbnbound, hbibound, hidxsize']
+
+set_option linter.style.longLine false in
+/-- info: 'PersistenceCapacity.ledger_itinerary' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms ledger_itinerary
+
+/-- **The ledger at `k` consecutive frames** ([Persistence] §6, Theorem 6.5(i)). `rangeCode`
+replaces the held-times chain: instead of loading `k` separate times at `Θ (k log k)` total, one
+`bconst k` runs through the fixed `rangeCode` program, restoring the paper's own `O (log k)`
+term. -/
+theorem ledger_itinerary_consecutive (hn : 0 < n) {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m}
+    (k : ℕ) (hU : U ∈ ConsistentWith ℓ (List.range k))
+    (c : ℕ → Nat.Partrec.Code)
+    (hc : ∀ t < k, (c t).eval 0 = Part.some (lensCode (ℓ t)))
+    (N : ℕ) (hN : Nat.card ↥(ConsistentWith ℓ (List.range k)) ≤ N) :
+    KE (lensCode U)
+      ≤ ((List.range k).map fun t => elen (c t)).sum
+        + 15 * k
+        + (15 + elen dbl) * Nat.size k
+        + (15 + elen dbl) * Nat.size N
+        + (15 + elen dbl) * Nat.size n
+        + (elen itinBuilder + elen rangeCode + 3 * (15 + elen dbl) + 18) := by
+  set bs := List.range k with hbsdef
+  set Ts := bs.map fun t => lensCode (ℓ t) with hTsdef
+  have hvalid : isValidItin n Ts bs (worldNumeral U) := isValidItin_worldNumeral hn hU
+  have hlt : worldNumeral U < n ^ n := worldNumeral_lt hn U
+  have hmem : worldNumeral U ∈ candListItin n Ts bs := by
+    rw [candListItin, List.mem_filter, List.mem_range, decide_eq_true_eq]
+    exact ⟨hlt, hvalid⟩
+  obtain ⟨idx, hidxlt, hidxeq⟩ := List.getElem_of_mem hmem
+  have hlenle : (candListItin n Ts bs).length ≤ N :=
+    le_trans (candListItin_length_le hn hU) hN
+  have hidxN : idx < N := lt_of_lt_of_le hidxlt hlenle
+  have hgetD : List.getD (candListItin n Ts bs) idx 0 = worldNumeral U := by
+    rw [List.getD_eq_getElem _ _ hidxlt]; exact hidxeq
+  have heval : itinTableFn (Nat.pair n (Nat.pair (Encodable.encode Ts)
+      (Nat.pair (Encodable.encode bs) idx))) = lensCode U := by
+    rw [itinTableFn]
+    simp only [Nat.unpair_pair, Encodable.encodek, Option.getD_some]
+    rw [hgetD]
+    exact congrArg Encodable.encode (candTable_packMarks hn U)
+  have htc : (tableChain c bs).eval 0 = Part.some (Encodable.encode Ts) := by
+    rw [hTsdef]; exact eval_tableChain c (fun t => lensCode (ℓ t)) bs
+      (fun t ht => hc t (by rw [hbsdef, List.mem_range] at ht; exact ht))
+  have hti : eval (comp rangeCode (bconst k)) 0 = Part.some (Encodable.encode bs) := by
+    rw [hbsdef]
+    have hbk : eval (bconst k) (0 : ℕ) = Part.some k := eval_bconst k 0
+    exact (eval_comp_some hbk).trans (eval_rangeCode k)
+  have hbi : eval (bconst idx) (0 : ℕ) = Part.some idx := eval_bconst idx 0
+  have hbn : eval (bconst n) (0 : ℕ) = Part.some n := eval_bconst n 0
+  have hpair3 : eval (pair (comp rangeCode (bconst k)) (bconst idx)) 0
+      = Part.some (Nat.pair (Encodable.encode bs) idx) := by
+    change Nat.pair <$> _ <*> _ = _
+    rw [hti, hbi]; simp [Seq.seq]
+  have hpair2 : eval (pair (tableChain c bs) (pair (comp rangeCode (bconst k)) (bconst idx))) 0
+      = Part.some (Nat.pair (Encodable.encode Ts) (Nat.pair (Encodable.encode bs) idx)) := by
+    change Nat.pair <$> _ <*> _ = _
+    rw [htc, hpair3]; simp [Seq.seq]
+  have hpair1 : eval
+      (pair (bconst n)
+        (pair (tableChain c bs) (pair (comp rangeCode (bconst k)) (bconst idx)))) 0
+      = Part.some (Nat.pair n
+          (Nat.pair (Encodable.encode Ts) (Nat.pair (Encodable.encode bs) idx))) := by
+    change Nat.pair <$> _ <*> _ = _
+    rw [hbn, hpair2]; simp [Seq.seq]
+  have hcomp : Computes
+      (comp itinBuilder
+        (pair (bconst n)
+          (pair (tableChain c bs) (pair (comp rangeCode (bconst k)) (bconst idx)))))
+      (lensCode U) := by
+    change eval (comp itinBuilder
+      (pair (bconst n)
+        (pair (tableChain c bs) (pair (comp rangeCode (bconst k)) (bconst idx))))) 0 = _
+    rw [eval_comp_some hpair1, eval_itinBuilder, heval]
+  have hle := KE_le hcomp
+  rw [E_len_comp, E_len_pair, E_len_pair, E_len_pair, E_len_comp] at hle
+  have htcelen := elen_tableChain c bs
+  have hbnbound := elen_bconst_le n
+  have hbibound := elen_bconst_le idx
+  have hbkbound := elen_bconst_le k
+  have hidxsize : Nat.size idx ≤ Nat.size N := Nat.size_le_size (le_of_lt hidxN)
+  have hidxsize' : (15 + elen dbl) * Nat.size idx ≤ (15 + elen dbl) * Nat.size N :=
+    Nat.mul_le_mul_left _ hidxsize
+  have hklen : bs.length = k := by rw [hbsdef, List.length_range]
+  rw [htcelen, hklen] at hle
+  nlinarith [hle, hbnbound, hbibound, hbkbound, hidxsize']
+
+set_option linter.style.longLine false in
+/-- info: 'PersistenceCapacity.ledger_itinerary_consecutive' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms ledger_itinerary_consecutive
+
+/-! ### Two hypotheses proved load-bearing (in-module witnesses) -/
+
+/-- **The `t = t' + 1` side condition is load-bearing**: at `bs = [0, 2]`, no two held times are
+one apart, so `ConsistentWith ℓ bs` is unconstrained — every permutation is consistent, including
+the identity. Requiring instead that EVERY pair of distinct held times constrain `V` — the
+condition with `t = t' + 1` dropped in favor of `t ≠ t'` — is a strictly sharper set that the
+identity fails: at `ℓ 0 = id`, `ℓ 2 = swap 0 1`, the sharper condition forces `V 0 = ℓ 0 (V 0) =
+ℓ 2 0 = 1 ≠ 0`, so the identity is excluded from it while `ConsistentWith` admits it. -/
+theorem guard_consistentWith_step_load_bearing :
+    ∃ (ℓ : ℕ → Fin 2 → Fin 2),
+      ConsistentWith ℓ [0, 2] = Set.univ ∧
+      (1 : Perm (Fin 2)) ∉ {V : Perm (Fin 2) | ∀ t ∈ ([0, 2] : List ℕ), ∀ t' ∈ ([0, 2] : List ℕ),
+        t ≠ t' → ∀ x, ℓ t (V x) = ℓ t' x} := by
+  refine ⟨fun t => if t = 2 then Equiv.swap 0 1 else ⇑(1 : Perm (Fin 2)), ?_, ?_⟩
+  · ext V
+    simp only [ConsistentWith, Set.mem_setOf_eq, Set.mem_univ, iff_true]
+    intro t ht t' ht' hstep x
+    fin_cases ht <;> fin_cases ht' <;> omega
+  · intro h
+    exact absurd (h 0 (by decide) 2 (by decide) (by decide) 0) (by decide)
+
+/-- **The `candBijBool` conjunct is load-bearing**: at a constant, single-label reference frame
+(codomain `Fin 1`, so `ℓ t x = 0` for every `t` and `x`), `pairsOK` holds for EVERY numeral `w`
+below `n ^ n` — the transport condition reads `0 = 0` regardless of `w`'s own digits — while
+`ConsistentWith` is unconstrained for the same reason, so its cardinality is the full symmetric
+group, `n !`. Without the bijectivity conjunct the enumeration therefore has `n ^ n` members
+against the true count `n !`; checked at `n = 4`: `256` against `24`. -/
+theorem guard_isValidItin_candBijBool_load_bearing :
+    Nat.card ↥(ConsistentWith (n := 4) (m := 1) (fun _ _ => (0 : Fin 1)) [0, 2])
+        = Nat.factorial 4 ∧
+      ∀ w < 4 ^ 4, pairsOK 4 (([0, 2] : List ℕ).map fun _ => lensCode
+        (fun _ : Fin 4 => (0 : Fin 1))) [0, 2] w = true := by
+  constructor
+  · have huniv : ConsistentWith (n := 4) (m := 1) (fun _ _ => (0 : Fin 1)) [0, 2] = Set.univ := by
+      ext V
+      simp only [ConsistentWith, Set.mem_setOf_eq, Set.mem_univ, iff_true]
+      simp
+    rw [huniv]
+    have : Nat.card ↥(Set.univ : Set (Perm (Fin 4))) = Nat.card (Perm (Fin 4)) :=
+      Nat.card_congr (Equiv.Set.univ _)
+    rw [this, Nat.card_eq_fintype_card, Fintype.card_perm, Fintype.card_fin]
+  · intro w _
+    rw [pairsOK_iff]
+    intro j hj j' hj' _ i _
+    have hzero : ∀ (y : Fin 4 → Fin 1) (d : ℕ), (rawTable (lensCode y)).getD d 0 = 0 := by
+      intro y d
+      rw [rawTable_lensCode, lensTable]
+      have hrep : ((List.finRange 4).map fun i => ((y i : Fin 1) : ℕ)) = List.replicate 4 0 := by
+        apply List.eq_replicate_of_mem
+        intro a ha
+        obtain ⟨i, _, rfl⟩ := List.mem_map.mp ha
+        exact Fin.val_eq_zero (y i)
+      rw [hrep]
+      rcases Nat.lt_or_ge d 4 with hd | hd
+      · rw [List.getD_eq_getElem _ _ (by simpa using hd), List.getElem_replicate]
+      · rw [List.getD_eq_default _ _ (by simpa using hd)]
+    have hconst : ∀ k, k < 2 → (([0, 2] : List ℕ).map fun _ => lensCode
+        (fun _ : Fin 4 => (0 : Fin 1))).getD k 0 = lensCode (fun _ : Fin 4 => (0 : Fin 1)) := by
+      intro k hk
+      rcases k with _ | _ | k
+      · rfl
+      · rfl
+      · omega
+    rw [hconst j hj, hconst j' hj', hzero, hzero]
+
+/-! ## Corollary 8.11(i): what a factor buys, exactly
+
+`ledger_graded` recovers `U` from two frame tables plus an index into the coset
+`{V | ℓ₁ ∘ V = ℓ₀}`. [Persistence] §8, Corollary 8.11(i) recovers `U` from `κ`'s table, `W`'s table,
+and an index into the coset `{V | κ ∘ V = W ∘ κ}` — the SAME stabilizer (`card_descentCoset`,
+above), at a different translate. So the display below is `ledger_graded`'s own
+enumerate-filter-select decoder with one predicate swapped: "carries the two frames" becomes
+"descends through `κ` with law `W`". `candBijBool`, `candTable`, `candPerm`, `worldNumeral` and
+`candTable_packMarks` are reused unchanged; only the matching predicate, the candidate list, and
+the tabulation built from it are new. -/
+
+/-- **A candidate descends through the packed `κ`-table with the packed `W`-table's law**: its
+table is a genuine permutation, and reading `κ`'s table at the candidate's value agrees with reading
+`W`'s table at `κ`'s own value — `κ (candidate i) = W (κ i)` for every `i`, read straight off the
+three tables. -/
+private def isValidDescent (n t0 t1 w : ℕ) : Prop :=
+  candBijBool n w = true ∧
+    ∀ i < n, List.getD (rawTable t0) (digitAt n w i) 0
+      = List.getD (rawTable t1) (List.getD (rawTable t0) i 0) 0
+
+private instance decIsValidDescent (n t0 t1 w : ℕ) : Decidable (isValidDescent n t0 t1 w) := by
+  unfold isValidDescent; infer_instance
+
+/-- **`isValidDescent` is primitive recursive**, over the packed program `⟨n, t0, t1, w⟩` — the
+bijectivity half unchanged from `primrec_isValid`, the matching half reading `t0`'s table twice
+(once at the candidate's value, once at `i` itself) and `t1`'s table once, at that second
+reading. -/
+private theorem primrec_isValidDescent :
+    PrimrecPred fun p : ℕ => isValidDescent p.unpair.1 p.unpair.2.unpair.1
+      p.unpair.2.unpair.2.unpair.1 p.unpair.2.unpair.2.unpair.2 := by
+  have hN : Primrec fun p : ℕ => p.unpair.1 := Primrec.fst.comp Primrec.unpair
+  have hR1 : Primrec fun p : ℕ => p.unpair.2 := Primrec.snd.comp Primrec.unpair
+  have hT0 : Primrec fun p : ℕ => p.unpair.2.unpair.1 := Primrec.fst.comp (Primrec.unpair.comp hR1)
+  have hR2 : Primrec fun p : ℕ => p.unpair.2.unpair.2 := Primrec.snd.comp (Primrec.unpair.comp hR1)
+  have hT1 : Primrec fun p : ℕ => p.unpair.2.unpair.2.unpair.1 :=
+    Primrec.fst.comp (Primrec.unpair.comp hR2)
+  have hW : Primrec fun p : ℕ => p.unpair.2.unpair.2.unpair.2 :=
+    Primrec.snd.comp (Primrec.unpair.comp hR2)
+  have hpow : Primrec₂ ((· ^ ·) : ℕ → ℕ → ℕ) := Primrec₂.unpaired'.1 Nat.Primrec.pow
+  have hBij : PrimrecPred fun p : ℕ =>
+      candBijBool p.unpair.1 p.unpair.2.unpair.2.unpair.2 = true := by
+    have hb : Primrec fun p : ℕ => candBijBool p.unpair.1 p.unpair.2.unpair.2.unpair.2 := by
+      have := primrec_candBijBool.comp hN hW
+      exact this
+    exact Primrec.eq.comp hb (Primrec.const true)
+  have hMatch : PrimrecPred fun p : ℕ => ∀ i < p.unpair.1,
+      List.getD (rawTable p.unpair.2.unpair.1)
+          (digitAt p.unpair.1 p.unpair.2.unpair.2.unpair.2 i) 0
+        = List.getD (rawTable p.unpair.2.unpair.2.unpair.1)
+            (List.getD (rawTable p.unpair.2.unpair.1) i 0) 0 := by
+    have hR : PrimrecRel fun (i : ℕ) (p : ℕ) =>
+        List.getD (rawTable p.unpair.2.unpair.1)
+            (digitAt p.unpair.1 p.unpair.2.unpair.2.unpair.2 i) 0
+          = List.getD (rawTable p.unpair.2.unpair.2.unpair.1)
+              (List.getD (rawTable p.unpair.2.unpair.1) i 0) 0 := by
+      have hdig : Primrec fun q : ℕ × ℕ =>
+          digitAt q.2.unpair.1 q.2.unpair.2.unpair.2.unpair.2 q.1 :=
+        Primrec.nat_mod.comp
+          (Primrec.nat_div.comp (hW.comp Primrec.snd)
+            (hpow.comp (hN.comp Primrec.snd) Primrec.fst))
+          (hN.comp Primrec.snd)
+      have hf : Primrec fun q : ℕ × ℕ =>
+          List.getD (rawTable q.2.unpair.2.unpair.1)
+            (digitAt q.2.unpair.1 q.2.unpair.2.unpair.2.unpair.2 q.1) 0 :=
+        (Primrec.list_getD 0).comp (primrec_rawTable.comp (hT0.comp Primrec.snd)) hdig
+      have hinner : Primrec fun q : ℕ × ℕ =>
+          List.getD (rawTable q.2.unpair.2.unpair.1) q.1 0 :=
+        (Primrec.list_getD 0).comp (primrec_rawTable.comp (hT0.comp Primrec.snd)) Primrec.fst
+      have hg : Primrec fun q : ℕ × ℕ =>
+          List.getD (rawTable q.2.unpair.2.unpair.2.unpair.1)
+            (List.getD (rawTable q.2.unpair.2.unpair.1) q.1 0) 0 :=
+        (Primrec.list_getD 0).comp (primrec_rawTable.comp (hT1.comp Primrec.snd)) hinner
+      exact PrimrecRel.comp Primrec.eq hf hg
+    exact primrecPred_dup_nat hR hN
+  exact hBij.and hMatch
+
+set_option maxHeartbeats 1000000 in
+-- same headroom reason as `primrec_isValid_rel`: multi-level packing meets `primrec_isValidDescent`.
+/-- **The membership relation is primitive recursive**, over `(w, param)` with `param` packing
+`(n, t0, t1)` — `primrec_isValidDescent` at `param` and `w` rebuilt into one packed program. -/
+private theorem primrec_isValidDescent_rel :
+    PrimrecRel fun (w param : ℕ) =>
+      isValidDescent param.unpair.1 param.unpair.2.unpair.1 param.unpair.2.unpair.2 w := by
+  have hn' : Primrec fun q : ℕ × ℕ => q.2.unpair.1 :=
+    Primrec.fst.comp (Primrec.unpair.comp Primrec.snd)
+  have ht0' : Primrec fun q : ℕ × ℕ => q.2.unpair.2.unpair.1 :=
+    Primrec.fst.comp (Primrec.unpair.comp (Primrec.snd.comp (Primrec.unpair.comp Primrec.snd)))
+  have ht1' : Primrec fun q : ℕ × ℕ => q.2.unpair.2.unpair.2 :=
+    Primrec.snd.comp (Primrec.unpair.comp (Primrec.snd.comp (Primrec.unpair.comp Primrec.snd)))
+  have hw' : Primrec fun q : ℕ × ℕ => q.1 := Primrec.fst
+  have hinner1 : Primrec fun q : ℕ × ℕ => Nat.pair (q.2.unpair.2.unpair.2) (q.1) :=
+    Primrec₂.natPair.comp ht1' hw'
+  have hinner2 : Primrec fun q : ℕ × ℕ =>
+      Nat.pair (q.2.unpair.2.unpair.1) (Nat.pair (q.2.unpair.2.unpair.2) (q.1)) :=
+    Primrec₂.natPair.comp ht0' hinner1
+  have hfull : Primrec fun q : ℕ × ℕ =>
+      Nat.pair (q.2.unpair.1) (Nat.pair (q.2.unpair.2.unpair.1)
+        (Nat.pair (q.2.unpair.2.unpair.2) (q.1))) :=
+    Primrec₂.natPair.comp hn' hinner2
+  have hkey := primrec_isValidDescent.comp hfull
+  refine hkey.of_eq fun q => ?_
+  simp only [Nat.unpair_pair]
+
+/-- **The descending-candidate list**: every numeral below `n ^ n` whose table both is a genuine
+permutation and descends through `κ`'s packed table with `W`'s packed law, in the numeral's own
+order — `candList`'s own skeleton at `isValidDescent` in place of `isValid`. -/
+private def candListDescent (n t0 t1 : ℕ) : List ℕ :=
+  (List.range (n ^ n)).filter (fun w => decide (isValidDescent n t0 t1 w))
+
+private theorem primrec_candListDescent :
+    Primrec fun p : ℕ => candListDescent p.unpair.1 p.unpair.2.unpair.1 p.unpair.2.unpair.2 := by
+  have hpow : Primrec₂ ((· ^ ·) : ℕ → ℕ → ℕ) := Primrec₂.unpaired'.1 Nat.Primrec.pow
+  have hN : Primrec fun p : ℕ => p.unpair.1 := Primrec.fst.comp Primrec.unpair
+  have hL : Primrec fun p : ℕ => List.range (p.unpair.1 ^ p.unpair.1) :=
+    Primrec.list_range.comp (hpow.comp hN hN)
+  have hfilt := (PrimrecRel.listFilter primrec_isValidDescent_rel).comp hL Primrec.id
+  exact hfilt.of_eq fun p => rfl
+
+/-- **The tabulation, rebuilt from the packed program** `⟨n, t0, t1, idx⟩` — `gradedTableFn`'s own
+skeleton, filtering `candListDescent` instead of `candList`; `candTable` itself is reused
+unchanged. -/
+private def gradedTableFnDescent (a : ℕ) : ℕ :=
+  Encodable.encode (candTable a.unpair.1
+    (List.getD (candListDescent a.unpair.1 a.unpair.2.unpair.1 a.unpair.2.unpair.2.unpair.1)
+      a.unpair.2.unpair.2.unpair.2 0))
+
+set_option maxHeartbeats 1000000 in
+-- same headroom reason as `primrec_isValidDescent_rel`: multi-level packing meets
+-- `primrec_candListDescent`.
+private theorem primrec_gradedTableFnDescent : Primrec gradedTableFnDescent := by
+  have hN : Primrec fun a : ℕ => a.unpair.1 := Primrec.fst.comp Primrec.unpair
+  have hT0 : Primrec fun a : ℕ => a.unpair.2.unpair.1 :=
+    Primrec.fst.comp (Primrec.unpair.comp (Primrec.snd.comp Primrec.unpair))
+  have hT1 : Primrec fun a : ℕ => a.unpair.2.unpair.2.unpair.1 :=
+    Primrec.fst.comp (Primrec.unpair.comp (Primrec.snd.comp
+      (Primrec.unpair.comp (Primrec.snd.comp Primrec.unpair))))
+  have hIdx : Primrec fun a : ℕ => a.unpair.2.unpair.2.unpair.2 :=
+    Primrec.snd.comp (Primrec.unpair.comp (Primrec.snd.comp
+      (Primrec.unpair.comp (Primrec.snd.comp Primrec.unpair))))
+  have hParam : Primrec fun a : ℕ =>
+      Nat.pair a.unpair.1 (Nat.pair a.unpair.2.unpair.1 a.unpair.2.unpair.2.unpair.1) :=
+    Primrec₂.natPair.comp hN (Primrec₂.natPair.comp hT0 hT1)
+  have hCL : Primrec fun a : ℕ =>
+      candListDescent a.unpair.1 a.unpair.2.unpair.1 a.unpair.2.unpair.2.unpair.1 := by
+    have := primrec_candListDescent.comp hParam
+    refine this.of_eq fun a => ?_
+    simp only [Nat.unpair_pair]
+  have hSel : Primrec fun a : ℕ =>
+      List.getD (candListDescent a.unpair.1 a.unpair.2.unpair.1 a.unpair.2.unpair.2.unpair.1)
+        a.unpair.2.unpair.2.unpair.2 0 :=
+    (Primrec.list_getD 0).comp hCL hIdx
+  exact Primrec.encode.comp (primrec_candTable.comp hN hSel)
+
+private theorem partrec_gradedTableFnDescent :
+    Nat.Partrec (fun a : ℕ => (gradedTableFnDescent a : ℕ)) :=
+  _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_gradedTableFnDescent).partrec
+
+/-- **The fixed factor-ledger builder code.** One program, independent of `n`, `κ` and `W` —
+`gradedBuilder`'s own role, at the descent predicate. -/
+noncomputable def gradedBuilderDescent : Nat.Partrec.Code :=
+  Classical.choose (Nat.Partrec.Code.exists_code.mp partrec_gradedTableFnDescent)
+
+private theorem eval_gradedBuilderDescent (a : ℕ) :
+    Nat.Partrec.Code.eval gradedBuilderDescent a = Part.some (gradedTableFnDescent a) := by
+  have h := congrFun (Classical.choose_spec
+    (Nat.Partrec.Code.exists_code.mp partrec_gradedTableFnDescent)) a
+  simpa [gradedBuilderDescent] using h
+
+/-- **`U`'s own table is a valid descending candidate**: it is bijective (`U` is a permutation) and
+it descends through `κ` with law `W` by hypothesis — read through the encode/decode round trip and
+the base-`n` packing, with no appeal to any `permCarries`-style rewriting: the hypothesis already
+has the shape the candidate's matching condition asks for. -/
+private theorem isValidDescent_worldNumeral (hn : 0 < n) {z : ℕ} {κ : Fin n → Fin z}
+    {W : Fin z → Fin z} {U : Perm (Fin n)} (hU : ∀ x, κ (U x) = W (κ x)) :
+    isValidDescent n (lensCode κ) (lensCode W) (worldNumeral U) := by
+  constructor
+  · rw [candBijBool_iff]
+    intro i hi j hj hij hcontra
+    have hdi : digitAt n (worldNumeral U) i = (U (⟨i, hi⟩ : Fin n) : ℕ) :=
+      digitAt_worldNumeral hn U ⟨i, hi⟩
+    have hdj : digitAt n (worldNumeral U) j = (U (⟨j, hj⟩ : Fin n) : ℕ) :=
+      digitAt_worldNumeral hn U ⟨j, hj⟩
+    rw [hdi, hdj] at hcontra
+    exact hij (congrArg Fin.val (U.injective (Fin.val_injective hcontra)))
+  · intro i hi
+    have hdig : digitAt n (worldNumeral U) i = (U (⟨i, hi⟩ : Fin n) : ℕ) :=
+      digitAt_worldNumeral hn U ⟨i, hi⟩
+    have hgetKappaU : List.getD (rawTable (lensCode κ)) (U (⟨i, hi⟩ : Fin n) : ℕ) 0
+        = (κ (U ⟨i, hi⟩) : ℕ) := by
+      rw [rawTable_lensCode, lensTable]
+      exact getD_map_finRange (fun y : Fin n => (κ y : ℕ)) (U ⟨i, hi⟩)
+    have hgetKappaI : List.getD (rawTable (lensCode κ)) i 0 = (κ (⟨i, hi⟩ : Fin n) : ℕ) := by
+      rw [rawTable_lensCode, lensTable]
+      exact getD_map_finRange (fun y : Fin n => (κ y : ℕ)) ⟨i, hi⟩
+    have hgetW : List.getD (rawTable (lensCode W)) (κ (⟨i, hi⟩ : Fin n) : ℕ) 0
+        = (W (κ ⟨i, hi⟩) : ℕ) := by
+      rw [rawTable_lensCode, lensTable]
+      exact getD_map_finRange (fun y : Fin z => (W y : ℕ)) (κ ⟨i, hi⟩)
+    rw [hdig, hgetKappaU, hgetKappaI, hgetW]
+    exact congrArg (fun x : Fin z => (x : ℕ)) (hU ⟨i, hi⟩)
+
+/-- **The descent injection**: a valid numeral's candidate permutation descends through `κ` with
+law `W` outright, `κ (candidate x) = W (κ x)` at every `x` — read straight off `isValidDescent`'s
+matching condition through the encode/decode round trip, with no multiplication by any world
+needed (unlike `candPerm_mem_stabilizer`, whose predicate was phrased relative to a reference
+frame's own inverse). -/
+private theorem candPerm_mem_descentSet {n w z : ℕ} (hn : 0 < n) {κ : Fin n → Fin z}
+    {W : Fin z → Fin z} (hv : isValidDescent n (lensCode κ) (lensCode W) w) :
+    ∀ x, κ (candPerm n w x) = W (κ x) := by
+  intro x
+  have hb := hv.1
+  have hmatch := hv.2
+  have hi : (x : ℕ) < n := x.2
+  have hval : (⟨digitAt n w x, Nat.mod_lt _ hn⟩ : Fin n) = candPerm n w x := by
+    apply Fin.val_injective
+    rw [candPerm_apply hn hb]
+  have hgetKappaCand : List.getD (rawTable (lensCode κ)) (digitAt n w x) 0
+      = (κ (⟨digitAt n w x, Nat.mod_lt _ hn⟩ : Fin n) : ℕ) := by
+    rw [rawTable_lensCode, lensTable]
+    exact getD_map_finRange (fun y : Fin n => (κ y : ℕ)) ⟨digitAt n w x, Nat.mod_lt _ hn⟩
+  have hgetKappaX : List.getD (rawTable (lensCode κ)) (x : ℕ) 0 = (κ x : ℕ) := by
+    rw [rawTable_lensCode, lensTable]; exact getD_map_finRange _ _
+  have hgetW : List.getD (rawTable (lensCode W)) (κ x : ℕ) 0 = (W (κ x) : ℕ) := by
+    rw [rawTable_lensCode, lensTable]
+    exact getD_map_finRange (fun y : Fin z => (W y : ℕ)) (κ x)
+  have hspec := hmatch x hi
+  rw [hgetKappaCand, hgetKappaX, hgetW, hval] at hspec
+  exact Fin.val_injective hspec
+
+/-- **The factor ledger's coset bound**: the descent set that a coset argument pins `U` down to
+against `κ` and `W` has size at most `∏ᵢ (fiberᵢ)!` — `card_descentCoset`'s count, reached here by
+injecting every valid descending candidate directly into the descent set (`candPerm n w` itself,
+with no world-relative multiplication), and falling back on `U` itself — always a member, by
+hypothesis — off the valid domain. -/
+private theorem candListDescent_length_le (hn : 0 < n) {z : ℕ} {κ : Fin n → Fin z}
+    {W : Fin z → Fin z} {U : Perm (Fin n)} (hU : ∀ x, κ (U x) = W (κ x)) :
+    (candListDescent n (lensCode κ) (lensCode W)).length
+      ≤ Nat.card ↥{V : Perm (Fin n) | ∀ x, κ (V x) = W (κ x)} := by
+  classical
+  set t0 := lensCode κ with ht0
+  set t1 := lensCode W with ht1
+  haveI : Fintype ↥{V : Perm (Fin n) | ∀ x, κ (V x) = W (κ x)} := Fintype.ofFinite _
+  have hnodup : (candListDescent n t0 t1).Nodup := List.nodup_range.filter _
+  have hmem : ∀ w ∈ (candListDescent n t0 t1).toFinset, w < n ^ n ∧ isValidDescent n t0 t1 w := by
+    intro w hw
+    rw [List.mem_toFinset, candListDescent, List.mem_filter, List.mem_range,
+      decide_eq_true_eq] at hw
+    exact hw
+  set f : ℕ → ↥{V : Perm (Fin n) | ∀ x, κ (V x) = W (κ x)} := fun w =>
+    if h : isValidDescent n t0 t1 w then ⟨candPerm n w, candPerm_mem_descentSet hn h⟩
+    else ⟨U, hU⟩ with hf
+  have hcard := Finset.card_le_card_of_injOn f
+    (s := (candListDescent n t0 t1).toFinset) (t := Finset.univ)
+    (fun w _ => Finset.mem_univ (f w))
+    (by
+      intro w1 hw1 w2 hw2 heq
+      rw [Finset.mem_coe] at hw1 hw2
+      have h1 := hmem w1 hw1
+      have h2 := hmem w2 hw2
+      have hfw1 : f w1 = ⟨candPerm n w1, candPerm_mem_descentSet hn h1.2⟩ := dif_pos h1.2
+      have hfw2 : f w2 = ⟨candPerm n w2, candPerm_mem_descentSet hn h2.2⟩ := dif_pos h2.2
+      rw [hfw1, hfw2, Subtype.mk_eq_mk] at heq
+      have hb1 : candBijBool n w1 = true := h1.2.1
+      have hb2 : candBijBool n w2 = true := h2.2.1
+      have hdig : ∀ i : Fin n, digitAt n w1 (i : ℕ) = digitAt n w2 (i : ℕ) := by
+        intro i
+        rw [← candPerm_apply hn hb1 i, ← candPerm_apply hn hb2 i, heq]
+      apply candTable_injOn h1.1 h2.1
+      change (List.range n).map (digitAt n w1) = (List.range n).map (digitAt n w2)
+      refine List.map_congr_left fun j hj => ?_
+      exact hdig ⟨j, List.mem_range.mp hj⟩)
+  rw [← List.toFinset_card_of_nodup hnodup, Nat.card_eq_fintype_card]
+  simpa using hcard
+
+/-- **The factor ledger's display** ([Persistence] §8, Corollary 8.11(i)): `ledger_graded`'s own
+enumerate-filter-select decoder, at the descent predicate — `κ`'s table, `W`'s table, and a coset
+INDEX into the descent set `card_descentCoset` counts recover `U`'s table exactly, at the same
+`O (Nat.size (∏ᵢ fiberᵢ!))` index cost and the same `O (Nat.size n)` search-bound term
+`ledger_graded` pays. This target moves where `ledger_graded`'s own encoding boundary SITS — a
+factor's law rather than a second frame — and claims no more: the display's unit-coefficient
+length-conditional index field stays paper-level, exactly as it does at two frames. -/
+theorem ledger_descent (hn : 0 < n) {z : ℕ} (κ : Fin n → Fin z) (W : Fin z → Fin z)
+    {U : Perm (Fin n)} (hU : ∀ x, κ (U x) = W (κ x)) :
+    KE (lensCode U) ≤ KE (lensCode κ) + KE (lensCode W)
+      + (15 + elen dbl) * Nat.size (∏ i : Fin z, (Nat.card {x : Fin n // κ x = i})!)
+      + (15 + elen dbl) * Nat.size n
+      + (elen gradedBuilderDescent + 2 * (15 + elen dbl) + 39) := by
+  set t0 := lensCode κ with ht0
+  set t1 := lensCode W with ht1
+  set N := ∏ i : Fin z, (Nat.card {x : Fin n // κ x = i})! with hNdef
+  have hvalid : isValidDescent n t0 t1 (worldNumeral U) := isValidDescent_worldNumeral hn hU
+  have hlt : worldNumeral U < n ^ n := worldNumeral_lt hn U
+  have hmem : worldNumeral U ∈ candListDescent n t0 t1 := by
+    rw [candListDescent, List.mem_filter, List.mem_range, decide_eq_true_eq]
+    exact ⟨hlt, hvalid⟩
+  obtain ⟨idx, hidxlt, hidxeq⟩ := List.getElem_of_mem hmem
+  have hlenle : (candListDescent n t0 t1).length ≤ N := by
+    rw [hNdef]
+    calc (candListDescent n t0 t1).length
+        ≤ Nat.card ↥{V : Perm (Fin n) | ∀ x, κ (V x) = W (κ x)} :=
+          candListDescent_length_le hn hU
+      _ = N := card_descentCoset κ W hU
+  have hidxN : idx < N := lt_of_lt_of_le hidxlt hlenle
+  have hgetD : List.getD (candListDescent n t0 t1) idx 0 = worldNumeral U := by
+    rw [List.getD_eq_getElem _ _ hidxlt]; exact hidxeq
+  have heval : gradedTableFnDescent (Nat.pair n (Nat.pair t0 (Nat.pair t1 idx))) = lensCode U := by
+    rw [gradedTableFnDescent]
+    simp only [Nat.unpair_pair]
+    rw [hgetD]
+    exact congrArg Encodable.encode (candTable_packMarks hn U)
+  obtain ⟨c0, hc0, hlc0⟩ := exists_min_E t0
+  obtain ⟨c1, hc1, hlc1⟩ := exists_min_E t1
+  have hz : eval zero (0 : ℕ) = Part.some 0 := rfl
+  have hn' : eval (bconst n) 0 = Part.some n := eval_bconst n 0
+  have h0 : eval (comp c0 zero) 0 = Part.some t0 := (eval_comp_some hz).trans hc0
+  have h1 : eval (comp c1 zero) 0 = Part.some t1 := (eval_comp_some hz).trans hc1
+  have hb : eval (bconst idx) 0 = Part.some idx := eval_bconst idx 0
+  have hpair3 : eval (pair (comp c1 zero) (bconst idx)) 0 = Part.some (Nat.pair t1 idx) := by
+    change Nat.pair <$> _ <*> _ = _
+    rw [h1, hb]; simp [Seq.seq]
+  have hpair2 : eval (pair (comp c0 zero) (pair (comp c1 zero) (bconst idx))) 0
+      = Part.some (Nat.pair t0 (Nat.pair t1 idx)) := by
+    change Nat.pair <$> _ <*> _ = _
+    rw [h0, hpair3]; simp [Seq.seq]
+  have hpair1 : eval (pair (bconst n) (pair (comp c0 zero) (pair (comp c1 zero) (bconst idx)))) 0
+      = Part.some (Nat.pair n (Nat.pair t0 (Nat.pair t1 idx))) := by
+    change Nat.pair <$> _ <*> _ = _
+    rw [hn', hpair2]; simp [Seq.seq]
+  have hcomp : Computes
+      (comp gradedBuilderDescent
+        (pair (bconst n) (pair (comp c0 zero) (pair (comp c1 zero) (bconst idx)))))
+      (lensCode U) := by
+    change eval (comp gradedBuilderDescent
+      (pair (bconst n) (pair (comp c0 zero) (pair (comp c1 zero) (bconst idx))))) 0 = _
+    rw [eval_comp_some hpair1, eval_gradedBuilderDescent, heval]
+  have hle := KE_le hcomp
+  rw [E_len_comp, E_len_pair, E_len_pair, E_len_comp, E_len_pair, E_len_comp] at hle
+  have hzlen : elen (zero : Code) = 3 := rfl
+  have hbc := elen_bconst_le idx
+  have hbn := elen_bconst_le n
+  have hidxsize : Nat.size idx ≤ Nat.size N := Nat.size_le_size (le_of_lt hidxN)
+  have hidxsize' : (15 + elen dbl) * Nat.size idx ≤ (15 + elen dbl) * Nat.size N :=
+    Nat.mul_le_mul_left _ hidxsize
+  rw [hzlen, hlc0, hlc1] at hle
   omega
 
 /-! ## Remark 6.6: the paired frame — an address is paid once
