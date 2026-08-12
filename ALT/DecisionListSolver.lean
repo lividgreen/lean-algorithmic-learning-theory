@@ -20,8 +20,8 @@ Provenance: the native cost model (`ALT/TimeCost.lean`). Builds on `ALT/Decision
 (the data layer:
 `readM`/`readK`, `peel`/`cPeel`, `headL`/`tailL`, `WF`, `readM_le_size`/`readK_le_size`,
 `encodeList`, `peel_encode`, and the labelled bit-example accessors `lblOf`/`fvOf`/`featOf`/`WFBits`)
-and `ALT/PolyTime.lean` (`PolyTime`, `PolyBounded`, `polyTime_loop`, `tc_prec_le'`, the closure
-toolkit).
+and `ALT/PolyTime.lean` (`PolyTime`, `PolyBounded`, `PolyTimeOn`, `PolyBoundedOn`, `polyTime_loop`,
+`tc_prec_le'`, the closure toolkit).
 
 The numbered layers below start at 2: layer 1 is the bit-logic gate library — `cIsPos`, `cNot`,
 `cOr`, `cAnd`, `cEqBit`, `cSwap`, `cShape0` with their value laws, `rfind'`-freeness and `tc`
@@ -737,9 +737,9 @@ theorem polyTime_cScan
 
 The threaded `hstep`/`hCval` premises of `polyTime_cScan` are ∀-`n` `PolyBounded` facts that are FALSE
 on garbage inputs (a raw slot is exponential in the bit-length), so a meaningful statement must restrict
-to the well-formed domain. `PolyTimeOn D f` (poly-time cost + output size on `D`) is that honest notion;
-`polyTime_purity` proves it for the binary-1-DL domain, with NO poly-bit hypotheses left — they are
-discharged from `readM_le_size`/`readK_le_size`. -/
+to the well-formed domain. `PolyTimeOn D f` (`ALT/PolyTime.lean`; poly-time cost + output size on `D`)
+is that honest notion; `polyTime_purity` proves it for the binary-1-DL domain, with NO poly-bit
+hypotheses left — they are discharged from `readM_le_size`/`readK_le_size`. -/
 
 /-- Every mask/example suffix is the peeled original — the carried suffix at step `i` is `peel _ i`. -/
 private theorem inv_msOf_peel (j p mask data i : ℕ) :
@@ -781,17 +781,6 @@ private theorem visited_bits (n i : ℕ) (hw : WFBits (instOf n))
     exact hfeat _ (List.getElem_mem hie) (jOf n)
   · rw [show dataOf n = encodeList exs from hdeq, getExample_encode exs i hie]
     exact hlbl _ (List.getElem_mem hie)
-
-/-- **Poly-time on a domain** — the honest "poly cost + output size on well-formed inputs" notion. -/
-def PolyBoundedOn (D : ℕ → Prop) (t : ℕ → ℕ) : Prop :=
-  ∃ C k : ℕ, ∀ n, D n → t n ≤ C * (Nat.size n + 1) ^ k + C
-
-/-- `f` is computed on `D` by an `rfind`-free code whose step count AND output size are both
-`PolyBoundedOn D`. Charging the output size too is what keeps the notion honest: a code can be
-cheap to run and still emit something exponentially wide. -/
-def PolyTimeOn (D : ℕ → Prop) (f : ℕ → ℕ) : Prop :=
-  ∃ c : Code, RfindFree c ∧ (∀ n, D n → val c n = f n) ∧
-    PolyBoundedOn D (tc c) ∧ PolyBoundedOn D (fun n => Nat.size (f n))
 
 /-- The binary well-formed domain for purity: a bit-well-formed instance, a valid mask, `p` a bit, and
 a valid literal index `j < k` (so `jOf n ≤ readK`). -/

@@ -38,11 +38,13 @@ additive form is true. The `2^{−KP}` prior itself (`PrefixComplexity.kraft_pri
 remains the semimeasure. **The program-indexed Kraft inequality is machine-checked**:
 `kraft_KP_E` proves `∑_c 2^{−elen c} ≤ 1` over `Code`, from unique decodability of the
 Polish `E` serialization (`uniquelyDecodable_range_E`) and its injectivity (`E_injective`).
-**Full unification** — an object-indexed prior semimeasure `∑_x 2^{−KE x} ≤ 1` (a distinct
-statement, not shown to follow from `kraft_KP_E`) plus a `KP_E ↔ KP` comparison — remains
-NOT shipped: `kraft_plen`'s Elias telescoping is specific to `plen`; and `elen` vs
-`plen ∘ encode` live on incomparable scales (`elen` is ≈ the log of the index bit-length).
-Left as a documented follow-on rather than forced.
+The object-indexed prior semimeasure `∑_x 2^{−KE x} ≤ 1` is a distinct statement, and it is
+now machine-checked too: `kraft_KE` reindexes `kraft_KP_E` along `x ↦ minCode x`, each
+value's own shortest program, injective by `minCode_E_injective`.
+**Full unification** — that together with a `KP_E ↔ KP` comparison — remains NOT shipped,
+and the comparison is now the whole of what is missing: `kraft_plen`'s Elias telescoping is
+specific to `plen`; and `elen` vs `plen ∘ encode` live on incomparable scales (`elen` is ≈
+the log of the index bit-length). Left as a documented follow-on rather than forced.
 
 ## What this establishes
 * `computes_comp`: the compose eval law in `Computes` form (interpreter `I` run on a program `c`).
@@ -62,9 +64,8 @@ form for arbitrary methods is barred by the same run-on-`0` / AST-data model fea
 
 ## Boundary (the index-measure wall)
 Additive two-machine invariance of the **index** measure `KP` remains barred by `encodeCode`'s
-quadratic pairing (above) — the reason this item is carried by `KE`. `kraft_KP_E` is
-shipped; the object-indexed semimeasure `∑_x 2^{−KE x} ≤ 1` and the `KP_E ↔ KP`
-comparison are not (not a clean transfer; see the carrier verdict).
+quadratic pairing (above) — the reason this item is carried by `KE`. `kraft_KP_E` and the
+object-indexed `kraft_KE` are both shipped; the `KP_E ↔ KP` comparison is not (not a clean
 transfer; see the carrier verdict).
 -/
 

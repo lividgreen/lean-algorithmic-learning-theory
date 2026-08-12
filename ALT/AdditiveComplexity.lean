@@ -308,6 +308,22 @@ theorem minCode_E_injective : Function.Injective fun x => E (minCode x) := by
   rw [Computes] at hy
   exact Part.some_injective (hx.symm.trans hy)
 
+/-- **Kraft's inequality for `KE` itself**: `∑ 2 ^ (-KE x) ≤ 1`, over all naturals — the
+object-indexed semimeasure `kraft_KP_E` gives only for programs. Each `x` contributes the weight of
+its own shortest program (`elen_minCode`), and `x ↦ minCode x` is injective (`E ∘ minCode` is
+injective by `minCode_E_injective`, hence so is `minCode`), so the object-indexed sum is the
+program-indexed sum reindexed along an injection and is bounded by it. -/
+theorem kraft_KE : ∑' x : ℕ, (1 / 2 : ℝ) ^ KE x ≤ 1 := by
+  have hminj : Function.Injective minCode := minCode_E_injective.of_comp
+  have hg : Summable fun c : Code => (1 / 2 : ℝ) ^ elen c := by
+    simpa [elen] using BinaryKraft.indexed_summable E E_injective uniquelyDecodable_range_E
+  have hf : Summable fun x : ℕ => (1 / 2 : ℝ) ^ KE x := by
+    simpa [Function.comp_def, elen_minCode] using hg.comp_injective hminj
+  have hle : ∑' x : ℕ, (1 / 2 : ℝ) ^ KE x ≤ ∑' c : Code, (1 / 2 : ℝ) ^ elen c :=
+    Summable.tsum_le_tsum_of_inj minCode hminj (fun c _ => by positivity)
+      (fun x => le_of_eq (by rw [elen_minCode])) hf hg
+  exact hle.trans kraft_KP_E
+
 /-- Only finitely many naturals are describable within a fixed budget. -/
 theorem finite_KE_le (L : ℕ) : {x : ℕ | KE x ≤ L}.Finite := by
   have hsub : {x : ℕ | KE x ≤ L} ⊆ (fun x => E (minCode x)) ⁻¹' ↑(bitLists L) := fun x hx =>

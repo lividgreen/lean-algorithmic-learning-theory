@@ -52,6 +52,11 @@ below are conditional on it, by design.
   **not** by itself imply survival.
 * `capacity_price` — the margin the debt demands is bought in expressiveness: by the repair tax, a
   reading with margin at least the debt has at most `|Mem| / |Ball_debt|` distinguishable values.
+* `survives_of_invariant_of_corrects` — **and the third repair's hypothesis is met for free, once
+  the first two hold together.** `Corrects` and `HammingNonexpansive` at the same radius `c ≥ 1`
+  force the ω-limit set down to a lone fixed point (`exists_fixedPoint_of_corrects`), and the ball
+  of radius `c` about it is then exactly the invariant set the third repair needs — degenerate only
+  once `c` reaches the cell count (`joint_dependence_boundary`).
 
 The counterexample is the reason this file is not three lines. `HasMargin` licenses exactly one
 inference: a perturbation of an **attractor** state, by at most `e` cells, keeps the value. It says
@@ -86,6 +91,22 @@ settle and settle to **different** values.
 inside it: a host satisfying `Corrects _ _ 1` — the disjunct at its least interesting radius —
 whose reading never settles at all. The two conditions are parallel questions about the same host,
 and neither implies the other.
+
+## The two dynamical repairs are pairwise independent, jointly not
+
+`Corrects` and `HammingNonexpansive` constrain the host's dynamics in different ways, and neither
+implies the other (`majWorld_corrects`/`majWorld_not_nonexpansive` witness one direction;
+`nonexpansive_satisfiable` the other). Held together, at any radius `c ≥ 1`, they force the ω-limit
+set to a single point (`omegaLimit_subsingleton_of_corrects`, `exists_fixedPoint_of_corrects`): two
+distinct core points cannot both survive `hammingDist_image_lt_of_corrects`'s strict contraction,
+applied enough times to drive a bounded natural number below zero. The ball of radius `c` about
+that point is then exactly the third repair's invariant set (`survives_of_invariant_of_corrects`).
+
+So the third repair is a genuine *alternative* to the first two only while they do not both hold;
+once they do, it is what the first two are secretly buying. `joint_dependence_boundary` witnesses
+the one place this collapses to nothing: at radius `c` equal to the memory's own cell count,
+`Corrects` forces the host constant outright, and the only reading its ball admits is a constant
+one — one radius lower, a genuinely non-constant reading (`badRead`) survives.
 
 ## Scope
 
@@ -474,6 +495,206 @@ theorem survives_of_invariant {U : Mem ι V → Mem ι V} {B' : Set (Mem ι V)} 
     | zero => simpa using hs
     | succ n ih => rw [traj_succ]; exact hD n _ ih
   exact ⟨htraj t, hv _ (htraj t) _ (hiter t)⟩
+
+/-! ### The two dynamical repairs, together: a lone fixed point
+
+`Corrects` and `HammingNonexpansive` constrain the dynamics in different ways, and neither implies
+the other (`majWorld_corrects`/`majWorld_not_nonexpansive` below witness one direction;
+`nonexpansive_satisfiable` the other). Held **together**, at any radius `c ≥ 1`, they force the
+host's entire recurrent behaviour down to a single point: two distinct core points could not both
+survive the interpolation argument below, since each step of it strictly shrinks the distance
+between them. The invariant repair's hypothesis is then met for free, on the ball of radius `c`
+about that point — so the third repair is a genuine alternative to the first two only while they do
+not both hold; once they do, it is what the first two are secretly buying. -/
+
+open Classical in
+/-- A `hammingDist`/`Function.update` fact Mathlib does not carry: overwriting one cell moves at
+most one cell. -/
+private theorem hammingDist_update_le_one (s : Mem ι V) (i : ι) (a : V) :
+    hammingDist (Function.update s i a) s ≤ 1 := by
+  have hsub : (Finset.univ.filter (fun j => Function.update s i a j ≠ s j)) ⊆ {i} := by
+    intro j hj
+    rw [Finset.mem_filter] at hj
+    rw [Finset.mem_singleton]
+    by_contra hne
+    exact hj.2 (Function.update_of_ne hne a s)
+  calc hammingDist (Function.update s i a) s
+      = (Finset.univ.filter (fun j => Function.update s i a j ≠ s j)).card := rfl
+    _ ≤ ({i} : Finset ι).card := Finset.card_le_card hsub
+    _ = 1 := Finset.card_singleton i
+
+open Classical in
+/-- The other `hammingDist`/`Function.update` fact: overwriting the one cell where `s` and `z`
+disagree, onto `z`'s own value there, moves strictly closer to `z` — the single-cell interpolation
+step the contraction below chains. -/
+private theorem hammingDist_update_lt (s z : Mem ι V) {i : ι} (h : s i ≠ z i) :
+    hammingDist (Function.update s i (z i)) z < hammingDist s z := by
+  have heq : (Finset.univ.filter (fun j => Function.update s i (z i) j ≠ z j))
+      = (Finset.univ.filter (fun j => s j ≠ z j)).erase i := by
+    ext j
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_erase]
+    by_cases hji : j = i
+    · subst hji
+      simp [Function.update_self]
+    · rw [Function.update_of_ne hji]
+      simp [hji]
+  have hmem : i ∈ (Finset.univ.filter (fun j => s j ≠ z j)) := by
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and]
+    exact h
+  calc hammingDist (Function.update s i (z i)) z
+      = (Finset.univ.filter (fun j => Function.update s i (z i) j ≠ z j)).card := rfl
+    _ = ((Finset.univ.filter (fun j => s j ≠ z j)).erase i).card := by rw [heq]
+    _ < (Finset.univ.filter (fun j => s j ≠ z j)).card := Finset.card_erase_lt_of_mem hmem
+    _ = hammingDist s z := rfl
+
+open Classical in
+/-- **A strict contraction** ([Inevitability] §6, Proposition 6.1(iii)'s joint-dependence
+mechanism). At a `Corrects`-radius `c ≥ 1`, one non-expansive step
+strictly shrinks the distance from any core point `s` to any other point `z`: overwrite the single
+cell where they disagree onto `z`'s own value there, landing within `hball c s`
+(`hammingDist_update_le_one`, using `1 ≤ c`), where `Corrects` fixes the image at `U s`; the
+overwritten point is itself strictly closer to `z` (`hammingDist_update_lt`), and non-expansiveness
+carries that gain through the step untouched. -/
+theorem hammingDist_image_lt_of_corrects [Finite V] {U : Mem ι V → Mem ι V} {B : Set (Mem ι V)}
+    {c : ℕ} (hc : 1 ≤ c) (hcorr : Corrects U B c) (hne : HammingNonexpansive U)
+    {s z : Mem ι V} (hs : s ∈ omegaLimit U B) (hsz : s ≠ z) :
+    hammingDist (U s) (U z) < hammingDist s z := by
+  obtain ⟨i, hi⟩ := Function.ne_iff.mp hsz
+  set s' := Function.update s i (z i) with hs'def
+  have hs'mem : s' ∈ hball c s := by
+    change hammingDist s s' ≤ c
+    rw [hammingDist_comm]
+    exact le_trans (hammingDist_update_le_one s i (z i)) hc
+  have hUs' : U s' = U s := hcorr s hs s' hs'mem
+  calc hammingDist (U s) (U z) = hammingDist (U s') (U z) := by rw [hUs']
+    _ ≤ hammingDist s' z := hne s' z
+    _ < hammingDist s z := hammingDist_update_lt s z hi
+
+/-- **The recurrent core collapses to a single point** ([Inevitability] §6, Proposition 6.1(iii)'s
+joint-dependence mechanism). Two distinct core points cannot both
+survive `hammingDist_image_lt_of_corrects` applied `hammingDist s z + 1` times: each application
+strictly drops a natural number, and injectivity on the core (`omegaLimit_bijOn`) keeps the
+iterates apart throughout, driving a bounded quantity below zero. -/
+theorem omegaLimit_subsingleton_of_corrects [Finite V] {U : Mem ι V → Mem ι V} {B : Set (Mem ι V)}
+    {c : ℕ} (hc : 1 ≤ c) (hB : ∀ s ∈ B, U s ∈ B) (hcorr : Corrects U B c)
+    (hne : HammingNonexpansive U) :
+    (omegaLimit U B).Subsingleton := by
+  intro s hs z hz
+  by_contra hsz
+  have hinj : Set.InjOn U (omegaLimit U B) := (omegaLimit_bijOn U hB).injOn
+  have hne_iter : ∀ k, U^[k] s ≠ U^[k] z := by
+    intro k
+    induction k with
+    | zero => simpa using hsz
+    | succ k ih =>
+        rw [Function.iterate_succ_apply', Function.iterate_succ_apply']
+        intro hcontra
+        exact ih (hinj (iterate_mem_omegaLimit hB hs k) (iterate_mem_omegaLimit hB hz k) hcontra)
+  have hdrop : ∀ k, hammingDist (U^[k] s) (U^[k] z) + k ≤ hammingDist s z := by
+    intro k
+    induction k with
+    | zero => simp
+    | succ k ih =>
+        have hlt : hammingDist (U^[k + 1] s) (U^[k + 1] z) < hammingDist (U^[k] s) (U^[k] z) := by
+          rw [Function.iterate_succ_apply', Function.iterate_succ_apply']
+          exact hammingDist_image_lt_of_corrects hc hcorr hne (iterate_mem_omegaLimit hB hs k)
+            (hne_iter k)
+        omega
+  have hbound := hdrop (hammingDist s z + 1)
+  omega
+
+omit [DecidableEq V] in
+-- `Fintype ι` supplies `Finite (Mem ι V)` for `exists_image_stable_le` below via `Finite ι`, but
+-- never appears in this declaration's own STATEMENT, which the linter cannot see through.
+set_option linter.unusedFintypeInType false in
+/-- The ω-limit set of a nonempty `U`-closed set is nonempty — reproved locally from the public
+`exists_image_stable_le` rather than reaching into `PersistenceCapacity`'s file-private
+stabilization lemmas: the point `U^[N] b`, for `b` a witness of `B` and `N` a stabilization index,
+lies in every `(U^[t]) '' B`, forward by `hN` and backward by peeling `U` off `U^[N - t] b`. -/
+private theorem omegaLimit_nonempty_of_nonempty [Finite V] {U : Mem ι V → Mem ι V}
+    {B : Set (Mem ι V)} (hB : ∀ s ∈ B, U s ∈ B) (hBne : B.Nonempty) :
+    (omegaLimit U B).Nonempty := by
+  obtain ⟨N, -, hN⟩ := exists_image_stable_le U hB
+  obtain ⟨b, hb⟩ := hBne
+  have hiter : ∀ n, U^[n] b ∈ B := by
+    intro n
+    induction n with
+    | zero => simpa using hb
+    | succ n ih => rw [Function.iterate_succ_apply']; exact hB _ ih
+  refine ⟨U^[N] b, Set.mem_iInter.mpr fun t => ?_⟩
+  rcases Nat.lt_or_ge t N with ht | ht
+  · refine ⟨U^[N - t] b, hiter (N - t), ?_⟩
+    rw [← Function.iterate_add_apply]
+    congr 1
+    omega
+  · rw [hN t ht]
+    exact ⟨b, hb, rfl⟩
+
+/-- **The lone fixed point, packaged** ([Inevitability] §6, Proposition 6.1(iii)'s joint-dependence
+mechanism). On a nonempty `U`-closed `B`, `Corrects`-radius `c ≥ 1`
+together with `HammingNonexpansive` force the ω-limit set down to a single state `s₀`, and `s₀` is
+a fixed point of `U` — the ω-limit set is `U`-invariant (`omegaLimit_bijOn`), so `U s₀` is trapped
+in a singleton alongside `s₀` itself. -/
+theorem exists_fixedPoint_of_corrects [Finite V] {U : Mem ι V → Mem ι V} {B : Set (Mem ι V)}
+    {c : ℕ} (hc : 1 ≤ c) (hB : ∀ s ∈ B, U s ∈ B) (hcorr : Corrects U B c)
+    (hne : HammingNonexpansive U) (hBne : B.Nonempty) :
+    ∃ s₀, omegaLimit U B = {s₀} ∧ U s₀ = s₀ := by
+  obtain ⟨s₀, hs₀⟩ := omegaLimit_nonempty_of_nonempty hB hBne
+  have hsingle : omegaLimit U B = {s₀} :=
+    (omegaLimit_subsingleton_of_corrects hc hB hcorr hne).eq_singleton_of_mem hs₀
+  refine ⟨s₀, hsingle, ?_⟩
+  have hmem : U s₀ ∈ omegaLimit U B := (omegaLimit_bijOn U hB).mapsTo hs₀
+  rw [hsingle, Set.mem_singleton_iff] at hmem
+  exact hmem
+
+/-- Half of `survives_of_invariant`'s hypothesis, once `s₀` is `U`'s lone fixed core point:
+`Corrects` sends every point of `hball c s₀` to `U s₀`, which is `s₀` itself, and `s₀` sits at the
+centre of its own ball. -/
+private theorem corrects_hball_closed {U : Mem ι V → Mem ι V} {B : Set (Mem ι V)} {c : ℕ}
+    {s₀ : Mem ι V} (hs₀ : s₀ ∈ omegaLimit U B) (hfix : U s₀ = s₀) (hcorr : Corrects U B c) :
+    ∀ s ∈ hball c s₀, U s ∈ hball c s₀ := by
+  intro s hs
+  have hUs : U s = s₀ := (hcorr s₀ hs₀ s hs).trans hfix
+  rw [hUs]
+  change hammingDist s₀ s₀ ≤ c
+  rw [hammingDist_self]
+  exact Nat.zero_le c
+
+/-- The other half of `survives_of_invariant`'s hypothesis: `hball c s₀` absorbs any damage of the
+host's own image, uniformly over `Damage` schedules of radius at most `c` — every such point maps to
+`s₀` under `U` (as in `corrects_hball_closed`), and `D.bounded` keeps the perturbation within `c` of
+`s₀`. -/
+private theorem corrects_hball_damage_closed {U : Mem ι V → Mem ι V} {B : Set (Mem ι V)} {c : ℕ}
+    {s₀ : Mem ι V} (hs₀ : s₀ ∈ omegaLimit U B) (hfix : U s₀ = s₀) (hcorr : Corrects U B c)
+    (D : Damage ι V) (hrad : D.radius ≤ c) :
+    ∀ t, ∀ s ∈ hball c s₀, D.perturb t (U s) ∈ hball c s₀ := by
+  intro t s hs
+  have hUs : U s = s₀ := (hcorr s₀ hs₀ s hs).trans hfix
+  rw [hUs]
+  change hammingDist s₀ (D.perturb t s₀) ≤ c
+  exact le_trans (D.bounded t s₀) hrad
+
+/-- **The third repair's hypothesis is met, once the first two hold together** ([Inevitability] §6,
+Proposition 6.1(iii)'s joint-dependence payoff). Once `s₀` is
+the lone fixed point `Corrects` and `HammingNonexpansive` force (`exists_fixedPoint_of_corrects`),
+`hball c s₀` is exactly the invariant set `survives_of_invariant` asks for: any reading constant on
+it agrees, at every step and under any damage schedule of radius at most `c`, on the damaged and
+undamaged trajectories — no margin, no further use of non-expansiveness at this step, and no
+finiteness beyond what built `s₀` in the first place.
+
+Read as advice rather than as a curiosity: the two dynamical repairs are not two levers a designer
+can pull together for redundancy. Pulling both collapses the recurrent core, at which point this
+third condition is free and the first two are doing no work it does not already do — so `(ii)`'s
+margin route and `(iii)`'s erasure route apply to nearly disjoint host classes, and a reader
+choosing which disjunct to verify is choosing, not hedging. -/
+theorem survives_of_invariant_of_corrects {U : Mem ι V → Mem ι V} {B : Set (Mem ι V)}
+    {v : Mem ι V → M} {c : ℕ} {s₀ : Mem ι V} (hs₀ : s₀ ∈ omegaLimit U B) (hfix : U s₀ = s₀)
+    (hcorr : Corrects U B c) (D : Damage ι V) (hrad : D.radius ≤ c)
+    (hv : ∀ x ∈ hball c s₀, ∀ y ∈ hball c s₀, v x = v y)
+    {s : Mem ι V} (hs : s ∈ hball c s₀) (t : ℕ) :
+    traj U D t s ∈ hball c s₀ ∧ v (traj U D t s) = v (U^[t] s) :=
+  survives_of_invariant (corrects_hball_closed hs₀ hfix hcorr) D
+    (corrects_hball_damage_closed hs₀ hfix hcorr D hrad) hv hs t
 
 /-! ### Settling versus agreement
 
@@ -990,6 +1211,73 @@ theorem corrects_not_settles :
   ⟨cycleU_corrects, not_settles_cycleU⟩
 
 end SettlingGuards
+
+/-! ## The joint-dependence boundary: a guard family at the degenerate radius
+
+`hammingDist_image_lt_of_corrects` and its corollaries above hold at every `Corrects`-radius
+`c ≥ 1`, but the invariant reading they hand `survives_of_invariant` is worth something only while
+`hball c s₀` is a PROPER subset of the state space: past that, the only reading constant on the
+ball is a constant reading outright, and a constant reading carries nothing.
+The witness below realizes the degenerate case: a constant host on `Mem (Fin 3) Bool`,
+at radius `3 = Fintype.card (Fin 3)` — the least radius at which `hball` reaches the whole memory
+(`hammingDist_le_card_fintype`) — beside the same reading one radius lower, where it is genuinely
+non-constant and still survives. -/
+
+section JointDependenceGuard
+
+/-- **The constant host.** `Corrects` and `HammingNonexpansive` hold at it for a degenerate reason
+— nothing ever moves — which is exactly why it is the right witness for the boundary: it is not a
+special case the theorems above strain to cover, it is what a `Corrects`-radius reaching the whole
+memory forces every witness to look like. -/
+def constHost : Mem (Fin 3) Bool → Mem (Fin 3) Bool := fun _ => z
+
+private theorem constHost_corrects (c : ℕ) : Corrects constHost Set.univ c := fun _ _ _ _ => rfl
+
+private theorem constHost_nonexpansive : HammingNonexpansive constHost := fun x y => by
+  simp [constHost, hammingDist_self]
+
+/-- **At radius `3`, `hball` about the fixed point is the whole memory** — the degenerate case,
+since `3 = Fintype.card (Fin 3)` and no two memories are further apart than that
+(`hammingDist_le_card_fintype`). -/
+theorem hball_three_eq_univ : hball 3 z = (Set.univ : Set (Mem (Fin 3) Bool)) := by
+  ext x
+  refine ⟨fun _ => Set.mem_univ x, fun _ => ?_⟩
+  change hammingDist z x ≤ 3
+  calc hammingDist z x ≤ Fintype.card (Fin 3) := hammingDist_le_card_fintype
+    _ = 3 := Fintype.card_fin 3
+
+/-- **The boundary, witnessed** ([Inevitability] §6, Proposition 6.1(iii)'s joint-dependence
+mechanism). At radius `3` — the memory's own cell count — the
+constant host meets both dynamical repairs, yet the only reading constant on `hball 3 z` is
+constant outright: the invariant repair's hypothesis is then met only by a reading that carries
+nothing. One radius lower, the implication is restored: `badRead` is genuinely non-constant, and is
+constant on `hball 2 z`, since its one distinguished state `o` sits at distance `3` from `z`. -/
+theorem joint_dependence_boundary :
+    (Corrects constHost Set.univ 3 ∧ HammingNonexpansive constHost ∧
+      ∀ v : Mem (Fin 3) Bool → Bool, (∀ x ∈ hball 3 z, ∀ y ∈ hball 3 z, v x = v y) →
+        ∀ x y, v x = v y) ∧
+      (∀ x ∈ hball 2 z, ∀ y ∈ hball 2 z, badRead x = badRead y) ∧
+      (∃ x y, badRead x ≠ badRead y) := by
+  refine ⟨⟨constHost_corrects 3, constHost_nonexpansive, fun v hv x y => ?_⟩, ?_, z, o, by decide⟩
+  · rw [hball_three_eq_univ] at hv
+    exact hv x (Set.mem_univ x) y (Set.mem_univ y)
+  · intro x hx y hy
+    have hxo : x ≠ o := by
+      intro hxeq
+      have hd : hammingDist z x ≤ 2 := hx
+      rw [hxeq] at hd
+      have heq3 : hammingDist z o = 3 := by decide
+      omega
+    have hyo : y ≠ o := by
+      intro hyeq
+      have hd : hammingDist z y ≤ 2 := hy
+      rw [hyeq] at hd
+      have heq3 : hammingDist z o = 3 := by decide
+      omega
+    change decide (x = o) = decide (y = o)
+    exact decide_eq_decide.mpr (iff_of_false hxo hyo)
+
+end JointDependenceGuard
 
 /-! ## The price: what the margin costs in expressiveness -/
 

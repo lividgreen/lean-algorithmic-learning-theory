@@ -20,9 +20,10 @@ by the same argument as the 1-decision-list class (`ALT/DecisionListSolver.lean`
 (Hirsh–Mishra–Pitt 2004). This module makes the conjunction case a second machine-checked instance.
 
 Builds on `ALT/DecisionListData.lean` (the shared instance/example encoding: `readK`/`readM`,
-`peel`/`cPeel`, `headL`/`tailL`, `WF`/`WFBits`, `encodeList`, `lblOf`/`fvOf`/`featOf`) and
-`ALT/Code/BitGates.lean` (the bit-logic gates `cAnd`/`cOr`/`cNot`/`cEqBit`). Deliberately does NOT
-import `ALT/DecisionListSolver.lean`: a conjunction is not a decision list, and the elimination
+`peel`/`cPeel`, `headL`/`tailL`, `WF`/`WFBits`, `encodeList`, `lblOf`/`fvOf`/`featOf`),
+`ALT/PolyTime.lean` (`PolyBoundedOn`, `PolyTimeOn`, reached via `DecisionListData`'s own import),
+and `ALT/Code/BitGates.lean` (the bit-logic gates `cAnd`/`cOr`/`cNot`/`cEqBit`). Deliberately does
+NOT import `ALT/DecisionListSolver.lean`: a conjunction is not a decision list, and the elimination
 algorithm below needs none of the greedy solver's machinery.
 
 ## The class
@@ -1211,19 +1212,6 @@ theorem tc_cConjSolve_raw (inst : ℕ) (hw : WFBits inst) :
     omega
   simp only [cConjSolve, cReadVC, tc_comp, tc_right, cjLoop, hpair]
   omega
-
-/-- Poly-time on a domain — the honest "poly cost + output size on well-formed inputs" notion,
-mirroring `OneDL.PolyBoundedOn`/`OneDL.PolyTimeOn` exactly. Kept as a local copy rather than
-imported: importing it would mean importing the whole 1-DL greedy solver for two generic
-definitions that are not themselves about decision lists (see the module docstring). -/
-def PolyBoundedOn (D : ℕ → Prop) (t : ℕ → ℕ) : Prop :=
-  ∃ C k : ℕ, ∀ n, D n → t n ≤ C * (Nat.size n + 1) ^ k + C
-
-/-- `f` is computed on `D` by an `rfind`-free code whose step count AND output size are both
-`PolyBoundedOn D`. -/
-def PolyTimeOn (D : ℕ → Prop) (f : ℕ → ℕ) : Prop :=
-  ∃ c : Code, RfindFree c ∧ (∀ n, D n → val c n = f n) ∧
-    PolyBoundedOn D (tc c) ∧ PolyBoundedOn D (fun n => Nat.size (f n))
 
 /-- The well-formed domain for `cConjSolve`: a bit-well-formed instance. -/
 def ConjWF (inst : ℕ) : Prop := WFBits inst

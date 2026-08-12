@@ -406,6 +406,70 @@ private theorem powFiber_succ_val {n₁ n₂ : ℕ} (F : Fin n₁ → Fin n₂ �
   have h : powFiber F (P + 1) i w = finProdFinEquiv (powFiber F P i w.divNat, F i w.modNat) := rfl
   exact (congrArg Fin.val h).trans (finProdFinEquiv_apply_val _)
 
+/-- **`finFunctionFinEquiv`'s own successor step, in raw values**: the low digit (weight `n₂ ^ 0`)
+is the head, and the remaining digits are the tail's own encoding, shifted up by one weight —
+the identity the induction below unwinds against `powFiber_succ_val`. -/
+private theorem finFunctionFinEquiv_succ_val {n₂ P : ℕ} (w : Fin (P + 1) → Fin n₂) :
+    (finFunctionFinEquiv w : ℕ) = (w 0 : ℕ) + n₂ * (finFunctionFinEquiv (Fin.tail w) : ℕ) := by
+  rw [finFunctionFinEquiv_apply, finFunctionFinEquiv_apply, Fin.sum_univ_succ, Finset.mul_sum]
+  have h0 : (w 0 : ℕ) * n₂ ^ ((0 : Fin (P + 1)) : ℕ) = (w 0 : ℕ) := by simp
+  rw [h0]
+  congr 1
+  refine Finset.sum_congr rfl fun j _ => ?_
+  change (w j.succ : ℕ) * n₂ ^ ((j.succ : Fin (P + 1)) : ℕ) = n₂ * ((w j.succ : ℕ) * n₂ ^ (j : ℕ))
+  rw [Fin.val_succ, pow_succ]
+  ring
+
+/-- **The low digit of `finFunctionFinEquiv w` is the head `w 0`.** -/
+private theorem finFunctionFinEquiv_modNat {n₂ P : ℕ} (w : Fin (P + 1) → Fin n₂) :
+    (finFunctionFinEquiv w).modNat = w 0 := by
+  apply Fin.ext
+  rw [Fin.coe_modNat, finFunctionFinEquiv_succ_val, Nat.add_mul_mod_self_left]
+  exact Nat.mod_eq_of_lt (w 0).isLt
+
+/-- **The high digits of `finFunctionFinEquiv w` are the tail's own encoding.** -/
+private theorem finFunctionFinEquiv_divNat {n₂ P : ℕ} (w : Fin (P + 1) → Fin n₂) :
+    (finFunctionFinEquiv w).divNat = finFunctionFinEquiv (Fin.tail w) := by
+  have hn₂ : 0 < n₂ := lt_of_le_of_lt (Nat.zero_le _) (w 0).isLt
+  apply Fin.ext
+  rw [Fin.coe_divNat, finFunctionFinEquiv_succ_val, Nat.add_mul_div_left _ _ hn₂,
+    Nat.div_eq_of_lt (w 0).isLt, Nat.zero_add]
+
+/-- **`powFiber` is componentwise `F i`, under the digit encoding** ([Inevitability] Theorem
+6.6(vi)'s identification): conjugating `powFiber F P i` through `finFunctionFinEquiv` gives exactly
+`F i` applied to each copy independently — copy `j` (the coefficient of `n₂ ^ j`) is `powFiber`'s
+own digit `j`, one application of `F i` per copy and nothing more. Both encodings share the same
+little-endian convention (`finProdFinEquiv (a, b) = b + n * a`, `powFiber`'s own recursion, weights
+the fresh copy as the low digit; `finFunctionFinEquiv` weights index `j` by `n₂ ^ j`, so index `0`
+is the low digit too) — checked, not assumed, by the guard below. -/
+theorem powFiber_eq_map {n₁ n₂ : ℕ} (F : Fin n₁ → Fin n₂ → Fin n₂) (P : ℕ) (i : Fin n₁)
+    (w : Fin P → Fin n₂) :
+    powFiber F P i (finFunctionFinEquiv w) = finFunctionFinEquiv fun j => F i (w j) := by
+  induction P with
+  | zero =>
+      change finFunctionFinEquiv w = finFunctionFinEquiv fun j => F i (w j)
+      congr 1
+      funext j
+      exact j.elim0
+  | succ P ih =>
+      apply Fin.ext
+      have htail : Fin.tail (fun j => F i (w j)) = fun j => F i (Fin.tail w j) := by
+        funext j; rfl
+      have hval : (finFunctionFinEquiv (fun j => F i (w j)) : ℕ)
+          = (F i (w 0) : ℕ) + n₂ * (finFunctionFinEquiv (fun j => F i (Fin.tail w j)) : ℕ) := by
+        rw [finFunctionFinEquiv_succ_val, htail]
+      rw [powFiber_succ_val, finFunctionFinEquiv_modNat, finFunctionFinEquiv_divNat,
+        ih (Fin.tail w), hval]
+
+/-- **The digit-to-copy convention is load-bearing, checked against a concrete asymmetric `F`**: an
+`F` that merely permutes its two values would pass under either digit order, so this fixes `F` to
+swap `0 ↦ 1` and `1 ↦ 0` against the asymmetric population `w = ![0, 1]`, at `n₂ = P = 2`. Computed
+independently of `powFiber_eq_map`'s proof, by kernel reduction. -/
+example :
+    powFiber (fun _ : Fin 1 => (![1, 0] : Fin 2 → Fin 2)) 2 (0 : Fin 1)
+        (finFunctionFinEquiv (![0, 1] : Fin 2 → Fin 2))
+      = finFunctionFinEquiv (![1, 0] : Fin 2 → Fin 2) := by decide
+
 /-- **The composite table is the iterated weave** ([Inevitability] Theorem 6.6(vi), "`P` copies"):
 `powFiber`'s own table, built by `finProdFinEquiv` at every level, is exactly `fibProdAppend`
 iterated `P` times from the trivial table — the argument of `lensTable_skewWorldFin`, replayed one

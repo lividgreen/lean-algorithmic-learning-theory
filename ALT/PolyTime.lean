@@ -18,7 +18,9 @@ set_option linter.style.longLine false
 
 Provenance: the native cost model. Builds on `ALT/TimeCost.lean` (`evalT`,
 `val`, `tc`, `RfindFree`, the step laws, `tc_prec_le`). Downstream infra for bounding a concrete
-algorithm's `tc` (the greedy 1-DL consistency solver, `ALT/DecisionListSolver.lean`).
+algorithm's `tc` (the greedy 1-DL consistency solver, `ALT/DecisionListSolver.lean`, and the
+conjunction solver, `ALT/ConjunctionSolver.lean`), including the domain-relative `PolyBoundedOn`/
+`PolyTimeOn` pair both consume for their well-formed-input bounds.
 
 ## HONEST FRAMING — unit cost, measured against input BIT-LENGTH
 `tc` is a UNIT-cost model: each AST primitive costs `1` regardless of operand magnitude. So "polynomial
@@ -137,6 +139,25 @@ poly in the inner output's bit-length). See the module note on why it is on `Nat
 def PolyTime (f : ℕ → ℕ) : Prop :=
   ∃ c : Code, RfindFree c ∧ (∀ n, val c n = f n) ∧
     PolyBounded (tc c) ∧ PolyBounded (fun n => Nat.size (f n))
+
+/-! ## `PolyBoundedOn`/`PolyTimeOn` — the domain-relative variants
+
+`PolyBounded`/`PolyTime` state their bound over ALL of `ℕ`; a caller whose bound only holds on a
+well-formed domain (a raw slot of a packed input is exponential off it — see `PolyTime`'s own
+`unpair_snd_not_polyBounded` blocker below) needs the relativized notion instead. Consumed by
+`ALT/DecisionListSolver.lean` (`PurityWF`, `FindLitWF`, `SolveWF`) and `ALT/ConjunctionSolver.lean`
+(`ConjWF`), which import this file already for `PolyTime`/`PolyBounded`. -/
+
+/-- **Poly-time on a domain** — the honest "poly cost + output size on well-formed inputs" notion. -/
+def PolyBoundedOn (D : ℕ → Prop) (t : ℕ → ℕ) : Prop :=
+  ∃ C k : ℕ, ∀ n, D n → t n ≤ C * (Nat.size n + 1) ^ k + C
+
+/-- `f` is computed on `D` by an `rfind`-free code whose step count AND output size are both
+`PolyBoundedOn D`. Charging the output size too is what keeps the notion honest: a code can be
+cheap to run and still emit something exponentially wide. -/
+def PolyTimeOn (D : ℕ → Prop) (f : ℕ → ℕ) : Prop :=
+  ∃ c : Code, RfindFree c ∧ (∀ n, D n → val c n = f n) ∧
+    PolyBoundedOn D (tc c) ∧ PolyBoundedOn D (fun n => Nat.size (f n))
 
 /-! ## Base closure — `zero`, `succ`, `left`, `right` are `PolyTime` -/
 

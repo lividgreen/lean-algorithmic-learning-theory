@@ -44,12 +44,12 @@ import ALT.Decoupling
 import ALT.DeterministicDiscovery
 import ALT.EpsilonZeroBound
 import ALT.EvoAbsorption
-import ALT.ExactBreakeven
 import ALT.ExcessOrder
 import ALT.ExcessOrderComplete
 import ALT.ExpensiveLens
 import ALT.ExtensionalDiscovery
 import ALT.FiniteInfoTheory
+import ALT.FixedLensCriterion
 import ALT.FlooredMixture
 import ALT.FrameItinerary
 import ALT.GodelChecker
@@ -85,7 +85,6 @@ import ALT.PolyTime
 import ALT.PolyTimeAccounting
 import ALT.PrefixComplexity
 import ALT.PrefixInvariance
-import ALT.PressureWindow
 import ALT.PriorNormalization
 import ALT.QuantizationRate
 import ALT.ReadingWord

@@ -205,7 +205,17 @@ entry points, if you want a sense of the range before reading the list:
   (`settles_traj_not_agreement`), and a host can erase every one-cell
   perturbation while its reading alternates forever (`corrects_not_settles`) —
   so settling is parallel to the three repairs rather than a fourth one, in
-  both directions and on witnesses rather than on inspection. Separately, the
+  both directions and on witnesses rather than on inspection. The three repairs
+  themselves are pairwise independent but not jointly so: a host that both
+  erases every `c`-perturbation in one step and never separates two memories
+  has a **single recurrent state**, fixed — one update strictly shrinks the
+  distance from an on-core state to any other, which the core's own permutation
+  cannot absorb (`omegaLimit_subsingleton_of_corrects`) — and the third repair
+  is then free (`survives_of_invariant_of_corrects`, which needs the erasure
+  condition and that fixed point, not non-expansiveness). The boundary is
+  guarded rather than described: at a radius reaching the whole memory, the
+  only invariant reading is the one that distinguishes nothing
+  (`joint_dependence_boundary`). Separately, the
   decoupling equivalence holds verbatim on a monotonically *growing* code
   region, with an append-only witness on which the limit region is not
   read-only, so the statement does not reduce to one fixed partition.
@@ -259,19 +269,38 @@ entry points, if you want a sense of the range before reading the list:
   composite's decode is priced as well, and is the cheaper half to name: its
   three ingredient codes carry every structural number but the population size,
   so `P`'s binary numeral is the only one loaded (`KE_compFrameFlat_le`) —
-  though both halves are priced on the flat carrier `Fin (n₁ * n₂ ^ P)`, and
-  that this is the composite guest's own state space is the standard encoding
-  rather than a theorem here.
+  Both halves are priced on the flat carrier `Fin (n₁ * n₂ ^ P)`, and that this
+  is the composite guest's own state space is a theorem on each side rather than
+  a reading of the encoding: conjugating the copies through the digit encoding
+  gives one application of the per-copy rule per copy, and the flat decode is
+  shown equal to the population's own.
   Honest boundary: the damage model — which perturbations are allowed, and how
   far one reaches — is a **named hypothesis of the companion paper, not a
   theorem of this library**, and `DamageGate.lean` states precisely what that
   costs. A gate a host could actually apply, phrased on the noise stream and so
   naming the same times before and after any damage, buys the same conclusion
   (`compPredFrame_eq_next_of_noiseGated`) — but is provably empty on a
-  noise-free stream (`noiseGated_eq_empty_of_quiet`), which is exactly the
-  branch whose budget is lifetime-free. Host-checkable and lifetime-free are
-  therefore met on disjoint branches, and that obstruction is itself a theorem
-  here rather than a caveat.
+  noise-free stream (`noiseGated_eq_empty_of_quiet`), the branch whose budget
+  is the zero-miss anchor. What closes the apparent disjointness of
+  host-checkable and lifetime-free is the **eventually-quiet** class
+  (`QuietFrom`): a stream firing at most `m` times keeps the gated schedule's
+  count capped by that same `m` at every horizon
+  (`noiseCount_le_of_quietFrom`), so the single redundancy condition
+  `c·m < P` buys the untouched copy and the composite's conclusion at every
+  horizon at once (`exists_untouched_copy_of_quietFrom`,
+  `compPredFrame_eq_next_of_quietFrom`) — a lifetime statement with a
+  non-empty gate, witnessed by a designed stream whose designated candidate's
+  misses are exactly its `m` firings (`quietStream`,
+  `witMiss_quietStream_zero_iff`, `noiseGated_quietStream_iff`) and emitted by
+  a saturating counter automaton whose own transient is the firing set
+  (`sourceOut_iterate_sourceStep_zero`, `sourceStep_not_injective`).
+  What no gate delivers is the containment itself:
+  `exists_untouched_copy_of_noiseGated` consumes `NoiseGated`, so every damage
+  time must sit on a firing — a hypothesis on every branch. On the noisy
+  branch it takes a damage-invariant form — `noiseGated_iff_witMiss` makes the
+  noise bit and the true candidate's miss one event — and it is that
+  identification, not the mere existence of a finitely-firing event, that the
+  argument rests on.
 - **A dependency audit of the reflection chain**
   (`ChainDependencyAudit.lean`): which imports each conclusion actually
   consumes, with unused-binder marking so that "off the critical path" is
@@ -352,7 +381,7 @@ entry points, if you want a sense of the range before reading the list:
 - No `sorry`, `admit`, or `native_decide`; standard axioms only
   (`propext`, `Classical.choice`, `Quot.sound`) — several cores are
   choice-free, and the structural capstone depends on no axioms at all.
-- **Build-enforced axiom hygiene**: 833 `#guard_msgs in #print axioms` guards
+- **Build-enforced axiom hygiene**: 882 `#guard_msgs in #print axioms` guards
   assert each capstone's exact axiom set; `lake build` fails on any drift.
 - **CI-enforced whole-library audit**: every declaration under `ALT` — not only
   the guarded capstones — is checked against the same allowlist by
@@ -403,6 +432,14 @@ What the machine does enforce is that it never grows by accident: the closure is
 recomputed against the compiled environment and ratcheted per module, so the
 surface can narrow freely, while widening it requires an explicit, recorded
 decision rather than a silent drift.
+
+**"Narrow freely" is a real consequence, so it is worth saying plainly**: a
+release can make a previously public declaration `private`, and one already
+has. That is why the install snippet above pins a tag rather than a branch —
+nothing changes under you until you move the pin. Every release that loses a
+public name lists each one in its release notes rather than counting them, and
+if a name you actually depend on goes, that is a good issue to open: a real
+consumer is a reason to keep something public that the closure cannot compute.
 
 **If you are looking for reusable pieces** rather than a paper's machine-checked
 core, these are the library-shaped modules: `ALT/Code/EvalLaws.lean` (the

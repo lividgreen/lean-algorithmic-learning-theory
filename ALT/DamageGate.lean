@@ -29,6 +29,15 @@ untouched copy, by the same pigeonhole step `RedundantFiber.lean` already proves
 directly (`compPredFrame_eq_next_of_noiseGated`), reusing `RedundantFiber.lean`'s touch-bound
 argument rather than duplicating it.
 
+Between the noise-free branch and one merely bounded per horizon sits a third class: a stream that
+fires at most `m` times in total (`QuietFrom`). Its noise count is capped by the same `m` at *every*
+horizon at once (`noiseCount_le_of_quietFrom`), so a single redundancy condition — not one per
+horizon — already buys the composite's survival there (`exists_untouched_copy_of_quietFrom`,
+`compPredFrame_eq_next_of_quietFrom`): a lifetime statement on a branch strictly between the two
+Theorem 6.6(iii) names ([Inevitability] §6, Theorem 6.6(v″)). `quietStream` packages a designed
+instance of this class, and `sourceStep`/`sourceOut` package a counter automaton emitting it, so
+the class is witnessed rather than merely named.
+
 ## Main results
 
 * `NoiseGated` — a hit schedule is gated when every one of its times sits on a fired noise bit.
@@ -42,6 +51,30 @@ argument rather than duplicating it.
 * `noiseGated_eq_empty_of_quiet` — **the boundary.** On a noise-free stream the only gated schedule
   is the empty one: a noise-gated host does no damage at all there, and a noise-free stream is
   exactly the branch whose surprise count is the lifetime-free anchor `4(C−1)/θ`.
+* `QuietFrom` — a stream that has fired at most `m` times in total, at the same offset `NoiseGated`
+  reads at.
+* `noiseCount_le_of_quietFrom` — under `QuietFrom`, the noise count is capped by `m` at every
+  horizon at once.
+* `exists_untouched_copy_of_quietFrom`, `compPredFrame_eq_next_of_quietFrom` — the uniformization:
+  one redundancy condition, `c · m < P`, serves every horizon's conclusion, a lifetime statement
+  rather than the honestly per-horizon one `compPredFrame_eq_next_of_noiseGated` supplies on its
+  own.
+* `quietStream` — the designed eventually-quiet stream at parameters `k, m`, firing on exactly
+  `[k, k + m)`.
+* `quietFrom_quietStream`, `witMiss_quietStream_zero_iff`, `noiseGated_quietStream_iff` — its basic
+  identities: it is eventually-quiet at its own `m`, its designated candidate's misses are exactly
+  its designed window, and its gate is exactly confinement to that window.
+* `witMiss_quietStream_zero_of_pos`, `finite_setOf_witMiss_quietStream` — the two boundary facts
+  placing `quietStream` strictly between Theorem 6.6(iii)'s two branches: it misses immediately at
+  `0 < m` (not the noise-free branch), yet its total miss set is finite (not the branch that never
+  settles).
+* `sourceStep`, `sourceOut` — a saturating counter automaton on `Fin (k + m + 1)` and its output.
+* `val_iterate_sourceStep`, `sourceOut_iterate_sourceStep_zero` — the counter's closed form, and the
+  fact that reading it from `0` emits `quietStream` exactly.
+* `sourceStep_iterate_eq_last`, `sourceStep_last` — the counter saturates within `k + m` steps from
+  any start, and its top is a fixed point.
+* `sourceStep_not_injective` — at `1 ≤ m` the step map is not injective: the host's own
+  non-invertibility, confined to the source and claimed of nothing downstream.
 
 ## Scope
 
@@ -54,6 +87,15 @@ lifetime-free bound covers, so this is a variant repair, not a strengthening, of
 `compPredFrame_eq_next_of_noiseGated` inherits that same boundary: it is a parallel route to the
 theorem's own conclusion, honestly per-horizon rather than lifetime-free, not a replacement for the
 realizable branch's.
+
+The eventually-quiet material carries the identical boundary, one level up: `QuietFrom` is stated
+on the stream alone, still names nothing about a run or a schedule, and its uniformization is a
+reading of `exists_untouched_copy_of_noiseGated`/`compPredFrame_eq_next_of_noiseGated`, not a new
+argument. What it does not supply is the composition this file's own uniform bound and a designed
+instance's own realizability are stitched together into a single per-horizon-free survival
+statement over an *arbitrary* eventually-quiet stream and an *arbitrary* gated schedule on it —
+that composition, and the instantiation of `quietStream`/`sourceStep` at this construction's own
+substrate, stay paper-level, exactly the sense in which (v″) names its own remaining seam.
 -/
 
 namespace DamageGate
@@ -158,6 +200,182 @@ theorem noiseGated_eq_empty_of_quiet {k n : ℕ} {ξ : ℕ → Bool} {H : Finset
   rw [h1] at h2
   exact Bool.noConfusion h2
 
+/-! ## The eventually-quiet class, and its lifetime-free redundancy
+
+Between the noise-free branch `noiseGated_eq_empty_of_quiet` covers and the honestly per-horizon
+`compPredFrame_eq_next_of_noiseGated` sits a third class: streams that fire finitely often overall
+rather than not at all. `QuietFrom` names it directly on the stream, with no run and no schedule,
+exactly as `NoiseGated` does — `noiseCount_le_of_quietFrom` is the uniform-in-horizon bound that
+makes a single redundancy condition serve every horizon at once ([Inevitability] §6, Theorem
+6.6(v″)). -/
+
+/-- **A stream that has fired at most `m` times in total, at offset `k`.** Every firing sits below
+`m`, so the same bound `m` caps how often the stream has fired by *any* horizon — the class between
+a noise-free stream (`m = 0`) and one merely bounded within each horizon separately
+([Inevitability] §6, Theorem 6.6(v″)). -/
+def QuietFrom (k m : ℕ) (ξ : ℕ → Bool) : Prop := ∀ s, ξ (s + k) = true → s < m
+
+/-- **The uniform count.** Under `QuietFrom`, the noise count at *every* horizon `n` is capped by
+the same `m` — the fired times all sit below `m`, so extending the horizon past `m` never grows the
+count further ([Inevitability] §6, Theorem 6.6(v″), IN-13). -/
+theorem noiseCount_le_of_quietFrom {k m : ℕ} {ξ : ℕ → Bool} (hq : QuietFrom k m ξ) (n : ℕ) :
+    noiseCount ξ k n ≤ m := by
+  rw [noiseCount]
+  calc ((Finset.range n).filter fun t => ξ (t + k)).card
+      ≤ (Finset.range m).card :=
+        Finset.card_le_card fun t ht =>
+          Finset.mem_range.mpr (hq t (Finset.mem_filter.mp ht).2)
+    _ = m := Finset.card_range m
+
+/-- **The composite survives a gated schedule under `QuietFrom`, at one redundancy for every
+horizon at once.** `c * m < P` already covers `c * noiseCount ξ k n < P` at every `n`
+(`noiseCount_le_of_quietFrom`), so `exists_untouched_copy_of_noiseGated`'s conclusion holds
+uniformly — the fixed redundancy is a lifetime statement, not a per-horizon one
+([Inevitability] §6, Theorem 6.6(v″)). -/
+theorem exists_untouched_copy_of_quietFrom {P : ℕ} [NeZero P] {k m c : ℕ} {ξ : ℕ → Bool}
+    (hq : QuietFrom k m ξ) (hP : c * m < P) {n : ℕ} {H : Finset ℕ} (hH : H ⊆ Finset.range n)
+    (hgate : NoiseGated k ξ H) (col : ℕ → Finset (Fin P)) (hcol : ∀ t, (col t).card ≤ c) :
+    ∃ i₀ : Fin P, ∀ t ∈ H, i₀ ∉ col t :=
+  exists_untouched_copy_of_noiseGated ξ hH hgate col hcol
+    (lt_of_le_of_lt (Nat.mul_le_mul_left c (noiseCount_le_of_quietFrom hq n)) hP)
+
+/-- **The same uniformization of `compPredFrame_eq_next_of_noiseGated`** — one redundancy
+condition, `c * m < P`, serving every horizon's conclusion at once, exactly (v)'s form reached from
+the eventually-quiet class rather than from a per-horizon noise count ([Inevitability] §6,
+Theorem 6.6(v″)). -/
+theorem compPredFrame_eq_next_of_quietFrom {n₁ C P W : ℕ} [NeZero C] [NeZero P] {hW : 2 ≤ W}
+    (S : Fin n₁ → Fin n₁) (dec : Fin C → Fin n₁ → Fin n₁) (x₀ : Fin n₁)
+    {c₀ : Fin C} (hc₀ : ∀ s, dec c₀ (S^[s] x₀) = S (S^[s] x₀))
+    (v₀ : Fin P → WVec C W) {k m c : ℕ} {ξ : ℕ → Bool} (hq : QuietFrom k m ξ) (hP : c * m < P)
+    {n : ℕ} {H : Finset ℕ} (hH : H ⊆ Finset.range n) (hgate : NoiseGated k ξ H)
+    (col : ℕ → Finset (Fin P)) (hcol : ∀ t, (col t).card ≤ c) (land : ℕ → Fin P → WVec C W) :
+    ∃ T : ℕ, ∀ t, T ≤ t →
+      compPredFrame S dec (S^[t] x₀) (compRun W (predMiss S dec x₀) v₀ H col land t)
+        = S (S^[t] x₀) :=
+  compPredFrame_eq_next_of_noiseGated (hW := hW) S dec x₀ hc₀ v₀ ξ hH hgate col hcol
+    (lt_of_le_of_lt (Nat.mul_le_mul_left c (noiseCount_le_of_quietFrom hq n)) hP) land
+
+/-! ## A designed instance, strictly between the two named branches
+
+`quietStream` is a concrete eventually-quiet stream: it fires on exactly the window `[k, k + m)`.
+At `0 < m` it is not the noise-free branch (`witMiss_quietStream_zero_of_pos` — it misses
+immediately, at `s = 0`), yet its total miss set is finite (`finite_setOf_witMiss_quietStream`) —
+the two boundary facts placing it in the class `QuietFrom` names and neither of Theorem 6.6(iii)'s
+two branches covers on its own. -/
+
+/-- **The designed eventually-quiet stream at parameters `k, m`.** Fires on exactly the window
+`[k, k + m)` and is silent everywhere else ([Inevitability] §6, Theorem 6.6(v″)). -/
+def quietStream (k m : ℕ) : ℕ → Bool := fun u => decide (k ≤ u ∧ u < k + m)
+
+/-- **`quietStream` is eventually-quiet at its own parameter `m`.** Every one of its firings, read
+at offset `k`, sits below `m` by construction ([Inevitability] §6, Theorem 6.6(v″)). -/
+theorem quietFrom_quietStream (k m : ℕ) : QuietFrom k m (quietStream k m) := by
+  intro s hs
+  simp only [quietStream, decide_eq_true_eq] at hs
+  omega
+
+/-- **The designed candidate's misses are exactly the designed prefix.** `witMiss_zero` reads the
+noise bit directly, and `quietStream` fires there exactly below `m` ([Inevitability] §6,
+Theorem 6.6(v″)). -/
+theorem witMiss_quietStream_zero_iff {k : ℕ} [NeZero k] (m s : ℕ) :
+    witMiss k (quietStream k m) s 0 = true ↔ s < m := by
+  rw [witMiss_zero, quietStream]
+  simp only [decide_eq_true_eq]
+  omega
+
+/-- **The gate on `quietStream` is exactly confinement to the designed prefix.** Composing
+`noiseGated_iff_witMiss` with `witMiss_quietStream_zero_iff` reads `NoiseGated` on this stream as a
+plain range containment ([Inevitability] §6, Theorem 6.6(v″), IN-28). -/
+theorem noiseGated_quietStream_iff {k : ℕ} [NeZero k] (m : ℕ) (H : Finset ℕ) :
+    NoiseGated k (quietStream k m) H ↔ H ⊆ Finset.range m := by
+  rw [noiseGated_iff_witMiss]
+  simp only [witMiss_quietStream_zero_iff, ← Finset.mem_range]
+  exact Iff.rfl
+
+/-- **Not immediately realizable, at `0 < m`.** The designed candidate misses at `s = 0` — the
+first boundary fact placing `quietStream` off the noise-free branch. -/
+theorem witMiss_quietStream_zero_of_pos {k : ℕ} [NeZero k] {m : ℕ} (hm : 0 < m) :
+    witMiss k (quietStream k m) 0 0 = true :=
+  (witMiss_quietStream_zero_iff m 0).mpr hm
+
+/-- **Eventually realizable.** The designed candidate's total miss set is finite — the second
+boundary fact, placing `quietStream` off the noisy branch that never settles. -/
+theorem finite_setOf_witMiss_quietStream {k : ℕ} [NeZero k] (m : ℕ) :
+    {s : ℕ | witMiss k (quietStream k m) s 0 = true}.Finite :=
+  Set.Finite.subset (Set.finite_Iio m) fun s hs => (witMiss_quietStream_zero_iff m s).mp hs
+
+/-! ## A source automaton emitting the designed instance
+
+`sourceStep` is a saturating counter on `Fin (k + m + 1)`: it increments until it reaches the top
+and then holds there. Read through `sourceOut`, the state it reaches after `u` steps from `0`
+emits exactly `quietStream k m u` — a host packaging for the designed instance, confining its own
+non-invertibility to the source (`sourceStep_not_injective`) rather than to anything downstream. -/
+
+/-- **The saturating counter.** Increments by one short of the top, `k + m`, and holds there —
+the source `sourceOut` reads against. -/
+def sourceStep (k m : ℕ) : Fin (k + m + 1) → Fin (k + m + 1) :=
+  fun i => ⟨min ((i : ℕ) + 1) (k + m), by omega⟩
+
+/-- **The source's output.** Fires exactly while the counter sits in `[k, k + m)`, mirroring
+`quietStream`'s own window. -/
+def sourceOut (k m : ℕ) (i : Fin (k + m + 1)) : Bool := decide (k ≤ (i : ℕ) ∧ (i : ℕ) < k + m)
+
+/-- **The counter's value after `t` steps from any start**, in closed form: it advances by `t` and
+saturates at `k + m`. Every fact about `sourceStep`'s orbit below reduces to this one arithmetic
+identity. -/
+theorem val_iterate_sourceStep (k m t : ℕ) (i : Fin (k + m + 1)) :
+    ((sourceStep k m)^[t] i : ℕ) = min ((i : ℕ) + t) (k + m) := by
+  induction t with
+  | zero =>
+      have h : (i : ℕ) ≤ k + m := Nat.le_of_lt_succ i.isLt
+      simp only [Function.iterate_zero, id_eq, Nat.add_zero]
+      omega
+  | succ t ih =>
+      rw [Function.iterate_succ_apply']
+      change min (((sourceStep k m)^[t] i : ℕ) + 1) (k + m) = min ((i : ℕ) + (t + 1)) (k + m)
+      omega
+
+/-- **The source emits `quietStream` from state `0`** ([Inevitability] §6, Theorem 6.6(v″)): the
+output read off the counter after `u` steps from `0` is the designed stream's own value at `u`. -/
+theorem sourceOut_iterate_sourceStep_zero (k m u : ℕ) :
+    sourceOut k m ((sourceStep k m)^[u] (0 : Fin (k + m + 1))) = quietStream k m u := by
+  have hval := val_iterate_sourceStep k m u (0 : Fin (k + m + 1))
+  simp only [Fin.val_zero, Nat.zero_add] at hval
+  rw [sourceOut, hval, quietStream, decide_eq_decide]
+  omega
+
+/-- **The counter saturates by `k + m` steps, from every start.** Not just from `0` — the top is
+reached from anywhere in the type within `k + m` steps, since no start sits further than `k + m`
+below it. -/
+theorem sourceStep_iterate_eq_last (k m : ℕ) (i : Fin (k + m + 1)) :
+    (sourceStep k m)^[k + m] i = Fin.last (k + m) := by
+  apply Fin.ext
+  rw [val_iterate_sourceStep, Fin.val_last]
+  omega
+
+/-- **The saturated state is a fixed point.** Once at the top, the counter stays there. -/
+theorem sourceStep_last (k m : ℕ) : sourceStep k m (Fin.last (k + m)) = Fin.last (k + m) := by
+  apply Fin.ext
+  rw [show ((sourceStep k m (Fin.last (k + m)) : ℕ)) = ((sourceStep k m)^[1] (Fin.last (k + m)) : ℕ)
+      from rfl, val_iterate_sourceStep, Fin.val_last]
+  omega
+
+/-- **The step map is not injective, at `1 ≤ m`.** The saturated top and its immediate
+predecessor both land on the top — the host's own non-invertibility, confined to the source and
+nowhere claimed of the guest it drives. -/
+theorem sourceStep_not_injective {k m : ℕ} (hm : 1 ≤ m) :
+    ¬ Function.Injective (sourceStep k m) := by
+  intro hinj
+  have h1 : sourceStep k m (⟨k + m - 1, by omega⟩ : Fin (k + m + 1)) = Fin.last (k + m) := by
+    apply Fin.ext
+    simp only [sourceStep, Fin.val_last]
+    omega
+  have heq := hinj (h1.trans (sourceStep_last k m).symm)
+  have hval : (k + m - 1 : ℕ) = k + m := by
+    have := congrArg Fin.val heq
+    simpa [Fin.val_last] using this
+  omega
+
 end DamageGate
 
 /-- info: 'DamageGate.noiseGated_iff_witMiss' depends on axioms: [propext, Quot.sound] -/
@@ -179,3 +397,55 @@ end DamageGate
 /-- info: 'DamageGate.compPredFrame_eq_next_of_noiseGated' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms DamageGate.compPredFrame_eq_next_of_noiseGated
+
+/-- info: 'DamageGate.noiseCount_le_of_quietFrom' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms DamageGate.noiseCount_le_of_quietFrom
+
+/-- info: 'DamageGate.exists_untouched_copy_of_quietFrom' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms DamageGate.exists_untouched_copy_of_quietFrom
+
+/-- info: 'DamageGate.compPredFrame_eq_next_of_quietFrom' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms DamageGate.compPredFrame_eq_next_of_quietFrom
+
+/-- info: 'DamageGate.quietFrom_quietStream' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms DamageGate.quietFrom_quietStream
+
+/-- info: 'DamageGate.witMiss_quietStream_zero_iff' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms DamageGate.witMiss_quietStream_zero_iff
+
+/-- info: 'DamageGate.noiseGated_quietStream_iff' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms DamageGate.noiseGated_quietStream_iff
+
+/-- info: 'DamageGate.witMiss_quietStream_zero_of_pos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms DamageGate.witMiss_quietStream_zero_of_pos
+
+/-- info: 'DamageGate.finite_setOf_witMiss_quietStream' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms DamageGate.finite_setOf_witMiss_quietStream
+
+/-- info: 'DamageGate.val_iterate_sourceStep' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms DamageGate.val_iterate_sourceStep
+
+/-- info: 'DamageGate.sourceOut_iterate_sourceStep_zero' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms DamageGate.sourceOut_iterate_sourceStep_zero
+
+/-- info: 'DamageGate.sourceStep_iterate_eq_last' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms DamageGate.sourceStep_iterate_eq_last
+
+/-- info: 'DamageGate.sourceStep_last' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms DamageGate.sourceStep_last
+
+/-- info: 'DamageGate.sourceStep_not_injective' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms DamageGate.sourceStep_not_injective

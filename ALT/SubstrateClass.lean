@@ -202,11 +202,12 @@ file gave [Inevitability]'s own Definitions 2.1–2.3 a Lean counterpart.
   that learning PRODUCES the committed configuration — which needs the learner inside the
   substrate's own dynamics, an object no module here supplies. This file does not manufacture a
   field-consuming proof by weakening the conclusion.
-* `SubstrateE`'s two fields (`growsLawfulGuest`, `witnessKappaCondition`) are CARRIED as opaque
-  Props, not connected to `PersistenceCapacity.witness_world`: that theorem lives on the SPECIFIC
-  carrier `Decoupling.Mem (Fin κ) Bool` built by `witnessWorld κ k G π`, not on `Substrate`'s
-  GENERAL `(ι, V, U)`. Bridging the two needs an instantiation argument this file does not
-  attempt (Theorem 5.1(a) is explicitly out of scope here — imported verbatim in its own home).
+* `SubstrateE`'s two fields (`growsLawfulGuest`, `grownGuestReachesThreshold`) are CARRIED as
+  opaque Props, not connected to `PersistenceCapacity.witness_world`: that theorem lives on the
+  SPECIFIC carrier `Decoupling.Mem (Fin κ) Bool` built by `witnessWorld κ k G π`, not on
+  `Substrate`'s GENERAL `(ι, V, U)`. Bridging the two needs an instantiation argument this file
+  does not attempt (Theorem 5.1(a) is explicitly out of scope here — imported verbatim in its own
+  home).
 * No inhabitant of `SubstrateL` is exhibited (Remark 5.3's own point: the corpus proves what
   follows from `𝒮_L` but exhibits no member of it); `substrate_satisfiable` inhabits only the
   bare three-field `Substrate`, not either route-class.
@@ -371,24 +372,26 @@ structure Substrate {ι V : Type*} (U : Decoupling.Mem ι V → Decoupling.Mem �
 
 /-! ### Definition 2.3: the two route-classes -/
 
-/-- **`𝒮_E` (the emergence route-class).** `Substrate` plus the emergence hypotheses [Guests]
-supplies: the update grows a lawful, affordably-owned guest from every initial state
-(`GrowsLawfulGuest`), and the Witness World's parameter condition on `κ` for the
-threshold-crossing clause (`WitnessKappaCondition`). Both are CARRIED as uninterpreted `Prop`
-parameters: the genuine `PersistenceCapacity.witness_world` lives on the SPECIFIC carrier
-`Decoupling.Mem (Fin κ) Bool`, not on `Substrate`'s general `(ι, V, U)`, so no bridging
-instantiation is attempted here (Theorem 5.1(a) is out of scope — imported verbatim elsewhere). -/
+/-- **`𝒮_E` (the emergence route-class).** `Substrate` plus the emergence hypotheses
+[Inevitability] §2 Definition 2.3 names: the update grows a lawful, affordably-owned guest from
+every initial state ([Guests]'s emergence theorem, `GrowsLawfulGuest`), and that grown guest
+reaches Definition 2.1's threshold (`GrownGuestReachesThreshold`). Both are CARRIED as
+uninterpreted `Prop` parameters: the genuine `PersistenceCapacity.witness_world` lives on the
+SPECIFIC carrier `Decoupling.Mem (Fin κ) Bool`, not on `Substrate`'s general `(ι, V, U)`, so no
+bridging instantiation is attempted here (Theorem 5.1(a) is out of scope — imported verbatim
+elsewhere; [Inevitability] §5 Remark 5.7 is where that carrier question turns out to decide the
+seam between the two route-classes at the witnesses these papers build). -/
 structure SubstrateE {ι V : Type*} (U : Decoupling.Mem ι V → Decoupling.Mem ι V) (R : Set ι)
     (r K L c₀ c₁ c₂ δ : ℝ) (sCodeSize gTS : ℕ)
     (Consistent NSound Delta1Axiomatized InterpretsR0 : Prop)
-    (GrowsLawfulGuest WitnessKappaCondition : Prop) : Prop extends
+    (GrowsLawfulGuest GrownGuestReachesThreshold : Prop) : Prop extends
     Substrate U R r K L c₀ c₁ c₂ δ sCodeSize gTS Consistent NSound Delta1Axiomatized InterpretsR0
     where
   /-- the update grows a lawful, affordably-owned guest from every initial state
   ([Guests]'s emergence theorem). -/
   growsLawfulGuest : GrowsLawfulGuest
-  /-- the Witness World's parameter condition on `κ`, for the threshold-crossing clause. -/
-  witnessKappaCondition : WitnessKappaCondition
+  /-- that grown guest reaches Definition 2.1's threshold ([Inevitability] §2 Definition 2.3). -/
+  grownGuestReachesThreshold : GrownGuestReachesThreshold
 
 /-- **`𝒮_L` (the learning route-class).** `Substrate` plus [SQ]'s full named statistical set,
 carried WITHOUT WEAKENING: `realizability` and `windowSufficiency` (carried, uninterpreted —

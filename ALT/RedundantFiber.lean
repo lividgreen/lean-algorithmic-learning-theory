@@ -817,6 +817,56 @@ theorem compFrameFlat_eq_of_exists {n₂ : ℕ} [NeZero P] {S : Fin n₁ → Fin
   rw [frameVerifiers, List.mem_filter, decide_eq_true_eq]
   exact ⟨List.mem_finRange i, hi⟩
 
+/-- **The priced flat carrier is the composite guest's own state space** ([Inevitability] Theorem
+6.6(vi)'s identification, the last residue of clause (vi)): `compFrameFlat`'s generalized decode,
+instantiated at the per-copy space `n₂ := (W + 1) ^ C` with `θ` the fiber-only half of
+`WeightedFiber.argmaxFrame`, agrees with `compPredFrame` on the composite's own carrier — the flat
+`Fin (n₁ * ((W + 1) ^ C) ^ P)` is the population's own `Fin P → WVec C W`, read digitwise by
+`finFunctionFinEquiv` at both levels (per copy, and over the population), exactly as `compPredFrame`
+reads it directly. Neither side's tie-breaking order is observable here: every verifying copy
+decodes to the same value `S x` (`compFrame_eq_of_mem_verifiers`,
+`compPredFrame_eq_of_mem_verifiers`), so the two frames agree without needing `frameVerifiers`'s
+least index and `verifiers`'s `Finset.min'` to be the same copy. -/
+theorem compFrameFlat_eq_compPredFrame [NeZero C] [NeZero P] (S : Fin n₁ → Fin n₁)
+    (dec : Fin C → Fin n₁ → Fin n₁) (x : Fin n₁) (v : Fin P → WVec C W) :
+    compFrameFlat (n₂ := (W + 1) ^ C) S dec
+        (fun q => argmax (raw (finFunctionFinEquiv.symm q)))
+        (finProdFinEquiv (x, finFunctionFinEquiv fun j => finFunctionFinEquiv (v j)))
+      = compPredFrame S dec x v := by
+  set θ : Fin ((W + 1) ^ C) → Fin C := fun q => argmax (raw (finFunctionFinEquiv.symm q)) with hθ
+  have hθv : ∀ j, θ (finFunctionFinEquiv (v j)) = argmax (raw (v j)) := by
+    intro j
+    simp only [hθ, Equiv.symm_apply_apply]
+  have hflat : compFrameFlat (n₂ := (W + 1) ^ C) S dec θ
+      (finProdFinEquiv (x, finFunctionFinEquiv fun j => finFunctionFinEquiv (v j)))
+      = compFrame S dec θ x (fun j => finFunctionFinEquiv (v j)) := by
+    rw [compFrameFlat]
+    simp only [Equiv.symm_apply_apply]
+  rw [hflat, compFrame]
+  by_cases hne : (verifiers S dec x v).Nonempty
+  · obtain ⟨i, hiv⟩ := hne
+    have hif : i ∈ frameVerifiers S dec θ x (fun j => finFunctionFinEquiv (v j)) := by
+      rw [frameVerifiers, List.mem_filter, decide_eq_true_eq]
+      refine ⟨List.mem_finRange i, ?_⟩
+      rw [hθv]
+      simpa only [verifiers, Finset.mem_filter, Finset.mem_univ, true_and] using hiv
+    have hleft : dec (θ ((fun j => finFunctionFinEquiv (v j))
+        ((frameVerifiers S dec θ x (fun j => finFunctionFinEquiv (v j))).getD 0 0))) x = S x := by
+      have := compFrame_eq_of_mem_verifiers (S := S) (dec := dec) hif
+      rwa [compFrame] at this
+    rw [hleft, compPredFrame_eq_of_mem_verifiers hiv]
+  · have heq : verifiers S dec x v = ∅ := Finset.not_nonempty_iff_eq_empty.mp hne
+    have hempty : frameVerifiers S dec θ x (fun j => finFunctionFinEquiv (v j)) = [] := by
+      rw [List.eq_nil_iff_forall_not_mem]
+      intro i hmem
+      rw [frameVerifiers, List.mem_filter, decide_eq_true_eq] at hmem
+      have hiv : i ∈ verifiers S dec x v := by
+        rw [verifiers, Finset.mem_filter]
+        exact ⟨Finset.mem_univ i, hθv i ▸ hmem.2⟩
+      rw [heq] at hiv
+      exact absurd hiv (Finset.notMem_empty i)
+    rw [hempty, List.getD_nil, hθv, compPredFrame, dif_neg hne]
+
 end Composite
 
 /-! ### The decode's price: a bounded search over the population

@@ -76,8 +76,6 @@ import ALT.MDLDominance
 import ALT.RetentionOverhead
 import ALT.PriorNormalization
 import ALT.EpsilonZeroBound
-import ALT.PressureWindow
-import ALT.ExactBreakeven
 import ALT.KReconnection
 import ALT.KolmogorovComplexity
 import ALT.KolmogorovBitlen
@@ -207,6 +205,29 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 /-- info: 'SurpriseBudget.corrects_not_settles' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms SurpriseBudget.corrects_not_settles
+
+-- The joint-dependence mechanism: `Corrects` and `HammingNonexpansive` together force the ω-limit
+-- set to a lone fixed point, whose ball is then exactly the third repair's invariant set, plus the
+-- guard family witnessing where this collapses to nothing.
+/-- info: 'SurpriseBudget.hammingDist_image_lt_of_corrects' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms SurpriseBudget.hammingDist_image_lt_of_corrects
+
+/-- info: 'SurpriseBudget.omegaLimit_subsingleton_of_corrects' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms SurpriseBudget.omegaLimit_subsingleton_of_corrects
+
+/-- info: 'SurpriseBudget.exists_fixedPoint_of_corrects' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms SurpriseBudget.exists_fixedPoint_of_corrects
+
+/-- info: 'SurpriseBudget.survives_of_invariant_of_corrects' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms SurpriseBudget.survives_of_invariant_of_corrects
+
+/-- info: 'SurpriseBudget.joint_dependence_boundary' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms SurpriseBudget.joint_dependence_boundary
 
 -- The weighted fiber: fitness-proportional selection on a frequency-independent likelihood, whose
 -- exact step IS Bayesian update; the carrier projection that a finite host forces; the transported
@@ -620,6 +641,12 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms AdditiveComplexity.kraft_KP_E
 
+-- The object-indexed semimeasure: reindexing `kraft_KP_E` along `x ↦ minCode x` (each value's own
+-- shortest program) turns the program-indexed Kraft sum into one over the naturals themselves.
+/-- info: 'AdditiveComplexity.kraft_KE' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms AdditiveComplexity.kraft_KE
+
 -- The supply side of the incompressibility method: a budget of `L` bits describes at most
 -- `2 ^ (L + 1)` naturals, because distinct values need distinct shortest programs and there are
 -- fewer than `2 ^ (L + 1)` bit-strings of length at most `L`. Choosing a shortest program per value
@@ -838,6 +865,10 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms PersistenceCapacity.KE_lensCode_pairLens_le
 
+/-- info: 'PersistenceCapacity.uniformBudget_pairLens_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PersistenceCapacity.uniformBudget_pairLens_le
+
 /-- info: 'PersistenceCapacity.ledger_graded_paired' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms PersistenceCapacity.ledger_graded_paired
@@ -845,6 +876,10 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 /-- info: 'PersistenceCapacity.ledger_graded_paired_faithful' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms PersistenceCapacity.ledger_graded_paired_faithful
+
+/-- info: 'PersistenceCapacity.uniformBudget_ledger_paired_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PersistenceCapacity.uniformBudget_ledger_paired_le
 
 /-- info: 'PersistenceCapacity.CbH_le_pointwise' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
@@ -921,6 +956,10 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 /-- info: 'PersistenceCapacity.faithful_rule_cost' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms PersistenceCapacity.faithful_rule_cost
+
+/-- info: 'PersistenceCapacity.uniformBudget_faithful_rule_cost_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PersistenceCapacity.uniformBudget_faithful_rule_cost_le
 
 /-- info: 'PersistenceCapacity.prod_fiber_bijective' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
@@ -3524,32 +3563,6 @@ strict subset the guard pins verbatim. -/
 /-- info: 'EpsilonZeroBound.Tdiscover_le_of_separated' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms EpsilonZeroBound.Tdiscover_le_of_separated
-
--- B1a/B1b pressure window (conjectural framing) (`ALT/PressureWindow.lean`): the retention break-even
--- (`breakeven`), the window-as-interval-in-Π reparametrization (`regimeBand_iff_pi_mem`), and the S2
--- dynamical-window capstone (`dynamical_window`).
-/-- info: 'PressureWindow.breakeven' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms PressureWindow.breakeven
-
-/-- info: 'PressureWindow.regimeBand_iff_pi_mem' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms PressureWindow.regimeBand_iff_pi_mem
-
-/-- info: 'PressureWindow.dynamical_window' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms PressureWindow.dynamical_window
-
--- [Discovery] exact-gap retention break-even (`ALT/ExactBreakeven.lean`): the exact dominance gap is
--- strictly positive in the regime (`domGap_pos`) and B1a's break-even at the exact endpoints
--- (`breakeven_exact`).
-/-- info: 'ExactBreakeven.domGap_pos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms ExactBreakeven.domGap_pos
-
-/-- info: 'ExactBreakeven.breakeven_exact' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms ExactBreakeven.breakeven_exact
 
 -- [Discovery] K-reconnection (`ALT/KReconnection.lean`): the five load-bearing MDL-corpus theorems
 -- re-stated at the genuine `r = K(R)` (bit-length Kolmogorov complexity of the rule `R`).

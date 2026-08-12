@@ -301,7 +301,7 @@ gives `ℓ 1 = U • ℓ 0`, matching the fibers. -/
 theorem consistent_card_one {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m} (hcar : PermCarries U ℓ) :
     Nat.card ↥(Consistent ℓ ({1} : Finset ℕ))
       = ∏ i : Fin m, (Nat.card {x : Fin n // ℓ 0 x = i})! := by
-  have h1 : ℓ 1 = U • ℓ 0 := permCarries_frame_one hcar
+  have h1 : ℓ 1 = U • ℓ 0 := permCarries_frame_one hcar.2
   have key : ∀ V : Perm (Fin n), V ∈ Consistent ℓ ({1} : Finset ℕ) ↔
       U⁻¹ * V ∈ stabilizer (Perm (Fin n)) (ℓ 0) := by
     intro V

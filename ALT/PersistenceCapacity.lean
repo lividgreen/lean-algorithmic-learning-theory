@@ -8,9 +8,11 @@ import Mathlib.Data.Finite.Perm
 import Mathlib.Data.List.GetD
 import Mathlib.Data.Nat.Choose.Multinomial
 import Mathlib.Data.Set.Card.Arithmetic
+import Mathlib.GroupTheory.Perm.Fin
 import Mathlib.InformationTheory.Hamming
 import ALT.AdditiveComplexity
 import ALT.BinaryConstant
+import ALT.Collector
 import ALT.Decoupling
 import ALT.GodelInternalization
 
@@ -1833,10 +1835,17 @@ theorem collapse_fraction (ℓ₀ : Fin n → Fin m) (b : ℕ) :
         * ∏ i : Fin m, (Nat.card {x : Fin n // ℓ₀ x = i})!) := by ring
     _ = 2 ^ (b + 1) * n ! := by rw [h2]
 
+/-- **The persistence identity alone** ([Persistence] §7): a family carries `U`'s power through
+frame `t` back to frame `0`, without `PermCarries`'s further requirement that `ℓ 0` be surjective.
+This is everything the graded ledger's own coset argument uses — `permCarries_frame_one` through
+`ledger_graded` read a family only through this identity, never through `ℓ 0`'s surjectivity. -/
+def PermPersists (U : Perm (Fin n)) (ℓ : ℕ → Fin n → Fin m) : Prop :=
+  ∀ t x, ℓ t ((U ^ t) x) = ℓ 0 x
+
 /-- A lens family over a **permutation world** ([Persistence] §7): the world is its own recurrent
 core, so `U^t` is a genuine power and the persistence identity is `ℓ t ∘ U ^ t = ℓ 0`. -/
 def PermCarries (U : Perm (Fin n)) (ℓ : ℕ → Fin n → Fin m) : Prop :=
-  Function.Surjective (ℓ 0) ∧ ∀ t x, ℓ t ((U ^ t) x) = ℓ 0 x
+  Function.Surjective (ℓ 0) ∧ PermPersists U ℓ
 
 /-- Every frame of the family is affordable at budget `b` ([Persistence] §5, per-frame budget). -/
 def PermBudget (ℓ : ℕ → Fin n → Fin m) (b : ℕ) : Prop := ∀ t, KE (lensCode (ℓ t)) ≤ b
@@ -1844,12 +1853,13 @@ def PermBudget (ℓ : ℕ → Fin n → Fin m) (b : ℕ) : Prop := ∀ t, KE (le
 /-- **The ledger over a permutation world** ([Persistence] §6, Theorem 6.1, in the §7 setting): the
 second frame is DETERMINED by the first frame and the world, `ℓ 1 = ℓ 0 ∘ U⁻¹`. No maximality is
 needed here — the world is already invertible — which is why the counting can price `ℓ 1` for every
-family at once. (In the cell-structured setting this is `lens_bijOn_core` and `ledger`.) -/
+family at once. (In the cell-structured setting this is `lens_bijOn_core` and `ledger`.) Only the
+persistence identity is used, not `PermCarries`'s surjectivity. -/
 theorem permCarries_frame_one {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m}
-    (h : PermCarries U ℓ) : ℓ 1 = U • ℓ 0 := by
+    (h : PermPersists U ℓ) : ℓ 1 = U • ℓ 0 := by
   funext x
   rw [smul_lens_apply]
-  have := h.2 1 (U⁻¹ x)
+  have := h 1 (U⁻¹ x)
   simpa using this
 
 /-- **The Collapse Theorem** ([Persistence] §7, Theorem 7.3). For a fixed reference frame `ℓ₀`, the
@@ -1866,7 +1876,7 @@ theorem collapse (ℓ₀ : Fin n → Fin m) (b : ℕ) :
       ≤ 2 ^ (b + 1) * ∏ i : Fin m, (Nat.card {x : Fin n // ℓ₀ x = i})! := by
   refine le_trans (Set.ncard_le_ncard ?_ (Set.toFinite _)) (collapse_count ℓ₀ b)
   rintro U ⟨ℓ, hcar, h0, hbud⟩
-  have h1 : ℓ 1 = U • ℓ₀ := by rw [permCarries_frame_one hcar, h0]
+  have h1 : ℓ 1 = U • ℓ₀ := by rw [permCarries_frame_one hcar.2, h0]
   have hb := hbud 1
   rwa [h1] at hb
 
@@ -1892,7 +1902,7 @@ theorem collapse_generic (ℓ₀ : Fin n → Fin m) (b : ℕ) :
   refine le_trans (Nat.mul_le_mul_right _ (Set.ncard_le_ncard ?_ (Set.toFinite _)))
     (collapse_fraction ℓ₀ b)
   rintro U ⟨ℓ, hcar, h0, hbud⟩
-  have h1 : ℓ 1 = U • ℓ₀ := by rw [permCarries_frame_one hcar, h0]
+  have h1 : ℓ 1 = U • ℓ₀ := by rw [permCarries_frame_one hcar.2, h0]
   have hb := hbud 1
   rwa [h1] at hb
 
@@ -2159,7 +2169,7 @@ theorem CbH_collapse (b d : ℕ) :
   obtain ⟨k, ℓ, hcar, hbud, hval⟩ : CbH U b ∈ BudgetedEntropies U b :=
     Nat.sSup_mem hne (bddAbove_budgetedEntropies U b)
   refine ⟨k, ℓ 0, hcar.1, ?_⟩
-  have h1 : ℓ 1 = U • ℓ 0 := permCarries_frame_one hcar
+  have h1 : ℓ 1 = U • ℓ 0 := permCarries_frame_one hcar.2
   have hb0 := hbud 0
   have hb1 := hbud 1
   rw [h1, show U • ℓ 0 = ℓ 0 ∘ ⇑U⁻¹ from rfl] at hb1
@@ -3052,7 +3062,7 @@ theorem CbHu_collapse (b d : ℕ) :
   obtain ⟨k, ℓ, hcar, hbud, hval⟩ : CbHu U b ∈ UniformBudgetedEntropies U b :=
     Nat.sSup_mem hne (bddAbove_uniformBudgetedEntropies U b)
   refine ⟨k, ℓ 0, hcar.1, ?_⟩
-  have h1 : ℓ 1 = U • ℓ 0 := permCarries_frame_one hcar
+  have h1 : ℓ 1 = U • ℓ 0 := permCarries_frame_one hcar.2
   have hb0 := uniformBudget_early_cost hbud (t := 0) (by norm_num)
   have hb1 := uniformBudget_early_cost hbud (t := 1) (le_refl 1)
   rw [h1, show U • ℓ 0 = ℓ 0 ∘ ⇑U⁻¹ from rfl] at hb1
@@ -3453,9 +3463,9 @@ private theorem digitAt_worldNumeral (hn : 0 < n) (U : Perm (Fin n)) (i : Fin n)
 
 /-- **The world's own table is a valid candidate**: it is bijective (`U` is a permutation) and it
 transports `ℓ₁`'s table to `ℓ₀`'s — `permCarries_frame_one`, read through the encode/decode round
-trip and the base-`n` packing. -/
+trip and the base-`n` packing. Only the persistence identity is used. -/
 private theorem isValid_worldNumeral (hn : 0 < n) {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m}
-    (hcar : PermCarries U ℓ) :
+    (hpers : PermPersists U ℓ) :
     isValid n (lensCode (ℓ 0)) (lensCode (ℓ 1)) (worldNumeral U) := by
   constructor
   · rw [candBijBool_iff]
@@ -3476,7 +3486,7 @@ private theorem isValid_worldNumeral (hn : 0 < n) {U : Perm (Fin n)} {ℓ : ℕ 
       rw [rawTable_lensCode, lensTable]
       exact getD_map_finRange (fun y : Fin n => (ℓ 0 y : ℕ)) ⟨i, hi⟩
     rw [hdig, hget1, hget0]
-    have hstep := hcar.2 1 (⟨i, hi⟩ : Fin n)
+    have hstep := hpers 1 (⟨i, hi⟩ : Fin n)
     rw [pow_one] at hstep
     exact congrArg (fun x : Fin m => (x : ℕ)) hstep
 
@@ -3496,9 +3506,9 @@ private theorem candPerm_apply {n w : ℕ} (hn : 0 < n) (hb : candBijBool n w = 
 /-- **The coset injection**: a valid numeral's candidate permutation, composed with `U⁻¹`, lands in
 `ℓ₀`'s fiber-stabilizer — the matching condition says `ℓ₁ ∘ (candPerm) = ℓ₀`, and
 `permCarries_frame_one` reads `ℓ₁` itself as `ℓ₀ ∘ U⁻¹`, so `U⁻¹ * candPerm` fixes every `ℓ₀`-fiber
-setwise. -/
+setwise. Only the persistence identity is used. -/
 private theorem candPerm_mem_stabilizer {n w : ℕ} (hn : 0 < n) {U : Perm (Fin n)}
-    {ℓ : ℕ → Fin n → Fin m} (hcar : PermCarries U ℓ)
+    {ℓ : ℕ → Fin n → Fin m} (hpers : PermPersists U ℓ)
     (hv : isValid n (lensCode (ℓ 0)) (lensCode (ℓ 1)) w) :
     U⁻¹ * candPerm n w ∈ stabilizer (Perm (Fin n)) (ℓ 0) := by
   rw [mem_stabilizer_lens]
@@ -3521,7 +3531,7 @@ private theorem candPerm_mem_stabilizer {n w : ℕ} (hn : 0 < n) {U : Perm (Fin 
       rw [candPerm_apply hn hb]
     rw [hval] at hspec
     exact Fin.val_injective hspec
-  have h2 : ℓ 1 = ℓ 0 ∘ ⇑U⁻¹ := permCarries_frame_one hcar
+  have h2 : ℓ 1 = ℓ 0 ∘ ⇑U⁻¹ := permCarries_frame_one hpers
   rw [h2] at h1
   simpa using h1
 
@@ -3546,9 +3556,10 @@ private theorem candPerm_injOn {n : ℕ} (hn : 0 < n) (t0 t1 : ℕ) (U : Perm (F
 
 /-- **The graded ledger's coset bound**: the coset that pins `U` down against a reference frame
 `ℓ₀` has size at most `∏ᵢ (fiberᵢ)!` — the count `card_stabilizer_lens` gives Lemma 7.1's
-stabilizer, reached here by injecting every valid candidate numeral into it. -/
+stabilizer, reached here by injecting every valid candidate numeral into it. Only the persistence
+identity is used. -/
 private theorem candList_length_le (hn : 0 < n) {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m}
-    (hcar : PermCarries U ℓ) :
+    (hpers : PermPersists U ℓ) :
     (candList n (lensCode (ℓ 0)) (lensCode (ℓ 1))).length
       ≤ Nat.card ↥(stabilizer (Perm (Fin n)) (ℓ 0)) := by
   classical
@@ -3561,7 +3572,7 @@ private theorem candList_length_le (hn : 0 < n) {U : Perm (Fin n)} {ℓ : ℕ �
     rw [List.mem_toFinset, candList, List.mem_filter, List.mem_range, decide_eq_true_eq] at hw
     exact hw
   set f : ℕ → ↥(stabilizer (Perm (Fin n)) (ℓ 0)) := fun w =>
-    if h : isValid n t0 t1 w then ⟨U⁻¹ * candPerm n w, candPerm_mem_stabilizer hn hcar h⟩
+    if h : isValid n t0 t1 w then ⟨U⁻¹ * candPerm n w, candPerm_mem_stabilizer hn hpers h⟩
     else ⟨1, Subgroup.one_mem _⟩ with hf
   have hcard := Finset.card_le_card_of_injOn f
     (s := (candList n t0 t1).toFinset) (t := Finset.univ)
@@ -3571,9 +3582,9 @@ private theorem candList_length_le (hn : 0 < n) {U : Perm (Fin n)} {ℓ : ℕ �
       rw [Finset.mem_coe] at hw1 hw2
       have h1 := hmem w1 hw1
       have h2 := hmem w2 hw2
-      have hfw1 : f w1 = ⟨U⁻¹ * candPerm n w1, candPerm_mem_stabilizer hn hcar h1.2⟩ :=
+      have hfw1 : f w1 = ⟨U⁻¹ * candPerm n w1, candPerm_mem_stabilizer hn hpers h1.2⟩ :=
         dif_pos h1.2
-      have hfw2 : f w2 = ⟨U⁻¹ * candPerm n w2, candPerm_mem_stabilizer hn hcar h2.2⟩ :=
+      have hfw2 : f w2 = ⟨U⁻¹ * candPerm n w2, candPerm_mem_stabilizer hn hpers h2.2⟩ :=
         dif_pos h2.2
       rw [hfw1, hfw2, Subtype.mk_eq_mk] at heq
       exact candPerm_injOn hn t0 t1 U ⟨h1.1, h1.2⟩ ⟨h2.1, h2.2⟩ heq)
@@ -3586,9 +3597,11 @@ fiber-stabilizer, of size `∏ᵢ (fiberᵢ)!` (`card_stabilizer_lens`): a fixed
 table from the two frame tables plus a coset INDEX, and the index costs `O (Nat.size (∏ᵢ fiberᵢ!))`
 bits — logarithmic in the coset, not linear (the `bconst` loading precedent of
 `KE_markingLens_le`), no genericity, no maximality. `ledger_K` is the case `∏ᵢ (fiberᵢ)! = 1`
-(`ledger_graded_faithful`). -/
+(`ledger_graded_faithful`). Only the persistence identity is used, not `PermCarries`'s surjectivity
+of `ℓ 0` — `ledger_graded_lossy` is where that generality is spent, pricing a lossy guest's own
+reduction to a persistent one. -/
 theorem ledger_graded (hn : 0 < n) {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m}
-    (hcar : PermCarries U ℓ) :
+    (hpers : PermPersists U ℓ) :
     KE (lensCode U) ≤ KE (lensCode (ℓ 0)) + KE (lensCode (ℓ 1))
       + (15 + elen dbl) * Nat.size (∏ i : Fin m, (Nat.card {x : Fin n // ℓ 0 x = i})!)
       + (15 + elen dbl) * Nat.size n
@@ -3596,7 +3609,7 @@ theorem ledger_graded (hn : 0 < n) {U : Perm (Fin n)} {ℓ : ℕ → Fin n → F
   set t0 := lensCode (ℓ 0) with ht0
   set t1 := lensCode (ℓ 1) with ht1
   set N := ∏ i : Fin m, (Nat.card {x : Fin n // ℓ 0 x = i})! with hNdef
-  have hvalid : isValid n t0 t1 (worldNumeral U) := isValid_worldNumeral hn hcar
+  have hvalid : isValid n t0 t1 (worldNumeral U) := isValid_worldNumeral hn hpers
   have hlt : worldNumeral U < n ^ n := worldNumeral_lt hn U
   have hmem : worldNumeral U ∈ candList n t0 t1 := by
     rw [candList, List.mem_filter, List.mem_range, decide_eq_true_eq]
@@ -3605,7 +3618,7 @@ theorem ledger_graded (hn : 0 < n) {U : Perm (Fin n)} {ℓ : ℕ → Fin n → F
   have hlenle : (candList n t0 t1).length ≤ N := by
     rw [hNdef]
     calc (candList n t0 t1).length ≤ Nat.card ↥(stabilizer (Perm (Fin n)) (ℓ 0)) :=
-          candList_length_le hn hcar
+          candList_length_le hn hpers
       _ = N := card_stabilizer_lens (ℓ 0)
   have hidxN : idx < N := lt_of_lt_of_le hidxlt hlenle
   have hgetD : List.getD (candList n t0 t1) idx 0 = worldNumeral U := by
@@ -3667,7 +3680,7 @@ theorem ledger_graded_faithful (hn : 0 < n) {U : Perm (Fin n)} {ℓ : ℕ → Fi
       obtain ⟨x, hx, huniq⟩ := hbij.existsUnique i
       exact Nat.card_eq_one_iff_exists.mpr ⟨⟨x, hx⟩, fun y => Subtype.ext (huniq y y.2)⟩
     rw [hcard]; rfl
-  have hbound := ledger_graded hn hcar
+  have hbound := ledger_graded hn hcar.2
   rw [hone] at hbound
   simp only [Nat.size_one, Nat.mul_one] at hbound
   omega
@@ -4865,6 +4878,141 @@ theorem KE_lensCode_pairLens_le (ℓ₀ ℓ₁ : Fin n → Fin m) :
   rw [pairZipConst]
   omega
 
+/-! ## The paired table from one uniform code ([Persistence] §7, the v13 sharpening)
+
+A `UniformBudget` witness `c` is a *single* program computing every frame's table from its clock
+input, not two independent per-frame descriptions. Reading `c` off at `t = 0` and `t = 1` separately
+and zipping the results (`KE_lensCode_pairLens_le`'s route) embeds `c` *twice* — once per frame —
+and pays `2 · elen c`. `pairFromUniformCode` below embeds `c` exactly *once*: it is a fixed two-step
+primitive-recursive iterator whose step calls `c` on the recursion's own index (`comp c projIdx`)
+rather than on a hardcoded clock constant, so the same subterm is *run* twice at evaluation time
+without being *written* twice in the assembled program. This is `Collector.lean`'s `collector`/
+`stepWrap` template (`elen (collector cR) = elen cR + 60`, paid once regardless of how many times
+the rule iterates) specialized to exactly two calls at the recursion index rather than at the
+accumulated state. -/
+
+/-- Extracts the recursion index `n` from a `prec`-step input `Nat.pair a (Nat.pair n prev)` — the
+companion projection to `AdditiveComplexity.projIH` (which extracts `prev`). -/
+def projIdx : Code := comp left right
+
+theorem eval_projIdx (a n prev : ℕ) :
+    eval projIdx (Nat.pair a (Nat.pair n prev)) = Part.some n := by
+  rw [projIdx, eval_comp_some (eval_right' _), eval_left']
+  simp
+
+theorem elen_projIdx : elen projIdx = 9 := by decide
+
+/-- **The step function**: pairs the accumulator so far with `c` run at the current recursion index.
+`c` occurs exactly once, composed with `projIdx` rather than hardcoded to a clock value. -/
+def pairStep (c : Code) : Code := pair projIH (comp c projIdx)
+
+theorem eval_pairStep {c : Code} {v : ℕ → ℕ} (hc : ∀ t, eval c t = Part.some (v t))
+    (a n prev : ℕ) :
+    eval (pairStep c) (Nat.pair a (Nat.pair n prev)) = Part.some (Nat.pair prev (v n)) := by
+  have h1 : eval projIH (Nat.pair a (Nat.pair n prev)) = Part.some prev := eval_projIH a n prev
+  have h2 : eval (comp c projIdx) (Nat.pair a (Nat.pair n prev)) = Part.some (v n) := by
+    rw [eval_comp_some (eval_projIdx a n prev), hc]
+  change Nat.pair <$> eval projIH _ <*> eval (comp c projIdx) _ = _
+  rw [h1, h2]
+  simp [Seq.seq]
+
+theorem elen_pairStep (c : Code) : elen (pairStep c) = elen c + 24 := by
+  rw [pairStep, E_len_pair, E_len_comp, elen_projIH, elen_projIdx]
+  omega
+
+/-- **The fixed two-step iterator**: primitive recursion with base `zero` and step `pairStep c`.
+`elen (pairFromCode c) = elen c + 30` (`elen_pairFromCode`) — a fixed constant plus `c`, paid once
+regardless of the two calls the recursion makes. -/
+def pairFromCode (c : Code) : Code := prec Code.zero (pairStep c)
+
+/-- The accumulator `pairFromCode` builds: `pairAcc v 0 = 0`,
+`pairAcc v (k+1) = (pairAcc v k, v k)`. Mirrors `Collector.orbitAcc`'s shape. -/
+def pairAcc (v : ℕ → ℕ) : ℕ → ℕ
+  | 0 => 0
+  | k + 1 => Nat.pair (pairAcc v k) (v k)
+
+theorem eval_pairFromCode {c : Code} {v : ℕ → ℕ} (hc : ∀ t, eval c t = Part.some (v t))
+    (a k : ℕ) : eval (pairFromCode c) (Nat.pair a k) = Part.some (pairAcc v k) := by
+  induction k with
+  | zero => rw [pairFromCode, eval_prec_zero]; rfl
+  | succ j ih =>
+    rw [pairFromCode, eval_prec_succ]
+    rw [show pairFromCode c = Code.zero.prec (pairStep c) from rfl] at ih
+    rw [ih]
+    rw [show (Part.some (pairAcc v j)) >>= (fun i => eval (pairStep c) (Nat.pair a (Nat.pair j i)))
+        = eval (pairStep c) (Nat.pair a (Nat.pair j (pairAcc v j))) from Part.bind_some _ _]
+    rw [eval_pairStep hc a j (pairAcc v j)]
+    rfl
+
+theorem elen_pairFromCode (c : Code) : elen (pairFromCode c) = elen c + 30 := by
+  rw [pairFromCode, E_len_prec, elen_pairStep]
+  have hz : elen (Code.zero) = 3 := rfl
+  omega
+
+/-- **Extraction**: unwinds `pairFromCode`'s two-step accumulator `((0, x), y)` into `(x, y)`. -/
+def pairExtract : Code := pair (comp right left) right
+
+theorem eval_pairExtract (x y : ℕ) :
+    eval pairExtract (Nat.pair (Nat.pair 0 x) y) = Part.some (Nat.pair x y) := by
+  have h1 : eval (comp right left) (Nat.pair (Nat.pair 0 x) y) = Part.some x := by
+    rw [eval_comp_some (eval_left' _), eval_right']
+    simp
+  have h2 : eval right (Nat.pair (Nat.pair 0 x) y) = Part.some y := by rw [eval_right']; simp
+  change Nat.pair <$> eval (comp right left) _ <*> eval right _ = _
+  rw [h1, h2]
+  simp [Seq.seq]
+
+theorem elen_pairExtract : elen pairExtract = 15 := by decide
+
+/-- **A uniformly-budgeted family's first two frames, read as one paired code**: `c` embedded
+exactly once, run at the fixed two-step iterator's own recursion index, then unwound. -/
+noncomputable def pairFromUniformCode (c : Code) : Code :=
+  comp pairExtract (comp (pairFromCode c) (pair Code.zero (bconst 2)))
+
+theorem eval_pairFromUniformCode {c : Code} {v : ℕ → ℕ} (hc : ∀ t, eval c t = Part.some (v t)) :
+    eval (pairFromUniformCode c) 0 = Part.some (Nat.pair (v 0) (v 1)) := by
+  have hin : eval (pair Code.zero (bconst 2)) 0 = Part.some (Nat.pair 0 2) := by
+    have hz : eval (Code.zero) (0 : ℕ) = Part.some 0 := rfl
+    change Nat.pair <$> eval Code.zero 0 <*> eval (bconst 2) 0 = _
+    rw [hz, eval_bconst]; simp [Seq.seq]
+  have hacc : pairAcc v 2 = Nat.pair (Nat.pair 0 (v 0)) (v 1) := rfl
+  have hmid : eval (pairFromCode c) (Nat.pair 0 2)
+      = Part.some (Nat.pair (Nat.pair 0 (v 0)) (v 1)) := by
+    rw [eval_pairFromCode hc 0 2, hacc]
+  have hcomp2 : eval (comp (pairFromCode c) (pair Code.zero (bconst 2))) 0
+      = Part.some (Nat.pair (Nat.pair 0 (v 0)) (v 1)) := by
+    rw [eval_comp_some hin, hmid]
+  rw [pairFromUniformCode, eval_comp_some hcomp2, eval_pairExtract]
+
+theorem elen_pairFromUniformCode (c : Code) :
+    elen (pairFromUniformCode c) = elen c + (57 + elen (bconst 2)) := by
+  rw [pairFromUniformCode, E_len_comp, E_len_comp, E_len_pair, elen_pairFromCode, elen_pairExtract]
+  have hz : elen (Code.zero) = 3 := rfl
+  omega
+
+/-- **Target A — the paired table costs one budget, not two.** From a `UniformBudget` witness of
+length at most `b`, the paired frame of frames `0` and `1` is computable at `b` plus an absolute
+constant — coefficient `1` on `b`, not the `2` that reading the two frames off separately and
+zipping them (`KE_lensCode_pairLens_le`) would pay. The clock inputs are constants (`t = 0, 1`), so
+`bconst 2`'s own cost is the only variable term, and it is bounded by `Nat.size 2 = 2`, an absolute
+numeral. -/
+theorem uniformBudget_pairLens_le {ℓ : ℕ → Fin n → Fin m} {b : ℕ} (h : UniformBudget ℓ b) :
+    KE (lensCode (pairLens (ℓ 0) (ℓ 1)))
+      ≤ b + (57 + 3 * (15 + elen dbl) + elen zipBuilder + 6) := by
+  obtain ⟨c, hlen, heval⟩ := h
+  have hcomp : Computes (comp zipBuilder (pairFromUniformCode c))
+      (lensCode (pairLens (ℓ 0) (ℓ 1))) := by
+    change eval (comp zipBuilder (pairFromUniformCode c)) 0 = _
+    rw [eval_comp_some (eval_pairFromUniformCode heval), eval_zipBuilder, zipTableFn_eq]
+  have hle := KE_le hcomp
+  rw [E_len_comp, elen_pairFromUniformCode] at hle
+  have hb2 : elen (bconst 2) ≤ 3 * (15 + elen dbl) := by
+    have := elen_bconst_le 2
+    have hs : Nat.size 2 = 2 := rfl
+    rw [hs] at this
+    omega
+  omega
+
 /-! ### Remark 6.6's display: the frame term at one address -/
 
 /-- Recovering the first frame's table from a zipped one: `Nat.unpair` applied entrywise. -/
@@ -4969,14 +5117,17 @@ private theorem eval_pairedGradedBuilder (a : ℕ) :
 paired frame code, and the coset index, three loaded pieces against `ledger_graded`'s four. -/
 noncomputable def pairedLedgerConst : ℕ := elen pairedGradedBuilder + 2 * (15 + elen dbl) + 15
 
-/-- **The graded ledger, at the paired frame** ([Persistence] §6, Remark 6.6): Theorem 6.4's own
-decoder, unzipping the paired frame's table before running `ledger_graded`'s search, so the frame
-term occurs ONCE — `KE (lensCode (pairLens (ℓ 0) (ℓ 1)))` rather than the two separate frame prices
-`ledger_graded` charges. Everything upstream of the code assembly — the coset argument, the world's
-own numeral as a valid candidate, the index bound by the coset size — is `ledger_graded`'s own,
-unchanged; only where the candidate table's two halves come from differs. -/
-theorem ledger_graded_paired (hn : 0 < n) {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m}
-    (hcar : PermCarries U ℓ) :
+/-- **The graded ledger, at the paired frame, from the persistence identity alone** ([Persistence]
+§6, Remark 6.6): the `PermPersists`-only base `ledger_graded_paired` corollaries from, exactly as
+`ledger_graded` is the base `ledger_graded_lossy` reduces to — the coset argument below never reads
+`ℓ 0`'s surjectivity, only its persistence. Theorem 6.4's own decoder, unzipping the paired frame's
+table before running `ledger_graded`'s search, so the frame term occurs ONCE —
+`KE (lensCode (pairLens (ℓ 0) (ℓ 1)))` rather than the two separate frame prices `ledger_graded`
+charges. Everything upstream of the code assembly — the coset argument, the world's own numeral as a
+valid candidate, the index bound by the coset size — is `ledger_graded`'s own, unchanged; only where
+the candidate table's two halves come from differs. -/
+private theorem ledger_graded_paired_persists (hn : 0 < n) {U : Perm (Fin n)}
+    {ℓ : ℕ → Fin n → Fin m} (hpers : PermPersists U ℓ) :
     KE (lensCode U) ≤ KE (lensCode (pairLens (ℓ 0) (ℓ 1)))
       + (15 + elen dbl) * Nat.size (∏ i : Fin m, (Nat.card {x : Fin n // ℓ 0 x = i})!)
       + (15 + elen dbl) * Nat.size n
@@ -4984,7 +5135,7 @@ theorem ledger_graded_paired (hn : 0 < n) {U : Perm (Fin n)} {ℓ : ℕ → Fin 
   set t0 := lensCode (ℓ 0) with ht0
   set t1 := lensCode (ℓ 1) with ht1
   set N := ∏ i : Fin m, (Nat.card {x : Fin n // ℓ 0 x = i})! with hNdef
-  have hvalid : isValid n t0 t1 (worldNumeral U) := isValid_worldNumeral hn hcar
+  have hvalid : isValid n t0 t1 (worldNumeral U) := isValid_worldNumeral hn hpers
   have hlt : worldNumeral U < n ^ n := worldNumeral_lt hn U
   have hmem : worldNumeral U ∈ candList n t0 t1 := by
     rw [candList, List.mem_filter, List.mem_range, decide_eq_true_eq]
@@ -4993,7 +5144,7 @@ theorem ledger_graded_paired (hn : 0 < n) {U : Perm (Fin n)} {ℓ : ℕ → Fin 
   have hlenle : (candList n t0 t1).length ≤ N := by
     rw [hNdef]
     calc (candList n t0 t1).length ≤ Nat.card ↥(stabilizer (Perm (Fin n)) (ℓ 0)) :=
-          candList_length_le hn hcar
+          candList_length_le hn hpers
       _ = N := card_stabilizer_lens (ℓ 0)
   have hidxN : idx < N := lt_of_lt_of_le hidxlt hlenle
   have hgetD : List.getD (candList n t0 t1) idx 0 = worldNumeral U := by
@@ -5039,6 +5190,19 @@ theorem ledger_graded_paired (hn : 0 < n) {U : Perm (Fin n)} {ℓ : ℕ → Fin 
   rw [pairedLedgerConst]
   omega
 
+/-- **The graded ledger, at the paired frame** ([Persistence] §6, Remark 6.6): Theorem 6.4's own
+decoder, unzipping the paired frame's table before running `ledger_graded`'s search, so the frame
+term occurs ONCE — `KE (lensCode (pairLens (ℓ 0) (ℓ 1)))` rather than the two separate frame prices
+`ledger_graded` charges. A corollary of `ledger_graded_paired_persists`, whose own coset argument
+never reads `PermCarries`'s surjectivity of `ℓ 0` — only the persistence identity `hcar.2`. -/
+theorem ledger_graded_paired (hn : 0 < n) {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m}
+    (hcar : PermCarries U ℓ) :
+    KE (lensCode U) ≤ KE (lensCode (pairLens (ℓ 0) (ℓ 1)))
+      + (15 + elen dbl) * Nat.size (∏ i : Fin m, (Nat.card {x : Fin n // ℓ 0 x = i})!)
+      + (15 + elen dbl) * Nat.size n
+      + pairedLedgerConst :=
+  ledger_graded_paired_persists hn hcar.2
+
 /-- **Non-vacuity: the paired ledger recovers the maximal ledger's shape.** At singleton fibres
 (`ℓ 0` bijective) the coset is trivial, exactly as in `ledger_graded_faithful`, and the paired bound
 collapses the same way — with the frame term paid once. -/
@@ -5056,6 +5220,24 @@ theorem ledger_graded_paired_faithful (hn : 0 < n) {U : Perm (Fin n)} {ℓ : ℕ
   have hbound := ledger_graded_paired hn hcar
   rw [hone] at hbound
   simp only [Nat.size_one, Nat.mul_one] at hbound
+  omega
+
+/-- **Target C — the general paired uniform cap.** `ledger_graded_paired_faithful` without the
+bijectivity hypothesis: for *any* family carried at a uniform budget `b`, the world's table costs
+one budget plus its own fibre defect — `KE (lensCode U) ≤ b + O (log n) + κ · Nat.size (∏ fiber!)`,
+the coefficient-`1` reading of `ledger_graded_paired` once Target A supplies its frame term. The
+fibre-product term is the same "defect" `ledger_graded_paired` already charges a non-faithful
+reading, here run through Target A's cheaper frame term rather than two separate frame codes.
+`ledger_graded_paired_faithful` (Target B) is the singleton-fibre special case, where the defect
+term vanishes; `CbHu_collapse` stays beside both, unsuperseded — it bounds the FRACTION of worlds
+exceeding a threshold across every reference frame at once, a statement this one does not make. -/
+theorem uniformBudget_ledger_paired_le (hn : 0 < n) {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m}
+    {b : ℕ} (hcar : PermCarries U ℓ) (hbud : UniformBudget ℓ b) :
+    KE (lensCode U) ≤ b + (15 + elen dbl) * Nat.size n
+      + (15 + elen dbl) * Nat.size (∏ i : Fin m, (Nat.card {x : Fin n // ℓ 0 x = i})!)
+      + (63 + 3 * (15 + elen dbl) + elen zipBuilder + pairedLedgerConst) := by
+  have hA := uniformBudget_pairLens_le hbud
+  have hB := ledger_graded_paired hn hcar
   omega
 
 /-- **The graded ledger's capstone**: at the family attaining `C_b^H (U)`, the coset's complementary
@@ -5080,7 +5262,7 @@ theorem CbH_le_pointwise (hn : 0 < n) (U : Perm (Fin n)) (b : ℕ)
     Nat.sSup_mem hne (bddAbove_budgetedEntropies U b)
   refine ⟨∏ i : Fin k, (Nat.card {x : Fin n // ℓ 0 x = i})!, ?_, ?_⟩
   · rw [hval]; exact card_orbit_mul_prod_fiber (ℓ 0)
-  · have hbound := ledger_graded hn hcar
+  · have hbound := ledger_graded hn hcar.2
     have hb0 := hbud 0
     have hb1 := hbud 1
     omega
@@ -5588,7 +5770,7 @@ theorem invcomp_permFrames {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m}
     invcomp (Nat.pair (lensCode (ℓ 0)) (lensCode (ℓ 1))) = lensCode ⇑U := by
   set f₀ : Fin n → ℕ := fun i => ((ℓ 0 i : Fin m) : ℕ) with hf₀
   set f₁ : Fin n → ℕ := fun i => ((ℓ 1 i : Fin m) : ℕ) with hf₁
-  have h1 : ℓ 1 = ℓ 0 ∘ ⇑U⁻¹ := permCarries_frame_one hcar
+  have h1 : ℓ 1 = ℓ 0 ∘ ⇑U⁻¹ := permCarries_frame_one hcar.2
   have hinj₁ : Function.Injective f₁ := by
     rw [hf₁]
     intro i j hij
@@ -5648,6 +5830,23 @@ theorem faithful_rule_cost {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m} {b
     have hs : Nat.size 1 = 1 := rfl
     rw [hs] at this
     omega
+  omega
+
+/-- **Target B — the faithful extraction at coefficient one.** For a faithful family carried by a
+*uniform* budget `b` (`faithful_rule_cost`'s own hypotheses), the world's table costs one budget —
+`KE (lensCode ⇑U) ≤ b + O (log n)`, not `faithful_rule_cost`'s `2 * b`. The route is Target A
+(`uniformBudget_pairLens_le`) feeding `ledger_graded_paired_faithful`: at a faithful reference frame
+the coset term collapses (singleton fibres, `∏ fiber! = 1`), so nothing beyond
+`ledger_graded_paired_faithful`'s own `Nat.size n` term survives. `faithful_rule_cost` stays beside
+it, unsuperseded — its `2 * b` is the icode/invcomp route's own shadow, worth keeping for its
+smaller, `n`-free constant. -/
+theorem uniformBudget_faithful_rule_cost_le (hn : 0 < n) {U : Perm (Fin n)}
+    {ℓ : ℕ → Fin n → Fin m} {b : ℕ} (hcar : PermCarries U ℓ) (hbij : Function.Bijective (ℓ 0))
+    (hbud : UniformBudget ℓ b) :
+    KE (lensCode ⇑U) ≤ b + (15 + elen dbl) * Nat.size n
+      + (63 + 4 * (15 + elen dbl) + elen zipBuilder + pairedLedgerConst) := by
+  have hA := uniformBudget_pairLens_le hbud
+  have hB := ledger_graded_paired_faithful hn hcar hbij
   omega
 
 /-- A **faithful** frame's fibres are singletons, so the fibre product of the orbit–stabilizer count
@@ -6035,6 +6234,39 @@ private theorem unionWorld_pow_right {n₁ n₂ : ℕ} (U₁ : Perm (Fin n₁)) 
   induction t generalizing j with
   | zero => simp
   | succ t ih => rw [pow_succ, pow_succ]; simp [Equiv.Perm.mul_apply, ih]
+
+/-- The inverse of a union world moving only the second block fixes the first, by injectivity of
+the forward map (`unionWorld_left` reads block one as `1`, which is `id`). -/
+private theorem unionWorld_inv_left {n₁ n₂ : ℕ} (U₂ : Perm (Fin n₂)) (i : Fin n₁) :
+    (unionWorld (1 : Perm (Fin n₁)) U₂)⁻¹ (Fin.castAdd n₂ i) = Fin.castAdd n₂ i := by
+  apply (unionWorld (1 : Perm (Fin n₁)) U₂).injective
+  simp
+
+/-- The inverse of a union world moving only the second block acts there as `U₂⁻¹`. -/
+private theorem unionWorld_inv_right {n₁ n₂ : ℕ} (U₂ : Perm (Fin n₂)) (j : Fin n₂) :
+    (unionWorld (1 : Perm (Fin n₁)) U₂)⁻¹ (Fin.natAdd n₁ j) = Fin.natAdd n₁ (U₂⁻¹ j) := by
+  apply (unionWorld (1 : Perm (Fin n₁)) U₂).injective
+  simp
+
+/-- Every power of that inverse still fixes the first block, same induction as
+`unionWorld_pow_left`. -/
+private theorem unionWorld_invPow_left {n₁ n₂ : ℕ} (U₂ : Perm (Fin n₂)) (t : ℕ) (i : Fin n₁) :
+    ((unionWorld (1 : Perm (Fin n₁)) U₂)⁻¹ ^ t) (Fin.castAdd n₂ i) = Fin.castAdd n₂ i := by
+  induction t generalizing i with
+  | zero => simp
+  | succ t ih =>
+      rw [pow_succ, Equiv.Perm.mul_apply, unionWorld_inv_left]
+      exact ih i
+
+/-- Every power of that inverse acts on the second block as the corresponding power of `U₂⁻¹`. -/
+private theorem unionWorld_invPow_right {n₁ n₂ : ℕ} (U₂ : Perm (Fin n₂)) (t : ℕ) (j : Fin n₂) :
+    ((unionWorld (1 : Perm (Fin n₁)) U₂)⁻¹ ^ t) (Fin.natAdd n₁ j)
+      = Fin.natAdd n₁ ((U₂⁻¹ ^ t) j) := by
+  induction t generalizing j with
+  | zero => simp
+  | succ t ih =>
+      rw [pow_succ, pow_succ, Equiv.Perm.mul_apply, Equiv.Perm.mul_apply, unionWorld_inv_right]
+      exact ih _
 
 /-- **Two tables, concatenated with the second block's entries shifted.** The shared shape of both
 builders below: for the world the shift is the first table's own length, for a lens it is the first
@@ -6565,7 +6797,7 @@ endofunction; `PermCarries` is it over a permutation world, with the iterate `U^
 group power `U ^ t`. -/
 theorem permCarries_iff_carries {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m} :
     PermCarries U ℓ ↔ Carries (⇑U) ℓ := by
-  simp only [PermCarries, Carries, Equiv.Perm.coe_pow]
+  simp only [PermCarries, PermPersists, Carries, Equiv.Perm.coe_pow]
 
 /-- **A permutation world is its own recurrent core** ([Persistence] §7's standing simplification,
 proved rather than assumed): nothing is transient when nothing is irreversible. -/
@@ -7215,7 +7447,7 @@ theorem intertwines_iterate_one {U : X → X} {F : M → M} {ℓ : ℕ → X →
 
 /-- **Telescoping**: `t` steps of the world, read through frame `t`, are `t` steps of the law
 applied to frame zero's reading. The square is a *local* statement; this is its global content. -/
-private theorem Intertwines.iterate {U : X → X} {F : M → M} {ℓ : ℕ → X → M}
+theorem Intertwines.iterate {U : X → X} {F : M → M} {ℓ : ℕ → X → M}
     (h : Intertwines U F ℓ) : ∀ t s, ℓ t (U^[t] s) = F^[t] (ℓ 0 s) := by
   intro t
   induction t with
@@ -7247,6 +7479,1313 @@ theorem Intertwines.anchored {U : X → X} {ℓ : ℕ → X → M} (h : Intertwi
     ∀ t s, ℓ t (U^[t] s) = ℓ 0 s := by
   intro t s
   simpa using h.iterate t s
+
+/-! ### The reversible-host dichotomy ([Guests] §2 Definition 2.2, Remark 2.4(a))
+
+Over a reversible host `(X, e)` — `e : X ≃ X` a bijection — the intertwining square admits no
+off-core region at all, so lossiness in the guest law has exactly one escape: the reading must
+*move*. A time-independent reading forces the guest law bijective outright
+(`Intertwines.fixed_bijective`), while a moving reading realizes every law whatever, uniquely from
+its own initial frame (`intertwines_realize`, `Intertwines.closed_form`). A time-indexed factor map
+is therefore not a generalization for its own sake: it is what makes a lossy guest of a reversible
+host possible at all. -/
+
+/-- **Realization** ([Guests] §2 Definition 2.2, Remark 2.4(a)): over a reversible host, running a
+guest law `F` forward and the host's inverse backward in lockstep — `ℓₜ = F^[t] ∘ ℓ₀ ∘ (e.symm)^[t]`
+— intertwines `e` with `F`, for ANY law `F` and any initial frame `ℓ₀`. Surjectivity of `ℓ₀` is
+deliberately not assumed here — it is not a hypothesis of the square — but it transfers to make the
+family a reading in the sense of Definition 2.2, since the family's own frame zero is `ℓ₀` by `rfl`.
+-/
+theorem intertwines_realize (e : X ≃ X) (F : M → M) (ℓ₀ : X → M) :
+    Intertwines (⇑e) F (fun t => F^[t] ∘ ℓ₀ ∘ (⇑e.symm)^[t]) := by
+  intro t s
+  simp only [Function.comp_apply]
+  rw [Function.iterate_succ_apply (⇑e.symm), e.symm_apply_apply, Function.iterate_succ_apply' F]
+
+set_option linter.style.longLine false in
+/-- info: 'PersistenceCapacity.intertwines_realize' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms intertwines_realize
+
+/-- **The closed form** ([Guests] §2 Definition 2.2, Remark 2.4(a)), which subsumes uniqueness: over
+a reversible host, EVERY intertwining family is the one `intertwines_realize` builds from its own
+initial frame. Two families intertwining the same `e` with the same `F` and sharing `ℓ 0` therefore
+agree at every frame — there is no second reading with that data. -/
+theorem Intertwines.closed_form {e : X ≃ X} {F : M → M} {ℓ : ℕ → X → M}
+    (h : Intertwines (⇑e) F ℓ) :
+    ∀ t, ℓ t = fun x => F^[t] (ℓ 0 ((⇑e.symm)^[t] x)) := by
+  intro t
+  induction t with
+  | zero => simp
+  | succ t ih =>
+      funext x
+      have hx := h t (e.symm x)
+      rw [e.apply_symm_apply] at hx
+      rw [hx, congrFun ih (e.symm x), ← Function.iterate_succ_apply' F,
+        ← Function.iterate_succ_apply (⇑e.symm)]
+
+set_option linter.style.longLine false in
+/-- info: 'PersistenceCapacity.Intertwines.closed_form' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms Intertwines.closed_form
+
+/-- **The fixed-lens converse** ([Guests] §2 Definition 2.2, Remark 2.4(a)): a time-independent
+reading forces the guest law bijective, so no fixed lens sees a lossy guest of a reversible host —
+`intertwines_realize`'s moving lens is not an artifact of the construction but the only way to own a
+lossy law at all. The host need only be surjective, not reversible outright: surjectivity of `U` and
+of the shared frame `ℓ₀` is all the argument uses. -/
+theorem Intertwines.fixed_bijective [Finite M] {U : X → X} {F : M → M} {ℓ₀ : X → M}
+    (hU : Function.Surjective U) (hℓ₀ : Function.Surjective ℓ₀)
+    (h : Intertwines U F (fun _ => ℓ₀)) :
+    Function.Bijective F := by
+  have hFsurj : Function.Surjective F := by
+    intro m
+    obtain ⟨x, hx⟩ := hℓ₀ m
+    obtain ⟨s, hs⟩ := hU x
+    refine ⟨ℓ₀ s, ?_⟩
+    have heq : ℓ₀ (U s) = F (ℓ₀ s) := h 0 s
+    rw [hs, hx] at heq
+    exact heq.symm
+  exact ⟨Finite.injective_iff_surjective.mpr hFsurj, hFsurj⟩
+
+set_option linter.style.longLine false in
+/-- info: 'PersistenceCapacity.Intertwines.fixed_bijective' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms Intertwines.fixed_bijective
+
+/-! ### The lossy ledger ([Guests] §2 Remark 2.4(a); [Persistence] §8.2)
+
+The coset argument behind `ledger_graded` only ever reads the world through a reference frame and
+its own one-step image; it never uses that the family is itself persistent. So a lossy guest law
+`F` running behind a persistent family `ℓ` — `Intertwines (⇑U) F ℓ` — is priced the same way, once
+`F ∘ ℓ 0` stands in as the reference frame: `(F ∘ ℓ 0, ℓ 1)` is exactly the pair `ledger_graded`
+wants, read off the square at `t = 0`. A second, purely combinatorial fact turns the guest's own
+settling depth into a resolution bound on the same currency: an image chain that strictly
+decreases for `d` steps starting at `Set.range F` forces `Set.range F` to carry at least `d`
+elements, since each step drops the count by at least one and the chain's last term is
+non-empty. -/
+
+/-- **The lossy ledger** ([Guests] §2 Remark 2.4(a); [Persistence] §8.2, the dynamical reading): a
+lossy guest law `F` running behind a persistent family `ℓ` is priced exactly as `ledger_graded`
+prices a persistent family's own two frames, with `F ∘ ℓ 0` as the reference frame — the coset term
+runs over `F ∘ ℓ 0`'s fibres rather than `ℓ 0`'s.
+
+A reduction, not a new count. Put `g := F ∘ ℓ 0` and `ℓ' t := g ∘ (⇑U⁻¹)^[t]`: `ℓ'` persists `U`
+(unwinding the host's inverse against its own power recovers `g`), `ℓ' 0 = g` by definition, and
+`ℓ' 1 = ℓ 1` by the square read at `t = 0`. `ledger_graded` applied to `ℓ'` then prices `U` from
+exactly the pair `(g, ℓ 1)`. -/
+theorem ledger_graded_lossy (hn : 0 < n) {U : Perm (Fin n)} {F : Fin m → Fin m}
+    {ℓ : ℕ → Fin n → Fin m} (h : Intertwines (⇑U) F ℓ) :
+    KE (lensCode U) ≤ KE (lensCode (F ∘ ℓ 0)) + KE (lensCode (ℓ 1))
+      + (15 + elen dbl) * Nat.size (∏ i : Fin m, (Nat.card {x : Fin n // (F ∘ ℓ 0) x = i})!)
+      + (15 + elen dbl) * Nat.size n
+      + (elen gradedBuilder + 2 * (15 + elen dbl) + 39) := by
+  set g : Fin n → Fin m := F ∘ ℓ 0 with hgdef
+  set ℓ' : ℕ → Fin n → Fin m := fun t => g ∘ (⇑U⁻¹)^[t] with hℓ'def
+  have hpers : PermPersists U ℓ' := by
+    intro t x
+    have hinv : (⇑U⁻¹)^[t] ((U ^ t) x) = x := by
+      rw [← Equiv.Perm.coe_pow, inv_pow]
+      exact (U ^ t).symm_apply_apply x
+    simp only [hℓ'def, Function.comp_apply, hinv, Function.iterate_zero_apply]
+  have h0 : ℓ' 0 = g := by simp [hℓ'def]
+  have h1 : ℓ' 1 = ℓ 1 := by
+    funext x
+    have hux : (U : Fin n → Fin n) (U⁻¹ x) = x := U.apply_symm_apply x
+    have hstep := h 0 (U⁻¹ x)
+    rw [hux] at hstep
+    simp only [hℓ'def, Function.comp_apply, Function.iterate_one, hgdef]
+    exact hstep.symm
+  have hbound := ledger_graded hn hpers
+  rwa [h0, h1] at hbound
+
+set_option linter.style.longLine false in
+/-- info: 'PersistenceCapacity.ledger_graded_lossy' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms ledger_graded_lossy
+
+/-- **The lossy ledger, at the paired frame** ([Guests] §4, Law 1's sketch; [Persistence] §6,
+Remark 6.6): the guest's first two frames extend to a persistent family whose reference lens is
+`F ∘ ℓ 0` and whose second frame is `ℓ 1`, and the paired ledger prices the host from those two
+frames read as ONE paired table — `KE (lensCode (pairLens (F ∘ ℓ 0) (ℓ 1)))` rather than the two
+separate frame prices `ledger_graded_lossy` charges. The same reduction `ledger_graded_lossy`
+performs, landing on `ledger_graded_paired_persists` instead of `ledger_graded`: put
+`g := F ∘ ℓ 0` and `ℓ' t := g ∘ (⇑U⁻¹)^[t]`, whose persistence identity and first two frames are
+exactly `ledger_graded_lossy`'s own. -/
+theorem ledger_graded_paired_lossy (hn : 0 < n) {U : Perm (Fin n)} {F : Fin m → Fin m}
+    {ℓ : ℕ → Fin n → Fin m} (h : Intertwines (⇑U) F ℓ) :
+    KE (lensCode U) ≤ KE (lensCode (pairLens (F ∘ ℓ 0) (ℓ 1)))
+      + (15 + elen dbl) * Nat.size (∏ i : Fin m, (Nat.card {x : Fin n // (F ∘ ℓ 0) x = i})!)
+      + (15 + elen dbl) * Nat.size n
+      + pairedLedgerConst := by
+  set g : Fin n → Fin m := F ∘ ℓ 0 with hgdef
+  set ℓ' : ℕ → Fin n → Fin m := fun t => g ∘ (⇑U⁻¹)^[t] with hℓ'def
+  have hpers : PermPersists U ℓ' := by
+    intro t x
+    have hinv : (⇑U⁻¹)^[t] ((U ^ t) x) = x := by
+      rw [← Equiv.Perm.coe_pow, inv_pow]
+      exact (U ^ t).symm_apply_apply x
+    simp only [hℓ'def, Function.comp_apply, hinv, Function.iterate_zero_apply]
+  have h0 : ℓ' 0 = g := by simp [hℓ'def]
+  have h1 : ℓ' 1 = ℓ 1 := by
+    funext x
+    have hux : (U : Fin n → Fin n) (U⁻¹ x) = x := U.apply_symm_apply x
+    have hstep := h 0 (U⁻¹ x)
+    rw [hux] at hstep
+    simp only [hℓ'def, Function.comp_apply, Function.iterate_one, hgdef]
+    exact hstep.symm
+  have hbound := ledger_graded_paired_persists hn hpers
+  rwa [h0, h1] at hbound
+
+set_option linter.style.longLine false in
+/-- info: 'PersistenceCapacity.ledger_graded_paired_lossy' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms ledger_graded_paired_lossy
+
+/-- **A strictly decreasing chain of naturals, counted**: `d` consecutive strict drops starting at
+`c 0` force `c 0` to exceed `c d` by at least `d`. Pure arithmetic, no sets involved — the set-level
+fact below is this applied to the cardinalities of an image chain. -/
+private theorem chain_card_add_le {c : ℕ → ℕ} {d : ℕ} (h : ∀ j < d, c (j + 1) < c j) :
+    c d + d ≤ c 0 := by
+  induction d with
+  | zero => simp
+  | succ d ih =>
+    have h1 : c (d + 1) < c d := h d (Nat.lt_succ_self d)
+    have h2 : c d + d ≤ c 0 := ih (fun j hj => h j (hj.trans (Nat.lt_succ_self d)))
+    omega
+
+/-- **The image-chain bound** ([Guests] §8.2): if a law's iterated images strictly decrease for `d`
+steps starting at its own image — `Set.range F ⊃ Set.range (F^[2]) ⊃ ⋯ ⊃ Set.range (F^[d])`, each
+inclusion strict, with the chain's last term `Set.range (F^[d])` non-empty — then
+`d ≤ Nat.card (Set.range F)`. Elementary: each strict step drops the image's cardinality by at
+least one, and the last image contributes at least the one further element non-emptiness
+guarantees. This is what turns a lossy guest's settling depth into a resolution bound on the same
+frame `ledger_graded_lossy` prices ([Guests] §8.2). -/
+theorem settlingDepth_le_card_range {F : Fin m → Fin m} {d : ℕ}
+    (hchain : ∀ j, j + 1 < d → Set.range (F^[j + 2]) ⊂ Set.range (F^[j + 1]))
+    (hlast : (Set.range (F^[d])).Nonempty) :
+    d ≤ Nat.card (Set.range F) := by
+  rcases d with _ | e
+  · exact Nat.zero_le _
+  · have hc : ∀ j < e, Nat.card (Set.range (F^[j + 2])) < Nat.card (Set.range (F^[j + 1])) :=
+      fun j hj => Set.ncard_lt_ncard (hchain j (by omega)) (Set.toFinite _)
+    have hbound := chain_card_add_le (c := fun j => Nat.card (Set.range (F^[j + 1]))) hc
+    simp only [Nat.zero_add, Function.iterate_one] at hbound
+    have hpos : 0 < Nat.card (Set.range (F^[e + 1])) := by
+      have : Nonempty (Set.range (F^[e + 1])) := hlast.to_subtype
+      exact Nat.card_pos
+    omega
+
+set_option linter.style.longLine false in
+/-- info: 'PersistenceCapacity.settlingDepth_le_card_range' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms settlingDepth_le_card_range
+
+/-- **The resolution clause, at the parity guest's own witness** ([Guests] §8.2): the parity-then-
+die guest's law `fun _ => 0` has a SINGLETON range, so `settlingDepth_le_card_range`'s resolution
+bound pins any settling depth this law admits to at most one step — depth one at resolution one
+prices nothing. This is the guard `intertwines_parityLens`/`parityLens_intertwines_not_carries`
+were missing: neither states what the depth floor forces at the family's own law. -/
+theorem settlingDepth_parityLens_le_one {d : ℕ}
+    (hchain : ∀ j, j + 1 < d →
+      Set.range ((fun _ : Fin 2 => (0 : Fin 2))^[j + 2])
+        ⊂ Set.range ((fun _ : Fin 2 => (0 : Fin 2))^[j + 1]))
+    (hlast : (Set.range ((fun _ : Fin 2 => (0 : Fin 2))^[d])).Nonempty) :
+    d ≤ 1 := by
+  have hcard : Nat.card (Set.range (fun _ : Fin 2 => (0 : Fin 2))) = 1 := by
+    have hone : (Set.range (fun _ : Fin 2 => (0 : Fin 2)) : Set (Fin 2)) = {0} := by
+      ext y
+      simp only [Set.mem_range, Set.mem_singleton_iff]
+      exact ⟨fun ⟨_, h⟩ => h.symm, fun h => ⟨0, h.symm⟩⟩
+    rw [hone, Nat.card_coe_set_eq, Set.ncard_singleton]
+  have hbound := settlingDepth_le_card_range hchain hlast
+  rwa [hcard] at hbound
+
+set_option linter.style.longLine false in
+/-- info: 'PersistenceCapacity.settlingDepth_parityLens_le_one' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms settlingDepth_parityLens_le_one
+
+/-! ### The law-blind count and its ledger ([Guests] §8.2)
+
+Persistence prices the world against ONE named law. The count behind it is coarser: among every
+permutation SOME law could explain — quantifying the law away entirely — how many are there?
+`card_lawBlind_le` answers this by the coset argument `collapse_count` already runs, read against
+the CODOMAIN lens `ℓ'` rather than an affordable-frame set: a law-blind permutation determines its
+own law only on the domain lens's actual image, so the count splits into a choice of that partial
+map — at most `(card range ℓ') ^ (card range ℓ)` of them — times one `ℓ'`-fibre-stabilizer coset
+per choice (`∏ᵢ (fibreᵢ)!`, `card_stabilizer_lens`). -/
+
+/-- **The permutations some law explains** ([Guests] §8.2): the set a fixed pair of lenses
+`(ℓ, ℓ')` cannot distinguish from carrying a law of its own — quantifying the law away, unlike
+`PermCarries`/`Intertwines`, which each fix one. -/
+def LawBlind (ℓ ℓ' : Fin n → Fin m) : Set (Perm (Fin n)) :=
+  {V : Perm (Fin n) | ∃ f : Fin m → Fin m, ℓ' ∘ ⇑V = f ∘ ℓ}
+
+/-- **The law-blind count** ([Guests] §8.2): at most `(card range ℓ') ^ (card range ℓ)` guesses at
+the induced partial law, each pinning `V` down to one `ℓ'`-fibre-stabilizer coset — one map guess
+per point `ℓ` actually reads, times `card_stabilizer_lens`'s own coset size. -/
+theorem card_lawBlind_le (ℓ ℓ' : Fin n → Fin m) :
+    Nat.card (LawBlind ℓ ℓ') ≤ Nat.card (Set.range ℓ') ^ Nat.card (Set.range ℓ)
+      * ∏ i : Fin m, (Nat.card {x : Fin n // ℓ' x = i})! := by
+  classical
+  set S : Finset (Perm (Fin n)) := Finset.univ.filter (fun V => V ∈ LawBlind ℓ ℓ') with hSdef
+  set Φ : Perm (Fin n) → (↥(Set.range ℓ) → ↥(Set.range ℓ')) :=
+    fun V y => ⟨ℓ' (V y.2.choose), Set.mem_range_self _⟩ with hΦdef
+  set T : Finset (↥(Set.range ℓ) → ↥(Set.range ℓ')) := Finset.univ with hTdef
+  have hΦ_eq : ∀ {V : Perm (Fin n)} {f : Fin m → Fin m}, ℓ' ∘ ⇑V = f ∘ ℓ →
+      ∀ y : ↥(Set.range ℓ), (Φ V y : Fin m) = f y.1 := by
+    intro V f hf y
+    have hchoose : ℓ y.2.choose = y.1 := y.2.choose_spec
+    have hcongr := congrFun hf y.2.choose
+    simp only [Function.comp_apply] at hcongr
+    change ℓ' (V y.2.choose) = f y.1
+    rw [hcongr, hchoose]
+  have hfib : ∀ v ∈ T, (S.filter fun V => Φ V = v).card
+      ≤ ∏ i : Fin m, (Nat.card {x : Fin n // ℓ' x = i})! := by
+    intro v _
+    rcases Finset.eq_empty_or_nonempty (S.filter fun V => Φ V = v) with hemp | ⟨W, hW⟩
+    · simp [hemp]
+    · have hWmem := Finset.mem_filter.mp hW
+      have hWA : W ∈ LawBlind ℓ ℓ' := by
+        have h := (Finset.mem_filter.mp hWmem.1).2
+        simpa [hSdef] using h
+      obtain ⟨fW, hfW⟩ := hWA
+      have hWv : Φ W = v := hWmem.2
+      haveI : Fintype ↥(stabilizer (Perm (Fin n)) ℓ') := Fintype.ofFinite _
+      have hmaps : ∀ U ∈ S.filter fun V => Φ V = v,
+          W * U⁻¹ ∈ (stabilizer (Perm (Fin n)) ℓ' : Set (Perm (Fin n))).toFinset := by
+        intro U hU
+        have hUmem := Finset.mem_filter.mp hU
+        have hUA : U ∈ LawBlind ℓ ℓ' := by
+          have h := (Finset.mem_filter.mp hUmem.1).2
+          simpa [hSdef] using h
+        obtain ⟨fU, hfU⟩ := hUA
+        have hUv : Φ U = v := hUmem.2
+        have heqfun : ℓ' ∘ ⇑U = ℓ' ∘ ⇑W := by
+          funext x
+          have hy : Φ U ⟨ℓ x, ⟨x, rfl⟩⟩ = Φ W ⟨ℓ x, ⟨x, rfl⟩⟩ := by rw [hUv, hWv]
+          have h1 := hΦ_eq hfU (⟨ℓ x, ⟨x, rfl⟩⟩ : ↥(Set.range ℓ))
+          have h2 := hΦ_eq hfW (⟨ℓ x, ⟨x, rfl⟩⟩ : ↥(Set.range ℓ))
+          have hzz : fU (ℓ x) = fW (ℓ x) := by
+            have hcast := congrArg (fun z : ↥(Set.range ℓ') => (z : Fin m)) hy
+            rw [h1, h2] at hcast
+            exact hcast
+          calc (ℓ' ∘ ⇑U) x = fU (ℓ x) := congrFun hfU x
+            _ = fW (ℓ x) := hzz
+            _ = (ℓ' ∘ ⇑W) x := (congrFun hfW x).symm
+        have hlens : U⁻¹ • ℓ' = W⁻¹ • ℓ' := by
+          funext x
+          rw [smul_lens_apply, smul_lens_apply, inv_inv, inv_inv]
+          exact congrFun heqfun x
+        simp only [Set.mem_toFinset, SetLike.mem_coe, mem_stabilizer_iff, mul_smul, hlens,
+          smul_inv_smul]
+      have hinj : Set.InjOn (fun U => W * U⁻¹) ↑(S.filter fun U => Φ U = v) :=
+        fun a _ c _ hac => inv_injective (mul_left_cancel hac)
+      have hcard := Finset.card_le_card_of_injOn (fun U => W * U⁻¹) hmaps hinj
+      rw [Set.toFinset_card, ← Nat.card_eq_fintype_card] at hcard
+      have hstab : Nat.card ↥((stabilizer (Perm (Fin n)) ℓ' : Set (Perm (Fin n))))
+          = ∏ i : Fin m, (Nat.card {x : Fin n // ℓ' x = i})! := card_stabilizer_lens ℓ'
+      exact hstab ▸ hcard
+  have hmapsT : ∀ V ∈ S, Φ V ∈ T := fun V _ => Finset.mem_univ _
+  have hmain := Finset.card_le_mul_card_image_of_maps_to hmapsT
+    (∏ i : Fin m, (Nat.card {x : Fin n // ℓ' x = i})!) hfib
+  have hTcard : T.card = Nat.card (Set.range ℓ') ^ Nat.card (Set.range ℓ) := by
+    rw [hTdef, Finset.card_univ, ← Nat.card_eq_fintype_card, Nat.card_fun]
+  have hSset : (LawBlind ℓ ℓ' : Set (Perm (Fin n))) = ↑S := by
+    ext V; simp [hSdef]
+  have hcardeq : Nat.card (LawBlind ℓ ℓ') = S.card := by
+    rw [Nat.card_coe_set_eq, hSset, Set.ncard_coe_finset]
+  rw [hcardeq]
+  calc S.card ≤ (∏ i : Fin m, (Nat.card {x : Fin n // ℓ' x = i})!) * T.card := hmain
+    _ = (∏ i : Fin m, (Nat.card {x : Fin n // ℓ' x = i})!)
+        * (Nat.card (Set.range ℓ') ^ Nat.card (Set.range ℓ)) := by rw [hTcard]
+    _ = Nat.card (Set.range ℓ') ^ Nat.card (Set.range ℓ)
+        * ∏ i : Fin m, (Nat.card {x : Fin n // ℓ' x = i})! := by ring
+
+set_option linter.style.longLine false in
+/-- info: 'PersistenceCapacity.card_lawBlind_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms card_lawBlind_le
+
+/-! ### The law-blind ledger, over the paired frame ([Guests] §8.2)
+
+`card_lawBlind_le` counts; this enumerates. A fixed decoder recovers `U`'s own table from the
+paired frame `pairLens ℓ ℓ'` plus an index into the SAME set the count bounds —
+`ledger_graded_paired`'s own plumbing, with the transport check widened from "equals a fixed
+reference table" to "equals it after SOME law", `isValid`'s single ∀ becoming a doubly-bounded ∀∀
+implication (`lbOK`/`lbBool`, `pairOK`/`candBijBool`'s own shape). No term below ever reads `F`:
+the address is `(ℓ, ℓ')` alone, which is what separates this from `ledger_graded_paired_lossy`. -/
+
+/-- **One law-blind pairwise test**, `Bool`-valued: skip the pair when the `ℓ`-table disagrees at
+`i` and `j`, else require the `ℓ'`-table to agree at the candidate's own images — `pairOK`'s
+shape, reading two tables through the candidate rather than comparing digits directly. -/
+private def lbOK (n t0 t1 w i j : ℕ) : Bool :=
+  (!decide ((rawTable t0).getD i 0 = (rawTable t0).getD j 0)) ||
+    decide ((rawTable t1).getD (digitAt n w i) 0 = (rawTable t1).getD (digitAt n w j) 0)
+
+private theorem primrec_lbOK :
+    Primrec₂ fun (a : ℕ × ℕ) (j : ℕ) =>
+      lbOK a.1.unpair.1 a.1.unpair.2.unpair.1 a.1.unpair.2.unpair.2.unpair.1
+        a.1.unpair.2.unpair.2.unpair.2 a.2 j := by
+  have hpow : Primrec₂ ((· ^ ·) : ℕ → ℕ → ℕ) := Primrec₂.unpaired'.1 Nat.Primrec.pow
+  have hN : Primrec fun q : (ℕ × ℕ) × ℕ => q.1.1.unpair.1 :=
+    Primrec.fst.comp (Primrec.unpair.comp (Primrec.fst.comp Primrec.fst))
+  have hT0 : Primrec fun q : (ℕ × ℕ) × ℕ => q.1.1.unpair.2.unpair.1 :=
+    Primrec.fst.comp (Primrec.unpair.comp (Primrec.snd.comp (Primrec.unpair.comp
+      (Primrec.fst.comp Primrec.fst))))
+  have hT1 : Primrec fun q : (ℕ × ℕ) × ℕ => q.1.1.unpair.2.unpair.2.unpair.1 :=
+    Primrec.fst.comp (Primrec.unpair.comp (Primrec.snd.comp (Primrec.unpair.comp
+      (Primrec.snd.comp (Primrec.unpair.comp (Primrec.fst.comp Primrec.fst))))))
+  have hW : Primrec fun q : (ℕ × ℕ) × ℕ => q.1.1.unpair.2.unpair.2.unpair.2 :=
+    Primrec.snd.comp (Primrec.unpair.comp (Primrec.snd.comp (Primrec.unpair.comp
+      (Primrec.snd.comp (Primrec.unpair.comp (Primrec.fst.comp Primrec.fst))))))
+  have hI : Primrec fun q : (ℕ × ℕ) × ℕ => q.1.2 := Primrec.snd.comp Primrec.fst
+  have hJ : Primrec fun q : (ℕ × ℕ) × ℕ => q.2 := Primrec.snd
+  have hdigI : Primrec fun q : (ℕ × ℕ) × ℕ =>
+      digitAt q.1.1.unpair.1 q.1.1.unpair.2.unpair.2.unpair.2 q.1.2 :=
+    Primrec.nat_mod.comp (Primrec.nat_div.comp hW (hpow.comp hN hI)) hN
+  have hdigJ : Primrec fun q : (ℕ × ℕ) × ℕ =>
+      digitAt q.1.1.unpair.1 q.1.1.unpair.2.unpair.2.unpair.2 q.2 :=
+    Primrec.nat_mod.comp (Primrec.nat_div.comp hW (hpow.comp hN hJ)) hN
+  have hT0i : Primrec fun q : (ℕ × ℕ) × ℕ => (rawTable q.1.1.unpair.2.unpair.1).getD q.1.2 0 :=
+    (Primrec.list_getD 0).comp (primrec_rawTable.comp hT0) hI
+  have hT0j : Primrec fun q : (ℕ × ℕ) × ℕ => (rawTable q.1.1.unpair.2.unpair.1).getD q.2 0 :=
+    (Primrec.list_getD 0).comp (primrec_rawTable.comp hT0) hJ
+  have hT1i : Primrec fun q : (ℕ × ℕ) × ℕ =>
+      (rawTable q.1.1.unpair.2.unpair.2.unpair.1).getD
+        (digitAt q.1.1.unpair.1 q.1.1.unpair.2.unpair.2.unpair.2 q.1.2) 0 :=
+    (Primrec.list_getD 0).comp (primrec_rawTable.comp hT1) hdigI
+  have hT1j : Primrec fun q : (ℕ × ℕ) × ℕ =>
+      (rawTable q.1.1.unpair.2.unpair.2.unpair.1).getD
+        (digitAt q.1.1.unpair.1 q.1.1.unpair.2.unpair.2.unpair.2 q.2) 0 :=
+    (Primrec.list_getD 0).comp (primrec_rawTable.comp hT1) hdigJ
+  have h1 : Primrec fun q : (ℕ × ℕ) × ℕ =>
+      decide ((rawTable q.1.1.unpair.2.unpair.1).getD q.1.2 0
+        = (rawTable q.1.1.unpair.2.unpair.1).getD q.2 0) :=
+    Primrec.eq.decide.comp hT0i hT0j
+  have h2 : Primrec fun q : (ℕ × ℕ) × ℕ =>
+      decide ((rawTable q.1.1.unpair.2.unpair.2.unpair.1).getD
+          (digitAt q.1.1.unpair.1 q.1.1.unpair.2.unpair.2.unpair.2 q.1.2) 0
+        = (rawTable q.1.1.unpair.2.unpair.2.unpair.1).getD
+          (digitAt q.1.1.unpair.1 q.1.1.unpair.2.unpair.2.unpair.2 q.2) 0) :=
+    Primrec.eq.decide.comp hT1i hT1j
+  exact ((Primrec.dom_bool₂ (fun (b1 b2 : Bool) => (!b1) || b2)).comp h1 h2).of_eq
+    fun q => by simp [lbOK]
+
+private theorem lbOK_iff (n t0 t1 w i j : ℕ) :
+    lbOK n t0 t1 w i j = true ↔
+      (rawTable t0).getD i 0 = (rawTable t0).getD j 0 →
+        (rawTable t1).getD (digitAt n w i) 0 = (rawTable t1).getD (digitAt n w j) 0 := by
+  simp only [lbOK, Bool.or_eq_true, Bool.not_eq_true', decide_eq_false_iff_not, decide_eq_true_eq]
+  constructor
+  · intro h hcond
+    rcases h with hne | heq
+    · exact absurd hcond hne
+    · exact heq
+  · intro h
+    by_cases hcond : (rawTable t0).getD i 0 = (rawTable t0).getD j 0
+    · right; exact h hcond
+    · left; exact hcond
+
+/-- **The doubly-bounded law-blind search** ([Guests] §8.2): every pair of positions in `[0, n)`
+respects `lbOK` — `candBijBool`'s own outer shape, folded over `lbOK` instead of `pairOK`. -/
+private def lbBool (n t0 t1 w : ℕ) : Bool :=
+  (List.range n).all fun i => (List.range n).all fun j => lbOK n t0 t1 w i j
+
+set_option maxHeartbeats 1000000 in
+-- multi-level packing meets the double fold, same reason as primrec_candBijBool.
+private theorem primrec_lbBool :
+    Primrec fun p : ℕ => lbBool p.unpair.1 p.unpair.2.unpair.1 p.unpair.2.unpair.2.unpair.1
+      p.unpair.2.unpair.2.unpair.2 := by
+  have hN : Primrec fun p : ℕ => p.unpair.1 := Primrec.fst.comp Primrec.unpair
+  have hInner : Primrec₂ fun (packed4 i : ℕ) =>
+      (List.range packed4.unpair.1).all
+        (fun j => lbOK packed4.unpair.1 packed4.unpair.2.unpair.1
+          packed4.unpair.2.unpair.2.unpair.1 packed4.unpair.2.unpair.2.unpair.2 i j) :=
+    primrec_list_all (Primrec.list_range.comp (Primrec.fst.comp (Primrec.unpair.comp Primrec.fst)))
+      primrec_lbOK
+  have hOuter : Primrec fun packed4 : ℕ =>
+      (List.range packed4.unpair.1).all (fun i =>
+        (List.range packed4.unpair.1).all
+          (fun j => lbOK packed4.unpair.1 packed4.unpair.2.unpair.1
+            packed4.unpair.2.unpair.2.unpair.1 packed4.unpair.2.unpair.2.unpair.2 i j)) :=
+    primrec_list_all (Primrec.list_range.comp (Primrec.fst.comp Primrec.unpair)) hInner
+  exact hOuter.of_eq fun packed4 => rfl
+
+private theorem lbBool_iff (n t0 t1 w : ℕ) :
+    lbBool n t0 t1 w = true ↔
+      ∀ i < n, ∀ j < n, (rawTable t0).getD i 0 = (rawTable t0).getD j 0 →
+        (rawTable t1).getD (digitAt n w i) 0 = (rawTable t1).getD (digitAt n w j) 0 := by
+  simp only [lbBool, List.all_eq_true, List.mem_range]
+  constructor
+  · intro h i hi j hj; exact (lbOK_iff n t0 t1 w i j).mp (h i hi j hj)
+  · intro h i hi j hj; exact (lbOK_iff n t0 t1 w i j).mpr (h i hi j hj)
+
+/-- **A candidate is law-blind valid** when its table is a genuine permutation AND its `ℓ'`-image
+respects `ℓ`'s fibres — `isValid`'s shape, with the fixed reference table's equality widened to
+`lbBool`'s existential-law agreement. -/
+private def isValidLB (n t0 t1 w : ℕ) : Prop :=
+  candBijBool n w = true ∧ lbBool n t0 t1 w = true
+
+private instance decIsValidLB (n t0 t1 w : ℕ) : Decidable (isValidLB n t0 t1 w) := by
+  unfold isValidLB; infer_instance
+
+private theorem primrec_isValidLB :
+    PrimrecPred fun p : ℕ => isValidLB p.unpair.1 p.unpair.2.unpair.1
+      p.unpair.2.unpair.2.unpair.1 p.unpair.2.unpair.2.unpair.2 := by
+  have hN : Primrec fun p : ℕ => p.unpair.1 := Primrec.fst.comp Primrec.unpair
+  have hW : Primrec fun p : ℕ => p.unpair.2.unpair.2.unpair.2 :=
+    Primrec.snd.comp (Primrec.unpair.comp (Primrec.snd.comp (Primrec.unpair.comp
+      (Primrec.snd.comp Primrec.unpair))))
+  have hBij : PrimrecPred fun p : ℕ => candBijBool p.unpair.1 p.unpair.2.unpair.2.unpair.2 = true :=
+    Primrec.eq.comp (primrec_candBijBool.comp hN hW) (Primrec.const true)
+  have hLB : PrimrecPred fun p : ℕ => lbBool p.unpair.1 p.unpair.2.unpair.1
+      p.unpair.2.unpair.2.unpair.1 p.unpair.2.unpair.2.unpair.2 = true :=
+    Primrec.eq.comp primrec_lbBool (Primrec.const true)
+  exact hBij.and hLB
+
+set_option maxHeartbeats 1000000 in
+-- multi-level packing meets primrec_isValidLB, same reason as primrec_isValid_rel.
+private theorem primrec_isValidLB_rel :
+    PrimrecRel fun (w param : ℕ) =>
+      isValidLB param.unpair.1 param.unpair.2.unpair.1 param.unpair.2.unpair.2 w := by
+  have hn' : Primrec fun q : ℕ × ℕ => q.2.unpair.1 :=
+    Primrec.fst.comp (Primrec.unpair.comp Primrec.snd)
+  have ht0' : Primrec fun q : ℕ × ℕ => q.2.unpair.2.unpair.1 :=
+    Primrec.fst.comp (Primrec.unpair.comp (Primrec.snd.comp (Primrec.unpair.comp Primrec.snd)))
+  have ht1' : Primrec fun q : ℕ × ℕ => q.2.unpair.2.unpair.2 :=
+    Primrec.snd.comp (Primrec.unpair.comp (Primrec.snd.comp (Primrec.unpair.comp Primrec.snd)))
+  have hw' : Primrec fun q : ℕ × ℕ => q.1 := Primrec.fst
+  have hinner1 : Primrec fun q : ℕ × ℕ => Nat.pair (q.2.unpair.2.unpair.2) (q.1) :=
+    Primrec₂.natPair.comp ht1' hw'
+  have hinner2 : Primrec fun q : ℕ × ℕ =>
+      Nat.pair (q.2.unpair.2.unpair.1) (Nat.pair (q.2.unpair.2.unpair.2) (q.1)) :=
+    Primrec₂.natPair.comp ht0' hinner1
+  have hfull : Primrec fun q : ℕ × ℕ =>
+      Nat.pair (q.2.unpair.1) (Nat.pair (q.2.unpair.2.unpair.1)
+        (Nat.pair (q.2.unpair.2.unpair.2) (q.1))) :=
+    Primrec₂.natPair.comp hn' hinner2
+  have hkey := primrec_isValidLB.comp hfull
+  refine hkey.of_eq fun q => ?_
+  simp only [Nat.unpair_pair]
+
+/-- **The law-blind candidate list**: every numeral below `n ^ n` whose table is law-blind valid,
+in the numeral's own order — `candList`'s own shape, at the law-blind predicate. -/
+private def candListLB (n t0 t1 : ℕ) : List ℕ :=
+  (List.range (n ^ n)).filter (fun w => decide (isValidLB n t0 t1 w))
+
+private theorem primrec_candListLB :
+    Primrec fun p : ℕ => candListLB p.unpair.1 p.unpair.2.unpair.1 p.unpair.2.unpair.2 := by
+  have hpow : Primrec₂ ((· ^ ·) : ℕ → ℕ → ℕ) := Primrec₂.unpaired'.1 Nat.Primrec.pow
+  have hN : Primrec fun p : ℕ => p.unpair.1 := Primrec.fst.comp Primrec.unpair
+  have hL : Primrec fun p : ℕ => List.range (p.unpair.1 ^ p.unpair.1) :=
+    Primrec.list_range.comp (hpow.comp hN hN)
+  have hfilt := (PrimrecRel.listFilter primrec_isValidLB_rel).comp hL Primrec.id
+  exact hfilt.of_eq fun p => rfl
+
+/-- **The law-blind tabulation, rebuilt from the packed program** `⟨n, t0, t1, idx⟩` —
+`gradedTableFn`'s own shape, filtering `candListLB` instead of `candList`. -/
+private def gradedTableFnLB (a : ℕ) : ℕ :=
+  Encodable.encode (candTable a.unpair.1
+    (List.getD (candListLB a.unpair.1 a.unpair.2.unpair.1 a.unpair.2.unpair.2.unpair.1)
+      a.unpair.2.unpair.2.unpair.2 0))
+
+set_option maxHeartbeats 1000000 in
+-- same headroom reason as primrec_gradedTableFn: multi-level packing meets primrec_candListLB.
+private theorem primrec_gradedTableFnLB : Primrec gradedTableFnLB := by
+  have hN : Primrec fun a : ℕ => a.unpair.1 := Primrec.fst.comp Primrec.unpair
+  have hT0 : Primrec fun a : ℕ => a.unpair.2.unpair.1 :=
+    Primrec.fst.comp (Primrec.unpair.comp (Primrec.snd.comp Primrec.unpair))
+  have hT1 : Primrec fun a : ℕ => a.unpair.2.unpair.2.unpair.1 :=
+    Primrec.fst.comp (Primrec.unpair.comp (Primrec.snd.comp
+      (Primrec.unpair.comp (Primrec.snd.comp Primrec.unpair))))
+  have hIdx : Primrec fun a : ℕ => a.unpair.2.unpair.2.unpair.2 :=
+    Primrec.snd.comp (Primrec.unpair.comp (Primrec.snd.comp
+      (Primrec.unpair.comp (Primrec.snd.comp Primrec.unpair))))
+  have hParam : Primrec fun a : ℕ =>
+      Nat.pair a.unpair.1 (Nat.pair a.unpair.2.unpair.1 a.unpair.2.unpair.2.unpair.1) :=
+    Primrec₂.natPair.comp hN (Primrec₂.natPair.comp hT0 hT1)
+  have hCL : Primrec fun a : ℕ =>
+      candListLB a.unpair.1 a.unpair.2.unpair.1 a.unpair.2.unpair.2.unpair.1 := by
+    have := primrec_candListLB.comp hParam
+    refine this.of_eq fun a => ?_
+    simp only [Nat.unpair_pair]
+  have hSel : Primrec fun a : ℕ =>
+      List.getD (candListLB a.unpair.1 a.unpair.2.unpair.1 a.unpair.2.unpair.2.unpair.1)
+        a.unpair.2.unpair.2.unpair.2 0 :=
+    (Primrec.list_getD 0).comp hCL hIdx
+  exact Primrec.encode.comp (primrec_candTable.comp hN hSel)
+
+private theorem partrec_gradedTableFnLB : Nat.Partrec (fun a : ℕ => (gradedTableFnLB a : ℕ)) :=
+  _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_gradedTableFnLB).partrec
+
+/-- **The fixed law-blind ledger builder code.** One program, independent of `n`, the lenses, and
+the law. -/
+noncomputable def gradedBuilderLB : Nat.Partrec.Code :=
+  Classical.choose (Nat.Partrec.Code.exists_code.mp partrec_gradedTableFnLB)
+
+private theorem eval_gradedBuilderLB (a : ℕ) :
+    Nat.Partrec.Code.eval gradedBuilderLB a = Part.some (gradedTableFnLB a) := by
+  have h := congrFun (Classical.choose_spec
+    (Nat.Partrec.Code.exists_code.mp partrec_gradedTableFnLB)) a
+  simpa [gradedBuilderLB] using h
+
+/-- **The world's own table is a law-blind valid candidate**: bijective (`U` is a permutation) and
+its `ℓ'`-image factors through `ℓ` via `F` — read through the encode/decode round trip and the
+base-`n` packing. No term below reads `F` itself; only its EXISTENCE is used. -/
+private theorem isValidLB_worldNumeral (hn : 0 < n) {U : Perm (Fin n)} {ℓ ℓ' : Fin n → Fin m}
+    {F : Fin m → Fin m} (hF : ℓ' ∘ ⇑U = F ∘ ℓ) :
+    isValidLB n (lensCode ℓ) (lensCode ℓ') (worldNumeral U) := by
+  constructor
+  · rw [candBijBool_iff]
+    intro i hi j hj hij hcontra
+    have hdi : digitAt n (worldNumeral U) i = (U (⟨i, hi⟩ : Fin n) : ℕ) :=
+      digitAt_worldNumeral hn U ⟨i, hi⟩
+    have hdj : digitAt n (worldNumeral U) j = (U (⟨j, hj⟩ : Fin n) : ℕ) :=
+      digitAt_worldNumeral hn U ⟨j, hj⟩
+    rw [hdi, hdj] at hcontra
+    exact hij (congrArg Fin.val (U.injective (Fin.val_injective hcontra)))
+  · rw [lbBool_iff]
+    intro i hi j hj hcond
+    have hget0 : ∀ k (hk : k < n), (rawTable (lensCode ℓ)).getD k 0
+        = (ℓ (⟨k, hk⟩ : Fin n) : ℕ) := fun k hk => by
+      rw [rawTable_lensCode, lensTable]
+      exact getD_map_finRange (fun y : Fin n => (ℓ y : ℕ)) ⟨k, hk⟩
+    have hxy : ℓ (⟨i, hi⟩ : Fin n) = ℓ (⟨j, hj⟩ : Fin n) := by
+      apply Fin.val_injective
+      rw [← hget0 i hi, ← hget0 j hj]
+      exact hcond
+    have hUxy : ℓ' (U (⟨i, hi⟩ : Fin n)) = ℓ' (U (⟨j, hj⟩ : Fin n)) := by
+      have hi' := congrFun hF (⟨i, hi⟩ : Fin n)
+      have hj' := congrFun hF (⟨j, hj⟩ : Fin n)
+      simp only [Function.comp_apply] at hi' hj'
+      rw [hi', hj', hxy]
+    have hget1 : ∀ k (hk : k < n), (rawTable (lensCode ℓ')).getD
+        (digitAt n (worldNumeral U) k) 0 = (ℓ' (U (⟨k, hk⟩ : Fin n)) : ℕ) := fun k hk => by
+      rw [digitAt_worldNumeral hn U ⟨k, hk⟩, rawTable_lensCode, lensTable]
+      exact getD_map_finRange (fun y : Fin n => (ℓ' y : ℕ)) (U ⟨k, hk⟩)
+    rw [hget1 i hi, hget1 j hj]
+    exact congrArg (fun x : Fin m => (x : ℕ)) hUxy
+
+/-- **A law-blind valid candidate's own permutation agrees, through `ℓ'`, wherever `ℓ` agrees**:
+`lbBool`'s content, read at `candPerm`'s own digits via `candPerm_apply`. -/
+private theorem candPerm_lb_agree {n w : ℕ} (hn : 0 < n) {ℓ ℓ' : Fin n → Fin m}
+    (hb : candBijBool n w = true) (hlb : lbBool n (lensCode ℓ) (lensCode ℓ') w = true)
+    {x y : Fin n} (hxy : ℓ x = ℓ y) :
+    ℓ' (candPerm n w x) = ℓ' (candPerm n w y) := by
+  have hcond : (rawTable (lensCode ℓ)).getD (x : ℕ) 0 = (rawTable (lensCode ℓ)).getD (y : ℕ) 0 := by
+    rw [rawTable_lensCode, lensTable, getD_map_finRange, getD_map_finRange]
+    exact congrArg (fun z : Fin m => (z : ℕ)) hxy
+  have hres := (lbBool_iff n (lensCode ℓ) (lensCode ℓ') w).mp hlb (x : ℕ) x.2 (y : ℕ) y.2 hcond
+  have hdigx : digitAt n w (x : ℕ) = (candPerm n w x : ℕ) := (candPerm_apply hn hb x).symm
+  have hdigy : digitAt n w (y : ℕ) = (candPerm n w y : ℕ) := (candPerm_apply hn hb y).symm
+  rw [hdigx, hdigy] at hres
+  have hgx : (rawTable (lensCode ℓ')).getD (candPerm n w x : ℕ) 0 = (ℓ' (candPerm n w x) : ℕ) := by
+    rw [rawTable_lensCode, lensTable]; exact getD_map_finRange _ _
+  have hgy : (rawTable (lensCode ℓ')).getD (candPerm n w y : ℕ) 0 = (ℓ' (candPerm n w y) : ℕ) := by
+    rw [rawTable_lensCode, lensTable]; exact getD_map_finRange _ _
+  rw [hgx, hgy] at hres
+  exact Fin.val_injective hres
+
+/-- **A law-blind valid candidate's own permutation is law-blind**: it witnesses its own
+membership in `LawBlind ℓ ℓ'`, the induced law read off any preimage under `ℓ`
+(`candPerm_lb_agree` certifying the choice is immaterial). -/
+private theorem isValidLB_mem_lawBlind {n w : ℕ} (hn : 0 < n) {ℓ ℓ' : Fin n → Fin m}
+    (hv : isValidLB n (lensCode ℓ) (lensCode ℓ') w) :
+    candPerm n w ∈ LawBlind ℓ ℓ' := by
+  classical
+  refine ⟨fun a => if h : ∃ x : Fin n, ℓ x = a then ℓ' (candPerm n w h.choose) else a, ?_⟩
+  funext x
+  simp only [Function.comp_apply]
+  rw [dif_pos (⟨x, rfl⟩ : ∃ x' : Fin n, ℓ x' = ℓ x)]
+  exact candPerm_lb_agree hn hv.1 hv.2
+    (Exists.choose_spec (⟨x, rfl⟩ : ∃ x' : Fin n, ℓ x' = ℓ x)).symm
+
+/-- **The law-blind candidate list's length is bounded by the law-blind count**: distinct valid
+numerals give distinct permutations (`candTable_injOn`, `candBijBool`'s digits determining the
+candidate), each a member of `LawBlind ℓ ℓ'` by `isValidLB_mem_lawBlind` — no coset detour needed,
+since the target set IS the set being injected into. `V0 ∈ LawBlind ℓ ℓ'` supplies the junk value
+an invalid numeral's branch needs (`LawBlind` is a plain set, not a subgroup, with no free `1`). -/
+private theorem candListLB_length_le (hn : 0 < n) {ℓ ℓ' : Fin n → Fin m}
+    {V0 : Perm (Fin n)} (hV0 : V0 ∈ LawBlind ℓ ℓ') :
+    (candListLB n (lensCode ℓ) (lensCode ℓ')).length ≤ Nat.card (LawBlind ℓ ℓ') := by
+  classical
+  set t0 := lensCode ℓ with ht0
+  set t1 := lensCode ℓ' with ht1
+  haveI : Finite (LawBlind ℓ ℓ') := Set.toFinite _
+  haveI : Fintype ↥(LawBlind ℓ ℓ') := Fintype.ofFinite _
+  have hnodup : (candListLB n t0 t1).Nodup := List.nodup_range.filter _
+  have hmem : ∀ w ∈ (candListLB n t0 t1).toFinset, w < n ^ n ∧ isValidLB n t0 t1 w := by
+    intro w hw
+    rw [List.mem_toFinset, candListLB, List.mem_filter, List.mem_range, decide_eq_true_eq] at hw
+    exact hw
+  have hinj0 : Set.InjOn (candPerm n) {w | w < n ^ n ∧ isValidLB n t0 t1 w} := by
+    intro w1 hw1 w2 hw2 heq
+    have hb1 : candBijBool n w1 = true := hw1.2.1
+    have hb2 : candBijBool n w2 = true := hw2.2.1
+    have hdig : ∀ i : Fin n, digitAt n w1 (i : ℕ) = digitAt n w2 (i : ℕ) := by
+      intro i
+      rw [← candPerm_apply hn hb1 i, ← candPerm_apply hn hb2 i, heq]
+    apply candTable_injOn hw1.1 hw2.1
+    change (List.range n).map (digitAt n w1) = (List.range n).map (digitAt n w2)
+    refine List.map_congr_left fun j hj => ?_
+    exact hdig ⟨j, List.mem_range.mp hj⟩
+  set f : ℕ → ↥(LawBlind ℓ ℓ') := fun w =>
+    if h : isValidLB n t0 t1 w then ⟨candPerm n w, isValidLB_mem_lawBlind hn h⟩ else ⟨V0, hV0⟩
+    with hf
+  have hcard := Finset.card_le_card_of_injOn f
+    (s := (candListLB n t0 t1).toFinset) (t := Finset.univ)
+    (fun w _ => Finset.mem_univ (f w))
+    (by
+      intro w1 hw1 w2 hw2 heq
+      rw [Finset.mem_coe] at hw1 hw2
+      have h1 := hmem w1 hw1
+      have h2 := hmem w2 hw2
+      have hfw1 : f w1 = ⟨candPerm n w1, isValidLB_mem_lawBlind hn h1.2⟩ := dif_pos h1.2
+      have hfw2 : f w2 = ⟨candPerm n w2, isValidLB_mem_lawBlind hn h2.2⟩ := dif_pos h2.2
+      rw [hfw1, hfw2, Subtype.mk_eq_mk] at heq
+      exact hinj0 ⟨h1.1, h1.2⟩ ⟨h2.1, h2.2⟩ heq)
+  rw [← List.toFinset_card_of_nodup hnodup, Nat.card_eq_fintype_card]
+  simpa using hcard
+
+/-- **The paired law-blind tabulation, rebuilt from the packed program** `⟨n, pairCode, idx⟩`:
+unzip the paired table back into the two frame tables and hand them to `gradedTableFnLB`'s own
+decoder — `pairedGradedTableFn`'s own shape, at the law-blind decoder rather than the persistence
+one. -/
+private def pairedGradedTableFnLB (a : ℕ) : ℕ :=
+  gradedTableFnLB
+    (Nat.pair a.unpair.1
+      (Nat.pair
+        (Encodable.encode
+          (unzipFst ((Encodable.decode (α := List ℕ) a.unpair.2.unpair.1).getD [])))
+        (Nat.pair
+          (Encodable.encode
+            (unzipSnd ((Encodable.decode (α := List ℕ) a.unpair.2.unpair.1).getD [])))
+          a.unpair.2.unpair.2)))
+
+set_option maxHeartbeats 1000000 in
+-- multi-level packing meets primrec_gradedTableFnLB, same headroom as primrec_pairedGradedTableFn.
+private theorem primrec_pairedGradedTableFnLB : Primrec pairedGradedTableFnLB := by
+  have hN : Primrec fun a : ℕ => a.unpair.1 := Primrec.fst.comp Primrec.unpair
+  have hPC : Primrec fun a : ℕ => a.unpair.2.unpair.1 :=
+    Primrec.fst.comp (Primrec.unpair.comp (Primrec.snd.comp Primrec.unpair))
+  have hIdx : Primrec fun a : ℕ => a.unpair.2.unpair.2 :=
+    Primrec.snd.comp (Primrec.unpair.comp (Primrec.snd.comp Primrec.unpair))
+  have hDec : Primrec fun a : ℕ => (Encodable.decode (α := List ℕ) a.unpair.2.unpair.1).getD [] :=
+    Primrec.option_getD.comp (Primrec.decode.comp hPC) (Primrec.const [])
+  have hT0 : Primrec fun a : ℕ => Encodable.encode (unzipFst
+      ((Encodable.decode (α := List ℕ) a.unpair.2.unpair.1).getD [])) :=
+    Primrec.encode.comp (primrec_unzipFst.comp hDec)
+  have hT1 : Primrec fun a : ℕ => Encodable.encode (unzipSnd
+      ((Encodable.decode (α := List ℕ) a.unpair.2.unpair.1).getD [])) :=
+    Primrec.encode.comp (primrec_unzipSnd.comp hDec)
+  have hPacked : Primrec fun a : ℕ =>
+      Nat.pair a.unpair.1 (Nat.pair (Encodable.encode (unzipFst
+        ((Encodable.decode (α := List ℕ) a.unpair.2.unpair.1).getD [])))
+        (Nat.pair (Encodable.encode (unzipSnd
+          ((Encodable.decode (α := List ℕ) a.unpair.2.unpair.1).getD [])))
+          a.unpair.2.unpair.2)) :=
+    Primrec₂.natPair.comp hN (Primrec₂.natPair.comp hT0 (Primrec₂.natPair.comp hT1 hIdx))
+  exact primrec_gradedTableFnLB.comp hPacked
+
+/-- **The builder is correct**: unzipping the paired code before running `gradedTableFnLB`'s
+decoder is the same as running it on the two separate frame codes. -/
+private theorem pairedGradedTableFnLB_eq (n idx : ℕ) {m : ℕ} (ℓ ℓ' : Fin n → Fin m) :
+    pairedGradedTableFnLB (Nat.pair n (Nat.pair (lensCode (pairLens ℓ ℓ')) idx))
+      = gradedTableFnLB (Nat.pair n (Nat.pair (lensCode ℓ) (Nat.pair (lensCode ℓ') idx))) := by
+  have hpc : (Encodable.decode (α := List ℕ) (lensCode (pairLens ℓ ℓ'))).getD []
+      = lensTable (pairLens ℓ ℓ') := by rw [lensCode, Encodable.encodek]; rfl
+  rw [pairedGradedTableFnLB]
+  simp only [Nat.unpair_pair]
+  rw [hpc, unzipFst_lensTable_pairLens, unzipSnd_lensTable_pairLens]
+  rfl
+
+private theorem partrec_pairedGradedTableFnLB :
+    Nat.Partrec (fun a : ℕ => (pairedGradedTableFnLB a : ℕ)) :=
+  _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_pairedGradedTableFnLB).partrec
+
+/-- **The fixed paired law-blind builder code.** One program, independent of `n`, the world, and
+the two lenses. -/
+noncomputable def pairedGradedBuilderLB : Nat.Partrec.Code :=
+  Classical.choose (Nat.Partrec.Code.exists_code.mp partrec_pairedGradedTableFnLB)
+
+private theorem eval_pairedGradedBuilderLB (a : ℕ) :
+    Nat.Partrec.Code.eval pairedGradedBuilderLB a = Part.some (pairedGradedTableFnLB a) := by
+  have h := congrFun (Classical.choose_spec
+    (Nat.Partrec.Code.exists_code.mp partrec_pairedGradedTableFnLB)) a
+  simpa [pairedGradedBuilderLB] using h
+
+/-- **The law-blind ledger's constant**: one fixed builder plus the assembly's opcodes — `n`, the
+paired frame code, and the coset index, `pairedLedgerConst`'s own shape at the law-blind builder. -/
+noncomputable def pairedLedgerConstLB : ℕ := elen pairedGradedBuilderLB + 2 * (15 + elen dbl) + 15
+
+/-- **The law-blind ledger** ([Guests] §8.2): one step of an intertwining square — `ℓ' ∘ U = F ∘ ℓ`
+for SOME `F`, which `Intertwines` supplies at every `t` — prices `U` against the paired frame
+`pairLens ℓ ℓ'` plus an index into `card_lawBlind_le`'s own count, no term reading `F` at all: the
+address is `(ℓ, ℓ')` alone, quantifying the law away exactly as `LawBlind` does. Mirrors
+`ledger_graded_paired`'s enumeration plumbing — an index into a computed finite set, the SAME
+`Nat.size n` / `Nat.size (…)` split its own bookkeeping produces, read here against
+`card_lawBlind_le`'s bound rather than a single fibre-stabilizer count. -/
+theorem ledger_lawBlind (hn : 0 < n) {U : Perm (Fin n)} {ℓ ℓ' : Fin n → Fin m} {F : Fin m → Fin m}
+    (hF : ℓ' ∘ ⇑U = F ∘ ℓ) :
+    KE (lensCode U) ≤ KE (lensCode (pairLens ℓ ℓ'))
+      + (15 + elen dbl) * Nat.size (Nat.card (Set.range ℓ') ^ Nat.card (Set.range ℓ)
+        * ∏ i : Fin m, (Nat.card {x : Fin n // ℓ' x = i})!)
+      + (15 + elen dbl) * Nat.size n
+      + pairedLedgerConstLB := by
+  set t0 := lensCode ℓ with ht0
+  set t1 := lensCode ℓ' with ht1
+  set N := Nat.card (Set.range ℓ') ^ Nat.card (Set.range ℓ)
+    * ∏ i : Fin m, (Nat.card {x : Fin n // ℓ' x = i})! with hNdef
+  have hUmem : U ∈ LawBlind ℓ ℓ' := ⟨F, hF⟩
+  have hvalid : isValidLB n t0 t1 (worldNumeral U) := isValidLB_worldNumeral hn hF
+  have hlt : worldNumeral U < n ^ n := worldNumeral_lt hn U
+  have hmem : worldNumeral U ∈ candListLB n t0 t1 := by
+    rw [candListLB, List.mem_filter, List.mem_range, decide_eq_true_eq]
+    exact ⟨hlt, hvalid⟩
+  obtain ⟨idx, hidxlt, hidxeq⟩ := List.getElem_of_mem hmem
+  have hlenle : (candListLB n t0 t1).length ≤ N := by
+    rw [hNdef]
+    calc (candListLB n t0 t1).length ≤ Nat.card (LawBlind ℓ ℓ') :=
+          candListLB_length_le hn hUmem
+      _ ≤ Nat.card (Set.range ℓ') ^ Nat.card (Set.range ℓ)
+          * ∏ i : Fin m, (Nat.card {x : Fin n // ℓ' x = i})! := card_lawBlind_le ℓ ℓ'
+  have hidxN : idx < N := lt_of_lt_of_le hidxlt hlenle
+  have hgetD : List.getD (candListLB n t0 t1) idx 0 = worldNumeral U := by
+    rw [List.getD_eq_getElem _ _ hidxlt]; exact hidxeq
+  have heval : gradedTableFnLB (Nat.pair n (Nat.pair t0 (Nat.pair t1 idx))) = lensCode U := by
+    rw [gradedTableFnLB]
+    simp only [Nat.unpair_pair]
+    rw [hgetD]
+    exact congrArg Encodable.encode (candTable_packMarks hn U)
+  have hevalp : pairedGradedTableFnLB (Nat.pair n (Nat.pair (lensCode (pairLens ℓ ℓ')) idx))
+      = lensCode U := by
+    rw [pairedGradedTableFnLB_eq]
+    exact heval
+  obtain ⟨cp, hcp, hlcp⟩ := exists_min_E (lensCode (pairLens ℓ ℓ'))
+  have hz : eval zero (0 : ℕ) = Part.some 0 := rfl
+  have hn' : eval (bconst n) 0 = Part.some n := eval_bconst n 0
+  have hp0 : eval (comp cp zero) 0 = Part.some (lensCode (pairLens ℓ ℓ')) :=
+    (eval_comp_some hz).trans hcp
+  have hb : eval (bconst idx) 0 = Part.some idx := eval_bconst idx 0
+  have hpair3 : eval (pair (comp cp zero) (bconst idx)) 0
+      = Part.some (Nat.pair (lensCode (pairLens ℓ ℓ')) idx) := by
+    change Nat.pair <$> _ <*> _ = _
+    rw [hp0, hb]; simp [Seq.seq]
+  have hpair1 : eval (pair (bconst n) (pair (comp cp zero) (bconst idx))) 0
+      = Part.some (Nat.pair n (Nat.pair (lensCode (pairLens ℓ ℓ')) idx)) := by
+    change Nat.pair <$> _ <*> _ = _
+    rw [hn', hpair3]; simp [Seq.seq]
+  have hcomp : Computes
+      (comp pairedGradedBuilderLB (pair (bconst n) (pair (comp cp zero) (bconst idx))))
+      (lensCode U) := by
+    change eval (comp pairedGradedBuilderLB
+      (pair (bconst n) (pair (comp cp zero) (bconst idx)))) 0 = _
+    rw [eval_comp_some hpair1, eval_pairedGradedBuilderLB, hevalp]
+  have hle := KE_le hcomp
+  rw [E_len_comp, E_len_pair, E_len_pair, E_len_comp] at hle
+  have hzlen : elen (zero : Code) = 3 := rfl
+  have hbc := elen_bconst_le idx
+  have hbn := elen_bconst_le n
+  have hidxsize : Nat.size idx ≤ Nat.size N := Nat.size_le_size (le_of_lt hidxN)
+  have hidxsize' : (15 + elen dbl) * Nat.size idx ≤ (15 + elen dbl) * Nat.size N :=
+    Nat.mul_le_mul_left _ hidxsize
+  rw [hzlen, hlcp] at hle
+  rw [pairedLedgerConstLB]
+  omega
+
+set_option linter.style.longLine false in
+/-- info: 'PersistenceCapacity.ledger_lawBlind' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms ledger_lawBlind
+
+/-! ### Off the fibre: the collapse has no analogue past `F = id` ([Guests] §4, the v0.4 correction
+to Laws 1 and 2)
+
+`PermCarries` is `PermPersists` plus surjectivity of the reference frame, and `PermPersists` is
+exactly `Intertwines U id ℓ` read over `Perm (Fin n)` — the permutation specialization of
+`Intertwines.anchored`'s `F = id` fibre. Off that fibre the collapse has no analogue at all: a lossy
+law can intertwine a family for *every* host permutation while the family carries none of them
+(`parityLens_intertwines_not_carries`), and a family that intertwines the host's own law can be
+faithful at every frame while still carrying no permutation but the identity
+(`discreteFactor_intertwines_not_carries`). Both are refuting instances behind [Guests] §4's Laws 1
+and 2 as restated in v0.4: each law's proof, over an imported ledger, needs the family to persist,
+and these show that hypothesis is load-bearing rather than a presentation choice. -/
+
+/-- **The parity guest's reading**: frame zero reads a state's parity into `Fin 2`, every later
+frame is the constant `0`. Paired with `parityLens_intertwines_not_carries`. -/
+def parityLens (n : ℕ) : ℕ → Fin n → Fin 2
+  | 0, x => ⟨(x : ℕ) % 2, Nat.mod_lt _ (by norm_num)⟩
+  | _ + 1, _ => 0
+
+/-- The parity guest intertwines the constant law for **every** permutation of `Fin n`: past frame
+zero both sides of the square are the constant `0`, and at frame zero they agree because the law
+itself is constant. No hypothesis on `U` at all. -/
+theorem intertwines_parityLens (n : ℕ) (U : Perm (Fin n)) :
+    Intertwines (⇑U) (fun _ : Fin 2 => 0) (parityLens n) := by
+  intro t s
+  cases t <;> rfl
+
+/-- The parity guest's persistence identity fails at every permutation, once some state is odd: the
+identity at `t = 1` reads frame zero as the constant `0` everywhere, which it is not at an odd
+state. -/
+theorem not_permPersists_parityLens {n : ℕ} (hn : 2 ≤ n) (U : Perm (Fin n)) :
+    ¬ PermPersists U (parityLens n) := by
+  intro h
+  have heq := h 1 (⟨1, hn⟩ : Fin n)
+  simp [parityLens] at heq
+
+/-- **Witness 1 — the parity guest** ([Guests] §4): a lossy law intertwines this family for
+*every* permutation of `Fin n`, yet the family carries none of them, so `Intertwines` is strictly
+more general than `PermCarries` off the `F = id` fibre. `2 ≤ n` is needed so `Fin n` has an odd
+state for frame zero to distinguish from the even one. -/
+theorem parityLens_intertwines_not_carries {n : ℕ} (hn : 2 ≤ n) (U : Perm (Fin n)) :
+    Intertwines (⇑U) (fun _ : Fin 2 => 0) (parityLens n) ∧ ¬ PermCarries U (parityLens n) :=
+  ⟨intertwines_parityLens n U, fun hc => not_permPersists_parityLens hn U hc.2⟩
+
+set_option linter.style.longLine false in
+/-- info: 'PersistenceCapacity.parityLens_intertwines_not_carries' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms parityLens_intertwines_not_carries
+
+/-- The discrete factor intertwines the host's own law by `rfl`: reading every state as itself, one
+step of the world already *is* one step of the law applied to the reading. -/
+theorem intertwines_discreteFactor (U : Perm (Fin n)) :
+    Intertwines (⇑U) (⇑U) (fun _ : ℕ => (id : Fin n → Fin n)) :=
+  fun _ _ => rfl
+
+/-- The discrete factor's persistence identity fails at every permutation but the identity: at
+`t = 1` it reads `U x = x` for every state `x`, which is exactly the identity `U` is not. -/
+theorem not_permCarries_discreteFactor {U : Perm (Fin n)} (hU : U ≠ 1) :
+    ¬ PermCarries U (fun _ : ℕ => (id : Fin n → Fin n)) := by
+  rintro ⟨-, hpers⟩
+  refine hU (Equiv.ext fun x => ?_)
+  have heq := hpers 1 x
+  simpa [pow_one] using heq
+
+/-- **Witness 2 — the discrete factor** ([Guests] §4): the identity reading, run behind the host's
+own law, is faithful at every frame and intertwines by `rfl` — yet it carries no permutation but the
+identity, so faithfulness at every frame is no substitute for `PermCarries`'s persistence identity
+off the `F = id` fibre. -/
+theorem discreteFactor_intertwines_not_carries {U : Perm (Fin n)} (hU : U ≠ 1) :
+    Intertwines (⇑U) (⇑U) (fun _ : ℕ => (id : Fin n → Fin n))
+      ∧ Function.Bijective (id : Fin n → Fin n)
+      ∧ ¬ PermCarries U (fun _ : ℕ => (id : Fin n → Fin n)) :=
+  ⟨intertwines_discreteFactor U, Function.bijective_id, not_permCarries_discreteFactor hU⟩
+
+set_option linter.style.longLine false in
+/-- info: 'PersistenceCapacity.discreteFactor_intertwines_not_carries' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms discreteFactor_intertwines_not_carries
+
+/-! ### The two-block guest ([Guests] §4, Remark 4.2: every division of the bill is realized)
+
+Neither witness above is the only way to pay Law 1's `cost(S) + K(F)` debt: the **two-block
+guest** splits the carrier into invariant blocks of sizes `n₁` and `n₂`, lets the host act as
+`U₁ ⊕ U₂`, and gives the guest's law the first block while its reading moves with the second. At
+`U₁ = 1` this is the persistent memory of `U₂`; at `U₂ = 1` it is the discrete factor of `U₁`
+(Witness 2 above); in between it stays faithful throughout while intertwining, dividing the debt
+between `K(F)` and `cost(S)` at every split of the two blocks. -/
+
+/-- **The two-block guest's reading**: undo the second block by `t` steps, leave the first alone.
+Paired with `intertwines_twoBlockGuest`, `bijective_twoBlockLens`, `not_permPersists_twoBlockGuest`
+and `ne_twoBlockLens`, and bundled in `twoBlockGuest_intertwines_not_carries`. -/
+def twoBlockLens (n₁ : ℕ) {n₂ : ℕ} (U₂ : Perm (Fin n₂)) (t : ℕ) :
+    Fin (n₁ + n₂) → Fin (n₁ + n₂) :=
+  ⇑((unionWorld (1 : Perm (Fin n₁)) U₂)⁻¹ ^ t)
+
+private theorem exists_apply_ne {k : ℕ} {V : Perm (Fin k)} (hV : V ≠ 1) : ∃ x : Fin k, V x ≠ x := by
+  by_contra h
+  push Not at h
+  exact hV (Equiv.ext h)
+
+/-- A permutation's inverse cancels it — stated to keep `⁻¹`'s surface syntax intact for `simp`,
+where the library's `Equiv.symm`-phrased form (`Equiv.Perm.inv_def` unfolds `⁻¹` to `.symm`) would
+otherwise fight a neighbouring `pow_succ`/`unionWorld_invPow_*` rewrite over the same subterm. -/
+private theorem invApplySelf {k : ℕ} (V : Perm (Fin k)) (x : Fin k) : V⁻¹ (V x) = x := by
+  rw [Equiv.Perm.inv_def]; exact Equiv.symm_apply_apply V x
+
+/-- **The square commutes blockwise** ([Guests] §4, Remark 4.2): `U = U₁ ⊕ U₂`, the law carries the
+first block (`F = U₁ ⊕ id`), and the reading undoes the second (`ℓₜ = (id ⊕ U₂)^{-t}`) —
+block-disjoint maps commute, so no hypothesis on `U₁` or `U₂` is needed at all. -/
+theorem intertwines_twoBlockGuest {n₁ n₂ : ℕ} (U₁ : Perm (Fin n₁)) (U₂ : Perm (Fin n₂)) :
+    Intertwines (⇑(unionWorld U₁ U₂)) (⇑(unionWorld U₁ (1 : Perm (Fin n₂))))
+      (twoBlockLens n₁ U₂) := by
+  intro t x
+  refine Fin.addCases (fun i => ?_) (fun j => ?_) x
+  · simp only [twoBlockLens, unionWorld_left, unionWorld_invPow_left]
+  · simp only [twoBlockLens, unionWorld_right, unionWorld_invPow_right, Equiv.Perm.one_apply]
+    congr 1
+    rw [pow_succ, Equiv.Perm.mul_apply, invApplySelf]
+
+/-- **Every frame is a bijection**: each is the coercion of a permutation, so faithfulness is
+near-free — the honest content of the square is `intertwines_twoBlockGuest`. -/
+theorem bijective_twoBlockLens {n₁ n₂ : ℕ} (U₂ : Perm (Fin n₂)) (t : ℕ) :
+    Function.Bijective (twoBlockLens n₁ U₂ t) :=
+  ((unionWorld (1 : Perm (Fin n₁)) U₂)⁻¹ ^ t).bijective
+
+/-- **Not `PermPersists` when `U₁ ≠ 1`** ([Guests] §4, Remark 4.2): frame one undoes only the second
+block, so any point the first block moves witnesses the persistence identity's failure — hence not
+`PermCarries` either (`twoBlockGuest_intertwines_not_carries`). -/
+theorem not_permPersists_twoBlockGuest {n₁ n₂ : ℕ} {U₁ : Perm (Fin n₁)} (U₂ : Perm (Fin n₂))
+    (hU₁ : U₁ ≠ 1) :
+    ¬ PermPersists (unionWorld U₁ U₂) (twoBlockLens n₁ U₂) := by
+  intro hpers
+  obtain ⟨i, hi⟩ := exists_apply_ne hU₁
+  have heq := hpers 1 (Fin.castAdd n₂ i)
+  simp only [pow_one, twoBlockLens, unionWorld_left, unionWorld_inv_left,
+    unionWorld_invPow_left] at heq
+  exact hi (Fin.castAdd_injective n₁ n₂ heq)
+
+/-- **The frames are non-constant when `U₂ ≠ 1`** ([Guests] §4, Remark 4.2): the separation from the
+discrete-factor shape, where every frame is the identity. -/
+theorem ne_twoBlockLens (n₁ : ℕ) {n₂ : ℕ} {U₂ : Perm (Fin n₂)} (hU₂ : U₂ ≠ 1) :
+    twoBlockLens n₁ U₂ 1 ≠ twoBlockLens n₁ U₂ 0 := by
+  obtain ⟨k, hk⟩ := exists_apply_ne hU₂
+  intro hEq
+  have heq := congrFun hEq (Fin.natAdd n₁ (U₂ k))
+  simp only [twoBlockLens, pow_one, pow_zero, Equiv.Perm.one_apply, unionWorld_inv_right,
+    invApplySelf] at heq
+  exact hk (Fin.natAdd_injective n₂ n₁ heq).symm
+
+/-- **Witness 3 — the two-block guest** ([Guests] §4, Remark 4.2): bundles (a)–(d) beside
+`discreteFactor_intertwines_not_carries`, whose shape it mirrors. When both blocks act nontrivially
+the family intertwines, stays faithful at every frame, carries no permutation (`PermCarries` fails),
+and is not frame-constant — the family that realizes every intermediate division of Law 1's debt
+between `K(F)` and `cost(S)`, degenerating to the persistent memory at `U₁ = 1` and to Witness 2 at
+`U₂ = 1`. -/
+theorem twoBlockGuest_intertwines_not_carries {n₁ n₂ : ℕ} (U₁ : Perm (Fin n₁)) (U₂ : Perm (Fin n₂))
+    (hU₁ : U₁ ≠ 1) (hU₂ : U₂ ≠ 1) :
+    Intertwines (⇑(unionWorld U₁ U₂)) (⇑(unionWorld U₁ (1 : Perm (Fin n₂))))
+        (twoBlockLens n₁ U₂)
+      ∧ (∀ t, Function.Bijective (twoBlockLens n₁ U₂ t))
+      ∧ ¬ PermCarries (unionWorld U₁ U₂) (twoBlockLens n₁ U₂)
+      ∧ twoBlockLens n₁ U₂ 1 ≠ twoBlockLens n₁ U₂ 0 :=
+  ⟨intertwines_twoBlockGuest U₁ U₂, bijective_twoBlockLens U₂,
+    fun hcar => not_permPersists_twoBlockGuest U₂ hU₁ hcar.2, ne_twoBlockLens n₁ hU₂⟩
+
+set_option linter.style.longLine false in
+/-- info: 'PersistenceCapacity.twoBlockGuest_intertwines_not_carries' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms twoBlockGuest_intertwines_not_carries
+
+/-! ### The conjugation guest ([Guests] §4, Remark 4.2: the split curve over single-cycle hosts)
+
+A single-cycle host bars the two-block route above — its centralizer is its own powers, so no
+non-trivial invariant block exists to split. The **conjugation guest** realizes the same curve by
+relabeling instead: conjugate the standard cycle `σ₀` (`finRotate n`) by `h = h₁ ∘ h₂`, split across
+disjoint initial segments, and read by `h₁⁻¹` alone. Three pieces make the witness go:
+
+* **The recovery identity** (`orbitEnum_bijective`, `orbitEnum_conj`, `orbitEnum_unique`): a
+  conjugator of `σ₀` fixing `0` is determined by the image of one point, so it IS the host's own
+  orbit enumeration — total, no search.
+* **The pair injection** (`conjugation_pair_injective`): the recovery identity pins the conjugating
+  pair `(h₁, h₂)` from the conjugate alone.
+* **The guest's clauses** (`conjugationGuest_intertwines_not_carries`): the square commutes by pure
+  cancellation, every frame is a bijection, and the family carries nothing. -/
+
+/-! #### The recovery identity -/
+
+/-- **The orbit enumeration**: read the host `U`'s orbit of `0` off `U`'s own powers. Paired with
+`orbitEnum_bijective`, `orbitEnum_conj` and `orbitEnum_unique`. -/
+def orbitEnum {n : ℕ} [NeZero n] (U : Perm (Fin n)) : Fin n → Fin n := fun j => (U ^ (j : ℕ)) 0
+
+private theorem orbitEnum_noSmallPeriod {n : ℕ} [NeZero n] {U : Perm (Fin n)}
+    (hU : ∀ x, ∃ k : ℕ, (U ^ k) 0 = x) {d : ℕ} (hd0 : 0 < d) (hdn : d < n)
+    (hUd : (U ^ d) 0 = 0) : False := by
+  have hfix : ∀ x : Fin n, (U ^ d) x = x := by
+    intro x
+    obtain ⟨k, hk⟩ := hU x
+    have hcomm : (U ^ d) ((U ^ k) 0) = (U ^ k) ((U ^ d) 0) := by
+      rw [← Equiv.Perm.mul_apply, ← Equiv.Perm.mul_apply, ← pow_add, ← pow_add, Nat.add_comm]
+    rw [hk, hUd] at hcomm
+    exact hcomm.trans hk
+  have hone : U ^ d = 1 := Equiv.ext hfix
+  have hsurj : Function.Surjective (fun r : Fin d => (U ^ (r : ℕ)) 0) := by
+    intro x
+    obtain ⟨k, hk⟩ := hU x
+    refine ⟨⟨k % d, Nat.mod_lt _ hd0⟩, ?_⟩
+    change (U ^ (k % d)) 0 = x
+    have hkd : d * (k / d) + k % d = k := Nat.div_add_mod k d
+    have hstep : U ^ (d * (k / d) + k % d) = U ^ (k % d) := by
+      rw [pow_add, pow_mul, hone, one_pow, one_mul]
+    rw [hkd] at hstep
+    rw [← hstep, hk]
+  have hcard := Fintype.card_le_of_surjective _ hsurj
+  simp only [Fintype.card_fin] at hcard
+  omega
+
+/-- **Bijective** ([Guests] §4, Remark 4.2): a period shorter than `n` would recur inside `Fin n`
+before covering it, contradicting transitivity — the pigeonhole `orbitEnum_noSmallPeriod` runs. -/
+theorem orbitEnum_bijective {n : ℕ} [NeZero n] {U : Perm (Fin n)}
+    (hU : ∀ x, ∃ k : ℕ, (U ^ k) 0 = x) : Function.Bijective (orbitEnum U) := by
+  rw [← Finite.injective_iff_bijective]
+  have key : ∀ a b : Fin n, (a : ℕ) < (b : ℕ) → orbitEnum U a ≠ orbitEnum U b := by
+    intro a b hlt heq
+    have hbn : (b : ℕ) < n := b.isLt
+    set d := (b : ℕ) - (a : ℕ) with hd
+    have hd0 : 0 < d := by omega
+    have hdn : d < n := by omega
+    have hUd : (U ^ d) 0 = 0 := by
+      have hab : (a : ℕ) + d = (b : ℕ) := by omega
+      have hcanc : (U ^ (a : ℕ)) ((U ^ d) 0) = (U ^ (a : ℕ)) 0 := by
+        rw [← Equiv.Perm.mul_apply, ← pow_add, hab]
+        exact heq.symm
+      exact (U ^ (a : ℕ)).injective hcanc
+    exact orbitEnum_noSmallPeriod hU hd0 hdn hUd
+  intro a b heq
+  rcases lt_trichotomy (a : ℕ) (b : ℕ) with h | h | h
+  · exact absurd heq (key a b h)
+  · exact Fin.ext h
+  · exact absurd heq.symm (key b a h)
+
+private theorem orbitEnum_pow_n_zero {n : ℕ} [NeZero n] {U : Perm (Fin n)}
+    (hU : ∀ x, ∃ k : ℕ, (U ^ k) 0 = x) : (U ^ n) 0 = 0 := by
+  obtain ⟨m, hm⟩ := (orbitEnum_bijective hU).2 ((U ^ n) 0)
+  simp only [orbitEnum] at hm
+  have hm0 : m = 0 := by
+    by_contra hne
+    have hmpos : 0 < (m : ℕ) := Nat.pos_of_ne_zero (fun h0 => hne (Fin.ext h0))
+    have hmn : (m : ℕ) < n := m.isLt
+    set d := n - (m : ℕ) with hd
+    have hd0 : 0 < d := by omega
+    have hdn : d < n := by omega
+    have hmd : (m : ℕ) + d = n := by omega
+    have hcanc : (U ^ (m : ℕ)) ((U ^ d) 0) = (U ^ (m : ℕ)) 0 := by
+      rw [← Equiv.Perm.mul_apply, ← pow_add, hmd, hm]
+    have hUd : (U ^ d) 0 = 0 := (U ^ (m : ℕ)).injective hcanc
+    exact orbitEnum_noSmallPeriod hU hd0 hdn hUd
+  rw [hm0] at hm
+  simpa using hm.symm
+
+private theorem finRotate_val_succ_or_wrap {n : ℕ} [NeZero n] (j : Fin n) :
+    ((finRotate n j : ℕ) = (j : ℕ) + 1 ∧ (j : ℕ) + 1 < n) ∨
+      ((finRotate n j : ℕ) = 0 ∧ (j : ℕ) + 1 = n) := by
+  obtain ⟨n', rfl⟩ := Nat.exists_eq_succ_of_ne_zero (NeZero.ne n)
+  rcases eq_or_ne j (Fin.last n') with hj | hj
+  · right
+    subst hj
+    refine ⟨by simp, by simp⟩
+  · left
+    have hlt : (j : ℕ) < n' := Fin.val_lt_last hj
+    exact ⟨coe_finRotate_of_ne_last hj, by omega⟩
+
+/-- **The conjugation identity** ([Guests] §4, Remark 4.2): the orbit enumeration conjugates `σ₀`
+to `U`. The wrap step at the top index needs `(U ^ n) 0 = 0`, itself forced by bijectivity. -/
+theorem orbitEnum_conj {n : ℕ} [NeZero n] {U : Perm (Fin n)}
+    (hU : ∀ x, ∃ k : ℕ, (U ^ k) 0 = x) (j : Fin n) :
+    orbitEnum U (finRotate n j) = U (orbitEnum U j) := by
+  simp only [orbitEnum]
+  rcases finRotate_val_succ_or_wrap j with ⟨hval, -⟩ | ⟨hval, hlast⟩
+  · rw [hval, _root_.pow_succ', Equiv.Perm.mul_apply]
+  · rw [hval, pow_zero, Equiv.Perm.one_apply]
+    have hn0 : (U ^ ((j : ℕ) + 1)) 0 = 0 := by rw [hlast]; exact orbitEnum_pow_n_zero hU
+    rw [_root_.pow_succ', Equiv.Perm.mul_apply] at hn0
+    exact hn0.symm
+
+private theorem orbitEnum_unique_aux {n : ℕ} [NeZero n] {U : Perm (Fin n)}
+    (hU : ∀ x, ∃ k : ℕ, (U ^ k) 0 = x) {g : Perm (Fin n)}
+    (hg : ∀ x, g (finRotate n x) = U (g x)) (hg0 : g 0 = 0) :
+    ∀ v : ℕ, ∀ hv : v < n, g ⟨v, hv⟩ = orbitEnum U ⟨v, hv⟩ := by
+  intro v
+  induction v with
+  | zero =>
+    intro hv
+    have h0 : (⟨0, hv⟩ : Fin n) = 0 := rfl
+    rw [h0, hg0]
+    simp [orbitEnum]
+  | succ m ih =>
+    intro hv
+    have hmn : m < n := by omega
+    have hp : (finRotate n (⟨m, hmn⟩ : Fin n) : ℕ) = m + 1 := by
+      rcases finRotate_val_succ_or_wrap (⟨m, hmn⟩ : Fin n) with ⟨h1, -⟩ | ⟨h1, h2⟩
+      · exact h1
+      · have h2' : m + 1 = n := h2
+        omega
+    have hjeq : finRotate n (⟨m, hmn⟩ : Fin n) = (⟨m + 1, hv⟩ : Fin n) := Fin.ext hp
+    calc g (⟨m + 1, hv⟩ : Fin n) = g (finRotate n (⟨m, hmn⟩ : Fin n)) := by rw [hjeq]
+      _ = U (g ⟨m, hmn⟩) := hg _
+      _ = U (orbitEnum U ⟨m, hmn⟩) := by rw [ih hmn]
+      _ = orbitEnum U (finRotate n (⟨m, hmn⟩ : Fin n)) := (orbitEnum_conj hU _).symm
+      _ = orbitEnum U (⟨m + 1, hv⟩ : Fin n) := by rw [hjeq]
+
+/-- **Uniqueness** ([Guests] §4, Remark 4.2): the unique conjugator of `σ₀` to `U` fixing `0` is the
+orbit enumeration — proved by induction along the cycle from `0`, using `orbitEnum_conj` at each
+step. -/
+theorem orbitEnum_unique {n : ℕ} [NeZero n] {U : Perm (Fin n)}
+    (hU : ∀ x, ∃ k : ℕ, (U ^ k) 0 = x) {g : Perm (Fin n)}
+    (hg : ∀ x, g (finRotate n x) = U (g x)) (hg0 : g 0 = 0) (j : Fin n) :
+    g j = orbitEnum U j := by
+  simpa using orbitEnum_unique_aux hU hg hg0 (j : ℕ) j.isLt
+
+/-! #### The pair injection -/
+
+private theorem finRotate_moves {n : ℕ} (hn : 2 ≤ n) : ∀ x : Fin n, finRotate n x ≠ x := by
+  have hns : (finRotate n).support = Finset.univ := support_finRotate_of_le hn
+  intro x hx
+  exact Equiv.Perm.mem_support.mp (hns ▸ Finset.mem_univ x) hx
+
+private theorem finRotate_transitive {n : ℕ} [NeZero n] (hn : 2 ≤ n) :
+    ∀ y : Fin n, ∃ k : ℕ, ((finRotate n) ^ k) (0 : Fin n) = y := fun y =>
+  (isCycle_finRotate_of_le hn).exists_pow_eq (finRotate_moves hn 0) (finRotate_moves hn y)
+
+/-- **The pair injection** ([Guests] §4, Remark 4.2: the conjugation guest): a conjugating pair
+`(h₁, h₂)` split across disjoint initial segments — `h₁` fixing every point outside `{1, …, m}`,
+`h₂` every point outside `{m + 1, …, n − 1}`, both fixing `0` — is determined by the conjugate
+`(h₁ * h₂) * σ₀ * (h₁ * h₂)⁻¹` alone. The conjugate pins `h₁ * h₂` via `orbitEnum_unique`; the
+disjoint-support hypotheses then split the product into its two factors. -/
+theorem conjugation_pair_injective {n : ℕ} [NeZero n] (hn : 2 ≤ n) (m : ℕ)
+    {h₁ h₂ h₁' h₂' : Perm (Fin n)}
+    (hh₁ : ∀ x : Fin n, (x : ℕ) = 0 ∨ m < (x : ℕ) → h₁ x = x)
+    (hh₂ : ∀ x : Fin n, (x : ℕ) ≤ m → h₂ x = x)
+    (hh₁' : ∀ x : Fin n, (x : ℕ) = 0 ∨ m < (x : ℕ) → h₁' x = x)
+    (hh₂' : ∀ x : Fin n, (x : ℕ) ≤ m → h₂' x = x)
+    (heq : (h₁ * h₂) * finRotate n * (h₁ * h₂)⁻¹ = (h₁' * h₂') * finRotate n * (h₁' * h₂')⁻¹) :
+    h₁ = h₁' ∧ h₂ = h₂' := by
+  set U := (h₁ * h₂) * finRotate n * (h₁ * h₂)⁻¹ with hUdef
+  have hfix1 : h₁ 0 = 0 := hh₁ 0 (Or.inl (by simp))
+  have hfix2 : h₂ 0 = 0 := hh₂ 0 (by simp)
+  have hfix1' : h₁' 0 = 0 := hh₁' 0 (Or.inl (by simp))
+  have hfix2' : h₂' 0 = 0 := hh₂' 0 (by simp)
+  have key : ∀ a b : Perm (Fin n), a 0 = 0 → b 0 = 0 →
+      (a * b) * finRotate n * (a * b)⁻¹ = U → ∀ j, (a * b) j = orbitEnum U j := by
+    intro a b ha hb hab
+    have h0 : (a * b) 0 = 0 := by rw [Equiv.Perm.mul_apply, hb, ha]
+    have hmul : (a * b) * finRotate n = U * (a * b) := by
+      have h := congrArg (· * (a * b)) hab
+      simpa [mul_assoc] using h
+    have hg : ∀ x, (a * b) (finRotate n x) = U ((a * b) x) := by
+      intro x
+      rw [← Equiv.Perm.mul_apply, ← Equiv.Perm.mul_apply, hmul]
+    have hcomm : ∀ (j : ℕ) (x : Fin n), (a * b) (((finRotate n) ^ j) x) = (U ^ j) ((a * b) x) := by
+      intro j
+      induction j with
+      | zero => intro x; simp
+      | succ j ih =>
+        intro x
+        have step1 : ((finRotate n) ^ (j + 1)) x = finRotate n (((finRotate n) ^ j) x) := by
+          rw [_root_.pow_succ', Equiv.Perm.mul_apply]
+        have step2 : (U ^ (j + 1)) ((a * b) x) = U ((U ^ j) ((a * b) x)) := by
+          rw [_root_.pow_succ', Equiv.Perm.mul_apply]
+        rw [step1, hg, ih, step2]
+    have htrans : ∀ y : Fin n, ∃ k : ℕ, (U ^ k) 0 = y := by
+      intro y
+      obtain ⟨k, hk⟩ := finRotate_transitive hn ((a * b)⁻¹ y)
+      refine ⟨k, ?_⟩
+      have hc := hcomm k 0
+      rw [h0, hk] at hc
+      simpa using hc.symm
+    exact orbitEnum_unique htrans hg h0
+  have e1 := key h₁ h₂ hfix1 hfix2 rfl
+  have e2 := key h₁' h₂' hfix1' hfix2' heq.symm
+  have hcomb : h₁ * h₂ = h₁' * h₂' := Equiv.ext (fun j => (e1 j).trans (e2 j).symm)
+  have hcombx := Equiv.ext_iff.mp hcomb
+  have heq1 : h₁ = h₁' := by
+    apply Equiv.ext
+    intro x
+    by_cases hx : (x : ℕ) ≤ m
+    · have h2x : h₂ x = x := hh₂ x hx
+      have h2'x : h₂' x = x := hh₂' x hx
+      have hcx := hcombx x
+      simpa [Equiv.Perm.mul_apply, h2x, h2'x] using hcx
+    · have hx' : m < (x : ℕ) := by omega
+      rw [hh₁ x (Or.inr hx'), hh₁' x (Or.inr hx')]
+  have heq2 : h₂ = h₂' := mul_left_cancel (by rw [hcomb, heq1])
+  exact ⟨heq1, heq2⟩
+
+/-! #### The conjugation guest's clauses -/
+
+/-- **The conjugation guest's reading**: the constant `h₁⁻¹`, independent of the time index — a
+relabeling, not a moving decoder. Paired with `intertwines_conjugationGuest`,
+`bijective_conjugationLens` and `not_permCarries_conjugationGuest`, bundled in
+`conjugationGuest_intertwines_not_carries`. -/
+def conjugationLens {n : ℕ} (h₁ : Perm (Fin n)) : ℕ → Fin n → Fin n := fun _ => ⇑h₁⁻¹
+
+/-- **The square commutes by cancellation** ([Guests] §4, Remark 4.2): with `h = h₁ * h₂`, the
+constant reading `h₁⁻¹` intertwines the world `h * σ₀ * h⁻¹` with law `h₂ * σ₀ * h₂⁻¹` — pure group
+cancellation, no hypothesis on `h₁` or `h₂` at all. -/
+theorem intertwines_conjugationGuest {n : ℕ} (h₁ h₂ : Perm (Fin n)) :
+    Intertwines (⇑((h₁ * h₂) * finRotate n * (h₁ * h₂)⁻¹)) (⇑(h₂ * finRotate n * h₂⁻¹))
+      (conjugationLens h₁) := by
+  intro t x
+  change h₁⁻¹ (((h₁ * h₂) * finRotate n * (h₁ * h₂)⁻¹) x) = (h₂ * finRotate n * h₂⁻¹) (h₁⁻¹ x)
+  have hcancel :
+      h₁⁻¹ * ((h₁ * h₂) * finRotate n * (h₁ * h₂)⁻¹) = (h₂ * finRotate n * h₂⁻¹) * h₁⁻¹ := by
+    group
+  have hx := Equiv.ext_iff.mp hcancel x
+  simp only [Equiv.Perm.mul_apply] at hx
+  exact hx
+
+/-- **Every frame is a bijection**: `conjugationLens h₁ t` is `h₁⁻¹`'s coercion, so faithfulness is
+free — the honest content of the square is `intertwines_conjugationGuest`. -/
+theorem bijective_conjugationLens {n : ℕ} (h₁ : Perm (Fin n)) (t : ℕ) :
+    Function.Bijective (conjugationLens h₁ t) := by
+  simp only [conjugationLens]
+  exact h₁⁻¹.bijective
+
+/-- **Not `PermCarries`** ([Guests] §4, Remark 4.2): over `2 ≤ n`, `σ₀` moves every point, hence so
+does its conjugate `U` — at `U 0 ≠ 0` the persistence identity already fails, unconditionally on
+`h₁`, `h₂`. -/
+theorem not_permCarries_conjugationGuest {n : ℕ} [NeZero n] (hn : 2 ≤ n) (h₁ h₂ : Perm (Fin n)) :
+    ¬ PermCarries ((h₁ * h₂) * finRotate n * (h₁ * h₂)⁻¹) (conjugationLens h₁) := by
+  set h := h₁ * h₂ with hhdef
+  have hmove : finRotate n (h⁻¹ 0) ≠ h⁻¹ 0 := finRotate_moves hn _
+  have hU0 : (h * finRotate n * h⁻¹) 0 ≠ 0 := by
+    simp only [Equiv.Perm.mul_apply]
+    intro hc
+    have h2 : h (h⁻¹ (0 : Fin n)) = 0 := by simp
+    exact hmove (h.injective (hc.trans h2.symm))
+  rintro ⟨-, hpers⟩
+  have heq := hpers 1 0
+  simp only [pow_one, conjugationLens] at heq
+  exact hU0 ((h₁⁻¹).injective heq)
+
+/-- **The discrete-factor degeneracy** ([Guests] §4, Remark 4.2): at `h₁ = 1` the reading collapses
+to the identity — combined with `h₁ * h₂ = h₂` there, `intertwines_conjugationGuest` specializes to
+exactly `intertwines_discreteFactor`'s shape, world and law both `h₂ * σ₀ * h₂⁻¹`. -/
+theorem conjugationLens_one {n : ℕ} :
+    conjugationLens (1 : Perm (Fin n)) = fun _ => (id : Fin n → Fin n) := by
+  funext t x
+  simp [conjugationLens]
+
+/-- **Witness — the conjugation guest** ([Guests] §4, Remark 4.2): over `2 ≤ n`, the family
+intertwines its host by pure cancellation, stays faithful at every frame, and carries no
+permutation — realizing the split curve over single-cycle hosts by relabeling rather than block
+motion, degenerating to the discrete factor at `h₁ = 1` (`conjugationLens_one`). -/
+theorem conjugationGuest_intertwines_not_carries {n : ℕ} [NeZero n] (hn : 2 ≤ n)
+    (h₁ h₂ : Perm (Fin n)) :
+    Intertwines (⇑((h₁ * h₂) * finRotate n * (h₁ * h₂)⁻¹)) (⇑(h₂ * finRotate n * h₂⁻¹))
+        (conjugationLens h₁)
+      ∧ (∀ t, Function.Bijective (conjugationLens h₁ t))
+      ∧ ¬ PermCarries ((h₁ * h₂) * finRotate n * (h₁ * h₂)⁻¹) (conjugationLens h₁) :=
+  ⟨intertwines_conjugationGuest h₁ h₂, bijective_conjugationLens h₁,
+    not_permCarries_conjugationGuest hn h₁ h₂⟩
+
+set_option linter.style.longLine false in
+/-- info: 'PersistenceCapacity.orbitEnum_bijective' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms orbitEnum_bijective
+
+set_option linter.style.longLine false in
+/-- info: 'PersistenceCapacity.orbitEnum_conj' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms orbitEnum_conj
+
+set_option linter.style.longLine false in
+/-- info: 'PersistenceCapacity.orbitEnum_unique' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms orbitEnum_unique
+
+set_option linter.style.longLine false in
+/-- info: 'PersistenceCapacity.conjugation_pair_injective' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms conjugation_pair_injective
+
+set_option linter.style.longLine false in
+/-- info: 'PersistenceCapacity.conjugationGuest_intertwines_not_carries' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms conjugationGuest_intertwines_not_carries
 
 /-- **The composition lemma — the tower's core** ([Persistence] §10.2). Squares compose and
 **dilations multiply**: a `τ₁`-square from the base to level 1, stacked with a `τ₂`-square from

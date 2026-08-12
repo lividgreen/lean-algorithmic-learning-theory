@@ -1,5 +1,5 @@
 name = "alt"
-version = "1.7.0"
+version = "1.8.0"
 keywords = ["math", "learning-theory", "probability", "computability", "realizability"]
 defaultTargets = ["ALT"]
 
@@ -17,7 +17,7 @@ rev = "v4.32.2"
 [[require]]
 name = "Foundation"
 git = "https://github.com/FormalizedFormalLogic/Foundation"
-rev = "dbf334e5f393f93f9ea8d59f09cbb00da6fc1ecc"
+rev = "31bb5856c1086e3289c05f2db7356642754e02d3"
 
 [[lean_lib]]
 name = "ALT"
