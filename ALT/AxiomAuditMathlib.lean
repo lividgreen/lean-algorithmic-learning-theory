@@ -82,12 +82,25 @@ import ALT.KolmogorovBitlen
 import ALT.ChainDependencyAudit
 import ALT.ExcessOrder
 import ALT.SkewFiber
+import ALT.AccretingWitness
 import ALT.AccretiveDecoupling
+import ALT.GrowingWorld
 import ALT.SurpriseBudget
 import ALT.WeightedFiber
 import ALT.QuantizationRate
 import ALT.FlooredMixture
 import ALT.SubstrateClass
+import ALT.SubstrateEmergence
+import ALT.BlockPairProfile
+import ALT.BlockPairHost
+import ALT.BlockPairPrice
+import ALT.TapeHost
+import ALT.TapeHostFiber
+import ALT.TapeHostObservability
+import ALT.TapeHostWitness
+import ALT.BlockPairCriterion
+import ALT.BlockPairFamilyCriterion
+import ALT.TapeHostSurvival
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -146,6 +159,50 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 /-- info: 'Decoupling.exists_strictly_accretive_decoupling' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms Decoupling.exists_strictly_accretive_decoupling
+
+-- The growing-world skeleton ([Guests] §2 over [Inevitability] §6): factor closure at an arbitrary
+-- carrier, coherence with the fixed-carrier `Intertwines`, the guard showing the tape's
+-- counter-free reading admits no guest law at all, and the counter-including reading's strictly
+-- growing extent over the binary sub-stages.
+/-- info: 'GrowingWorld.advances_guestStage' does not depend on any axioms -/
+#guard_msgs (whitespace := lax) in
+#print axioms GrowingWorld.advances_guestStage
+
+/-- info: 'GrowingWorld.stagedSquare_const_iff' does not depend on any axioms -/
+#guard_msgs (whitespace := lax) in
+#print axioms GrowingWorld.stagedSquare_const_iff
+
+/-- info: 'GrowingWorld.not_exists_stagedSquare_tapeDecode' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms GrowingWorld.not_exists_stagedSquare_tapeDecode
+
+/-- info: 'GrowingWorld.ncard_guestStage_tapeStageB' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms GrowingWorld.ncard_guestStage_tapeStageB
+
+-- The accreting healer world ([Guests] §3/§5 over the growing-world skeleton): the stages advance
+-- under append-heal-turn, the majority reading obeys the growing-memory law from every state,
+-- total flips under the healing radius are erased in one step with the accretion in the loop, and
+-- the guest's extent doubles at every stage.
+/-- info: 'AccretingWitness.advances_accUpdate' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms AccretingWitness.advances_accUpdate
+
+/-- info: 'AccretingWitness.stagedSquare_accRead' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms AccretingWitness.stagedSquare_accRead
+
+/-- info: 'AccretingWitness.accErasure' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms AccretingWitness.accErasure
+
+/-- info: 'AccretingWitness.guestStage_accRead_eq' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms AccretingWitness.guestStage_accRead_eq
+
+/-- info: 'AccretingWitness.ncard_guestStage_accRead' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms AccretingWitness.ncard_guestStage_accRead
 
 -- The surprise-budget assembly: [Discovery]'s event count priced in cells, against [Persistence]'s
 -- robustness margin and repair tax. Two survival theorems under two different (independent)
@@ -3726,3 +3783,343 @@ strict subset the guard pins verbatim. -/
 /-- info: 'SubstrateClass.reachesThresholdWithinAt_lost_on_overwrite' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms SubstrateClass.reachesThresholdWithinAt_lost_on_overwrite
+
+-- [Inevitability] §2 Definition 2.3, the class-level `𝒮_E` constructor: for any decoupled
+-- `(U, R)`, any packing onto a numeral carrier, and any frame surjective off the packed update's
+-- own iterate, `SubstrateE` follows from the numeral conditions and one crossing hypothesis at the
+-- packed capacity — and the reversible corollary, Definition 2.3's own ruled sentence.
+/-- info: 'SubstrateEmergence.substrateE_of_emergence' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms SubstrateEmergence.substrateE_of_emergence
+
+/-- info: 'SubstrateEmergence.substrateE_of_perm' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms SubstrateEmergence.substrateE_of_perm
+
+-- The block-pair correlation profile: the cyclic-correlation decomposition at symbolic block
+-- count and its zone/spike corollaries, the Thue–Morse-sourced block-sign supply discharging both
+-- transition-sum balances, and the certified length-24 word pair's assembled correlation profile.
+/-- info: 'BlockPairProfile.cyclicCorr_blockSeq' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairProfile.cyclicCorr_blockSeq
+
+/-- info: 'BlockPairProfile.cyclicCorr_blockSeq_zone' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairProfile.cyclicCorr_blockSeq_zone
+
+/-- info: 'BlockPairProfile.cyclicCorr_blockSeq_spike' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairProfile.cyclicCorr_blockSeq_spike
+
+/-- info: 'BlockPairProfile.tmSign_balance' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairProfile.tmSign_balance
+
+/-- info: 'BlockPairProfile.blockSign_sq' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairProfile.blockSign_sq
+
+/-- info: 'BlockPairProfile.blockSign_mul_noWrap' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairProfile.blockSign_mul_noWrap
+
+/-- info: 'BlockPairProfile.blockSign_mul_wrap' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairProfile.blockSign_mul_wrap
+
+/-- info: 'BlockPairProfile.blockSign_transition_even' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairProfile.blockSign_transition_even
+
+/-- info: 'BlockPairProfile.blockSign_transition_odd' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairProfile.blockSign_transition_odd
+
+/-- info: 'BlockPairProfile.blockSeq_wordU_wordV_correlation' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairProfile.blockSeq_wordU_wordV_correlation
+
+-- The profile-class family (`ALT/BlockPairProfile.lean`): the certified pair's exact zone
+-- generalizes to every extension count `r ≥ 1`, the same seeds extended with alternating block
+-- sign to every length `8 * r`.
+/-- info: 'BlockPairProfile.aperiodicCorr_antiExt_zone' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairProfile.aperiodicCorr_antiExt_zone
+
+/-- info: 'BlockPairProfile.tmPrefix_two_mul' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairProfile.tmPrefix_two_mul
+
+/-- info: 'BlockPairProfile.tmPrefix_two_mul_add_one' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairProfile.tmPrefix_two_mul_add_one
+
+/-- info: 'BlockPairProfile.blockSign_eq_tmPrefix' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairProfile.blockSign_eq_tmPrefix
+
+-- The deviation envelope: Thue–Morse partial-sum bounds, the ℕ-indexed prefix/window machinery
+-- with its exact block decomposition and period reduction, the zone/spike prefix and window
+-- bounds at symbolic block count, and their instantiation at the certified word pair.
+/-- info: 'BlockPairProfile.tmSign_partial_odd' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairProfile.tmSign_partial_odd
+
+/-- info: 'BlockPairProfile.tmSign_partial_abs_le_one' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairProfile.tmSign_partial_abs_le_one
+
+/-- info: 'BlockPairProfile.tau_partial_even_abs_le_one' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairProfile.tau_partial_even_abs_le_one
+
+/-- info: 'BlockPairProfile.tau_partial_odd_abs_le_one' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairProfile.tau_partial_odd_abs_le_one
+
+/-- info: 'BlockPairProfile.cyclicCorrPrefix_add_period' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairProfile.cyclicCorrPrefix_add_period
+
+/-- info: 'BlockPairProfile.cyclicCorrWindow_eq_sub' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairProfile.cyclicCorrWindow_eq_sub
+
+/-- info: 'BlockPairProfile.cyclicCorrPrefix_mod_period' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairProfile.cyclicCorrPrefix_mod_period
+
+/-- info: 'BlockPairProfile.cyclicCorrPrefix_blockSeq_zone' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairProfile.cyclicCorrPrefix_blockSeq_zone
+
+/-- info: 'BlockPairProfile.cyclicCorrPrefix_blockSeq_spike' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairProfile.cyclicCorrPrefix_blockSeq_spike
+
+/-- info: 'BlockPairProfile.cyclicCorrWindow_blockSeq_zone' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairProfile.cyclicCorrWindow_blockSeq_zone
+
+/-- info: 'BlockPairProfile.cyclicCorrWindow_blockSeq_spike' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairProfile.cyclicCorrWindow_blockSeq_spike
+
+/-- info: 'BlockPairProfile.cyclicCorrPrefix_blockSeq_wordU_wordV_zone' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairProfile.cyclicCorrPrefix_blockSeq_wordU_wordV_zone
+
+/-- info: 'BlockPairProfile.cyclicCorrPrefix_blockSeq_wordU_wordV_spike' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairProfile.cyclicCorrPrefix_blockSeq_wordU_wordV_spike
+
+/-- info: 'BlockPairProfile.cyclicCorrWindow_blockSeq_wordU_wordV_zone' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairProfile.cyclicCorrWindow_blockSeq_wordU_wordV_zone
+
+/-- info: 'BlockPairProfile.cyclicCorrWindow_blockSeq_wordU_wordV_spike' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairProfile.cyclicCorrWindow_blockSeq_wordU_wordV_spike
+
+/-- info: 'BlockPairHost.rot8_iterate_eight' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairHost.rot8_iterate_eight
+
+/-- info: 'BlockPairHost.rot8_iterate_dvd' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairHost.rot8_iterate_dvd
+
+/-- info: 'BlockPairHost.windowXor_noisyStep' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairHost.windowXor_noisyStep
+
+/-- info: 'BlockPairHost.hostUpdate_iterate_designWindow' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairHost.hostUpdate_iterate_designWindow
+
+/-- info: 'BlockPairHost.hostUpdate_iterate_last' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairHost.hostUpdate_iterate_last
+
+/-- info: 'BlockPairHost.hostUpdate_iterate_period' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairHost.hostUpdate_iterate_period
+
+/-- info: 'BlockPairHost.windowXor_hostUpdate_iterate' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairHost.windowXor_hostUpdate_iterate
+
+/-- info: 'BlockPairHost.hostUpdate_iterate_period_all' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairHost.hostUpdate_iterate_period_all
+
+-- The profile-class 𝒮_L criterion (`ALT/TapeHost.lean`, `ALT/TapeHostObservability.lean`,
+-- `ALT/TapeHostWitness.lean`): the block-pair pipeline's host and observability layers with the
+-- observation sequence made a parameter, and the profile-class membership theorem over an
+-- arbitrary window-deviation profile. The certified sequence's own instance of that profile
+-- (`ALT/BlockPairCriterion.lean`) is guarded alongside it, below.
+/-- info: 'TapeHostObservability.mixingHoeffding_schedule' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms TapeHostObservability.mixingHoeffding_schedule
+
+/-- info: 'TapeHostWitness.tape_density' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms TapeHostWitness.tape_density
+
+/-- info: 'TapeHostWitness.tapeHost_substrateL' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms TapeHostWitness.tapeHost_substrateL
+
+/-- info: 'BlockPairCriterion.designObs_profile' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairCriterion.designObs_profile
+
+-- The affordable regime's worked example (`ALT/TapeHostSchedule.lean`): the schedule's own
+-- oracle is deterministic (`scheduleOracle_deterministic`) and its `2τ`-pruning rule
+-- (`schedSurvivors`) isolates the true literal from an explicit horizon on, uniform in the
+-- period. The certified block-pair design's own instance (`ALT/BlockPairCriterion.lean`) is
+-- guarded alongside it, below.
+/-- info: 'TapeHostSchedule.schedSurvivors_eq_singleton' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms TapeHostSchedule.schedSurvivors_eq_singleton
+
+/-- info: 'BlockPairCriterion.blockPair_identifies' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairCriterion.blockPair_identifies
+
+-- The sharp identification window (`ALT/TapeHostSchedule.lean`): `schedSurvivors_eq_singleton`'s
+-- three inequalities met against each of their own margins rather than a single `τ`-wide budget,
+-- giving identification at every density below a quarter of the cross-class slack
+-- (`identifies_of_lt_quarter`) and, at `μ = 0`, a refuting family above it
+-- (`not_identifies_of_gt_quarter`).
+/-- info: 'TapeHostSchedule.schedSurvivors_eq_singleton_sharp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms TapeHostSchedule.schedSurvivors_eq_singleton_sharp
+
+/-- info: 'TapeHostSchedule.not_identifies_of_gt_quarter' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms TapeHostSchedule.not_identifies_of_gt_quarter
+
+-- The profile-class family's own criterion instance (`ALT/BlockPairFamilyCriterion.lean`): the
+-- family meets `TapeHostObservability.Profile` at every `r ≥ 2` and identifies the true literal
+-- from `r = 3` on, at density `η = 1 / (2 * r)` inside `identifies_of_lt_quarter`'s window. The
+-- class-level overlap instance (`blockPairFamily_overlap`) routes through `𝗣𝗔⁻`
+-- (`SubstrateEmergence.grownGuestReachesThresholdAt_uniform`), so it is guarded in
+-- `AxiomAuditFoundation.lean` alongside `TapeHostOverlap.tapeHost_overlap`, not here.
+/-- info: 'BlockPairFamilyCriterion.designObsF_profile' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairFamilyCriterion.designObsF_profile
+
+/-- info: 'BlockPairFamilyCriterion.blockPairFamily_identifies' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairFamilyCriterion.blockPairFamily_identifies
+
+-- The block-pair host's rule as an exhibited program. The numeral step `hostStepNum`/
+-- `frameStepNum` bridges to `hostPacked`/`hostFrame` digit-by-digit through `hostStateEquiv_digit`
+-- (`hostStepNum_stateEquiv`/`frameStepNum_stateEquiv`); each is primitive recursive by direct
+-- composition, tabulated (`hostTableFn`/`frameTableFn`), and identified with the packed tables
+-- (`hostTableFn_eq`/`frameTableFn_eq`), giving fixed builders with no imported macro-law code.
+-- `KE_hostPacked_le`/`KE_hostFrame_le` price the two tables at `elen <builder> + O(log Π [+ log
+-- κ])`; `hostOwned_cheap` is `BlockPairOverlap.hostOwned` read at those codes — the guest owned
+-- within an absolute constant plus `O(log Π)`, no imported code parameter at all.
+
+/-- info: 'BlockPairPrice.tmSign_eq_tmBit' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairPrice.tmSign_eq_tmBit
+
+/-- info: 'BlockPairPrice.tmPrefix_eq_tmPrefixBit' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairPrice.tmPrefix_eq_tmPrefixBit
+
+/-- info: 'BlockPairPrice.blockSign_eq_blockSignBit' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairPrice.blockSign_eq_blockSignBit
+
+/-- info: 'BlockPairPrice.designObs_eq' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairPrice.designObs_eq
+
+/-- info: 'BlockPairPrice.hostTape_eq' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairPrice.hostTape_eq
+
+/-- info: 'BlockPairPrice.hostStateEquiv_digit' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairPrice.hostStateEquiv_digit
+
+/-- info: 'BlockPairPrice.hostStepNum_stateEquiv' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairPrice.hostStepNum_stateEquiv
+
+/-- info: 'BlockPairPrice.frameStepNum_stateEquiv' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairPrice.frameStepNum_stateEquiv
+
+/-- info: 'BlockPairPrice.primrec_hostTableFn' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairPrice.primrec_hostTableFn
+
+/-- info: 'BlockPairPrice.hostTableFn_eq' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairPrice.hostTableFn_eq
+
+/-- info: 'BlockPairPrice.eval_hostBuilder' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairPrice.eval_hostBuilder
+
+/-- info: 'BlockPairPrice.primrec_frameTableFn' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairPrice.primrec_frameTableFn
+
+/-- info: 'BlockPairPrice.frameTableFn_eq' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairPrice.frameTableFn_eq
+
+/-- info: 'BlockPairPrice.eval_frameBuilder' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairPrice.eval_frameBuilder
+
+/-- info: 'BlockPairPrice.KE_hostPacked_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairPrice.KE_hostPacked_le
+
+/-- info: 'BlockPairPrice.KE_hostFrame_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairPrice.KE_hostFrame_le
+
+/-- info: 'BlockPairPrice.hostOwned_cheap' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairPrice.hostOwned_cheap
+
+-- Theorem 6.6's noisy-branch machinery, read on the profile-class base: the surprise budget's rate
+-- and the noise-gated absorption bound instantiated at the tape host's own fiber-facing stream
+-- (`TapeHostFiber.tapeStream`), and the positive fact that the derived tape fires past every
+-- horizon at a positive-density profile.
+
+/-- info: 'TapeHostFiber.floorSurprise_rate_tapeHost' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms TapeHostFiber.floorSurprise_rate_tapeHost
+
+/-- info: 'TapeHostFiber.exists_untouched_copy_tapeHost' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms TapeHostFiber.exists_untouched_copy_tapeHost
+
+/-- info: 'TapeHostFiber.tapeStream_fires_forever' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms TapeHostFiber.tapeStream_fires_forever
+
+-- The base-plus-fiber composite (the tape host's own substrate with a `P`-copy redundant floored
+-- fiber added as extra memory) is a member of `𝒮_L`: every field but the read-only-code witness is
+-- the base's own (`TapeHostWitness.tapeHost_substrateL`), transported through the composite's own
+-- base-independence lemmas.
+/-- info: 'TapeHostSurvival.comp_substrateL' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms TapeHostSurvival.comp_substrateL
+
+-- Survival by redundancy on the composite's own fiber ([Inevitability] §6 Theorem 6.6(iv)/(v′)):
+-- an untouched copy exists and its reading is the single undamaged floored fiber's. No margin
+-- enters, and no `𝗣𝗔⁻` machinery does either — this is `RedundantFiber`/`TapeHostFiber`'s own
+-- combinatorics, not the crossing.
+/-- info: 'TapeHostSurvival.comp_carries_survival' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms TapeHostSurvival.comp_carries_survival

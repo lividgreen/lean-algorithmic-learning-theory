@@ -36,6 +36,10 @@ set_option linter.style.longLine false
 #guard_msgs (whitespace := lax) in
 #print axioms BirkhoffTool.mixing_oracle_sample_complexity
 
+/-- info: 'BirkhoffTool.mixing_oracle_tail_to' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BirkhoffTool.mixing_oracle_tail_to
+
 /-- info: 'BirkhoffTool.mixing_oracle_tail' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms BirkhoffTool.mixing_oracle_tail
@@ -55,3 +59,39 @@ set_option linter.style.longLine false
 /-- info: 'BirkhoffTool.mixing_oracle_truth_survives_noisy' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms BirkhoffTool.mixing_oracle_truth_survives_noisy
+
+/-! ## Finite-horizon `MixingHoeffdingTo` (`ALT/BirkhoffTool.lean`) -/
+
+/-- info: 'BirkhoffTool.mixingHoeffdingTo_of_mixingHoeffding' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BirkhoffTool.mixingHoeffdingTo_of_mixingHoeffding
+
+/-- info: 'BirkhoffTool.mixingHoeffding_iff_forall_mixingHoeffdingTo' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BirkhoffTool.mixingHoeffding_iff_forall_mixingHoeffdingTo
+
+/-- info: 'BirkhoffTool.mixingHoeffdingTo_of_le_floor' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BirkhoffTool.mixingHoeffdingTo_of_le_floor
+
+/-- info: 'BirkhoffTool.not_mixingHoeffdingTo_pinned' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BirkhoffTool.not_mixingHoeffdingTo_pinned
+
+/-- info: 'BirkhoffTool.mixingHoeffdingTo_mono_const' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BirkhoffTool.mixingHoeffdingTo_mono_const
+
+/-- info: 'BirkhoffTool.mixing_oracle_sample_complexity_to' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BirkhoffTool.mixing_oracle_sample_complexity_to
+
+/-- info: 'BirkhoffTool.mixing_oracle_truth_survives_noisy_to' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BirkhoffTool.mixing_oracle_truth_survives_noisy_to
+
+/-! ## Finite-horizon SQ oracle over a schedule (`ALT/BirkhoffTool.lean`) -/
+
+/-- info: 'BirkhoffTool.empirical_isSQOracle_of_mixingTo' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BirkhoffTool.empirical_isSQOracle_of_mixingTo

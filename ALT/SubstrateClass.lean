@@ -207,10 +207,12 @@ file gave [Inevitability]'s own Definitions 2.1–2.3 a Lean counterpart.
   SPECIFIC carrier `Decoupling.Mem (Fin κ) Bool` built by `witnessWorld κ k G π`, not on
   `Substrate`'s GENERAL `(ι, V, U)`. Bridging the two needs an instantiation argument this file
   does not attempt (Theorem 5.1(a) is explicitly out of scope here — imported verbatim in its own
-  home).
-* No inhabitant of `SubstrateL` is exhibited (Remark 5.3's own point: the corpus proves what
-  follows from `𝒮_L` but exhibits no member of it); `substrate_satisfiable` inhabits only the
-  bare three-field `Substrate`, not either route-class.
+  home); the class IS inhabited elsewhere, by `BlockPairOverlap.hostWitness_substrateE`.
+* This file exhibits no inhabitant of either route-class: `substrate_satisfiable` inhabits only
+  the bare three-field `Substrate`. The inhabitants live in their own modules —
+  `LearningWitness.witness_substrateL` and `BlockPairWitness.hostWitness_substrateL` for `𝒮_L`,
+  `BlockPairOverlap.hostWitness_overlap` for both classes at one host ([Inevitability] §5
+  Remark 5.3, Theorem 5.8; rows IN-14, IN-37, IN-38).
 
 ## Hypotheses: paper-stated vs added
 * Paper-stated / faithful: Definitions 2.1–2.3 verbatim, including (S2)'s explicit constants and
@@ -376,11 +378,16 @@ structure Substrate {ι V : Type*} (U : Decoupling.Mem ι V → Decoupling.Mem �
 [Inevitability] §2 Definition 2.3 names: the update grows a lawful, affordably-owned guest from
 every initial state ([Guests]'s emergence theorem, `GrowsLawfulGuest`), and that grown guest
 reaches Definition 2.1's threshold (`GrownGuestReachesThreshold`). Both are CARRIED as
-uninterpreted `Prop` parameters: the genuine `PersistenceCapacity.witness_world` lives on the
-SPECIFIC carrier `Decoupling.Mem (Fin κ) Bool`, not on `Substrate`'s general `(ι, V, U)`, so no
-bridging instantiation is attempted here (Theorem 5.1(a) is out of scope — imported verbatim
-elsewhere; [Inevitability] §5 Remark 5.7 is where that carrier question turns out to decide the
-seam between the two route-classes at the witnesses these papers build). -/
+uninterpreted `Prop` parameters, since `Substrate` is general over `(ι, V, U)` — but the bridge for
+any packed host with a surjective frame is `SubstrateEmergence.substrateE_of_emergence`, with
+Definition 2.3's own ruled sentence machine-checked as `SubstrateEmergence.substrateE_of_perm`. The
+genuine `PersistenceCapacity.witness_world` stays imported rather than instantiated: its carrier
+`Decoupling.Mem (Fin κ) Bool` has no code region for the constructor to take as `R` — every habitat
+cell moves under healing plus its own macro law, and the environment moves under its own
+permutation, so `Fixes` there admits only the empty region ([Inevitability] §5 Remark 5.7 is where
+that carrier question turns out to decide the seam between the two route-classes at the witnesses
+these papers build, and `BlockPairOverlap.hostWitness_overlap` is where a finite host inhabits both
+classes at once — [Inevitability] §5 Theorem 5.8). -/
 structure SubstrateE {ι V : Type*} (U : Decoupling.Mem ι V → Decoupling.Mem ι V) (R : Set ι)
     (r K L c₀ c₁ c₂ δ : ℝ) (sCodeSize gTS : ℕ)
     (Consistent NSound Delta1Axiomatized InterpretsR0 : Prop)

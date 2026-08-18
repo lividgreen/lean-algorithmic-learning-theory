@@ -8,7 +8,14 @@ import ALT.GodelCheckerAutomaton
 import ALT.GodelCheckerComplete
 import ALT.GodelComplete
 import ALT.ExcessOrderComplete
+import ALT.AccretingExcess
+import ALT.SubstrateEmergence
+import ALT.BlockPairOverlap
+import ALT.TapeHostOverlap
+import ALT.BlockPairCriterion
+import ALT.BlockPairFamilyCriterion
 import ALT.MinimalityWitness
+import ALT.TapeHostSurvival
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -144,3 +151,84 @@ axiom-clean via finiteness (`Theory.Δ₁.ofFinite`), so no named axiom appears.
 /-- info: 'ExcessOrder.witness_outgrows_paMinus' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms ExcessOrder.witness_outgrows_paMinus
+
+/-! ## The accreting crossing package (`ALT/AccretingExcess.lean`)
+
+The accreting healer world's guest ([Guests] §3/§5) composed with the uniform `𝗣𝗔⁻` excess above: a
+Gödel size fixed with the theory that every stage past some `t₀` hosts, with the reflective object
+delivered at that stage's own budget. Axiom-clean via the same `𝗣𝗔⁻` finiteness route. -/
+
+-- The uniform excess — one Gödel size served across every hosting budget, not one per budget.
+/-- info: 'AccretingWitness.outgrows_paMinus_uniform' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms AccretingWitness.outgrows_paMinus_uniform
+
+-- Eventual hosting — the crossing stage `t₀` made explicit. Constructive: no `Classical.choice`.
+/-- info: 'AccretingWitness.eventually_hostsAt' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms AccretingWitness.eventually_hostsAt
+
+-- The package — the accreting skeleton's landed clauses beside the eventual-hosting crossing.
+/-- info: 'AccretingWitness.accreting_outgrows_paMinus' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms AccretingWitness.accreting_outgrows_paMinus
+
+-- [Inevitability] §2 Definition 2.3, the class-level `𝒮_E` constructor's crossing clause: a
+-- Gödel size fixed once, that every sufficiently hosting capacity represents — routes through
+-- `𝗣𝗔⁻` via `AccretingWitness.outgrows_paMinus_uniform`, same finiteness route as the packages
+-- above.
+/-- info: 'SubstrateEmergence.grownGuestReachesThresholdAt_uniform' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms SubstrateEmergence.grownGuestReachesThresholdAt_uniform
+
+/-! ## The block-pair host's `𝒮_E` overlap (`ALT/BlockPairOverlap.lean`)
+
+The certified block-pair host, packed onto its numeral carrier and read through its own counter
+register, is simultaneously a member of `𝒮_E` and of `𝒮_L` — one update, one code region, one
+numeral set. Axiom-clean via the same `𝗣𝗔⁻` finiteness route as the packages above. -/
+
+-- The overlap capstone — the SAME host is a member of both route-classes at once.
+/-- info: 'BlockPairOverlap.hostWitness_overlap' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairOverlap.hostWitness_overlap
+
+/-! ## The class-level overlap (`ALT/TapeHostOverlap.lean`, `ALT/BlockPairCriterion.lean`)
+
+The class-level overlap over an arbitrary host and profile, at IN-24's coupling standard (one
+Gödel size shared by the class's own capacity clause and the crossing clause), and the certified
+block-pair sequence's own instance of it. Both route through `SubstrateEmergence.
+grownGuestReachesThresholdAt_uniform`, hence `𝗣𝗔⁻`, the same finiteness route as the packages
+above — not `BlockPairOverlap.hostWitness_overlap`'s own decoupled numerals, which stay
+untouched. -/
+
+/-- info: 'TapeHostOverlap.tapeHost_overlap' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms TapeHostOverlap.tapeHost_overlap
+
+/-- info: 'BlockPairCriterion.blockPair_overlap_coupled' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairCriterion.blockPair_overlap_coupled
+
+-- The profile-class family's own class-level overlap (`ALT/BlockPairFamilyCriterion.lean`): every
+-- member with `r ≥ 2` is simultaneously in `𝒮_E` and `𝒮_L`, at the same coupled numeral standard —
+-- the certified pair's own `blockPair_overlap_coupled` above is the `r = 3` instance.
+/-- info: 'BlockPairFamilyCriterion.blockPairFamily_overlap' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms BlockPairFamilyCriterion.blockPairFamily_overlap
+
+/-! ## A member of both route-classes carries survival, by redundancy (`ALT/TapeHostSurvival.lean`)
+
+The base-plus-fiber composite (the tape host's own substrate with a `P`-copy redundant floored
+fiber added as extra memory) is a member of `𝒮_E`, via `SubstrateEmergence.
+grownGuestReachesThresholdAt_uniform`, the same `𝗣𝗔⁻` finiteness route as the packages above. The
+capstone bundles that membership with the composite's `𝒮_L` membership and its own survival by
+redundancy, so it routes through `𝗣𝗔⁻` too. -/
+
+/-- info: 'TapeHostSurvival.comp_substrateE' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms TapeHostSurvival.comp_substrateE
+
+-- The survival capstone — a member of both route-classes carries survival by redundancy.
+/-- info: 'TapeHostSurvival.tapeHost_carries_survival' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms TapeHostSurvival.tapeHost_carries_survival

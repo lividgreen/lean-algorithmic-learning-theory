@@ -219,6 +219,313 @@ entry points, if you want a sense of the range before reading the list:
   decoupling equivalence holds verbatim on a monotonically *growing* code
   region, with an append-only witness on which the limit region is not
   read-only, so the statement does not reduce to one fixed partition.
+- **Growing worlds, an accreting witness with one sentence standing still, and
+  a chain fed by its own growth**
+  (`GrowingWorld.lean`, `AccretingWitness.lean`, `AccretingExcess.lean`,
+  `GrowingComposite.lean`): a
+  stage-indexed world whose update advances finite stages, with the guest of
+  one closed under factors — the image stages advance under the guest's own
+  law (`advances_guestStage`) — and the fixed-carrier intertwining square
+  recovered at the constant family (`stagedSquare_const_iff`). The reading of
+  a growing world must see the stage, and that is a theorem rather than a
+  convention: over an append-only tape's full stages the stage-blind reading
+  admits no guest law at all (`not_exists_stagedSquare_tapeDecode`), while the
+  stage-aware reading closes the square with the write law as its own guest
+  law. The accreting healer world — every block healed by the
+  recursive-majority step, one zero codeword appended per step, the
+  environment turning beside — hosts one guest from every state with no
+  codeword hypothesis (`stagedSquare_accRead`), erases any perturbation of
+  total weight under the healing radius in one step with the accretion inside
+  the erased step (`accErasure`), and doubles its extent at every stage
+  (`ncard_guestStage_accRead`). Above it, the `𝗣𝗔⁻` excess is proved
+  uniform — one Gödel sentence, then every budget (`outgrows_paMinus_uniform`)
+  — so the package (`accreting_outgrows_paMinus`) delivers a fixed
+  true-but-underivable sentence hosted and represented at every stage past an
+  explicit threshold stage (`eventually_hostsAt`, and that lemma is
+  constructive). The composite closes the loop between a growing source and
+  the noisy window chain: the chain's noise is no longer supplied from outside
+  but emitted by the world's own growing state — the window steps on exactly
+  the bit the tape records (`compUpdate`), and the orbit's window coordinate
+  is the chain's own window process at the recorded word
+  (`windowFst_iterate_compUpdate`). The stage-blind lesson recurs there: a
+  reading of the window alone admits no guest law once the source's emitted
+  bits ever differ (`not_exists_stagedSquare_windowOnly`), while the
+  counter-including reading closes the square
+  (`stagedSquare_compUpdate_counter`). Eventual periodicity transports between
+  the source and its observation process in both directions
+  (`eventuallyPeriodic_of_eventuallyPeriodic_obs`,
+  `eventuallyPeriodic_obs_of_eventuallyPeriodic`), so the observation process
+  of a source that is not eventually periodic never is either
+  (`not_eventuallyPeriodic_obs_of_not`) — exactly the property whose forced
+  presence traps every finite deterministic host
+  (`not_mixingHoeffding_of_periodic_ne`), with the designed quiet source on
+  the forced side as the contrast (`eventuallyPeriodic_obs_quietStream`). At a
+  single fixed trajectory, the mixing hypothesis reduces to an explicit
+  per-sample deviation bound at both horizons (`mixingHoeffding_dirac_iff`,
+  `mixingHoeffdingTo_dirac_iff`), and a concrete decimated 3-automatic source
+  is named with the guard instantiated at it (`mephisto`, `mephDecim`).
+  Honest boundary: the family's description-length price is not
+  formalized — no pricing statement appears in these modules — whether
+  hosts accrete generically is untouched, and the named source carries no
+  non-periodicity or convergence-rate theorem: its guard instantiation rests
+  on two of its values differing, nothing more.
+- **A block-pair sequence profile, exact at every period**
+  (`BlockPairProfile.lean`): the cyclic autocorrelation of a two-word signed
+  block concatenation decomposes exactly into within-block and boundary terms
+  (`cyclicCorr_blockSeq`), so under two balance conditions on the block signs
+  the correlation vanishes at a whole band of lags at **every** block count
+  (`cyclicCorr_blockSeq_zone`) and equals a half-count multiple of the words'
+  combined aperiodic correlation at the band's top lag
+  (`cyclicCorr_blockSeq_spike`). The balance is supplied constructively: the
+  Thue–Morse sign is balanced on every even range (`tmSign_balance`), and the
+  prefix-product sign sequence built from it satisfies the transition equation
+  through the cyclic wrap with both block-index classes summing to zero
+  (`blockSign_transition_even`, `blockSign_transition_odd`). A certified pair
+  of length-24 words (`wordU`, `wordV`) then yields, for every scale, a
+  sequence of period a fixed multiple of that scale with exactly zero
+  correlation at lags one through seven and a strictly negative value at lag
+  eight (`blockSeq_wordU_wordV_correlation`). The correlations' partial sums
+  are controlled as well: every prefix of a zone query is bounded by an
+  explicit multiple of the word length, the top-lag query's prefix tracks its
+  exact linear trend in integer-scaled form (`cyclicCorrPrefix_blockSeq_zone`,
+  `cyclicCorrPrefix_blockSeq_spike`), and every cyclic window of arbitrary
+  phase and length inherits both bounds (`cyclicCorrWindow_blockSeq_zone`,
+  `cyclicCorrWindow_blockSeq_spike`), instantiated at the certified pair with
+  explicit numerals (`cyclicCorrWindow_blockSeq_wordU_wordV_zone` and its
+  spike sibling); behind them, the Thue–Morse partial sums are pinned at
+  every bound (`tmSign_partial_odd`, `tmSign_partial_abs_le_one`). Honest
+  boundary: this module is pure sequence combinatorics — nothing here ties
+  these correlations to any observation process, no minimal-period or
+  probabilistic statement is made, the window bounds carry the constants the
+  proofs derive rather than the sharpest ones that hold, and the two words
+  enter as literals with decided sums rather than from any characterized
+  family.
+- **A finite autonomous host that emits the certified sequence**
+  (`BlockPairHost.lean`): a counter paired with the noisy window chain, the
+  chain's tape computed from the counter by the certified sequence's own
+  cyclic recursion (`designObs`, `hostTape`, `hostUpdate`). Started at the
+  design's own window, the iterated state is a closed formula — the design's
+  window and counter advance together (`hostUpdate_iterate_designWindow`) —
+  so the sequence emitted along the orbit **is** the certified sequence
+  (`hostUpdate_iterate_last`) and the designed state returns after one full
+  period (`hostUpdate_iterate_period`). The return extends to **every**
+  state: the window difference of two states sharing a counter evolves by a
+  pure rotation of the window, independently of the tape
+  (`windowXor_noisyStep`, `windowXor_hostUpdate_iterate`), and the rotation's
+  order divides the period, so the whole state space decomposes into cycles
+  of the full period (`hostUpdate_iterate_period_all`). The design's sign
+  supply also gains a closed evaluation (`tmPrefix`, `blockSign_eq_tmPrefix`
+  in `BlockPairProfile.lean`): the prefix product of the per-class
+  Thue–Morse transitions collapses to a two-factor formula. Honest boundary:
+  these are exact-orbit facts about a construction — *this module* states no
+  statistical property of the emitted process and claims no substrate-class
+  membership (the next two modules do), and the period statement is a return,
+  its minimality carried by the counter coordinate rather than stated
+  separately.
+- **The emitted process concentrates, at every bounded query**
+  (`BlockPairObservability.lean`): the host's own emitted sequence
+  (`hostTraj`), read as the noisy window chain's observation process on the
+  host's own tape (`hostTraj_eq_obs`), satisfies the single-orbit mixing
+  bound over its uniform phase law (`phaseLaw`) — the empirical mean of any
+  two-observation query concentrates on its stationary answer at a rate the
+  module derives, for **every** bounded query weight, not only the character
+  the correlation work pinned. Two ingredients make this exact rather than
+  asymptotic: a general deviation-to-concentration lemma turning any uniform
+  window bound into the mixing hypothesis at an explicit constant
+  (`mixingHoeffding_of_deviation_bound`), and a single-site discrepancy bound
+  for the certified sequence (`singleWindow_blockSeq_wordU_wordV_bound`) — the
+  sequence is balanced over its period, so a bounded query's single-coordinate
+  parts are controlled beside the correlation the profile module bounds. The
+  schedule theorem (`mixingHoeffding_schedule`) delivers the bound at every
+  offset the query class ranges over. Honest boundary: the constants are the
+  ones the proofs derive, looser than the sharpest that hold; no probability
+  beyond the deterministic phase law enters.
+- **The finite host meets the learning prerequisites, from its own dynamics**
+  (`BlockPairWitness.lean`): the certified host, embedded as a decoupled
+  memory with a read-only code region, a window, and a binary counter register
+  (`hostSubUpdate`, `loadHost`, `hostCodeRegion`), is a machine-checked member
+  of the learning route-class `𝒮_L` (`hostWitness_substrateL`) — a finite,
+  deterministic, autonomous machine, its observation process supplied by its
+  own update rather than by an external noise source. The observability field
+  is discharged by the concentration above, transported onto the substrate's
+  own trajectory by a realization theorem (`hostSubstrateTraj_eq_hostTraj`,
+  `readObs_iterate_loadHost`) — the reading off the memory along its own orbit
+  *is* the emitted process, so every statistical clause is proved on the
+  machine's own dynamics. Registered as *Inevitability* Theorem 5.8(a)(b),
+  row IN-37. Honest boundary: a membership witness at named parameters — the
+  numerals are the chain witness's, the constants are the ones the proofs
+  derive, and the rule's cheapness is priced two bullets below rather than
+  here.
+- **The same host is a member of the emergence route-class too, at one update,
+  one code region and one numeral set** (`BlockPairOverlap.lean`): the host's
+  memory re-packed onto the numeral carrier the pricing machinery is indexed by
+  (`hostPacked`), a frame reading the host's own counter register
+  (`hostFrame`) that covers its whole target after one full pass from the loaded orbit's
+  closed form alone (`hostFrame_surj_iterate`,
+  `BlockPairWitness.readCounter_iterate_loadHost`), the growth clause at the
+  emergence theorem's own shape — the guest carries its model from every
+  initial state and is owned at the host's rule plus the frame, parametric in
+  codes for both (`HostGrowsLawfulGuest`, `hostCarries`, `hostOwned`) — and the
+  crossing clause at the standard the Witness World's own crossing uses, a
+  Gödel size fixed once that every sufficiently large host's bit count hosts
+  (`HostGrownGuestReachesThreshold`, `hostFrameBits_eventually_hostsAt`). So
+  `hostWitness_substrateE` puts the host in `𝒮_E`, and `hostWitness_overlap`
+  states both memberships together, from a common threshold on the host's
+  size — the first `𝒮_E` inhabitant in this development, and the first system
+  in both route-classes at once. Honest boundary: two hypothesis sets for
+  *reaching* the threshold, nothing about survival (the host's core dynamics
+  is a permutation, which bars a positive margin); the codes for the host's
+  table and the frame are hypotheses here, as the emergence theorem's are
+  (the next module exhibits them); no class-level statement relating the two
+  route-classes in this module (the class-level form for this architecture is
+  `TapeHostOverlap.tapeHost_overlap`, below); and it is registered as
+  *Inevitability* Theorem 5.8(c), row IN-38 — the seam Theorem 5.1(c) leaves
+  open, inhabited at a witness.
+- **The host's rule as an exhibited program** (`BlockPairPrice.lean`): the
+  packed host's own step, rewritten as arithmetic on the packed numeral —
+  bit extraction by division and remainder, the decoded window bit, the tape
+  bit from the design's sign and word supplies (the Thue–Morse sign as a
+  bounded bit-sum, `tmSign_eq_tmBit`), the counter's increment modulo the
+  period — proved primitive recursive and identified digit by digit with
+  `hostPacked` (`hostStepNum_stateEquiv`), then tabulated and extracted from
+  universality as one fixed program `hostBuilder` taking only `M` and the bit
+  length of the period as numerals, with a twin `frameBuilder` for the counter
+  frame. So the two tables are owned in the development's own currency at a
+  fixed program plus logarithms (`KE_hostPacked_le`, `KE_hostFrame_le`), and
+  the guest of the module above is owned within an absolute constant plus
+  `O(log Π)` with no imported code parameter at all (`hostOwned_cheap`) —
+  the emergence theorem's affordability input met by an exhibited program at
+  a designed host that is not the Witness World. Honest boundary: description
+  length, not computation time; the builders' own lengths stay symbolic
+  constants, as every builder's do; registered at *Inevitability* Theorem
+  5.8's boundary and row IN-39.
+- **The seam at class level, for that architecture** (`TapeHost.lean`,
+  `TapeHostObservability.lean`, `TapeHostWitness.lean`, `TapeHostOverlap.lean`,
+  `BlockPairCriterion.lean`): the block-pair host with its observation sequence
+  a parameter — the tape derived as agreement at lag eight, the window chain's
+  step on it, the same orbit facts (`tapeUpdate_iterate_period_all` under
+  `8 ∣ N`), the same substrate embedding — and a **profile** as hypotheses:
+  single-site character sums bounded by `S` and pair sums at the scheduled
+  offsets within `W a` of `n · ρ a`, at every phase and horizon. From the
+  profile alone the two-offset queries deviate by at most `2S + W a`
+  (`deviation_bound`), so the whole scheduled class mixes on the phase law at
+  `(2S + W a)² / (2 ln 2)` (`mixingHoeffding_schedule`), and the host is a
+  member of the learning route-class at any capacity clearing the code region
+  plus the Gödel size's capacity (`tapeHost_substrateL`); the derived tape's
+  density is tied to the sequence's own lag-eight correlation rather than
+  declared (`tape_density`). Through the constructor below the same host is in
+  the emergence route-class as well, and `tapeHost_overlap` puts every
+  admissible sequence's host in both classes at one numeral set with the
+  class's Gödel number identified with the crossing's — one Gödel size outside
+  every period and sequence — once the period clears that size's capacity. The
+  certified block-pair sequence is the instance (`designObs_profile` at
+  `S = 56`, spike `−2/3` at lag eight, zone `0` elsewhere; the three definitional
+  identities with the certified host; density `1/6` by `blockPair_density`;
+  `blockPair_overlap_coupled`). Honest boundary: one architecture, parametric
+  in the sequence, not a statement about hosts in general; a machine-checked
+  inhabitant at every length `8r` (the family, in the next bullet); codes as
+  hypotheses at class level; reaching, not survival by margin (every such host
+  is a permutation of window-and-counter — the survival a member carries once
+  a redundant fiber is added to it is the survival-witness bullet below); the
+  crossing carries content only once the period clears the capacity, the
+  membership holding vacuously below; the certified host's own registration
+  (`hostWitness_overlap`) is untouched and has its two Gödel sizes uncoupled.
+  Registered as *Inevitability* Proposition 5.9, rows IN-41 and IN-42.
+- **A deterministic pace on that class** (`TapeHostSchedule.lean`, the instance in
+  `BlockPairCriterion.lean`): on every host of the profile class the scheduled
+  SQ oracle is exact within `τ` at every phase from an explicit horizon on —
+  `scheduleOracle_deterministic`, one line off `deviation_bound`, with no tail
+  bound and no measure — and the schedule's `2τ` pruning rule, stated as an
+  object (`schedSurvivors`), leaves the true literal alone from horizon
+  `⌊(2S + W_max)/τ⌋ + 1` on (`schedSurvivors_eq_singleton`,
+  `identificationHorizon`), under the budget `2η ≤ τ`, cross-class trends
+  bounded by `μ ≤ τ`, and the separation `3τ + μ ≤ 1` — every wrong literal
+  pruned at its own query. The certified block-pair sequence identifies at
+  `τ = 1/3` from every `n > 912` (`blockPair_identifies`). Those conditions are
+  sufficient, not sharp: taking the error against each margin gives the
+  two-sided **window** the schedule identifies in — every density
+  `η < (1 − μ)/4` under the budget, and no admissible tolerance above `1/4`
+  (`schedSurvivors_eq_singleton_sharp`, `not_identifies_of_gt_quarter`) — so
+  `1/4` is the schedule's own limit. The profile class is a **family**, one host
+  per length `8r` at density `1/(2r)`, the certified sequence its `r = 3`
+  member (`BlockPairFamilyCriterion`, `designObsF_profile`). Honest boundary:
+  this is the
+  schedule learner of the *SQ* companion at the single-literal class, not the
+  weighted fiber; a bounded pace in observation count and statistics per
+  decision, nothing about physical time; nothing about survival; one
+  architecture; registered as *Inevitability* Proposition 6.10, row IN-43.
+- **The single witness's noisy-branch machinery on that class** (`TapeHostFiber.lean`):
+  the fiber-facing stream of a profile-class host — its first eight bits the
+  observation, then the tape — with the identity `hostTraj = obs 8 tapeStream`,
+  so the learner-as-guest theorems of the paper's §6, all stated over an
+  arbitrary stream, read on an autonomous host whose observability is its own:
+  the true candidate's miss is the tape's own bit (`witMiss_zero_tapeStream`),
+  the noise count is the profile's same-class pair sum and tracks `n·η` within
+  `W₀/2` (`noiseCount_tapeStream_bounds`), the surprise budget's rate reads
+  `28 + 16·(nη + W₀/2)` (`floorSurprise_rate_tapeHost`), and the host-side
+  noise gate is a function of the host's own state — the bit it writes at the
+  counter's next position — with absorption at any horizon whose gated count
+  clears the redundancy (`noiseGated_tapeStream_iff`,
+  `exists_untouched_copy_tapeHost`). `tapeStream_fires_forever` states the
+  positive fact behind what is NOT on offer: at any positive density the tape
+  fires past every horizon, so the lifetime-free absorption clauses (which need
+  a quiet stream) and the fiber's settling theorems (which need a never-missing
+  or eventually-realizable candidate) do not apply here — a route-absence, not
+  an impossibility. Honest boundary: the damage model stays named; nothing
+  lifetime-free; one architecture; registered as *Inevitability* Proposition
+  6.10, row IN-44.
+- **A member of both route-classes carries survival, by redundancy**
+  (`TapeHostSurvival.lean`): the profile-class host with a `P`-copy redundant
+  floored fiber added as extra memory — one substrate (`CompMem`), the base's
+  cells plus one binary register per candidate per copy, whose update runs the
+  host's own step on the base cells and one floored-fiber generation on the
+  fiber cells, driven by a miss indicator read off the base's own observation
+  cell (`compSubUpdate`, `fiberMiss`). The base half is exactly the host's own
+  orbit (`compSubUpdate_base_iterate`), so both memberships transport: the
+  composite is in `𝒮_L` with every field but the read-only-code witness the
+  host's own proof term (`comp_substrateL`) and in `𝒮_E` at the same coupled
+  Gödel size through the class-level constructor, the frame reading the base's
+  counter off the composite's own packing (`compFrame_surj_iterate`,
+  `comp_substrateE`). The fiber's miss indicator along the loaded orbit is the
+  witness's miss indicator on the host's own tape stream — every candidate's
+  miss, the true candidate's being the tape's own bit (`fiberMiss_eq_witMiss`)
+  — so the redundancy route reads on it: under any damage schedule inside a
+  horizon `n`, confined to the tape's own firing and touching at most `c` copies
+  per hit, whenever `c · (n · η + W₀/2) < P` some copy is never touched and its
+  weight vector under the damaged run is the single undamaged fiber's at every
+  step (`comp_carries_survival`), and
+  `tapeHost_carries_survival` states both memberships and that clause together
+  at a Gödel size fixed once. Honest boundary: one witness; survival in the
+  redundancy form — the absorption half of the single-witness assembly's
+  noisy-branch clause, no margin claimed and none needed — at a horizon,
+  conditional on the damage model with the host-side gate in place of (D1),
+  nothing lifetime-free, and without the decode-level conclusion (the
+  composite's reading equal to the base's next state), which needs a
+  never-missing candidate this base denies; the guest that crosses (the counter memory) and
+  the guest that survives (the fiber's copies) are distinct structures on one
+  substrate, as in the single-witness assembly; survival is stated over the
+  fiber's own abstract carrier, the miss identity proved along the undamaged
+  orbit being the one fact tying the composite's fiber cells to it; the
+  composite is not priced; which systems carry survival beyond this witness
+  stays open. Registered as *Inevitability* Proposition 6.11, row IN-46.
+- **The class-level `𝒮_E` constructor** (`SubstrateEmergence.lean`): for any
+  decoupled update, any packing of its memory onto a numeral carrier and any
+  frame surjective off the packed update's own iterate, membership in the
+  emergence route-class follows from the numeral conditions and one crossing
+  hypothesis at the frame's capacity (`substrateE_of_emergence`); over a
+  reversible update every surjective frame qualifies (`substrateE_of_perm`) —
+  *Inevitability* Definition 2.3's own sentence, that a decoupled cheap
+  reversible world of sufficient capacity is in `𝒮_E`, at the class's Lean
+  definition, with one Gödel size shared by the capacity clause and the
+  crossing (`grownGuestReachesThresholdAt_uniform`). Honest boundary: the
+  codes for the table and the frame are hypotheses at class level (the
+  emergence theorem's own currency); the read-only region is taken as given,
+  so whether it is an honest code region is the instance's business; the
+  block-pair host above is an instance in the literal sense but is registered
+  at numerals whose class Gödel number and crossing Gödel size are not
+  identified, so it is not re-derived from the constructor; and the Witness
+  World's carrier has no code region for the constructor to take. Registered
+  as *Inevitability* row IN-40.
 - **A substrate class, and a capacity clause that is necessary**
   (`SubstrateClass.lean`): the prerequisites a bounded learner needs in order
   to reach the reflective threshold, as reusable objects — a decoupled
@@ -320,7 +627,28 @@ entry points, if you want a sense of the range before reading the list:
   non-positive constants (the bound then asserts nothing, for every law and
   target), and genuine refutability at every positive constant — so the
   constant is where the hypothesis's content lives, stated rather than
-  implied. The window-noise pruning budget now reaches the single-trajectory
+  implied. The hypothesis also comes in a **horizon-bounded** form,
+  `MixingHoeffdingTo N` — the same statement with its quantifier restricted to
+  sample sizes at most `N`, which is what a learner reading one orbit segment
+  actually consumes. It carries its own vacuity floor (below a horizon set by
+  the constant, *every* law satisfies it, so a bounded claim has to state its
+  horizon against its constant) and its own refutations, each naming both
+  quantifiers. On it, the oracle over a whole scheduled query class is
+  derived: for a fixed finite schedule whose every query is representative
+  below `N` at one shared constant, the empirical answers from a single orbit
+  segment satisfy the oracle predicate off an event of measure at most `δ`,
+  the schedule entering only logarithmically in the sample size. Every
+  oracle corollary is stated at that bounded form, each unbounded version
+  derived from its own twin rather than proved twice, so a consumer
+  holding only a horizon-bounded hypothesis gets the sample-size bound
+  and the pruning-survival statement as well as the tail. Composed with the
+  pruned learner's own discovery theorem (`FiniteHorizonDiscovery.lean`),
+  that yields an end-to-end statement: off an event of measure at most `δ`,
+  a learner answering its whole query schedule from one orbit segment
+  reaches the concentrated posterior — and the two sample counts are
+  unrelated, so the horizon bounds the answering of the schedule, never the
+  run. The
+  window-noise pruning budget now reaches the single-trajectory
   route, not only the i.i.d. ensemble. And a first genuinely **dependent**
   instance is derived (`NoisyWindowChain.lean`, engine in `ParityWalk.lean`):
   the Bernoulli-noise window chain satisfies the rate at the named constant
@@ -381,7 +709,7 @@ entry points, if you want a sense of the range before reading the list:
 - No `sorry`, `admit`, or `native_decide`; standard axioms only
   (`propext`, `Classical.choice`, `Quot.sound`) — several cores are
   choice-free, and the structural capstone depends on no axioms at all.
-- **Build-enforced axiom hygiene**: 882 `#guard_msgs in #print axioms` guards
+- **Build-enforced axiom hygiene**: 1015 `#guard_msgs in #print axioms` guards
   assert each capstone's exact axiom set; `lake build` fails on any drift.
 - **CI-enforced whole-library audit**: every declaration under `ALT` — not only
   the guarded capstones — is checked against the same allowlist by

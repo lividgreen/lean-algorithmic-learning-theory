@@ -60,11 +60,17 @@ therefore lives in the NAMES its clauses are instantiated at:
 * `mixingHoeffding_schedule` — E1 over the schedule `∀ a : Fin k`, on `substrateTraj`: the
   same-class constant `samePairConst k` at `a = 0` (the rule's own literal) and the cross-class
   `pairConst k η` elsewhere.
+* `witness_substrateL_of_e1` — the membership capstone abstracted over its `e1` source: every other
+  field is proved unconditionally, and `witness_substrateL` re-derives from it at the schedule's own
+  instance, statement byte-identical.
 * `witness_substrateL` — **the membership capstone**; `witness_substrateL_bernoulli` instantiates
   it at that shift, leaving no probabilistic hypothesis standing.
 * `witness_reachesThresholdWithin`, `witness_truth_survives` — the two payoffs: the learning branch
   reaching Definition 2.1's threshold end-to-end on a concrete system, and the witness's own oracle
   never `2τ`-pruning the true rule.
+* `witness_truth_survives_to` — payoff 2 at the horizon-bounded hypothesis
+  `BirkhoffTool.MixingHoeffdingTo N`, the theorem a periodic (deterministic finite) host's E1 would
+  consume; `witness_truth_survives` re-derives from it at `N := n`.
 * `witness_reachesThresholdWithinAt` — the first payoff at EVERY step of the orbit, in
   `SubstrateClass.ReachesThresholdWithinAt`'s time-indexed form, with the reference codeword pinned
   to the loaded rule encoding.
@@ -500,32 +506,20 @@ end Schedule
 
 /-! ## The membership capstone, and the two payoffs -/
 
-/-- **A constructed member of `𝒮_L`** ([Inevitability] Definition 2.3), at named parameters.
+/-- **A constructed member of `𝒮_L`, abstracted over its `e1` source** ([Inevitability] Definition
+2.3), at named parameters.  Every field but `e1` is proved unconditionally here: `chainUpdate_fixes`
+is (S1) by construction, the regime numerals are (S2)/(S3), `chainRealizable` and
+`sqDim_singleLiteral_le` need no probability hypothesis at all, and `chainWindowBudget` asks only
+`0 ≤ η` and the budget `2η ≤ τ` — both carried as ordinary hypotheses here, with no mixing rate
+behind them.  So the one field this theorem does NOT discharge is exactly the one `SubstrateL`'s
+own docstring already flags as "carried, not proved": `e1` stays a genuine hypothesis, at whatever
+probability space supplies it.
 
-The system is the substrate above: `chainUpdate` on `Wit k`, with `codeRegion k` as its read-only
-code region and `sCodeSize := k`, the region's actual cardinality (`codeRegion_ncard` — nothing in
-`Substrate` ties the two, so the tie is stated).  The regime constants are `r = 3`, `K = k + 100`,
-`L = 2K`, `c₀ = 1`, `c₁ = 2`, `c₂ = 3`, `δ = 1/2`, and `g(T_S) = 2` — the smallest Gödel number at
-which the capacity bridge is non-degenerate, with `K` leaving a headroom of `100` work bits over the
-`4` the reflective object needs.
-
-The three prerequisites: (S1) is `chainUpdate_fixes`, by construction; (S2) is the explicit regime;
-(S3) is `k + 4 ≤ k + 100`.  The five learning fields land at named instances: realizability at
-`ChainRealizable` (proved, `chainRealizable`), window sufficiency at `ChainWindowBudget` (proved
-under the budget, `chainWindowBudget`), Assumption A on the single-literal family via
-`sqDim_singleLiteral_le` at degree `0`, benign separation at the `ε₀ = 1/2` that
-`singleLiteral_separation` computes, and E1 at the schedule's own `a = 0` instance on the
-substrate's own process.
-
-`0 < η` is required here even though the bare `e1` field would survive at `η = 0`: the E1 the
-witness actually discharges is the SCHEDULED one, and `not_mixingHoeffding_frozen_schedule` refutes
-that at `η = 0` at every positive constant.  The four theory conditions stay carried at `True`, as
-everywhere on this route — and `substrateL_junk_satisfiable` is why that, plus the two named
-`Prop`s, is where this theorem's content has to live. -/
-theorem witness_substrateL [NeZero k] {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
-    [IsProbabilityMeasure P] {ξ : ℕ → Ω → Bool} (hmeas : ∀ i, Measurable (ξ i))
-    (hindep : iIndepFun ξ P) {η τ : ℝ} (hη0 : 0 < η) (hη1 : η ≤ 1 / 2)
-    (hmean : ∀ u, ∫ ω, ParityWalk.zeta (ξ (u + k) ω) ∂P = 2 * η - 1) (hbudget : 2 * η ≤ τ) :
+`witness_substrateL` below re-derives from this at the schedule's own instance
+(`mixingHoeffding_schedule` at `a = 0`), statement byte-identical. -/
+theorem witness_substrateL_of_e1 [NeZero k] {η τ : ℝ} (hη0 : 0 ≤ η) (hbudget : 2 * η ≤ τ)
+    (he1 : ∃ (X : Type) (_inst : MeasurableSpace X) (μ : MeasureTheory.Measure (ℕ → X))
+             (Z : ℕ → (ℕ → X) → ℝ) (predZ c : ℝ), BirkhoffTool.MixingHoeffding μ Z predZ c) :
     SubstrateClass.SubstrateL (chainUpdate (k := k)) (codeRegion k)
       3 ((k : ℝ) + 100) (2 * ((k : ℝ) + 100)) 1 2 3 (1 / 2) k 2
       True True True True (ChainRealizable k) (ChainWindowBudget k η τ) := by
@@ -538,17 +532,44 @@ theorem witness_substrateL [NeZero k] {Ω : Type*} [MeasurableSpace Ω] {P : Mea
         by norm_num, by norm_num⟩
       s3 := ⟨by rw [hcap]; push_cast; linarith, trivial, trivial, trivial, trivial⟩
       realizability := chainRealizable
-      windowSufficiency := chainWindowBudget k (le_of_lt hη0) hbudget
+      windowSufficiency := chainWindowBudget k hη0 hbudget
       assumptionA := ?_
       benignSeparation := ⟨1 / 2, 1, by norm_num, by norm_num⟩
-      e1 := ?_ }
-  · refine ⟨Fin k, Fin k, fun _ => Finset.univ, fun _ => singleLiteralAns, 0, (k : ℝ), 0, ?_⟩
-    filter_upwards with r'
-    have := sqDim_singleLiteral_le (k := k) (0 : ℝ)
-    have hcast : (SQObjects.sqDim (Finset.univ : Finset (Fin k)) 0
-        (singleLiteralAns (k := k)) : ℝ) ≤ (k : ℝ) := by exact_mod_cast this
-    simpa using hcast
-  · exact ⟨Bool, inferInstance, Measure.map (substrateTraj (k := k) ξ) P,
+      e1 := he1 }
+  refine ⟨Fin k, Fin k, fun _ => Finset.univ, fun _ => singleLiteralAns, 0, (k : ℝ), 0, ?_⟩
+  filter_upwards with r'
+  have := sqDim_singleLiteral_le (k := k) (0 : ℝ)
+  have hcast : (SQObjects.sqDim (Finset.univ : Finset (Fin k)) 0
+      (singleLiteralAns (k := k)) : ℝ) ≤ (k : ℝ) := by exact_mod_cast this
+  simpa using hcast
+
+/-- **A constructed member of `𝒮_L`** ([Inevitability] Definition 2.3), at named parameters.
+
+The system is the substrate above: `chainUpdate` on `Wit k`, with `codeRegion k` as its read-only
+code region and `sCodeSize := k`, the region's actual cardinality (`codeRegion_ncard` — nothing in
+`Substrate` ties the two, so the tie is stated).  The regime constants are `r = 3`, `K = k + 100`,
+`L = 2K`, `c₀ = 1`, `c₁ = 2`, `c₂ = 3`, `δ = 1/2`, and `g(T_S) = 2` — the smallest Gödel number at
+which the capacity bridge is non-degenerate, with `K` leaving a headroom of `100` work bits over the
+`4` the reflective object needs.
+
+The three prerequisites, and the five learning fields, are `witness_substrateL_of_e1`'s: this
+instantiates its `e1` hypothesis at the schedule's own `a = 0` instance on the substrate's own
+process (`mixingHoeffding_schedule`).
+
+`0 < η` is required here even though the bare `e1` field would survive at `η = 0`: the E1 the
+witness actually discharges is the SCHEDULED one, and `not_mixingHoeffding_frozen_schedule` refutes
+that at `η = 0` at every positive constant.  The four theory conditions stay carried at `True`, as
+everywhere on this route — and `substrateL_junk_satisfiable` is why that, plus the two named
+`Prop`s, is where this theorem's content has to live. -/
+theorem witness_substrateL [NeZero k] {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    [IsProbabilityMeasure P] {ξ : ℕ → Ω → Bool} (hmeas : ∀ i, Measurable (ξ i))
+    (hindep : iIndepFun ξ P) {η τ : ℝ} (hη0 : 0 < η) (hη1 : η ≤ 1 / 2)
+    (hmean : ∀ u, ∫ ω, ParityWalk.zeta (ξ (u + k) ω) ∂P = 2 * η - 1) (hbudget : 2 * η ≤ τ) :
+    SubstrateClass.SubstrateL (chainUpdate (k := k)) (codeRegion k)
+      3 ((k : ℝ) + 100) (2 * ((k : ℝ) + 100)) 1 2 3 (1 / 2) k 2
+      True True True True (ChainRealizable k) (ChainWindowBudget k η τ) :=
+  witness_substrateL_of_e1 (le_of_lt hη0) hbudget
+    ⟨Bool, inferInstance, Measure.map (substrateTraj (k := k) ξ) P,
       pairEnsemble pairChar 0 k, samePairMean pairChar (2 * η - 1), samePairConst k, by
         have h := mixingHoeffding_schedule (k := k) (ξ := ξ) (P := P) hmeas hindep hη0 hη1 hmean
           0 pairChar abs_pairChar_le_one
@@ -624,22 +645,26 @@ theorem witness_reachesThresholdWithinAt [NeZero k] {Ω : Type*} [MeasurableSpac
   rintro _ ⟨i, rfl⟩
   exact code_persists t (loadChain (k := k) ω) i
 
-/-- **Payoff 2: the witness's own oracle never prunes the truth.**  On the rule's own query — the
-same-class pair at `a = 0` — the single-orbit empirical answer stays within `2τ` of the answer the
-NOISELESS rule predicts, with probability `≥ 1 − δ`, at the sample bound
-`n ≥ (2c/τ²)·log(2/δ)` with `c = samePairConst k`.  So the unchanged `2τ`-pruning rule of
-[SQ] §3.2 never discards the true rule on this system.
+/-- **Payoff 2, at the horizon-bounded hypothesis.**  `witness_truth_survives` with the schedule's
+E1 instance taken directly as `BirkhoffTool.MixingHoeffdingTo N` rather than derived from
+`mixingHoeffding_schedule`: a horizon `N` and `n ≤ N` thread through, and `hη0` weakens to `0 ≤ η`
+since nothing here calls the schedule theorem, so `hindep`, `hmean` and `η ≤ 1/2` are not needed
+either.  What survives unchanged is the noise budget itself — `0 ≤ η` and `2η ≤ τ` still price the
+displacement `mixing_oracle_truth_survives_noisy_to`'s own `hnoise` argument consumes.
 
-This is the composition [Inevitability] Remark 5.3's outline could not complete — window
-sufficiency and E1 met together — completed at [SQ] §3.1's own `η`-relaxation: the displacement
-`hnoise` is exactly `ChainWindowBudget`'s second clause, and `hbudget` its first. -/
-theorem witness_truth_survives [NeZero k] {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+Why it is worth having: a deterministic finite host has a finite period, so a horizon-bounded E1 is
+the only kind it can supply, and this is the theorem such a host would consume.
+
+`witness_truth_survives` below re-derives from this at `N := n`, statement byte-identical, via
+`mixingHoeffdingTo_of_mixingHoeffding` and `le_rfl`. -/
+theorem witness_truth_survives_to [NeZero k] {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     [IsProbabilityMeasure P] {ξ : ℕ → Ω → Bool} (hmeas : ∀ i, Measurable (ξ i))
-    (hindep : iIndepFun ξ P) {η τ δ : ℝ} (hη0 : 0 < η) (hη1 : η ≤ 1 / 2)
-    (hmean : ∀ u, ∫ ω, ParityWalk.zeta (ξ (u + k) ω) ∂P = 2 * η - 1) (hbudget : 2 * η ≤ τ)
-    (ψ : Bool → Bool → ℝ) (hψ : ∀ u v, |ψ u v| ≤ 1) (n : ℕ) (hn1 : 1 ≤ n) (hτ : 0 < τ)
-    (hδ0 : 0 < δ)
-    (hn : (2 * samePairConst k / τ ^ 2) * Real.log (2 / δ) ≤ (n : ℝ)) :
+    {η τ δ : ℝ} (hη0 : 0 ≤ η) (hbudget : 2 * η ≤ τ)
+    (ψ : Bool → Bool → ℝ) (hψ : ∀ u v, |ψ u v| ≤ 1) (N n : ℕ) (hn1 : 1 ≤ n) (hnN : n ≤ N)
+    (hτ : 0 < τ) (hδ0 : 0 < δ)
+    (hn : (2 * samePairConst k / τ ^ 2) * Real.log (2 / δ) ≤ (n : ℝ))
+    (hmix : BirkhoffTool.MixingHoeffdingTo N (Measure.map (substrateTraj (k := k) ξ) P)
+      (pairEnsemble ψ 0 k) (samePairMean ψ (2 * η - 1)) (samePairConst k)) :
     1 - δ ≤ (Measure.map (substrateTraj (k := k) ξ) P).real
       {o | |samePairMean ψ (-1)
         - SQOracle.empiricalMean (pairEnsemble ψ 0 k) n o| ≤ 2 * τ} := by
@@ -650,16 +675,39 @@ theorem witness_truth_survives [NeZero k] {Ω : Type*} [MeasurableSpace Ω] {P :
   haveI : IsProbabilityMeasure (Measure.map (substrateTraj (k := k) ξ) P) := by
     rw [substrateTraj_eq_traj]
     exact Measure.isProbabilityMeasure_map (measurable_traj hkpos hmeas).aemeasurable
+  refine BirkhoffTool.mixing_oracle_truth_survives_noisy_to _ _ (samePairMean ψ (-1))
+    (samePairMean ψ (2 * η - 1)) (samePairConst k) N n τ δ η hmix hc
+    (fun i => measurable_pairEnsemble ψ 0 k i) hn1 hnN hτ hδ0 hn hη0 hbudget ?_
+  refine le_trans (abs_samePairMean_sub hψ (2 * η - 1) (-1)) ?_
+  rw [show 2 * η - 1 - (-1) = 2 * η by ring, abs_of_nonneg (by linarith : (0 : ℝ) ≤ 2 * η)]
+
+/-- **Payoff 2: the witness's own oracle never prunes the truth.**  On the rule's own query — the
+same-class pair at `a = 0` — the single-orbit empirical answer stays within `2τ` of the answer the
+NOISELESS rule predicts, with probability `≥ 1 − δ`, at the sample bound
+`n ≥ (2c/τ²)·log(2/δ)` with `c = samePairConst k`.  So the unchanged `2τ`-pruning rule of
+[SQ] §3.2 never discards the true rule on this system.
+
+This is the composition [Inevitability] Remark 5.3's outline could not complete — window
+sufficiency and E1 met together — completed at [SQ] §3.1's own `η`-relaxation: the displacement
+`hnoise` is exactly `ChainWindowBudget`'s second clause, and `hbudget` its first.  Reaches
+`witness_truth_survives_to` at `N := n` off the schedule's own E1 instance. -/
+theorem witness_truth_survives [NeZero k] {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    [IsProbabilityMeasure P] {ξ : ℕ → Ω → Bool} (hmeas : ∀ i, Measurable (ξ i))
+    (hindep : iIndepFun ξ P) {η τ δ : ℝ} (hη0 : 0 < η) (hη1 : η ≤ 1 / 2)
+    (hmean : ∀ u, ∫ ω, ParityWalk.zeta (ξ (u + k) ω) ∂P = 2 * η - 1) (hbudget : 2 * η ≤ τ)
+    (ψ : Bool → Bool → ℝ) (hψ : ∀ u v, |ψ u v| ≤ 1) (n : ℕ) (hn1 : 1 ≤ n) (hτ : 0 < τ)
+    (hδ0 : 0 < δ)
+    (hn : (2 * samePairConst k / τ ^ 2) * Real.log (2 / δ) ≤ (n : ℝ)) :
+    1 - δ ≤ (Measure.map (substrateTraj (k := k) ξ) P).real
+      {o | |samePairMean ψ (-1)
+        - SQOracle.empiricalMean (pairEnsemble ψ 0 k) n o| ≤ 2 * τ} := by
   have hmix := mixingHoeffding_schedule (k := k) (ξ := ξ) (P := P) hmeas hindep hη0 hη1 hmean
     0 ψ hψ
   have hz : ((0 : Fin k) : ℕ) = 0 := by simp
   rw [hz] at hmix
   simp only [scheduledMean, scheduledConst, hz] at hmix
-  refine BirkhoffTool.mixing_oracle_truth_survives_noisy _ _ (samePairMean ψ (-1))
-    (samePairMean ψ (2 * η - 1)) (samePairConst k) n τ δ η hmix hc
-    (fun i => measurable_pairEnsemble ψ 0 k i) hn1 hτ hδ0 hn (le_of_lt hη0) hbudget ?_
-  refine le_trans (abs_samePairMean_sub hψ (2 * η - 1) (-1)) ?_
-  rw [show 2 * η - 1 - (-1) = 2 * η by ring, abs_of_nonneg (by linarith : (0 : ℝ) ≤ 2 * η)]
+  exact witness_truth_survives_to hmeas (le_of_lt hη0) hbudget ψ hψ n n hn1 le_rfl hτ hδ0 hn
+    (BirkhoffTool.mixingHoeffdingTo_of_mixingHoeffding n _ _ _ _ hmix)
 
 /-! ## The guards -/
 
@@ -686,6 +734,19 @@ theorem not_mixingHoeffding_frozen_schedule {Ω : Type*} [MeasurableSpace Ω] (P
     ¬ BirkhoffTool.MixingHoeffding (Measure.map (traj 3 (fun i (_ : Ω) => frozenWord i)) P)
         (pairEnsemble pairChar 2 3) (pairMean pairChar) c := by
   refine not_mixingHoeffding_pinned_pair P (by norm_num) frozenWord pairChar hc
+    frozen_pin_two_three ?_
+  rw [pairMean_pairChar]; norm_num
+
+/-- **The finite-horizon form.**  At `η = 0` the scheduled E1 fails at every horizon `N` clearing
+`BirkhoffTool.not_mixingHoeffdingTo_pinned`'s own threshold, at the same query, window and offsets
+as `not_mixingHoeffding_frozen_schedule` — the two-line consequence of the ported pinned device
+`not_mixingHoeffdingTo_pinned_pair`. -/
+theorem not_mixingHoeffdingTo_frozen_schedule {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
+    [IsProbabilityMeasure P] {c : ℝ} (hc : 0 < c) {N : ℕ}
+    (hN : ⌈2 * c * Real.log 2⌉₊ + 1 ≤ N) :
+    ¬ BirkhoffTool.MixingHoeffdingTo N (Measure.map (traj 3 (fun i (_ : Ω) => frozenWord i)) P)
+        (pairEnsemble pairChar 2 3) (pairMean pairChar) c := by
+  refine not_mixingHoeffdingTo_pinned_pair P (by norm_num) frozenWord pairChar hc hN
     frozen_pin_two_three ?_
   rw [pairMean_pairChar]; norm_num
 
@@ -758,6 +819,10 @@ set_option linter.style.longLine false
 #guard_msgs (whitespace := lax) in
 #print axioms LearningWitness.mixingHoeffding_schedule
 
+/-- info: 'LearningWitness.witness_substrateL_of_e1' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms LearningWitness.witness_substrateL_of_e1
+
 /-- info: 'LearningWitness.witness_substrateL' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms LearningWitness.witness_substrateL
@@ -774,6 +839,10 @@ set_option linter.style.longLine false
 #guard_msgs (whitespace := lax) in
 #print axioms LearningWitness.witness_reachesThresholdWithinAt
 
+/-- info: 'LearningWitness.witness_truth_survives_to' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms LearningWitness.witness_truth_survives_to
+
 /-- info: 'LearningWitness.witness_truth_survives' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms LearningWitness.witness_truth_survives
@@ -781,6 +850,10 @@ set_option linter.style.longLine false
 /-- info: 'LearningWitness.not_mixingHoeffding_frozen_schedule' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms LearningWitness.not_mixingHoeffding_frozen_schedule
+
+/-- info: 'LearningWitness.not_mixingHoeffdingTo_frozen_schedule' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms LearningWitness.not_mixingHoeffdingTo_frozen_schedule
 
 /-- info: 'LearningWitness.substrateL_junk_satisfiable' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in

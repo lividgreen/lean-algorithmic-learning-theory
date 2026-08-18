@@ -4893,20 +4893,20 @@ accumulated state. -/
 
 /-- Extracts the recursion index `n` from a `prec`-step input `Nat.pair a (Nat.pair n prev)` — the
 companion projection to `AdditiveComplexity.projIH` (which extracts `prev`). -/
-def projIdx : Code := comp left right
+private def projIdx : Code := comp left right
 
-theorem eval_projIdx (a n prev : ℕ) :
+private theorem eval_projIdx (a n prev : ℕ) :
     eval projIdx (Nat.pair a (Nat.pair n prev)) = Part.some n := by
   rw [projIdx, eval_comp_some (eval_right' _), eval_left']
   simp
 
-theorem elen_projIdx : elen projIdx = 9 := by decide
+private theorem elen_projIdx : elen projIdx = 9 := by decide
 
 /-- **The step function**: pairs the accumulator so far with `c` run at the current recursion index.
 `c` occurs exactly once, composed with `projIdx` rather than hardcoded to a clock value. -/
-def pairStep (c : Code) : Code := pair projIH (comp c projIdx)
+private def pairStep (c : Code) : Code := pair projIH (comp c projIdx)
 
-theorem eval_pairStep {c : Code} {v : ℕ → ℕ} (hc : ∀ t, eval c t = Part.some (v t))
+private theorem eval_pairStep {c : Code} {v : ℕ → ℕ} (hc : ∀ t, eval c t = Part.some (v t))
     (a n prev : ℕ) :
     eval (pairStep c) (Nat.pair a (Nat.pair n prev)) = Part.some (Nat.pair prev (v n)) := by
   have h1 : eval projIH (Nat.pair a (Nat.pair n prev)) = Part.some prev := eval_projIH a n prev
@@ -4916,22 +4916,22 @@ theorem eval_pairStep {c : Code} {v : ℕ → ℕ} (hc : ∀ t, eval c t = Part.
   rw [h1, h2]
   simp [Seq.seq]
 
-theorem elen_pairStep (c : Code) : elen (pairStep c) = elen c + 24 := by
+private theorem elen_pairStep (c : Code) : elen (pairStep c) = elen c + 24 := by
   rw [pairStep, E_len_pair, E_len_comp, elen_projIH, elen_projIdx]
   omega
 
 /-- **The fixed two-step iterator**: primitive recursion with base `zero` and step `pairStep c`.
 `elen (pairFromCode c) = elen c + 30` (`elen_pairFromCode`) — a fixed constant plus `c`, paid once
 regardless of the two calls the recursion makes. -/
-def pairFromCode (c : Code) : Code := prec Code.zero (pairStep c)
+private def pairFromCode (c : Code) : Code := prec Code.zero (pairStep c)
 
 /-- The accumulator `pairFromCode` builds: `pairAcc v 0 = 0`,
 `pairAcc v (k+1) = (pairAcc v k, v k)`. Mirrors `Collector.orbitAcc`'s shape. -/
-def pairAcc (v : ℕ → ℕ) : ℕ → ℕ
+private def pairAcc (v : ℕ → ℕ) : ℕ → ℕ
   | 0 => 0
   | k + 1 => Nat.pair (pairAcc v k) (v k)
 
-theorem eval_pairFromCode {c : Code} {v : ℕ → ℕ} (hc : ∀ t, eval c t = Part.some (v t))
+private theorem eval_pairFromCode {c : Code} {v : ℕ → ℕ} (hc : ∀ t, eval c t = Part.some (v t))
     (a k : ℕ) : eval (pairFromCode c) (Nat.pair a k) = Part.some (pairAcc v k) := by
   induction k with
   | zero => rw [pairFromCode, eval_prec_zero]; rfl
@@ -4944,15 +4944,15 @@ theorem eval_pairFromCode {c : Code} {v : ℕ → ℕ} (hc : ∀ t, eval c t = P
     rw [eval_pairStep hc a j (pairAcc v j)]
     rfl
 
-theorem elen_pairFromCode (c : Code) : elen (pairFromCode c) = elen c + 30 := by
+private theorem elen_pairFromCode (c : Code) : elen (pairFromCode c) = elen c + 30 := by
   rw [pairFromCode, E_len_prec, elen_pairStep]
   have hz : elen (Code.zero) = 3 := rfl
   omega
 
 /-- **Extraction**: unwinds `pairFromCode`'s two-step accumulator `((0, x), y)` into `(x, y)`. -/
-def pairExtract : Code := pair (comp right left) right
+private def pairExtract : Code := pair (comp right left) right
 
-theorem eval_pairExtract (x y : ℕ) :
+private theorem eval_pairExtract (x y : ℕ) :
     eval pairExtract (Nat.pair (Nat.pair 0 x) y) = Part.some (Nat.pair x y) := by
   have h1 : eval (comp right left) (Nat.pair (Nat.pair 0 x) y) = Part.some x := by
     rw [eval_comp_some (eval_left' _), eval_right']
@@ -4962,14 +4962,15 @@ theorem eval_pairExtract (x y : ℕ) :
   rw [h1, h2]
   simp [Seq.seq]
 
-theorem elen_pairExtract : elen pairExtract = 15 := by decide
+private theorem elen_pairExtract : elen pairExtract = 15 := by decide
 
 /-- **A uniformly-budgeted family's first two frames, read as one paired code**: `c` embedded
 exactly once, run at the fixed two-step iterator's own recursion index, then unwound. -/
 noncomputable def pairFromUniformCode (c : Code) : Code :=
   comp pairExtract (comp (pairFromCode c) (pair Code.zero (bconst 2)))
 
-theorem eval_pairFromUniformCode {c : Code} {v : ℕ → ℕ} (hc : ∀ t, eval c t = Part.some (v t)) :
+private theorem eval_pairFromUniformCode {c : Code} {v : ℕ → ℕ}
+    (hc : ∀ t, eval c t = Part.some (v t)) :
     eval (pairFromUniformCode c) 0 = Part.some (Nat.pair (v 0) (v 1)) := by
   have hin : eval (pair Code.zero (bconst 2)) 0 = Part.some (Nat.pair 0 2) := by
     have hz : eval (Code.zero) (0 : ℕ) = Part.some 0 := rfl
@@ -4984,7 +4985,7 @@ theorem eval_pairFromUniformCode {c : Code} {v : ℕ → ℕ} (hc : ∀ t, eval 
     rw [eval_comp_some hin, hmid]
   rw [pairFromUniformCode, eval_comp_some hcomp2, eval_pairExtract]
 
-theorem elen_pairFromUniformCode (c : Code) :
+private theorem elen_pairFromUniformCode (c : Code) :
     elen (pairFromUniformCode c) = elen c + (57 + elen (bconst 2)) := by
   rw [pairFromUniformCode, E_len_comp, E_len_comp, E_len_pair, elen_pairFromCode, elen_pairExtract]
   have hz : elen (Code.zero) = 3 := rfl
@@ -8022,7 +8023,7 @@ private theorem partrec_gradedTableFnLB : Nat.Partrec (fun a : ℕ => (gradedTab
 
 /-- **The fixed law-blind ledger builder code.** One program, independent of `n`, the lenses, and
 the law. -/
-noncomputable def gradedBuilderLB : Nat.Partrec.Code :=
+private noncomputable def gradedBuilderLB : Nat.Partrec.Code :=
   Classical.choose (Nat.Partrec.Code.exists_code.mp partrec_gradedTableFnLB)
 
 private theorem eval_gradedBuilderLB (a : ℕ) :

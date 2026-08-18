@@ -69,6 +69,30 @@ jobs:
           restore-keys: |
             docs-${{ hashFiles('lean-toolchain') }}-${{ hashFiles('lake-manifest.json') }}-
             docs-${{ hashFiles('lean-toolchain') }}-
+      # A retired module's page would otherwise outlive it: the restore above
+      # carries every prior run's pages forward, and the docs build regenerates
+      # pages for modules that exist and deletes nothing (found 2026-08-13 by
+      # the both-directions docs probe: two modules retired before v1.8 were
+      # still served). So prune, before building, the page of every `ALT.*`
+      # module with no source file behind it — scoped to our own namespace, so
+      # dependency docs and the root ALT.html are untouched — logging each
+      # prune. The search index needs no pruning: doc-gen4 rebuilds it from
+      # `.lake/build/doc-data`, which is outside the cached path.
+      - name: Prune pages of retired ALT modules
+        run: |
+          pruned=0
+          if [ -d .lake/build/doc/ALT ]; then
+            while IFS= read -r -d '' page; do
+              rel="${page#.lake/build/doc/ALT/}"
+              src="ALT/${rel%.html}.lean"
+              if [ ! -f "$src" ]; then
+                echo "prune: $page (no $src in the tree)"
+                rm -f "$page"
+                pruned=$((pruned + 1))
+              fi
+            done < <(find .lake/build/doc/ALT -type f -name '*.html' -print0)
+          fi
+          echo "pruned $pruned retired module page(s)"
       - name: Build API docs
         timeout-minutes: 300
         run: ~/.elan/bin/lake build ALT:docs

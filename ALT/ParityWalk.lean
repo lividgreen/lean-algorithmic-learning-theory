@@ -151,6 +151,32 @@ lemma walk_eq_xor_par (x₀ : Bool) (ξ : ℕ → Bool) (s : ℕ) : walk x₀ ξ
   | zero => simp
   | succ s ih => rw [walk_succ, ih, par_succ]; cases x₀ <;> cases par ξ s <;> cases ξ s <;> rfl
 
+/-- **The prefix parity is additive.**  A noise-parity prefix splits at any point into the parity
+up to the split and the parity of the shifted tail — the deterministic fact behind why two
+observations of the same residue class, arbitrarily far apart, differ by only a bounded window of
+tape bits (`NoisyWindowChain.obs_xor_obs_add_mul`). -/
+theorem par_add (ξ : ℕ → Bool) (a b : ℕ) :
+    par ξ (a + b) = xor (par ξ a) (par (fun i => ξ (a + i)) b) := by
+  induction b with
+  | zero => simp
+  | succ b ih =>
+    have hstep : a + (b + 1) = (a + b) + 1 := by omega
+    rw [hstep]
+    change xor (par ξ (a + b)) (!(ξ (a + b)))
+        = xor (par ξ a) (xor (par (fun i => ξ (a + i)) b) (!(ξ (a + b))))
+    rw [ih]
+    cases (par ξ a) <;> cases (par (fun i => ξ (a + i)) b) <;> cases (ξ (a + b)) <;> rfl
+
+/-- **The noise-parity character is a product of noise characters.**  Each step of the prefix
+parity complements one more tape bit, and each complement contributes its own noise character —
+the identity `NoisyWindowChain.chi_pairObs_lagK` is exactly this at `d = 1`. -/
+theorem chi_par (ξ : ℕ → Bool) (d : ℕ) :
+    chi (par ξ d) = ∏ i ∈ Finset.range d, zeta (ξ i) := by
+  induction d with
+  | zero => simp
+  | succ d ih =>
+    rw [par_succ, chi_xor, chi_not, ih, Finset.prod_range_succ, zeta_eq_neg_chi (ξ d)]
+
 /-- **The one-step character recursion.**  This is the property that makes the parity walk fit the
 signed-sum engine: its character multiplies by the noise character at every step. -/
 private lemma chi_walk_succ (x₀ : Bool) (ξ : ℕ → Bool) (s : ℕ) :

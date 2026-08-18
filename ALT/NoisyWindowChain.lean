@@ -171,6 +171,37 @@ theorem obs_add {k : ℕ} (hk : 0 < k) (ξ : ℕ → Bool) (u : ℕ) :
   rw [obs, hmod, hdiv, ParityWalk.walk_succ, hnoise]
   rfl
 
+/-- **The same-class telescoping of `obs`.**  Two observations in the same residue class, `d`
+class-steps apart, differ by exactly the parity of the complemented tape bits at the `d` class
+positions strictly between them — a set of size `d`, independent of how far `u` sits from the
+origin.  At `d = 1` this is `obs_add` in xor-of-parity form; the general statement is
+`ParityWalk.par_add` transported across the interleaving (`obs_interleave`). -/
+theorem obs_xor_obs_add_mul {k : ℕ} (hk : 0 < k) (ξ : ℕ → Bool) (u d : ℕ) :
+    xor (obs k ξ u) (obs k ξ (u + k * d))
+      = ParityWalk.par (fun i => ξ (u + k * (i + 1))) d := by
+  have distrib : ∀ e : ℕ, u % k + k * (u / k + e) = u + k * e := fun e => by
+    rw [mul_add, ← add_assoc, Nat.mod_add_div]
+  have h1 : obs k ξ u
+      = ParityWalk.walk (ξ (u % k)) (fun i => ξ (u % k + k * (i + 1))) (u / k) := by
+    have h := obs_interleave hk ξ (Nat.mod_lt u hk) (u / k)
+    rwa [Nat.mod_add_div] at h
+  have h2 : obs k ξ (u + k * d)
+      = ParityWalk.walk (ξ (u % k)) (fun i => ξ (u % k + k * (i + 1))) (u / k + d) := by
+    have h := obs_interleave hk ξ (Nat.mod_lt u hk) (u / k + d)
+    rwa [distrib d] at h
+  rw [h1, h2, ParityWalk.walk_eq_xor_par, ParityWalk.walk_eq_xor_par]
+  have hpar : ParityWalk.par (fun i => ξ (u % k + k * (i + 1))) (u / k + d)
+      = xor (ParityWalk.par (fun i => ξ (u % k + k * (i + 1))) (u / k))
+          (ParityWalk.par (fun i => ξ (u % k + k * (u / k + i + 1))) d) :=
+    ParityWalk.par_add (fun i => ξ (u % k + k * (i + 1))) (u / k) d
+  have hshift : (fun i => ξ (u % k + k * (u / k + i + 1))) = fun i => ξ (u + k * (i + 1)) := by
+    funext i
+    rw [add_assoc (u / k) i 1, distrib (i + 1)]
+  rw [hpar, hshift]
+  cases (ξ (u % k)) <;>
+    cases (ParityWalk.par (fun i => ξ (u % k + k * (i + 1))) (u / k)) <;>
+    cases (ParityWalk.par (fun i => ξ (u + k * (i + 1))) d) <;> rfl
+
 /-- **The chain's character recursion**, in the multiplicative form `ParityWalk.chiSum_tail`
 consumes. -/
 private theorem chi_obs_add {k : ℕ} (hk : 0 < k) (ξ : ℕ → Bool) (u : ℕ) :
@@ -796,6 +827,65 @@ theorem not_mixingHoeffding_pinned_pair {Ω : Type*} [MeasurableSpace Ω] (P : M
     rw [hempty, measureReal_empty]
     positivity
 
+/-- **The finite-horizon device.**  The bounded twin of `not_mixingHoeffding_pinned_pair`: the same
+pinned witness refutes `BirkhoffTool.MixingHoeffdingTo N` at every horizon `N` clearing
+`BirkhoffTool.not_mixingHoeffdingTo_pinned`'s own threshold, at `c`.  The proof is the unbounded one
+with the horizon hypothesis threaded through every application of `hmix`, landing on the ported
+pinned device instead of the unbounded one at the end. -/
+theorem not_mixingHoeffdingTo_pinned_pair {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
+    [IsProbabilityMeasure P] {k a b : ℕ} (hk : 1 ≤ k) (w : ℕ → Bool) (ψ : Bool → Bool → ℝ)
+    {v ans c : ℝ} (hc : 0 < c) {N : ℕ} (hN : ⌈2 * c * Real.log 2⌉₊ + 1 ≤ N)
+    (hpin : ∀ t, ψ (obs k w (t + a)) (obs k w (t + b)) = v)
+    (hd : 1 ≤ |v - ans|) :
+    ¬ BirkhoffTool.MixingHoeffdingTo N (Measure.map (traj k (fun i (_ : Ω) => w i)) P)
+        (pairEnsemble ψ a b) ans c := by
+  intro hmix
+  have hFmeas : Measurable (traj k (fun i (_ : Ω) => w i)) :=
+    measurable_traj hk fun _ => measurable_const
+  have : IsProbabilityMeasure (Measure.map (traj k (fun i (_ : Ω) => w i)) P) :=
+    Measure.isProbabilityMeasure_map hFmeas.aemeasurable
+  refine BirkhoffTool.not_mixingHoeffdingTo_pinned
+    (Measure.map (traj k (fun i (_ : Ω) => w i)) P) hc hN ?_
+  intro n τ hn hnN hτ
+  have hn0 : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
+  have hemp : ∀ ω : Ω,
+      SQOracle.empiricalMean (pairEnsemble ψ a b) n (traj k (fun i (_ : Ω) => w i) ω) = v := by
+    intro ω
+    have hterm : ∀ t : ℕ,
+        pairEnsemble ψ a b t (traj k (fun i (_ : Ω) => w i) ω) = v := fun t => hpin t
+    rw [SQOracle.empiricalMean, Finset.sum_congr rfl fun t _ => hterm t, Finset.sum_const,
+      Finset.card_range, nsmul_eq_mul, ← mul_assoc, inv_mul_cancel₀ hn0, one_mul]
+  have hconst : ∀ o : ℕ → Bool,
+      SQOracle.empiricalMean (fun (_ : ℕ) (_ : ℕ → Bool) => (1 : ℝ)) n o = 1 := by
+    intro o
+    rw [SQOracle.empiricalMean, Finset.sum_const, Finset.card_range, nsmul_eq_mul, mul_one,
+      inv_mul_cancel₀ hn0]
+  by_cases hτ1 : τ ≤ 1
+  · -- the pinned answer sits at distance `≥ 1` from the target, so the tail bound must exceed `1`
+    set A : Set (ℕ → Bool) :=
+      {o | τ ≤ |SQOracle.empiricalMean (pairEnsemble ψ a b) n o - ans|} with hA
+    have hAmeas : MeasurableSet A :=
+      measurableSet_le measurable_const
+        (((measurable_empiricalMean_pair ψ a b n).sub_const _).abs)
+    have hpre : traj k (fun i (_ : Ω) => w i) ⁻¹' A = Set.univ := by
+      ext ω
+      simp only [hA, Set.mem_preimage, Set.mem_setOf_eq, Set.mem_univ, iff_true, hemp ω]
+      linarith
+    have hone : (Measure.map (traj k (fun i (_ : Ω) => w i)) P).real A = 1 := by
+      simp [Measure.real, Measure.map_apply hFmeas hAmeas, hpre]
+    have hb := hmix n τ hn hnN hτ
+    rw [hone] at hb
+    exact le_trans MeasureTheory.measureReal_le_one hb
+  · -- beyond the observable's own range the constant ensemble's event is empty
+    replace hτ1 : 1 < τ := not_le.mp hτ1
+    have hempty : {o : ℕ → Bool | τ ≤ |SQOracle.empiricalMean
+        (fun (_ : ℕ) (_ : ℕ → Bool) => (1 : ℝ)) n o - 0|} = ∅ := by
+      ext o
+      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le, hconst o]
+      simpa using hτ1
+    rw [hempty, measureReal_empty]
+    positivity
+
 /-- **The guard.**  At window length `3`, offsets `0` and `2` (distinct residue classes) and the
 noise rate `η = 0`, the two-offset predicate is refutable at **every** positive constant.  So no
 noise-free constant covers the two-offset class, and in particular the coordinate constant `4k` of
@@ -1086,6 +1176,11 @@ consumed only inside this file and stay private. -/
 noncomputable def pairCoefAB (ψ : Bool → Bool → ℝ) : ℝ :=
   (ψ false false - ψ false true - ψ true false + ψ true true) / 4
 
+/-- `pairChar`'s own pair Walsh coefficient is `1`: the pair character IS its genuinely
+two-coordinate part, with none of its mass on the flat or single-coordinate terms. -/
+@[simp] lemma pairCoefAB_pairChar : pairCoefAB pairChar = 1 := by
+  norm_num [pairCoefAB, pairChar, ParityWalk.chi]
+
 private lemma pair_decomp (ψ : Bool → Bool → ℝ) (u v : Bool) :
     ψ u v = pairMean ψ + pairCoefA ψ * ParityWalk.chi u + pairCoefB ψ * ParityWalk.chi v
       + pairCoefAB ψ * ParityWalk.chi (xor u v) := by
@@ -1120,6 +1215,51 @@ private lemma empiricalMean_sub_pairMean (ψ : Bool → Bool → ℝ) (a b : ℕ
     ← Finset.mul_sum]
   field_simp
   ring
+
+/-- **The query's deviation from a displaced same-class answer, bounded by two single-site window
+sums and one pair-correlation window.** The public interface to the private three-way character
+decomposition (`empiricalMean_sub_pairMean` and the `pairCoefA`/`pairCoefB`/`pairCoefAB` triple,
+which all stay private): given single-site window bounds `S` at both offsets and a pair-correlation
+window bound `W` against a declared correlation `ρ`, the two-offset query's `n`-scaled deviation
+from `pairMean ψ + pairCoefAB ψ · ρ` (`samePairMean ψ ρ`, definitionally) is at most `2S + W`. -/
+theorem empiricalMean_deviation_le_of_window_bounds (ψ : Bool → Bool → ℝ) (hψ : ∀ u v, |ψ u v| ≤ 1)
+    (a b : ℕ) {n : ℕ} (hn : 1 ≤ n) (o : ℕ → Bool) (ρ S W : ℝ)
+    (hSa : |∑ t ∈ Finset.range n, ParityWalk.chi (o (t + a))| ≤ S)
+    (hSb : |∑ t ∈ Finset.range n, ParityWalk.chi (o (t + b))| ≤ S)
+    (hW : |∑ t ∈ Finset.range n, ParityWalk.chi (o (t + a)) * ParityWalk.chi (o (t + b)) -
+        (n : ℝ) * ρ| ≤ W) :
+    (n : ℝ) * |SQOracle.empiricalMean (pairEnsemble ψ a b) n o - (pairMean ψ + pairCoefAB ψ * ρ)|
+      ≤ 2 * S + W := by
+  obtain ⟨-, hcA, hcB, hcAB⟩ := abs_pairCoef_le_one hψ
+  have hid := empiricalMean_sub_pairMean ψ a b hn o
+  have hxoreq : (∑ t ∈ Finset.range n, ParityWalk.chi (xor (o (t + a)) (o (t + b))))
+      = ∑ t ∈ Finset.range n, ParityWalk.chi (o (t + a)) * ParityWalk.chi (o (t + b)) :=
+    Finset.sum_congr rfl (fun t _ => ParityWalk.chi_xor (o (t + a)) (o (t + b)))
+  rw [hxoreq] at hid
+  set Sa : ℝ := ∑ t ∈ Finset.range n, ParityWalk.chi (o (t + a))
+  set Sb : ℝ := ∑ t ∈ Finset.range n, ParityWalk.chi (o (t + b))
+  set Sq : ℝ := ∑ t ∈ Finset.range n, ParityWalk.chi (o (t + a)) * ParityWalk.chi (o (t + b))
+  have heq : (n : ℝ) * (SQOracle.empiricalMean (pairEnsemble ψ a b) n o -
+      (pairMean ψ + pairCoefAB ψ * ρ)) =
+      pairCoefA ψ * Sa + pairCoefB ψ * Sb + pairCoefAB ψ * (Sq - (n : ℝ) * ρ) := by
+    linear_combination hid
+  have hnnn : (0 : ℝ) ≤ (n : ℝ) := Nat.cast_nonneg n
+  have hab : (n : ℝ) * |SQOracle.empiricalMean (pairEnsemble ψ a b) n o -
+      (pairMean ψ + pairCoefAB ψ * ρ)| =
+      |(n : ℝ) * (SQOracle.empiricalMean (pairEnsemble ψ a b) n o -
+        (pairMean ψ + pairCoefAB ψ * ρ))| := by
+    rw [abs_mul, abs_of_nonneg hnnn]
+  rw [hab, heq]
+  have ea : |pairCoefA ψ * Sa| ≤ S :=
+    le_trans (by rw [abs_mul]; exact mul_le_of_le_one_left (abs_nonneg Sa) hcA) hSa
+  have eb : |pairCoefB ψ * Sb| ≤ S :=
+    le_trans (by rw [abs_mul]; exact mul_le_of_le_one_left (abs_nonneg Sb) hcB) hSb
+  have ec : |pairCoefAB ψ * (Sq - (n : ℝ) * ρ)| ≤ W :=
+    le_trans (by rw [abs_mul]; exact mul_le_of_le_one_left (abs_nonneg _) hcAB) hW
+  have htri1 := abs_add_le (pairCoefA ψ * Sa + pairCoefB ψ * Sb)
+    (pairCoefAB ψ * (Sq - (n : ℝ) * ρ))
+  have htri2 := abs_add_le (pairCoefA ψ * Sa) (pairCoefB ψ * Sb)
+  linarith
 
 /-- Extending a Birkhoff block of characters past its end costs at most the number of extra
 terms. -/
@@ -1584,6 +1724,22 @@ theorem chi_pairObs_lagK {k : ℕ} (hk : 0 < k) (a : ℕ) (ξ : ℕ → Bool) (t
     cases obs k ξ (t + a) <;> norm_num [ParityWalk.chi]
   rw [chi_pairObs, show t + (a + k) = t + a + k by omega, ← hrec, ← mul_assoc, hsq, one_mul]
 
+/-- **The same-class pair character at lag `k·d`.**  `pairObs` at offsets `(a, a + k·d)` is, by
+definition, the xor of two same-class observations `d` class-steps apart; `obs_xor_obs_add_mul`
+rewrites that xor as the noise parity over the `d` intervening class positions, and `chi_par` turns
+its character into a product of the `d` noise characters at those positions.  `chi_pairObs_lagK` is
+this theorem at `d = 1`. -/
+theorem chi_pairObs_lag_mul {k : ℕ} (hk : 0 < k) (a d : ℕ) (ξ : ℕ → Bool) (t : ℕ) :
+    ParityWalk.chi (pairObs k a (a + k * d) ξ t)
+      = ∏ i ∈ Finset.range d, ParityWalk.zeta (ξ (t + a + k * (i + 1))) := by
+  have hxor : pairObs k a (a + k * d) ξ t
+      = xor (obs k ξ (t + a)) (obs k ξ ((t + a) + k * d)) := by
+    change xor (obs k ξ (t + a)) (obs k ξ (t + (a + k * d)))
+        = xor (obs k ξ (t + a)) (obs k ξ ((t + a) + k * d))
+    congr 2
+    omega
+  rw [hxor, obs_xor_obs_add_mul hk ξ (t + a) d, ParityWalk.chi_par]
+
 /-- The stationary answer to a **same-class** two-offset query at lag `k`.
 
 For offsets in distinct residue classes the two observations are independent and uniform under the
@@ -1622,6 +1778,31 @@ private lemma abs_samePairMean_le_one {ψ : Bool → Bool → ℝ} (hψ : ∀ u 
   obtain ⟨h4, h4'⟩ := abs_le.mp (hψ true true)
   have hp : (0 : ℝ) ≤ 1 + m := by linarith
   have hq : (0 : ℝ) ≤ 1 - m := by linarith
+  rw [abs_le]
+  constructor <;> simp only [samePairMean, pairMean, pairCoefAB] <;>
+    nlinarith [mul_nonneg (by linarith : (0 : ℝ) ≤ 1 - ψ false false) hp,
+      mul_nonneg (by linarith : (0 : ℝ) ≤ 1 - ψ false true) hq,
+      mul_nonneg (by linarith : (0 : ℝ) ≤ 1 - ψ true false) hq,
+      mul_nonneg (by linarith : (0 : ℝ) ≤ 1 - ψ true true) hp,
+      mul_nonneg (by linarith : (0 : ℝ) ≤ 1 + ψ false false) hp,
+      mul_nonneg (by linarith : (0 : ℝ) ≤ 1 + ψ false true) hq,
+      mul_nonneg (by linarith : (0 : ℝ) ≤ 1 + ψ true false) hq,
+      mul_nonneg (by linarith : (0 : ℝ) ≤ 1 + ψ true true) hp]
+
+/-- **The same-class answer stays inside the observable's own range, at any displaced mean `mm` of
+its own absolute range** — the same proof as `abs_samePairMean_le_one`, needing only `|mm| ≤ 1`, not
+`mm ≤ 0`.  What `abs_samePairMean_le_one` needs `hm : m ≤ 0` for is exactly `1 - m ≥ 0`, which
+`|mm| ≤ 1` already gives without a sign; the generalisation is for `mm := m ^ d`, which for `d` even
+is not `≤ 0` even when `m` is. -/
+private lemma abs_samePairMean_le_one_of_abs_le {ψ : Bool → Bool → ℝ} (hψ : ∀ u v, |ψ u v| ≤ 1)
+    {mm : ℝ} (hmm : |mm| ≤ 1) : |samePairMean ψ mm| ≤ 1 := by
+  obtain ⟨h1, h1'⟩ := abs_le.mp (hψ false false)
+  obtain ⟨h2, h2'⟩ := abs_le.mp (hψ false true)
+  obtain ⟨h3, h3'⟩ := abs_le.mp (hψ true false)
+  obtain ⟨h4, h4'⟩ := abs_le.mp (hψ true true)
+  obtain ⟨hmm0, hmm1⟩ := abs_le.mp hmm
+  have hp : (0 : ℝ) ≤ 1 + mm := by linarith
+  have hq : (0 : ℝ) ≤ 1 - mm := by linarith
   rw [abs_le]
   constructor <;> simp only [samePairMean, pairMean, pairCoefAB] <;>
     nlinarith [mul_nonneg (by linarith : (0 : ℝ) ≤ 1 - ψ false false) hp,
@@ -1938,6 +2119,679 @@ theorem mixingHoeffding_noisyWindowChain_pair_lagK
       neg_le_neg_iff, div_le_div_iff₀ (by positivity) (by norm_num)]
     nlinarith [mul_nonneg (mul_nonneg hn0.le (sq_nonneg τ)) (by linarith : (0 : ℝ) ≤ (k : ℝ) - 1)]
 
+/-! #### The mixing constant at same-class lag `k·d`
+
+`chi_pairObs_lagK`'s pair character is a single noise character; at the general lag `k·d`,
+`chi_pairObs_lag_mul` makes it a product of `d` noise characters.  Two query times `t`, `t′` share a
+noise bit in that product iff `t ≡ t′ [MOD k]` and `|t − t′| < k·d`, so the query splits into `k·d`
+subsequences: `k` residue classes mod `k`, genuinely independent of one another (the same
+decomposition `indepFun_residueClass` already uses); and, inside one class, a further split by index
+mod `d` removes the remaining overlap, since two steps of the same class at distance `≥ d` read
+disjoint windows.  The `k` classes combine at no cost (`HasSubgaussianMGF.add_of_indepFun`, additive
+in the parameter); the `d` phases inside one class do not avoid overlap with each other, so they
+combine via `HasSubgaussianMGF.add` (no independence needed, quadratic in the parameter).  That
+asymmetry is why the constant below is linear in `k` but quadratic in `d`. -/
+
+/-- The stationary answer to a **same-class** two-offset query at lag `k·d`: `samePairMean` at the
+noise character's mean raised to the `d`-th power, `chi_pairObs_lag_mul`'s own mean. -/
+noncomputable def samePairMeanMul (ψ : Bool → Bool → ℝ) (m : ℝ) (d : ℕ) : ℝ :=
+  pairMean ψ + pairCoefAB ψ * m ^ d
+
+/-- `samePairMeanMul` is `samePairMean` at the displaced mean `m ^ d`; stated so the `d = 1`
+identity `samePairMeanMul ψ m 1 = samePairMean ψ m` is `rfl`-visible, and so the existing
+displacement bounds (`abs_samePairMean_sub`) and the decomposition `empiricalMean_sub_samePairMean`
+apply to `samePairMeanMul` at `mm := m ^ d` with no restatement. -/
+lemma samePairMeanMul_eq_samePairMean (ψ : Bool → Bool → ℝ) (m : ℝ) (d : ℕ) :
+    samePairMeanMul ψ m d = samePairMean ψ (m ^ d) := rfl
+
+/-- **The same-class lag-`k·d` mixing constant.**  Linear in the window length `k` — the same
+boundary-allowance source as `samePairConst`'s own `48·k` — and quadratic in the interleave depth
+`d`, from combining `d` pairwise-overlapping phases without independence (`HasSubgaussianMGF.add`).
+At `d = 1` the quadratic factor vanishes and this is exactly `samePairConst k`
+(`samePairConstMul_one`), which is the constant the commissioning design record asked for;
+landing on `d²` rather than `d` for `d ≥ 2` is the finding this file reports (see the module
+boundary note at `mixingHoeffding_noisyWindowChain_pair_lag_mul`), not a claim `d²` is optimal. -/
+noncomputable def samePairConstMul (k d : ℕ) : ℝ := 48 * k * d ^ 2
+
+@[simp] lemma samePairConstMul_one (k : ℕ) : samePairConstMul k 1 = samePairConst k := by
+  simp [samePairConstMul, samePairConst]
+
+section SamePairLagMul
+
+variable {k : ℕ}
+
+/-- **The mean of a `d`-wide window of noise characters.**  Peeling the last factor off the product
+`chi_pairObs_lag_mul` exposes: it reads a fresh noise bit past every earlier factor's own reach, so
+its mean is independent of the rest, `hmean` gives it `m`, and the product's mean is `m ^ d` by
+induction. -/
+private lemma integral_prod_zeta (hk : 1 ≤ k) (hmeas : ∀ i, Measurable (ξ i))
+    (hindep : iIndepFun ξ P) (hmean : ∀ i, k ≤ i → ∫ ω, ParityWalk.zeta (ξ i ω) ∂P = m) (t d : ℕ) :
+    ∫ ω, (∏ i ∈ Finset.range d, ParityWalk.zeta (ξ (t + k * (i + 1)) ω)) ∂P = m ^ d := by
+  induction d with
+  | zero => simp
+  | succ d ih =>
+    have hdist : ∀ i ∈ Finset.range d, t + k * (i + 1) ≠ t + k * (d + 1) := by
+      intro i hi hcon
+      simp only [Finset.mem_range] at hi
+      have hik : k * (i + 1) = k * (d + 1) := by omega
+      have := Nat.eq_of_mul_eq_mul_left (show 0 < k by omega) hik
+      omega
+    have hF : Measurable[ParityWalk.noiseAlg ξ (({t + k * (d + 1)} : Set ℕ)ᶜ)]
+        (fun ω => ∏ i ∈ Finset.range d, ParityWalk.zeta (ξ (t + k * (i + 1)) ω)) := by
+      refine Finset.measurable_fun_prod _ fun i hi => ?_
+      refine ParityWalk.measurable_zeta.comp (ParityWalk.measurable_noiseAlg_xi ?_)
+      simpa only [Set.mem_compl_iff, Set.mem_singleton_iff] using hdist i hi
+    have hG : Measurable[ParityWalk.noiseAlg ξ ((({t + k * (d + 1)} : Set ℕ)ᶜ)ᶜ)]
+        (fun ω => ParityWalk.zeta (ξ (t + k * (d + 1)) ω)) := by
+      rw [compl_compl]
+      exact ParityWalk.measurable_zeta.comp (ParityWalk.measurable_noiseAlg_xi (by simp))
+    have hind := ParityWalk.indepFun_noiseAlg_compl hmeas hindep _ hF hG
+    have hFm : AEStronglyMeasurable
+        (fun ω => ∏ i ∈ Finset.range d, ParityWalk.zeta (ξ (t + k * (i + 1)) ω)) P :=
+      (hF.mono (ParityWalk.noiseAlg_le hmeas _) le_rfl).aestronglyMeasurable
+    have hGm : AEStronglyMeasurable (fun ω => ParityWalk.zeta (ξ (t + k * (d + 1)) ω)) P :=
+      (ParityWalk.measurable_zeta.comp (hmeas _)).aestronglyMeasurable
+    have hsplit : (fun ω => ∏ i ∈ Finset.range (d + 1), ParityWalk.zeta (ξ (t + k * (i + 1)) ω))
+        = fun ω => (∏ i ∈ Finset.range d, ParityWalk.zeta (ξ (t + k * (i + 1)) ω))
+            * ParityWalk.zeta (ξ (t + k * (d + 1)) ω) := by
+      funext ω; rw [Finset.prod_range_succ]
+    rw [hsplit, hind.integral_fun_mul_eq_mul_integral hFm hGm, ih, hmean (t + k * (d + 1)) (by
+      have : k ≤ k * (d + 1) := Nat.le_mul_of_pos_right k (by omega)
+      omega), pow_succ]
+
+/-! #### The `k·d`-way split: residue class `r < k`, phase `q < d`, step `w`
+
+Class `r`'s own times are `r, r + k, r + 2k, …`; phase `q` further selects the steps `≡ q [MOD d]`,
+so `phaseTime` below is exactly the arithmetic progression with common difference `k·d` starting at
+`r + k·q` — the residue-`(r + k·q)` class modulo `k·d`.  Two steps `w ≠ w'` of one `(r, q)` phase
+sit `≥ k·d` apart, past the width-`k·d` window `chi_pairObs_lag_mul` reads, so their windows
+(`phaseBlock`) are disjoint: this is the same arithmetic `eq_of_block_index` already proves for the
+cross-class blocking, reused here at the single-track window instead of the two-track one. -/
+
+/-- The time of class `r`'s, phase `q`'s, step `w` element. -/
+private def phaseTime (k d r q w : ℕ) : ℕ := r + k * q + k * d * w
+
+/-- The noise indices `chi_pairObs_lag_mul` reads at `phaseTime k d r q w`. -/
+private def phaseBlock (k a d r q w : ℕ) : Set ℕ :=
+  {i | ∃ j < d, i = phaseTime k d r q w + a + k * (j + 1)}
+
+/-- **Disjointness across steps of one phase.**  Two step counts `w ≠ w'` place their two windows
+`k·d` apart, past every window's own width, so no window index is shared. -/
+private lemma phaseBlock_disjoint {a d r q : ℕ} (hk : 0 < k) (hd : 0 < d) {w w' : ℕ}
+    (hww' : w ≠ w') :
+    Disjoint (phaseBlock k a d r q w) (phaseBlock k a d r q w') := by
+  rw [Set.disjoint_left]
+  rintro i ⟨j, hj, hi⟩ ⟨j', hj', hi'⟩
+  apply hww'
+  have heq : phaseTime k d r q w + a + k * (j + 1) = phaseTime k d r q w' + a + k * (j' + 1) := by
+    rw [← hi, ← hi']
+  have h1 : k * (d * w) + k * (j + 1) = k * (d * w') + k * (j' + 1) := by
+    simp only [phaseTime, mul_assoc] at heq; omega
+  rw [← Nat.mul_add, ← Nat.mul_add] at h1
+  exact eq_of_block_index (L := d) hd hj hj' (by have := Nat.eq_of_mul_eq_mul_left hk h1; omega)
+
+/-- The value `chi (pairObs k a (a + k·d) ξ ·)` takes at `phaseTime k d r q w`, as the explicit
+product `chi_pairObs_lag_mul` gives it — a function of exactly the noise bits `phaseBlock` names. -/
+private noncomputable def phaseChar (k a d r q w : ℕ) (ξ : ℕ → Bool) : ℝ :=
+  ∏ j ∈ Finset.range d, ParityWalk.zeta (ξ (phaseTime k d r q w + a + k * (j + 1)))
+
+private lemma phaseChar_eq (hk : 0 < k) (a d r q w : ℕ) (ξ : ℕ → Bool) :
+    ParityWalk.chi (pairObs k a (a + k * d) ξ (phaseTime k d r q w)) = phaseChar k a d r q w ξ :=
+  chi_pairObs_lag_mul hk a d ξ (phaseTime k d r q w)
+
+omit [MeasurableSpace Ω] in
+private lemma measurable_phaseChar {a d r q w : ℕ} :
+    Measurable[ParityWalk.noiseAlg ξ (phaseBlock k a d r q w)]
+      (fun ω => phaseChar k a d r q w (fun i => ξ i ω)) := by
+  refine Finset.measurable_fun_prod _ fun j hj => ?_
+  refine ParityWalk.measurable_zeta.comp (ParityWalk.measurable_noiseAlg_xi ?_)
+  simp only [Finset.mem_range] at hj
+  exact ⟨j, hj, rfl⟩
+
+private lemma abs_phaseChar_le_one (a d r q w : ℕ) (ξ : ℕ → Bool) :
+    |phaseChar k a d r q w ξ| ≤ 1 := by
+  rw [phaseChar, Finset.abs_prod]
+  refine Finset.prod_le_one (fun j _ => abs_nonneg _) fun j _ => ?_
+  cases ξ (phaseTime k d r q w + a + k * (j + 1)) <;> norm_num [ParityWalk.zeta]
+
+private lemma integral_phaseChar (hk : 1 ≤ k) (hmeas : ∀ i, Measurable (ξ i))
+    (hindep : iIndepFun ξ P) (hmean : ∀ i, k ≤ i → ∫ ω, ParityWalk.zeta (ξ i ω) ∂P = m)
+    (a d r q w : ℕ) :
+    ∫ ω, phaseChar k a d r q w (fun i => ξ i ω) ∂P = m ^ d := by
+  have h := integral_prod_zeta hk hmeas hindep hmean (phaseTime k d r q w + a) d
+  simpa only [phaseChar, add_assoc] using h
+
+/-- `phaseChar`, padded to the mean `m ^ d` once its time reaches `n`.  The device that lets a
+FIXED range `w < n` cover every phase uniformly: `n` overshoots the true number of a phase's terms
+below `n` (computing it exactly is the reindexing this file avoids), and the padded terms
+contribute exactly `0` to the centred sum, so overshooting costs nothing but a name. -/
+private noncomputable def paddedPhaseChar (k a d r q w n : ℕ) (m : ℝ) (ξ : ℕ → Bool) : ℝ :=
+  if phaseTime k d r q w < n then phaseChar k a d r q w ξ else m ^ d
+
+omit [MeasurableSpace Ω] in
+private lemma measurable_paddedPhaseChar {a d r q w n : ℕ} :
+    Measurable[ParityWalk.noiseAlg ξ (phaseBlock k a d r q w)]
+      (fun ω => paddedPhaseChar k a d r q w n m (fun i => ξ i ω)) := by
+  unfold paddedPhaseChar
+  split_ifs with h
+  · exact measurable_phaseChar
+  · exact measurable_const
+
+private lemma abs_paddedPhaseChar_le_one (hm0 : -1 ≤ m) (hm : m ≤ 0) (a d r q w n : ℕ)
+    (ξ : ℕ → Bool) :
+    |paddedPhaseChar k a d r q w n m ξ| ≤ 1 := by
+  unfold paddedPhaseChar
+  split_ifs with h
+  · exact abs_phaseChar_le_one a d r q w ξ
+  · rw [abs_pow]
+    exact pow_le_one₀ (abs_nonneg m) (abs_le.mpr ⟨hm0, by linarith⟩)
+
+private lemma integral_paddedPhaseChar (hk : 1 ≤ k) (hmeas : ∀ i, Measurable (ξ i))
+    (hindep : iIndepFun ξ P) (hmean : ∀ i, k ≤ i → ∫ ω, ParityWalk.zeta (ξ i ω) ∂P = m)
+    (a d r q w n : ℕ) :
+    ∫ ω, paddedPhaseChar k a d r q w n m (fun i => ξ i ω) ∂P = m ^ d := by
+  unfold paddedPhaseChar
+  split_ifs with h
+  · exact integral_phaseChar hk hmeas hindep hmean a d r q w
+  · simp
+
+/-- **The per-phase subgaussian bound.**  The `w`-indexed sequence of one phase `(r, q)`'s own
+character values, centred at its mean `m ^ d`, is a plain block-signed sum at the trivial (always
+`false`) sign — `chi_pairObs_lag_mul`'s value at each step reads a block disjoint from every other
+step's (`phaseBlock_disjoint`), so the engine gives sub-Gaussian parameter `n`, the parameter a
+genuinely i.i.d. sum of `n` `[-1, 1]`-valued terms would get.  The padding needs `|m| ≤ 1` to stay
+inside the observable's own range, which the coordinate-free `chi_pairObs_lag_mul` value never
+needed. -/
+private lemma hasSubgaussianMGF_phaseChar (hk : 1 ≤ k) (hd : 1 ≤ d) (hm0 : -1 ≤ m) (hm : m ≤ 0)
+    (hmeas : ∀ i, Measurable (ξ i)) (hindep : iIndepFun ξ P)
+    (hmean : ∀ i, k ≤ i → ∫ ω, ParityWalk.zeta (ξ i ω) ∂P = m) (a r q n : ℕ) :
+    HasSubgaussianMGF
+      (fun ω => ∑ w ∈ Finset.range n, (paddedPhaseChar k a d r q w n m (fun i => ξ i ω) - m ^ d))
+      n P := by
+  have hre : (fun ω => ∑ w ∈ Finset.range n,
+      (paddedPhaseChar k a d r q w n m (fun i => ξ i ω) - m ^ d))
+      = ParityWalk.blockSignedSum (fun _ (_ : Ω) => false)
+        (fun w ω => paddedPhaseChar k a d r q w n m (fun i => ξ i ω)) (m ^ d) n := by
+    funext ω
+    simp [ParityWalk.blockSignedSum, ParityWalk.chi]
+  rw [hre]
+  refine ParityWalk.hasSubgaussianMGF_blockSignedSum (A := phaseBlock k a d r q) hmeas hindep
+    (fun u v huv => phaseBlock_disjoint (by omega) (by omega) huv)
+    (fun _ => measurable_paddedPhaseChar) (fun w ω => Set.mem_Icc.mpr ?_)
+    (fun w => integral_paddedPhaseChar hk hmeas hindep hmean a d r q w n)
+    (fun _ => measurable_const) n
+  exact abs_le.mp (abs_paddedPhaseChar_le_one hm0 hm a d r q w n (fun i => ξ i ω))
+
+/-- **The `d` phases of one class, combined.**  The `d` phases of class `r` are NOT mutually
+independent (a phase-`q` step and a phase-`q'` step, `q ≠ q'`, can share a noise bit — the whole
+reason a further split was needed), so they combine via `HasSubgaussianMGF.add`, which needs no
+independence, rather than `add_of_indepFun`.  Iterated `d'` times this costs a factor `d'²`, not
+`d'`: this is the source of `samePairConstMul`'s own `d²`. -/
+private lemma hasSubgaussianMGF_classSum (hk : 1 ≤ k) (hd : 1 ≤ d) (hm0 : -1 ≤ m) (hm : m ≤ 0)
+    (hmeas : ∀ i, Measurable (ξ i)) (hindep : iIndepFun ξ P)
+    (hmean : ∀ i, k ≤ i → ∫ ω, ParityWalk.zeta (ξ i ω) ∂P = m) (a r n d' : ℕ) :
+    HasSubgaussianMGF
+      (fun ω => ∑ q ∈ Finset.range d', ∑ w ∈ Finset.range n,
+        (paddedPhaseChar k a d r q w n m (fun i => ξ i ω) - m ^ d)) ((d' : NNReal) ^ 2 * n) P := by
+  induction d' with
+  | zero =>
+    have hz : (fun ω => ∑ q ∈ Finset.range 0, ∑ w ∈ Finset.range n,
+        (paddedPhaseChar k a d r q w n m (fun i => ξ i ω) - m ^ d)) = (fun _ => (0 : ℝ)) := by simp
+    rw [hz, show ((0 : ℕ) : NNReal) ^ 2 * (n : NNReal) = 0 by simp]
+    exact HasSubgaussianMGF.fun_zero (μ := P)
+  | succ d' ih =>
+    have hcomb := ih.add (hasSubgaussianMGF_phaseChar hk hd hm0 hm hmeas hindep hmean a r d' n)
+    have hsq : (((d' : NNReal) ^ 2 * (n : NNReal)).sqrt + ((n : ℕ) : NNReal).sqrt) ^ 2
+        = ((d' + 1 : ℕ) : NNReal) ^ 2 * (n : NNReal) := by
+      rw [NNReal.sqrt_mul, NNReal.sqrt_sq,
+        show (d' : NNReal) * NNReal.sqrt (n : NNReal) + NNReal.sqrt (n : NNReal)
+          = ((d' : NNReal) + 1) * NNReal.sqrt (n : NNReal) by ring,
+        mul_pow, NNReal.sq_sqrt]
+      push_cast
+      ring
+    rw [hsq] at hcomb
+    have hfe : (fun ω => ∑ q ∈ Finset.range (d' + 1), ∑ w ∈ Finset.range n,
+        (paddedPhaseChar k a d r q w n m (fun i => ξ i ω) - m ^ d))
+        = (fun ω => (∑ q ∈ Finset.range d', ∑ w ∈ Finset.range n,
+            (paddedPhaseChar k a d r q w n m (fun i => ξ i ω) - m ^ d))
+          + (∑ w ∈ Finset.range n,
+            (paddedPhaseChar k a d r d' w n m (fun i => ξ i ω) - m ^ d))) := by
+      funext ω; rw [Finset.sum_range_succ]
+    rw [hfe]
+    exact hcomb
+
+/-! #### The `k` classes, combined at no cost: they are genuinely independent
+
+Every noise index `phaseBlock k a d r q w` reads is `≡ r + a [MOD k]`, regardless of `q`, `w`.  So
+class `r`'s whole partial sum is a reading of the single residue set `{i | i % k = (r + a) % k}`,
+and distinct classes `r ≠ r'` read *disjoint* residue sets — the same fact `indepFun_residueClass`
+already uses, at the level of one scalar sum rather than a whole trajectory.  That lets the `k`
+classes combine via `HasSubgaussianMGF.add_of_indepFun`, additive in the parameter: no cost, unlike
+the `d`-phase combination above. -/
+
+private lemma phaseBlock_subset_residue (a d r q w : ℕ) :
+    phaseBlock k a d r q w ⊆ {i | i % k = (r + a) % k} := by
+  rintro i ⟨j, hj, rfl⟩
+  change (phaseTime k d r q w + a + k * (j + 1)) % k = (r + a) % k
+  have hre : phaseTime k d r q w + a + k * (j + 1) = (r + a) + k * (q + d * w + (j + 1)) := by
+    simp only [phaseTime]; ring
+  rw [hre, Nat.add_mul_mod_self_left]
+
+private lemma residue_ne_of_ne {a r r' : ℕ} (hr : r < k) (hr' : r' < k) (hne : r' ≠ r) :
+    (r' + a) % k ≠ (r + a) % k := by
+  intro heq
+  have h1 : r' % k = r % k := Nat.ModEq.add_right_cancel' a heq
+  rw [Nat.mod_eq_of_lt hr', Nat.mod_eq_of_lt hr] at h1
+  exact hne h1
+
+omit [MeasurableSpace Ω] in
+/-- Class `r`'s own partial sum, measurable w.r.t. its own residue set. -/
+private lemma measurable_classSum (a r n : ℕ) :
+    Measurable[ParityWalk.noiseAlg ξ {i | i % k = (r + a) % k}]
+      (fun ω => ∑ q ∈ Finset.range d, ∑ w ∈ Finset.range n,
+        (paddedPhaseChar k a d r q w n m (fun i => ξ i ω) - m ^ d)) := by
+  refine Finset.measurable_fun_sum _ fun q _ => ?_
+  refine Finset.measurable_fun_sum _ fun w _ => ?_
+  exact (measurable_paddedPhaseChar.mono
+    (ParityWalk.noiseAlg_mono ξ (phaseBlock_subset_residue a d r q w)) le_rfl).sub
+    measurable_const
+
+omit [MeasurableSpace Ω] in
+/-- A Finset of classes, all avoiding `r`, is measurable w.r.t. `r`'s residue set's complement. -/
+private lemma measurable_sum_classSum {a r n : ℕ} {s : Finset ℕ} (hr : r < k)
+    (hs : ∀ r' ∈ s, r' < k) (hrs : r ∉ s) :
+    Measurable[ParityWalk.noiseAlg ξ ({i | i % k = (r + a) % k})ᶜ]
+      (fun ω => ∑ r' ∈ s, ∑ q ∈ Finset.range d, ∑ w ∈ Finset.range n,
+        (paddedPhaseChar k a d r' q w n m (fun i => ξ i ω) - m ^ d)) := by
+  refine Finset.measurable_fun_sum _ fun r' hr' => ?_
+  have hne : r' ≠ r := fun h => hrs (h ▸ hr')
+  refine (measurable_classSum a r' n).mono (ParityWalk.noiseAlg_mono ξ ?_) le_rfl
+  intro i hi
+  simp only [Set.mem_compl_iff, Set.mem_setOf_eq]
+  rw [hi]
+  exact residue_ne_of_ne hr (hs r' hr') hne
+
+/-- **The `k` classes, combined.**  Straight induction over the Finset of covered classes, peeling
+one off at each step against the independence of its own residue set from the rest's. -/
+private lemma hasSubgaussianMGF_sum_classes (hk : 1 ≤ k) (hd : 1 ≤ d) (hm0 : -1 ≤ m) (hm : m ≤ 0)
+    (hmeas : ∀ i, Measurable (ξ i)) (hindep : iIndepFun ξ P)
+    (hmean : ∀ i, k ≤ i → ∫ ω, ParityWalk.zeta (ξ i ω) ∂P = m) (a n : ℕ) {s : Finset ℕ}
+    (hs : ∀ r ∈ s, r < k) :
+    HasSubgaussianMGF
+      (fun ω => ∑ r ∈ s, ∑ q ∈ Finset.range d, ∑ w ∈ Finset.range n,
+        (paddedPhaseChar k a d r q w n m (fun i => ξ i ω) - m ^ d))
+      ((s.card : NNReal) * ((d : NNReal) ^ 2 * n)) P := by
+  classical
+  induction s using Finset.induction_on with
+  | empty =>
+    simp only [Finset.sum_empty, Finset.card_empty, Nat.cast_zero, zero_mul]
+    exact HasSubgaussianMGF.fun_zero (μ := P)
+  | insert r s hrs ih =>
+    have hrk : r < k := hs r (Finset.mem_insert_self r s)
+    have hs' : ∀ r' ∈ s, r' < k := fun r' hr' => hs r' (Finset.mem_insert_of_mem hr')
+    have hCr := hasSubgaussianMGF_classSum hk hd hm0 hm hmeas hindep hmean a r n d
+    have hrest := ih hs'
+    have hindep' : IndepFun
+        (fun ω => ∑ q ∈ Finset.range d, ∑ w ∈ Finset.range n,
+          (paddedPhaseChar k a d r q w n m (fun i => ξ i ω) - m ^ d))
+        (fun ω => ∑ r' ∈ s, ∑ q ∈ Finset.range d, ∑ w ∈ Finset.range n,
+          (paddedPhaseChar k a d r' q w n m (fun i => ξ i ω) - m ^ d)) P :=
+      ParityWalk.indepFun_noiseAlg_compl hmeas hindep {i | i % k = (r + a) % k}
+        (measurable_classSum a r n) (measurable_sum_classSum hrk hs' hrs)
+    have hcomb := hCr.add_of_indepFun hrest hindep'
+    have hfe : (fun ω => ∑ r' ∈ insert r s, ∑ q ∈ Finset.range d, ∑ w ∈ Finset.range n,
+          (paddedPhaseChar k a d r' q w n m (fun i => ξ i ω) - m ^ d))
+        = fun ω => (∑ q ∈ Finset.range d, ∑ w ∈ Finset.range n,
+              (paddedPhaseChar k a d r q w n m (fun i => ξ i ω) - m ^ d))
+            + ∑ r' ∈ s, ∑ q ∈ Finset.range d, ∑ w ∈ Finset.range n,
+              (paddedPhaseChar k a d r' q w n m (fun i => ξ i ω) - m ^ d) := by
+      funext ω; rw [Finset.sum_insert hrs]
+    rw [hfe, Finset.card_insert_of_notMem hrs,
+      show ((s.card + 1 : ℕ) : NNReal) * ((d : NNReal) ^ 2 * n)
+        = (d : NNReal) ^ 2 * n + (s.card : NNReal) * ((d : NNReal) ^ 2 * n) by push_cast; ring]
+    exact hcomb
+
+/-! #### The reindexing: `range n` regrouped by residue mod `k·d`
+
+Every `t < n` has a UNIQUE representation `t = phaseTime k d (t % k) ((t / k) % d) (t / (k · d))` —
+the standard mixed-radix split of `t` into a class, a phase, and a step.  So `range n` and the
+filtered triples `{(r, q, w) : r < k, q < d, w < n, phaseTime k d r q w < n}` are in bijection, and
+regrouping the pair-character sum along it — with `paddedPhaseChar`'s padding absorbing the triples
+whose `phaseTime` overshoots `n` — turns the single sum over `range n` into the triple sum
+`hasSubgaussianMGF_sum_classes` already bounds. -/
+
+private lemma phaseTime_mod_div (t : ℕ) :
+    phaseTime k d (t % k) ((t / k) % d) (t / (k * d)) = t := by
+  change t % k + k * (t / k % d) + k * d * (t / (k * d)) = t
+  have h1 : t / (k * d) = t / k / d := (Nat.div_div_eq_div_mul t k d).symm
+  have h2 : t / k % d + d * (t / k / d) = t / k := Nat.mod_add_div (t / k) d
+  have h3 : t % k + k * (t / k) = t := by rw [mul_comm]; exact Nat.mod_add_div' t k
+  rw [h1]
+  calc t % k + k * (t / k % d) + k * d * (t / k / d)
+      = t % k + k * (t / k % d + d * (t / k / d)) := by ring
+    _ = t % k + k * (t / k) := by rw [h2]
+    _ = t := h3
+
+private lemma phaseTime_mod {r q w : ℕ} (hr : r < k) (hq : q < d) :
+    (phaseTime k d r q w) % k = r ∧ ((phaseTime k d r q w) / k) % d = q
+      ∧ (phaseTime k d r q w) / (k * d) = w := by
+  change (r + k * q + k * d * w) % k = r ∧ ((r + k * q + k * d * w) / k) % d = q
+    ∧ (r + k * q + k * d * w) / (k * d) = w
+  have e1 : r + k * q + k * d * w = r + k * (q + d * w) := by ring
+  have e2 : r + k * q + k * d * w = (r + k * q) + (k * d) * w := by ring
+  have hrq : r + k * q < k * d := by nlinarith
+  refine ⟨?_, ?_, ?_⟩
+  · rw [e1, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hr]
+  · rw [e1, Nat.add_mul_div_left _ _ (by omega : 0 < k), Nat.div_eq_of_lt hr,
+      Nat.zero_add, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hq]
+  · rw [e2, Nat.add_mul_div_left _ _ (Nat.mul_pos (by omega) (by omega) : 0 < k * d),
+      Nat.div_eq_of_lt hrq, Nat.zero_add]
+
+/-- **The reindexing.**  The pair-character sum over `range n`, centred at `m ^ d`, equals the
+triple sum over classes, phases and steps that `hasSubgaussianMGF_sum_classes` bounds. -/
+private lemma sum_pairChar_eq_sum_phases (hk : 1 ≤ k) (hd : 1 ≤ d) (a n : ℕ) (ξ : ℕ → Bool) :
+    ∑ t ∈ Finset.range n, (ParityWalk.chi (pairObs k a (a + k * d) ξ t) - m ^ d)
+      = ∑ r ∈ Finset.range k, ∑ q ∈ Finset.range d, ∑ w ∈ Finset.range n,
+          (paddedPhaseChar k a d r q w n m ξ - m ^ d) := by
+  have hpad : ∀ r q w, paddedPhaseChar k a d r q w n m ξ - m ^ d
+      = if phaseTime k d r q w < n then phaseChar k a d r q w ξ - m ^ d else 0 := by
+    intro r q w
+    unfold paddedPhaseChar
+    split_ifs with h <;> simp
+  simp_rw [hpad]
+  rw [← Finset.sum_product', ← Finset.sum_product']
+  rw [← Finset.sum_filter (fun x : (ℕ × ℕ) × ℕ => phaseTime k d x.1.1 x.1.2 x.2 < n)]
+  refine Finset.sum_nbij' (i := fun t : ℕ => ((t % k, (t / k) % d), t / (k * d)))
+    (j := fun p : (ℕ × ℕ) × ℕ => phaseTime k d p.1.1 p.1.2 p.2) ?_ ?_ ?_ ?_ ?_
+  · intro t ht
+    simp only [Finset.mem_range] at ht
+    simp only [Finset.mem_filter, Finset.mem_product, Finset.mem_range]
+    refine ⟨⟨⟨Nat.mod_lt t (by omega), Nat.mod_lt _ (by omega)⟩,
+      lt_of_le_of_lt (Nat.div_le_self t (k * d)) ht⟩, ?_⟩
+    rw [phaseTime_mod_div]; exact ht
+  · intro p hp
+    simp only [Finset.mem_filter] at hp
+    exact Finset.mem_range.mpr hp.2
+  · intro t _
+    exact phaseTime_mod_div t
+  · intro p hp
+    simp only [Finset.mem_filter, Finset.mem_product, Finset.mem_range] at hp
+    obtain ⟨⟨⟨hr, hq⟩, _⟩, _⟩ := hp
+    obtain ⟨e1, e2, e3⟩ := phaseTime_mod hr hq
+    exact Prod.ext (Prod.ext e1 e2) e3
+  · intro t ht
+    simp only [Finset.mem_range] at ht
+    rw [(phaseChar_eq (by omega) a d (t % k) ((t / k) % d) (t / (k * d)) ξ).symm,
+      phaseTime_mod_div]
+
+/-- **The pair character's tail, at lag `k·d`.**  The `k`-way independent combination
+(`hasSubgaussianMGF_sum_classes`, applied to every class `r < k`) gives the reindexed sum a
+sub-Gaussian parameter `k·d²·n`; the reindexing (`sum_pairChar_eq_sum_phases`) carries this back to
+the pair character sum itself. -/
+private lemma pairCharMul_tail (hk : 1 ≤ k) (hd : 1 ≤ d) (hm0 : -1 ≤ m) (hm : m ≤ 0)
+    (hmeas : ∀ i, Measurable (ξ i)) (hindep : iIndepFun ξ P)
+    (hmean : ∀ i, k ≤ i → ∫ ω, ParityWalk.zeta (ξ i ω) ∂P = m) (a n : ℕ) {x : ℝ} (hx : 0 ≤ x) :
+    P.real {ω | x ≤ |∑ t ∈ Finset.range n,
+        (ParityWalk.chi (pairObs k a (a + k * d) (fun i => ξ i ω) t) - m ^ d)|}
+      ≤ 2 * Real.exp (-x ^ 2 / (2 * ((k : ℝ) * (d : ℝ) ^ 2 * n))) := by
+  have hsg := hasSubgaussianMGF_sum_classes hk hd hm0 hm hmeas hindep hmean a n
+    (s := Finset.range k) (fun r hr => Finset.mem_range.mp hr)
+  have hre : (fun ω => ∑ r ∈ Finset.range k, ∑ q ∈ Finset.range d, ∑ w ∈ Finset.range n,
+        (paddedPhaseChar k a d r q w n m (fun i => ξ i ω) - m ^ d))
+      = fun ω => ∑ t ∈ Finset.range n,
+        (ParityWalk.chi (pairObs k a (a + k * d) (fun i => ξ i ω) t) - m ^ d) := by
+    funext ω; exact (sum_pairChar_eq_sum_phases hk hd a n (fun i => ξ i ω)).symm
+  rw [hre] at hsg
+  have hc := measureReal_abs_ge_le hsg hx
+  simp only [Finset.card_range] at hc
+  rwa [show (2 : ℝ) * ((((k : NNReal) * ((d : NNReal) ^ 2 * (n : NNReal)) : NNReal) : ℝ))
+      = 2 * ((k : ℝ) * (d : ℝ) ^ 2 * n) by push_cast; ring] at hc
+
+set_option maxHeartbeats 1000000 in
+-- The kd-way split accumulates enough context (three character tails, each with its own
+-- k/d-dependent numeric side conditions) that elaboration needs more than the default budget.
+/-- **E1 for the same-class two-offset query class, at the general interleave lag `k·d`.**  The
+noisy window chain of window length `k ≥ 1`, at EVERY noise rate, satisfies the FJS-shaped
+single-orbit Hoeffding hypothesis for every query reading two observations at offsets `(a, a+k·d)`
+— the same residue class, `d` chain-steps apart — with a `[-1, 1]`-valued observable, at the
+constant `samePairConstMul k d`.
+
+At `d = 1` this is exactly `mixingHoeffding_noisyWindowChain_pair_lagK`, which is re-derived from
+this theorem's `d = 1` instance (`mixingHoeffding_noisyWindowChain_pair_lagK_eq`) rather than left
+standing on its own proof.
+
+**Boundary.**  The constant is `48·k·d²`, quadratic in `d` rather than linear, and the reason is
+the shape of the `k·d`-way split: the `k` residue classes genuinely are mutually independent and
+combine in the sub-Gaussian parameter at no cost (`hasSubgaussianMGF_sum_classes`,
+`HasSubgaussianMGF.add_of_indepFun`), but the `d` phases *inside* one residue class are not — two
+phases can and do share a noise bit — so combining them (`hasSubgaussianMGF_classSum`) goes through
+`HasSubgaussianMGF.add`, whose parameter is quadratic, not linear, in the number of pieces.  A tight
+`O(k·d)` bound would need a variance-additive argument for the `d`-way combination as well, and the
+phases being pairwise dependent, it is not immediate that one exists; this file does not attempt it.
+Nothing downstream turns on the difference: a larger mixing constant costs only a longer horizon
+([SQ] §3.3's sample threshold is linear in `c`). -/
+theorem mixingHoeffding_noisyWindowChain_pair_lag_mul
+    (hk : 1 ≤ k) (hd : 1 ≤ d) (hmeas : ∀ i, Measurable (ξ i)) (hindep : iIndepFun ξ P)
+    (hmean : ∀ u, ∫ ω, ParityWalk.zeta (ξ (u + k) ω) ∂P = m) (hm0 : -1 ≤ m) (hm : m ≤ 0)
+    (a : ℕ) (ψ : Bool → Bool → ℝ) (hψ : ∀ u v, |ψ u v| ≤ 1) :
+    BirkhoffTool.MixingHoeffding (Measure.map (traj k ξ) P) (pairEnsemble ψ a (a + k * d))
+      (samePairMeanMul ψ m d) (samePairConstMul k d) := by
+  classical
+  have hkR : (1 : ℝ) ≤ (k : ℝ) := by exact_mod_cast hk
+  have hdR : (1 : ℝ) ≤ (d : ℝ) := by exact_mod_cast hd
+  have hconst : samePairConstMul k d = 48 * (k : ℝ) * (d : ℝ) ^ 2 := rfl
+  have htraj : Measurable (traj k ξ) := measurable_traj hk hmeas
+  have hmean' : ∀ i, k ≤ i → ∫ ω, ParityWalk.zeta (ξ i ω) ∂P = m := by
+    intro i hi
+    have h := hmean (i - k)
+    rwa [Nat.sub_add_cancel hi] at h
+  obtain ⟨-, hcA, hcB, hcAB⟩ := abs_pairCoef_le_one hψ
+  have hmdabs : |m ^ d| ≤ 1 := by
+    rw [abs_pow]; exact pow_le_one₀ (abs_nonneg m) (abs_le.mpr ⟨hm0, by linarith⟩)
+  have hansabs : |samePairMeanMul ψ m d| ≤ 1 := by
+    rw [samePairMeanMul_eq_samePairMean]
+    exact abs_samePairMean_le_one_of_abs_le hψ hmdabs
+  intro n τ hn hτ
+  have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  set A : Set (ℕ → Bool) :=
+    {o | τ ≤ |SQOracle.empiricalMean (pairEnsemble ψ a (a + k * d)) n o
+      - samePairMeanMul ψ m d|} with hA
+  have hAmeas : MeasurableSet A :=
+    measurableSet_le measurable_const
+      (((measurable_empiricalMean_pair ψ a (a + k * d) n).sub_const _).abs)
+  have hmap : (Measure.map (traj k ξ) P).real A = P.real (traj k ξ ⁻¹' A) := by
+    simp only [Measure.real, Measure.map_apply htraj hAmeas]
+  rw [hmap]
+  have hempabs : ∀ o : ℕ → Bool,
+      |SQOracle.empiricalMean (pairEnsemble ψ a (a + k * d)) n o| ≤ 1 := by
+    intro o
+    have hsum : |∑ t ∈ Finset.range n, pairEnsemble ψ a (a + k * d) t o| ≤ (n : ℝ) := by
+      calc |∑ t ∈ Finset.range n, pairEnsemble ψ a (a + k * d) t o|
+          ≤ ∑ t ∈ Finset.range n, |pairEnsemble ψ a (a + k * d) t o| :=
+            Finset.abs_sum_le_sum_abs _ _
+        _ ≤ ∑ _t ∈ Finset.range n, (1 : ℝ) := Finset.sum_le_sum fun t _ => hψ _ _
+        _ = (n : ℝ) := by simp
+    rw [SQOracle.empiricalMean, abs_mul, abs_inv, abs_of_nonneg hn0.le]
+    calc (n : ℝ)⁻¹ * |∑ t ∈ Finset.range n, pairEnsemble ψ a (a + k * d) t o|
+        ≤ (n : ℝ)⁻¹ * (n : ℝ) := mul_le_mul_of_nonneg_left hsum (by positivity)
+      _ = 1 := inv_mul_cancel₀ (ne_of_gt hn0)
+  by_cases hτ2 : 2 < τ
+  · -- beyond the observable's own range the event is empty
+    have hempty : traj k ξ ⁻¹' A = ∅ := by
+      ext ω
+      simp only [hA, Set.mem_preimage, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false,
+        not_le]
+      obtain ⟨h1, h2⟩ := abs_le.mp (hempabs (traj k ξ ω))
+      obtain ⟨h3, h4⟩ := abs_le.mp hansabs
+      exact abs_lt.mpr ⟨by linarith, by linarith⟩
+    rw [hempty, measureReal_empty]
+    positivity
+  replace hτ2 : τ ≤ 2 := not_lt.mp hτ2
+  by_cases hsmall : (n : ℝ) * τ < 30 * (k : ℝ) * (d : ℝ) ^ 2
+  · -- the bound is not yet binding
+    have hb2 : (n : ℝ) * τ ^ 2 ≤ 60 * (k : ℝ) * (d : ℝ) ^ 2 := by
+      nlinarith [mul_nonneg (by linarith : (0 : ℝ) ≤ 30 * (k : ℝ) * (d : ℝ) ^ 2 - (n : ℝ) * τ) hτ,
+        mul_nonneg (mul_nonneg hn0.le hτ) (by linarith : (0 : ℝ) ≤ 2 - τ)]
+    have hlog : (0.69 : ℝ) ≤ Real.log 2 := by linarith [Real.log_two_gt_d9]
+    have hkey : (n : ℝ) * τ ^ 2 / (2 * samePairConstMul k d) ≤ Real.log 2 := by
+      rw [hconst, div_le_iff₀ (by nlinarith : (0 : ℝ) < 2 * (48 * (k : ℝ) * (d : ℝ) ^ 2))]
+      nlinarith [mul_nonneg (by linarith : (0 : ℝ) ≤ Real.log 2 - 0.625)
+        (by nlinarith : (0 : ℝ) ≤ (k : ℝ) * (d : ℝ) ^ 2)]
+    have h1 : Real.exp (-Real.log 2) ≤ Real.exp (-((n : ℝ) * τ ^ 2 / (2 * samePairConstMul k d))) :=
+      Real.exp_le_exp.mpr (by linarith)
+    have h2 : Real.exp (-Real.log 2) = 1 / 2 := by
+      rw [Real.exp_neg, Real.exp_log (by norm_num)]; norm_num
+    rw [h2] at h1
+    rw [show -(n : ℝ) * τ ^ 2 / (2 * samePairConstMul k d)
+        = -((n : ℝ) * τ ^ 2 / (2 * samePairConstMul k d)) by ring]
+    exact le_trans MeasureTheory.measureReal_le_one (by linarith)
+  · -- the three character tails
+    replace hsmall : 30 * (k : ℝ) * (d : ℝ) ^ 2 ≤ (n : ℝ) * τ := not_lt.mp hsmall
+    have hτ0 : 0 < τ := by nlinarith
+    have hnbig : 15 * (k : ℝ) * (d : ℝ) ^ 2 ≤ (n : ℝ) := by
+      nlinarith [mul_le_mul_of_nonneg_left hτ2 hn0.le]
+    have hd2R : (1 : ℝ) ≤ (d : ℝ) ^ 2 := by nlinarith
+    have hnbigk : 15 * (k : ℝ) ≤ (n : ℝ) := by
+      nlinarith [mul_le_mul_of_nonneg_left hd2R (by linarith : (0 : ℝ) ≤ 15 * (k : ℝ))]
+    have hsmallk : 30 * (k : ℝ) ≤ (n : ℝ) * τ := by
+      nlinarith [mul_le_mul_of_nonneg_left hd2R (by linarith : (0 : ℝ) ≤ 30 * (k : ℝ))]
+    have hkn : k ≤ n := by
+      have : (k : ℝ) ≤ (n : ℝ) := by linarith
+      exact_mod_cast this
+    have hnkpos : (0 : ℝ) < ((n - k : ℕ) : ℝ) := by
+      have h2k : (2 : ℝ) * (k : ℝ) ≤ (n : ℝ) := by linarith
+      have h2k' : 2 * k ≤ n := by exact_mod_cast h2k
+      have : 0 < n - k := by omega
+      exact_mod_cast this
+    have hnkle : ((n - k : ℕ) : ℝ) ≤ (n : ℝ) := by exact_mod_cast Nat.sub_le n k
+    have hx1nn : (0 : ℝ) ≤ (n : ℝ) * τ / 3 - 2 * (k : ℝ) := by linarith
+    have hx1big : (n : ℝ) * τ / 4 ≤ (n : ℝ) * τ / 3 - 2 * (k : ℝ) := by linarith
+    -- a coordinate character's tail, at either offset
+    have hcoordE : ∀ off : ℕ, P.real {ω | (n : ℝ) * τ / 3 ≤
+        |∑ t ∈ Finset.range n, ParityWalk.chi (obs k (fun i => ξ i ω) (t + off))|}
+        ≤ 2 * Real.exp (-((n : ℝ) * τ ^ 2 / (32 * (k : ℝ) * (d : ℝ) ^ 2))) := by
+      intro off
+      have h := coordChar_tail hk hmeas hindep hmean' hm0 hm off hkn hx1nn
+      have hset : {ω | (n : ℝ) * τ / 3 ≤
+          |∑ t ∈ Finset.range n, ParityWalk.chi (obs k (fun i => ξ i ω) (t + off))|}
+          = {ω | ((n : ℝ) * τ / 3 - 2 * (k : ℝ)) + 2 * (k : ℝ) ≤
+            |∑ t ∈ Finset.range n, ParityWalk.chi (obs k (fun i => ξ i ω) (t + off))|} := by
+        ext ω; simp only [Set.mem_setOf_eq]; constructor <;> intro hh <;> linarith
+      rw [hset]
+      have hstep1 : Real.exp (-((n : ℝ) * τ / 3 - 2 * (k : ℝ)) ^ 2 / (2 * ((n - k : ℕ) : ℝ)))
+          ≤ Real.exp (-((n : ℝ) * τ ^ 2 / 32)) := by
+        refine Real.exp_le_exp.mpr ?_
+        rw [neg_div, neg_le_neg_iff, div_le_div_iff₀ (by norm_num) (by positivity)]
+        have hnn : (0 : ℝ) ≤ (n : ℝ) * τ ^ 2 := by positivity
+        have hsq : ((n : ℝ) * τ / 4) ^ 2 ≤ ((n : ℝ) * τ / 3 - 2 * (k : ℝ)) ^ 2 :=
+          pow_le_pow_left₀ (by positivity) hx1big 2
+        calc (n : ℝ) * τ ^ 2 * (2 * ((n - k : ℕ) : ℝ))
+            ≤ (n : ℝ) * τ ^ 2 * (2 * (n : ℝ)) := mul_le_mul_of_nonneg_left (by linarith) hnn
+          _ = 32 * ((n : ℝ) * τ / 4) ^ 2 := by ring
+          _ ≤ 32 * ((n : ℝ) * τ / 3 - 2 * (k : ℝ)) ^ 2 := by linarith
+          _ = ((n : ℝ) * τ / 3 - 2 * (k : ℝ)) ^ 2 * 32 := by ring
+      have hstep2 : Real.exp (-((n : ℝ) * τ ^ 2 / 32))
+          ≤ Real.exp (-((n : ℝ) * τ ^ 2 / (32 * (k : ℝ) * (d : ℝ) ^ 2))) := by
+        refine Real.exp_le_exp.mpr ?_
+        rw [neg_le_neg_iff,
+          div_le_div_iff₀ (by nlinarith : (0 : ℝ) < 32 * (k : ℝ) * (d : ℝ) ^ 2) (by norm_num)]
+        have hnn : (0 : ℝ) ≤ (n : ℝ) * τ ^ 2 := by positivity
+        nlinarith [mul_nonneg hnn (by nlinarith : (0 : ℝ) ≤ (k : ℝ) * (d : ℝ) ^ 2 - 1)]
+      exact h.trans (le_trans (mul_le_mul_of_nonneg_left hstep1 (by norm_num))
+        (mul_le_mul_of_nonneg_left hstep2 (by norm_num)))
+    -- the pair character's tail
+    have hpairE : P.real {ω | (n : ℝ) * τ / 3 ≤
+        |∑ t ∈ Finset.range n,
+          (ParityWalk.chi (pairObs k a (a + k * d) (fun i => ξ i ω) t) - m ^ d)|}
+        ≤ 2 * Real.exp (-((n : ℝ) * τ ^ 2 / (32 * (k : ℝ) * (d : ℝ) ^ 2))) := by
+      have hxnn : (0 : ℝ) ≤ (n : ℝ) * τ / 3 := by positivity
+      have h := pairCharMul_tail hk hd hm0 hm hmeas hindep hmean' a n hxnn
+      have hn0' : (n : ℝ) ≠ 0 := ne_of_gt hn0
+      have hk0' : (k : ℝ) ≠ 0 := by positivity
+      have hd0' : (d : ℝ) ≠ 0 := by positivity
+      have hstep : Real.exp (-((n : ℝ) * τ / 3) ^ 2 / (2 * ((k : ℝ) * (d : ℝ) ^ 2 * n)))
+          ≤ Real.exp (-((n : ℝ) * τ ^ 2 / (32 * (k : ℝ) * (d : ℝ) ^ 2))) := by
+        refine Real.exp_le_exp.mpr ?_
+        rw [show -((n : ℝ) * τ / 3) ^ 2 / (2 * ((k : ℝ) * (d : ℝ) ^ 2 * n))
+            = -((n : ℝ) * τ ^ 2 / (18 * ((k : ℝ) * (d : ℝ) ^ 2))) by field_simp; ring]
+        rw [neg_le_neg_iff,
+          div_le_div_iff₀ (by nlinarith : (0 : ℝ) < 32 * (k : ℝ) * (d : ℝ) ^ 2)
+            (by nlinarith : (0 : ℝ) < 18 * ((k : ℝ) * (d : ℝ) ^ 2))]
+        have hnn : (0 : ℝ) ≤ (n : ℝ) * τ ^ 2 := by positivity
+        nlinarith [mul_nonneg hnn (by nlinarith : (0 : ℝ) ≤ 16 * ((k : ℝ) * (d : ℝ) ^ 2) - 9)]
+      exact h.trans (mul_le_mul_of_nonneg_left hstep (by norm_num))
+    -- the deviation forces one of the three characters to be large
+    have hincl : traj k ξ ⁻¹' A ⊆
+        ({ω | (n : ℝ) * τ / 3 ≤
+            |∑ t ∈ Finset.range n, ParityWalk.chi (obs k (fun i => ξ i ω) (t + a))|}
+          ∪ {ω | (n : ℝ) * τ / 3 ≤
+            |∑ t ∈ Finset.range n, ParityWalk.chi (obs k (fun i => ξ i ω) (t + (a + k * d)))|})
+          ∪ {ω | (n : ℝ) * τ / 3 ≤
+            |∑ t ∈ Finset.range n,
+              (ParityWalk.chi (pairObs k a (a + k * d) (fun i => ξ i ω) t) - m ^ d)|} := by
+      intro ω hω
+      simp only [hA, Set.mem_preimage, Set.mem_setOf_eq] at hω
+      by_contra hcon
+      simp only [Set.mem_union, not_or, Set.mem_setOf_eq, not_le] at hcon
+      obtain ⟨⟨h1, h2⟩, h3⟩ := hcon
+      have hid := empiricalMean_sub_samePairMean ψ a (a + k * d) hn (m ^ d) (traj k ξ ω)
+      have htr : ∀ u, traj k ξ ω u = obs k (fun i => ξ i ω) u := fun _ => rfl
+      have hxor : ∀ t, ParityWalk.chi (xor (obs k (fun i => ξ i ω) (t + a))
+            (obs k (fun i => ξ i ω) (t + (a + k * d))))
+          = ParityWalk.chi (pairObs k a (a + k * d) (fun i => ξ i ω) t) := fun _ => rfl
+      simp only [htr, hxor] at hid
+      rw [samePairMeanMul_eq_samePairMean] at hω
+      have hbig : (n : ℝ) * τ ≤ |(n : ℝ)
+          * (SQOracle.empiricalMean (pairEnsemble ψ a (a + k * d)) n (traj k ξ ω)
+            - samePairMean ψ (m ^ d))| := by
+        rw [abs_mul, abs_of_nonneg hn0.le]
+        exact mul_le_mul_of_nonneg_left hω hn0.le
+      rw [hid] at hbig
+      set Sa : ℝ := ∑ t ∈ Finset.range n, ParityWalk.chi (obs k (fun i => ξ i ω) (t + a))
+      set Sb : ℝ :=
+        ∑ t ∈ Finset.range n, ParityWalk.chi (obs k (fun i => ξ i ω) (t + (a + k * d)))
+      set Sq : ℝ := ∑ t ∈ Finset.range n,
+        (ParityWalk.chi (pairObs k a (a + k * d) (fun i => ξ i ω) t) - m ^ d)
+      have ea : |pairCoefA ψ * Sa| ≤ |Sa| := by
+        rw [abs_mul]; exact mul_le_of_le_one_left (abs_nonneg Sa) hcA
+      have eb : |pairCoefB ψ * Sb| ≤ |Sb| := by
+        rw [abs_mul]; exact mul_le_of_le_one_left (abs_nonneg Sb) hcB
+      have ec : |pairCoefAB ψ * Sq| ≤ |Sq| := by
+        rw [abs_mul]; exact mul_le_of_le_one_left (abs_nonneg Sq) hcAB
+      have htri1 := abs_add_le (pairCoefA ψ * Sa + pairCoefB ψ * Sb) (pairCoefAB ψ * Sq)
+      have htri2 := abs_add_le (pairCoefA ψ * Sa) (pairCoefB ψ * Sb)
+      linarith
+    -- assemble
+    have hsix : P.real (traj k ξ ⁻¹' A)
+        ≤ 6 * Real.exp (-((n : ℝ) * τ ^ 2 / (32 * (k : ℝ) * (d : ℝ) ^ 2))) := by
+      refine le_trans (measureReal_mono hincl (measure_ne_top _ _)) ?_
+      exact le_trans (measureReal_union3_le P _ _ _ _ (hcoordE a) (hcoordE (a + k * d)) hpairE)
+        (le_of_eq (by ring))
+    have hfin := bound_absorb MeasureTheory.measureReal_le_one hsix
+    rw [show -((n : ℝ) * τ ^ 2 / (32 * (k : ℝ) * (d : ℝ) ^ 2)) / 3
+        = -(n : ℝ) * τ ^ 2 / (2 * (48 * (k : ℝ) * (d : ℝ) ^ 2)) by ring] at hfin
+    rwa [hconst]
+
+/-- **The `d = 1` reduction, checked.**  Specializing
+`mixingHoeffding_noisyWindowChain_pair_lag_mul` at `d = 1` gives exactly
+`mixingHoeffding_noisyWindowChain_pair_lagK`'s own conclusion: the
+constant matches on the nose (`samePairConstMul k 1 = samePairConst k`, `samePairConstMul_one`),
+not merely up to an inequality.  Left as a check rather than a re-derivation of that theorem's own
+proof — `mixingHoeffding_noisyWindowChain_pair_lagK` precedes the `k·d`-way machinery in this file,
+so retargeting it through this theorem would need reordering it after the whole `SamePairLagMul`
+section, a restructuring this file does not make for its own sake. -/
+theorem mixingHoeffding_noisyWindowChain_pair_lag_mul_one
+    (hk : 1 ≤ k) (hmeas : ∀ i, Measurable (ξ i)) (hindep : iIndepFun ξ P)
+    (hmean : ∀ u, ∫ ω, ParityWalk.zeta (ξ (u + k) ω) ∂P = m) (hm0 : -1 ≤ m) (hm : m ≤ 0)
+    (a : ℕ) (ψ : Bool → Bool → ℝ) (hψ : ∀ u v, |ψ u v| ≤ 1) :
+    BirkhoffTool.MixingHoeffding (Measure.map (traj k ξ) P) (pairEnsemble ψ a (a + k))
+      (samePairMean ψ m) (samePairConst k) := by
+  have h := mixingHoeffding_noisyWindowChain_pair_lag_mul hk (le_refl 1) hmeas hindep hmean hm0 hm
+    a ψ hψ
+  rwa [Nat.mul_one, samePairMeanMul_eq_samePairMean, pow_one, samePairConstMul_one] at h
+
+end SamePairLagMul
+
 end Concentration
 
 end NoisyWindowChain
@@ -1970,6 +2824,10 @@ set_option linter.style.longLine false
 #guard_msgs (whitespace := lax) in
 #print axioms NoisyWindowChain.not_mixingHoeffding_noisyWindowChain_pinned
 
+/-- info: 'NoisyWindowChain.not_mixingHoeffdingTo_pinned_pair' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms NoisyWindowChain.not_mixingHoeffdingTo_pinned_pair
+
 /-- info: 'NoisyWindowChain.mixingHoeffding_noisyWindowChain_pair' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms NoisyWindowChain.mixingHoeffding_noisyWindowChain_pair
@@ -1997,3 +2855,15 @@ set_option linter.style.longLine false
 /-- info: 'NoisyWindowChain.mixingHoeffding_frozen_samePair_correctMean' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms NoisyWindowChain.mixingHoeffding_frozen_samePair_correctMean
+
+/-- info: 'NoisyWindowChain.mixingHoeffding_noisyWindowChain_pair_lag_mul' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms NoisyWindowChain.mixingHoeffding_noisyWindowChain_pair_lag_mul
+
+/-- info: 'NoisyWindowChain.mixingHoeffding_noisyWindowChain_pair_lag_mul_one' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms NoisyWindowChain.mixingHoeffding_noisyWindowChain_pair_lag_mul_one
+
+/-- info: 'NoisyWindowChain.empiricalMean_deviation_le_of_window_bounds' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms NoisyWindowChain.empiricalMean_deviation_le_of_window_bounds
