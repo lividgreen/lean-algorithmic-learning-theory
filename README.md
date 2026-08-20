@@ -44,21 +44,87 @@ entry points, if you want a sense of the range before reading the list:
 
 ## What is proved here
 
+### 1. Statistical-Query Learning & Information Theory
+
 - **Ville's inequality** for non-negative supermartingales (`Ville.lean`) —
   the all-time tail bound anytime-valid inference is built on; absent from
   Mathlib (whose Doob maximal inequality is submartingale-only).
+
 - **Statistical-query learning** — to our knowledge the first SQ formalization
   in any proof assistant (`SQObjects.lean`, `SQEnvelope.lean`, …): the
   statistical dimension with its separated-subfamily characterization
   definitional, a survivor pigeonhole, a *linear* version-space envelope under
   2τ-identifiability (Szörényi's maximality argument), and parity's `2^n`
   SQ-dimension lower bound derived from character orthogonality.
+
 - **A prequential-MDL discovery chain** (`BayesRedundancy.lean`,
   `DeterministicDiscovery.lean`, `ExtensionalDiscovery.lean`,
   `SQAlgorithm.lean`, …): posterior concentration for realizable deterministic
   prediction, qualitative concentration on the on-trajectory equivalence class
   (rate provably uncomputable), pruning soundness, exact predictive-transfer
   bounds, and the pruned-algorithm discovery theorem.
+
+- **Window determinism, and a mixing hypothesis checked at both ends**
+  (`WindowDeterminism.lean`, `BirkhoffTool.lean`): if each observation is
+  exactly determined by the window of the previous `k` over a finite
+  alphabet, the observation process is eventually periodic — and the initial
+  window determines the whole trajectory, choice-free — so exact window
+  sufficiency and quantitative mixing cannot coexist on a finite alphabet.
+  On the mixing side, the `MixingHoeffding` rate hypothesis is pinned at both
+  ends: a *theorem* at the i.i.d. end (the spectral-gap constant at one
+  recovers the independent Hoeffding bound exactly), a vacuity guard at
+  non-positive constants (the bound then asserts nothing, for every law and
+  target), and genuine refutability at every positive constant — so the
+  constant is where the hypothesis's content lives, stated rather than
+  implied. The hypothesis also comes in a **horizon-bounded** form,
+  `MixingHoeffdingTo N` — the same statement with its quantifier restricted to
+  sample sizes at most `N`, which is what a learner reading one orbit segment
+  actually consumes. It carries its own vacuity floor (below a horizon set by
+  the constant, *every* law satisfies it, so a bounded claim has to state its
+  horizon against its constant) and its own refutations, each naming both
+  quantifiers. On it, the oracle over a whole scheduled query class is
+  derived: for a fixed finite schedule whose every query is representative
+  below `N` at one shared constant, the empirical answers from a single orbit
+  segment satisfy the oracle predicate off an event of measure at most `δ`,
+  the schedule entering only logarithmically in the sample size. Every
+  oracle corollary is stated at that bounded form, each unbounded version
+  derived from its own twin rather than proved twice, so a consumer
+  holding only a horizon-bounded hypothesis gets the sample-size bound
+  and the pruning-survival statement as well as the tail. Composed with the
+  pruned learner's own discovery theorem (`FiniteHorizonDiscovery.lean`),
+  that yields an end-to-end statement: off an event of measure at most `δ`,
+  a learner answering its whole query schedule from one orbit segment
+  reaches the concentrated posterior — and the two sample counts are
+  unrelated, so the horizon bounds the answering of the schedule, never the
+  run. The
+  window-noise pruning budget now reaches the single-trajectory
+  route, not only the i.i.d. ensemble. And a first genuinely **dependent**
+  instance is derived (`NoisyWindowChain.lean`, engine in `ParityWalk.lean`):
+  the Bernoulli-noise window chain satisfies the rate at the named constant
+  `4·k` for coordinate observables, at every noise rate — no `1/η`, the
+  relevant eigenvalue being negative, so consecutive time-averages cancel
+  rather than accumulate. Honest boundary: multi-coordinate queries see a
+  positive eigenvalue and a genuinely noise-dependent constant, not bounded
+  here; the general spectral-gap theorem stays unproved.
+
+- **Kolmogorov complexity at two measures, and the load-bearing one is bits**
+  (`KolmogorovComplexity.lean`, `KolmogorovTimeBounded.lean`,
+  `KolmogorovBitlen.lean`, `KReconnection.lean`): the least-index measure `K` is
+  uncomputable by the recursion theorem — and so, separately, is the
+  **bit-length** measure `Nat.size ∘ encode`, which is the one the
+  description-length results are stated at (`K_bitlen_not_computable`). That
+  second proof re-runs the argument from scratch rather than reducing to the
+  first, because `Nat.size` is not injective and the reduction genuinely fails;
+  `Nat.size`'s own computability is built here, Mathlib having no such lemma.
+  The load-bearing MDL theorems are then instantiated at the bit-length
+  complexity of a concrete rule (`ruleComplexity`), so their description-length
+  parameter is a real complexity rather than an abstract real left in prose.
+  Honest boundary: two-machine invariance is deferred with a documented
+  obstruction — Mathlib exposes a single fixed universal machine, and the
+  classical bound needs two, one simulating the other.
+
+### 2. Cost Models, Complexity & Verified Learners
+
 - **A two-currency cost model** for `Nat.Partrec.Code` — Mathlib's
   fuel-indexed `evaln` bounds values, not resources. Sequential steps and
   workspace bit-width (`TimeCost.lean`), extended to unbounded search by
@@ -90,6 +156,7 @@ entry points, if you want a sense of the range before reading the list:
   transfer between classes is exercised rather than asserted.
   Honest boundary: time is unit-cost AST steps (arithmetic is value-linear,
   hence the solver's binary bit-gate setting); space is value bit-width.
+
 - **A priced universal interpreter** (`BoundedInterp.lean`, `CodeArith.lean`,
   `CodePacking.lean`, `UniversalAt.lean`): a small-step interpreter for
   `Nat.Partrec.Code` on configuration numerals, proved sound *and* complete
@@ -98,6 +165,9 @@ entry points, if you want a sense of the range before reading the list:
   run's own configuration width*. Universality with a constructor skeleton,
   where the usual universal witness is a bare existence statement nothing can
   price.
+
+### 3. Systems, Decoupling & Persistence Capacity
+
 - **Persistence capacity** (`Decoupling.lean`, `PersistenceCapacity.lean`):
   the Decoupling Lemma — a faithfully decoded model persists iff the update
   is read-only on its region — and the exact price of evading it with
@@ -131,23 +201,7 @@ entry points, if you want a sense of the range before reading the list:
   its own `d`-shift are exactly the run boundaries of its `d`-decimation, at
   any alphabet and — averaged over starting points — with no condition on `d`
   whatever (`ReadingWord.lean`).
-- **A realizability (assembly) category over Kleene's first algebra**
-  (`Realizability*.lean`, `CapacityLayer.lean`, `RealizerLength.lean`, …):
-  Cartesian closed with finite coproducts, a subobject classifier and
-  equalizers on the finite fragment (`RealizabilitySubobject.lean`), a
-  depth-bounded recursor as an object, a capacity filtration with non-closure
-  in both cardinality and realizer length, and a discriminating
-  initial-algebra characterization of the bounded recursor under which
-  **Lambek's lemma provably fails**. On top: the structural category of
-  decoupled learners with capacity-respecting simulations
-  (`DecoupledSimulation.lean`), realizer transport priced in both
-  program length and workspace (`GradeTransport.lean`), a capacity-graded
-  exponential with priced application and two-way graded transport
-  (`GradedApplication.lean`, `GradedConjugation.lean`, `GradedSimulation.lean`),
-  and a build-enforced boundary: the represent-but-cannot-derive phenomenon is
-  re-exported over an import closure from which the exponential object is
-  *absent*, so "no function space is needed" is machine-enforced rather than
-  observed (`MinimalityWitness.lean`).
+
 - **Evolution in a skew-product fiber** (`SkewFiber.lean`,
   `WeightedFiber.lean`, `QuantizationRate.lean`): a skew product is priced by
   its ingredients' codes plus a constant, with nothing scaling in the state
@@ -175,6 +229,7 @@ entry points, if you want a sense of the range before reading the list:
   two candidates. Honest boundary: no projection onto a finite carrier is a
   replicator step, the residual does not telescope over a run, and no
   accumulated bound is claimed.
+
 - **A surprise budget, and decoupling on a growing code region**
   (`SurpriseBudget.lean`, `AccretiveDecoupling.lean`): an unconditional bound
   on how often a prequential mixture is surprised, priced per event against a
@@ -219,6 +274,7 @@ entry points, if you want a sense of the range before reading the list:
   decoupling equivalence holds verbatim on a monotonically *growing* code
   region, with an append-only witness on which the limit region is not
   read-only, so the statement does not reduce to one fixed partition.
+
 - **Growing worlds, an accreting witness with one sentence standing still, and
   a chain fed by its own growth**
   (`GrowingWorld.lean`, `AccretingWitness.lean`, `AccretingExcess.lean`,
@@ -269,6 +325,61 @@ entry points, if you want a sense of the range before reading the list:
   hosts accrete generically is untouched, and the named source carries no
   non-periodicity or convergence-rate theorem: its guard instantiation rests
   on two of its values differing, nothing more.
+
+### 4. Realizability Categories & Categorical Incompleteness
+
+- **A realizability (assembly) category over Kleene's first algebra**
+  (`Realizability*.lean`, `CapacityLayer.lean`, `RealizerLength.lean`, …):
+  Cartesian closed with finite coproducts, a subobject classifier and
+  equalizers on the finite fragment (`RealizabilitySubobject.lean`), a
+  depth-bounded recursor as an object, a capacity filtration with non-closure
+  in both cardinality and realizer length, and a discriminating
+  initial-algebra characterization of the bounded recursor under which
+  **Lambek's lemma provably fails**. On top: the structural category of
+  decoupled learners with capacity-respecting simulations
+  (`DecoupledSimulation.lean`), realizer transport priced in both
+  program length and workspace (`GradeTransport.lean`), a capacity-graded
+  exponential with priced application and two-way graded transport
+  (`GradedApplication.lean`, `GradedConjugation.lean`, `GradedSimulation.lean`),
+  and a build-enforced boundary: the represent-but-cannot-derive phenomenon is
+  re-exported over an import closure from which the exponential object is
+  *absent*, so "no function space is needed" is machine-enforced rather than
+  observed (`MinimalityWitness.lean`).
+
+- **A dependency audit of the reflection chain**
+  (`ChainDependencyAudit.lean`): which imports each conclusion actually
+  consumes, with unused-binder marking so that "off the critical path" is
+  compiler-certified rather than asserted — statistical-query learnability is
+  off the path to bare representational reflection, while the steady-state
+  per-step bound genuinely consumes retention. Purely structural: it proves no
+  import, all edges being abstract propositions.
+
+- **A sound bounded checker, and a classical sound-and-complete bounded
+  decision** (`GodelChecker.lean`, `GodelCheckerComplete.lean`): two separate
+  artifacts, not one — an *executable* sound bounded proof-checker, and a
+  *noncomputable* classically-packaged sound-and-complete bounded
+  non-provability decision (Foundation ships no `Decidable` instance for its
+  own proof relation, so no single artifact here is both computable and
+  complete), axiom-clean for the finite theory PA⁻, with incompleteness
+  discharged against
+  [FormalizedFormalLogic/Foundation](https://github.com/FormalizedFormalLogic/Foundation);
+  run by a two-cell decision automaton over the executable checker, whose
+  code cell is read-only — the sentence under test persists by the
+  Decoupling Lemma while the work cell drives to the Gödel verdict
+  (`ReflectiveAutomaton.lean`, executable at the PA⁻ Gödel sentence in
+  `GodelCheckerAutomaton.lean`).
+
+- **An expressiveness excess order** (`ExcessOrder.lean`,
+  `ExcessOrderComplete.lean`): representational classes graded by work-bit
+  budget, with inclusions strict exactly as the budget grows; an
+  internalization threshold packaged as a predicate on the budget; and the
+  capstone at Foundation's finite `𝗣𝗔⁻`: a cheaply-owned guest that carries
+  its host's law and represents a true-but-underivable sentence, the
+  incompleteness antecedent discharged rather than hypothesized
+  (`witness_outgrows_paMinus`).
+
+### 5. Inevitability Routes & Constructive Witness Architecture
+
 - **A block-pair sequence profile, exact at every period**
   (`BlockPairProfile.lean`): the cyclic autocorrelation of a two-word signed
   block concatenation decomposes exactly into within-block and boundary terms
@@ -300,6 +411,7 @@ entry points, if you want a sense of the range before reading the list:
   proofs derive rather than the sharpest ones that hold, and the two words
   enter as literals with decided sums rather than from any characterized
   family.
+
 - **A finite autonomous host that emits the certified sequence**
   (`BlockPairHost.lean`): a counter paired with the noisy window chain, the
   chain's tape computed from the counter by the certified sequence's own
@@ -322,6 +434,7 @@ entry points, if you want a sense of the range before reading the list:
   membership (the next two modules do), and the period statement is a return,
   its minimality carried by the counter coordinate rather than stated
   separately.
+
 - **The emitted process concentrates, at every bounded query**
   (`BlockPairObservability.lean`): the host's own emitted sequence
   (`hostTraj`), read as the noisy window chain's observation process on the
@@ -340,6 +453,7 @@ entry points, if you want a sense of the range before reading the list:
   offset the query class ranges over. Honest boundary: the constants are the
   ones the proofs derive, looser than the sharpest that hold; no probability
   beyond the deterministic phase law enters.
+
 - **The finite host meets the learning prerequisites, from its own dynamics**
   (`BlockPairWitness.lean`): the certified host, embedded as a decoupled
   memory with a read-only code region, a window, and a binary counter register
@@ -356,6 +470,7 @@ entry points, if you want a sense of the range before reading the list:
   numerals are the chain witness's, the constants are the ones the proofs
   derive, and the rule's cheapness is priced two bullets below rather than
   here.
+
 - **The same host is a member of the emergence route-class too, at one update,
   one code region and one numeral set** (`BlockPairOverlap.lean`): the host's
   memory re-packed onto the numeral carrier the pricing machinery is indexed by
@@ -381,6 +496,7 @@ entry points, if you want a sense of the range before reading the list:
   `TapeHostOverlap.tapeHost_overlap`, below); and it is registered as
   *Inevitability* Theorem 5.8(c), row IN-38 — the seam Theorem 5.1(c) leaves
   open, inhabited at a witness.
+
 - **The host's rule as an exhibited program** (`BlockPairPrice.lean`): the
   packed host's own step, rewritten as arithmetic on the packed numeral —
   bit extraction by division and remainder, the decoded window bit, the tape
@@ -399,6 +515,7 @@ entry points, if you want a sense of the range before reading the list:
   length, not computation time; the builders' own lengths stay symbolic
   constants, as every builder's do; registered at *Inevitability* Theorem
   5.8's boundary and row IN-39.
+
 - **The seam at class level, for that architecture** (`TapeHost.lean`,
   `TapeHostObservability.lean`, `TapeHostWitness.lean`, `TapeHostOverlap.lean`,
   `BlockPairCriterion.lean`): the block-pair host with its observation sequence
@@ -431,6 +548,7 @@ entry points, if you want a sense of the range before reading the list:
   membership holding vacuously below; the certified host's own registration
   (`hostWitness_overlap`) is untouched and has its two Gödel sizes uncoupled.
   Registered as *Inevitability* Proposition 5.9, rows IN-41 and IN-42.
+
 - **A deterministic pace on that class** (`TapeHostSchedule.lean`, the instance in
   `BlockPairCriterion.lean`): on every host of the profile class the scheduled
   SQ oracle is exact within `τ` at every phase from an explicit horizon on —
@@ -454,6 +572,7 @@ entry points, if you want a sense of the range before reading the list:
   weighted fiber; a bounded pace in observation count and statistics per
   decision, nothing about physical time; nothing about survival; one
   architecture; registered as *Inevitability* Proposition 6.10, row IN-43.
+
 - **The single witness's noisy-branch machinery on that class** (`TapeHostFiber.lean`):
   the fiber-facing stream of a profile-class host — its first eight bits the
   observation, then the tape — with the identity `hostTraj = obs 8 tapeStream`,
@@ -474,6 +593,7 @@ entry points, if you want a sense of the range before reading the list:
   an impossibility. Honest boundary: the damage model stays named; nothing
   lifetime-free; one architecture; registered as *Inevitability* Proposition
   6.10, row IN-44.
+
 - **A member of both route-classes carries survival, by redundancy**
   (`TapeHostSurvival.lean`): the profile-class host with a `P`-copy redundant
   floored fiber added as extra memory — one substrate (`CompMem`), the base's
@@ -508,6 +628,7 @@ entry points, if you want a sense of the range before reading the list:
   orbit being the one fact tying the composite's fiber cells to it; the
   composite is not priced; which systems carry survival beyond this witness
   stays open. Registered as *Inevitability* Proposition 6.11, row IN-46.
+
 - **The class-level `𝒮_E` constructor** (`SubstrateEmergence.lean`): for any
   decoupled update, any packing of its memory onto a numeral carrier and any
   frame surjective off the packed update's own iterate, membership in the
@@ -526,6 +647,7 @@ entry points, if you want a sense of the range before reading the list:
   identified, so it is not re-derived from the constructor; and the Witness
   World's carrier has no code region for the constructor to take. Registered
   as *Inevitability* row IN-40.
+
 - **A substrate class, and a capacity clause that is necessary**
   (`SubstrateClass.lean`): the prerequisites a bounded learner needs in order
   to reach the reflective threshold, as reusable objects — a decoupled
@@ -537,6 +659,7 @@ entry points, if you want a sense of the range before reading the list:
   no general characterization is claimed. Also machine-checked: the regularity
   regime does not imply the capacity clause, a separation the informal
   presentation is easy to elide.
+
 - **A constructed learner that meets those prerequisites, and survives damage**
   (`LearningWitness.lean`, `LearningWitnessComplete.lean`,
   `FlooredMixture.lean`, `WitnessMixture.lean`, `BasinSettling.lean`,
@@ -608,92 +731,9 @@ entry points, if you want a sense of the range before reading the list:
   noise bit and the true candidate's miss one event — and it is that
   identification, not the mere existence of a finitely-firing event, that the
   argument rests on.
-- **A dependency audit of the reflection chain**
-  (`ChainDependencyAudit.lean`): which imports each conclusion actually
-  consumes, with unused-binder marking so that "off the critical path" is
-  compiler-certified rather than asserted — statistical-query learnability is
-  off the path to bare representational reflection, while the steady-state
-  per-step bound genuinely consumes retention. Purely structural: it proves no
-  import, all edges being abstract propositions.
-- **Window determinism, and a mixing hypothesis checked at both ends**
-  (`WindowDeterminism.lean`, `BirkhoffTool.lean`): if each observation is
-  exactly determined by the window of the previous `k` over a finite
-  alphabet, the observation process is eventually periodic — and the initial
-  window determines the whole trajectory, choice-free — so exact window
-  sufficiency and quantitative mixing cannot coexist on a finite alphabet.
-  On the mixing side, the `MixingHoeffding` rate hypothesis is pinned at both
-  ends: a *theorem* at the i.i.d. end (the spectral-gap constant at one
-  recovers the independent Hoeffding bound exactly), a vacuity guard at
-  non-positive constants (the bound then asserts nothing, for every law and
-  target), and genuine refutability at every positive constant — so the
-  constant is where the hypothesis's content lives, stated rather than
-  implied. The hypothesis also comes in a **horizon-bounded** form,
-  `MixingHoeffdingTo N` — the same statement with its quantifier restricted to
-  sample sizes at most `N`, which is what a learner reading one orbit segment
-  actually consumes. It carries its own vacuity floor (below a horizon set by
-  the constant, *every* law satisfies it, so a bounded claim has to state its
-  horizon against its constant) and its own refutations, each naming both
-  quantifiers. On it, the oracle over a whole scheduled query class is
-  derived: for a fixed finite schedule whose every query is representative
-  below `N` at one shared constant, the empirical answers from a single orbit
-  segment satisfy the oracle predicate off an event of measure at most `δ`,
-  the schedule entering only logarithmically in the sample size. Every
-  oracle corollary is stated at that bounded form, each unbounded version
-  derived from its own twin rather than proved twice, so a consumer
-  holding only a horizon-bounded hypothesis gets the sample-size bound
-  and the pruning-survival statement as well as the tail. Composed with the
-  pruned learner's own discovery theorem (`FiniteHorizonDiscovery.lean`),
-  that yields an end-to-end statement: off an event of measure at most `δ`,
-  a learner answering its whole query schedule from one orbit segment
-  reaches the concentrated posterior — and the two sample counts are
-  unrelated, so the horizon bounds the answering of the schedule, never the
-  run. The
-  window-noise pruning budget now reaches the single-trajectory
-  route, not only the i.i.d. ensemble. And a first genuinely **dependent**
-  instance is derived (`NoisyWindowChain.lean`, engine in `ParityWalk.lean`):
-  the Bernoulli-noise window chain satisfies the rate at the named constant
-  `4·k` for coordinate observables, at every noise rate — no `1/η`, the
-  relevant eigenvalue being negative, so consecutive time-averages cancel
-  rather than accumulate. Honest boundary: multi-coordinate queries see a
-  positive eigenvalue and a genuinely noise-dependent constant, not bounded
-  here; the general spectral-gap theorem stays unproved.
-- **A sound bounded checker, and a classical sound-and-complete bounded
-  decision** (`GodelChecker.lean`, `GodelCheckerComplete.lean`): two separate
-  artifacts, not one — an *executable* sound bounded proof-checker, and a
-  *noncomputable* classically-packaged sound-and-complete bounded
-  non-provability decision (Foundation ships no `Decidable` instance for its
-  own proof relation, so no single artifact here is both computable and
-  complete), axiom-clean for the finite theory PA⁻, with incompleteness
-  discharged against
-  [FormalizedFormalLogic/Foundation](https://github.com/FormalizedFormalLogic/Foundation);
-  run by a two-cell decision automaton over the executable checker, whose
-  code cell is read-only — the sentence under test persists by the
-  Decoupling Lemma while the work cell drives to the Gödel verdict
-  (`ReflectiveAutomaton.lean`, executable at the PA⁻ Gödel sentence in
-  `GodelCheckerAutomaton.lean`).
-- **An expressiveness excess order** (`ExcessOrder.lean`,
-  `ExcessOrderComplete.lean`): representational classes graded by work-bit
-  budget, with inclusions strict exactly as the budget grows; an
-  internalization threshold packaged as a predicate on the budget; and the
-  capstone at Foundation's finite `𝗣𝗔⁻`: a cheaply-owned guest that carries
-  its host's law and represents a true-but-underivable sentence, the
-  incompleteness antecedent discharged rather than hypothesized
-  (`witness_outgrows_paMinus`).
-- **Kolmogorov complexity at two measures, and the load-bearing one is bits**
-  (`KolmogorovComplexity.lean`, `KolmogorovTimeBounded.lean`,
-  `KolmogorovBitlen.lean`, `KReconnection.lean`): the least-index measure `K` is
-  uncomputable by the recursion theorem — and so, separately, is the
-  **bit-length** measure `Nat.size ∘ encode`, which is the one the
-  description-length results are stated at (`K_bitlen_not_computable`). That
-  second proof re-runs the argument from scratch rather than reducing to the
-  first, because `Nat.size` is not injective and the reduction genuinely fails;
-  `Nat.size`'s own computability is built here, Mathlib having no such lemma.
-  The load-bearing MDL theorems are then instantiated at the bit-length
-  complexity of a concrete rule (`ruleComplexity`), so their description-length
-  parameter is a real complexity rather than an abstract real left in prose.
-  Honest boundary: two-machine invariance is deferred with a documented
-  obstruction — Mathlib exposes a single fixed universal machine, and the
-  classical bound needs two, one simulating the other.
+
+### 6. Supporting Infrastructure
+
 - Supporting infrastructure: prefix-complexity semimeasure (`∑ 2^{−KP} ≤ 1`),
   an additive self-delimiting program-length measure with a length-efficient
   binary constant, binary index-form Kraft–McMillan bridges
