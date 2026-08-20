@@ -180,7 +180,6 @@ def cHeadL : Code := comp left right
 /-- Flag-cons tail, as a `Code`. -/
 def cTailL : Code := comp right right
 
-private theorem rfindFree_cHeadL : RfindFree cHeadL := ⟨trivial, trivial⟩
 private theorem rfindFree_cTailL : RfindFree cTailL := ⟨trivial, trivial⟩
 private theorem val_cHeadL (L : ℕ) : val cHeadL L = headL L := by
   simp only [cHeadL, val_comp, val_left, val_right, headL]
@@ -197,7 +196,6 @@ def cJA : Code := right
 def cDataA : Code := comp cTailL cInstA
 
 private theorem val_cInstA (N : ℕ) : val cInstA N = instA N := by simp only [cInstA, val_left, instA]
-private theorem val_cJA (N : ℕ) : val cJA N = jA N := by simp only [cJA, val_right, jA]
 private theorem val_cDataA (N : ℕ) : val cDataA N = readData (instA N) := by
   simp only [cDataA, val_comp, val_cTailL, val_cInstA, tailL, readData, instA]
 
@@ -296,8 +294,6 @@ def cAliveLoop : Code := comp (prec cAliveInit cAliveStep) (pair cAliveId cAlive
 
 private theorem rfindFree_cAliveId : RfindFree cAliveId := ⟨trivial, trivial⟩
 private theorem rfindFree_cAliveCount : RfindFree cAliveCount := ⟨rfindFree_cReadM, trivial⟩
-private theorem rfindFree_cAliveLoop : RfindFree cAliveLoop :=
-  ⟨⟨rfindFree_cAliveInit, rfindFree_cAliveStep⟩, rfindFree_cAliveId, rfindFree_cAliveCount⟩
 
 private theorem val_cAliveId (N : ℕ) : val cAliveId N = N := by
   simp only [cAliveId, val_pair, val_left, val_right, Nat.pair_unpair]
@@ -725,8 +721,6 @@ private theorem rfindFree_cInstOfB : RfindFree cInstOfB := trivial
 private theorem rfindFree_cRejCount : RfindFree cRejCount := ⟨rfindFree_cReadK, rfindFree_cInstOfB⟩
 private theorem rfindFree_cRejId : RfindFree cRejId := ⟨trivial, trivial⟩
 private theorem rfindFree_cRejBase : RfindFree cRejBase := trivial
-private theorem rfindFree_cRejLoop : RfindFree cRejLoop :=
-  ⟨⟨rfindFree_cRejBase, rfindFree_cRejStep⟩, rfindFree_cRejId, rfindFree_cRejCount⟩
 
 private theorem val_cInstOfB (M : ℕ) : val cInstOfB M = instB M := by simp only [cInstOfB, val_left, instB]
 private theorem val_cRejCount (M : ℕ) : val cRejCount M = readK (instB M) := by

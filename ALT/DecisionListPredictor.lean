@@ -68,8 +68,6 @@ private def cHd : Code := comp left right
 /-- `tailL` as a `Code` (mirrors `OneDL.DecisionListSolver`'s private `cTail`). -/
 private def cTl : Code := comp right right
 
-private theorem rfindFree_cHd : RfindFree cHd := ⟨trivial, trivial⟩
-private theorem rfindFree_cTl : RfindFree cTl := ⟨trivial, trivial⟩
 private theorem val_cHd (L : ℕ) : val cHd L = headL L := by
   simp only [cHd, val_comp, val_left, val_right, headL]
 private theorem val_cTl (L : ℕ) : val cTl L = tailL L := by
@@ -111,7 +109,6 @@ private theorem rfindFree_cIdN : RfindFree cIdN := ⟨trivial, trivial⟩
 private theorem rfindFree_cCountM : RfindFree cCountM := trivial
 private theorem rfindFree_cAzLoop : RfindFree cAzLoop :=
   ⟨⟨rfindFree_cAzInit, rfindFree_cAzStep⟩, rfindFree_cIdN, rfindFree_cCountM⟩
-private theorem rfindFree_cAllZero : RfindFree cAllZero := ⟨trivial, rfindFree_cAzLoop⟩
 
 private theorem val_cAnd' (a b : ℕ) : val cAnd (Nat.pair a b) = bAnd a b := val_cAnd a b
 private theorem val_cNot' (n : ℕ) : val cNot n = bNot n := val_cNot n
@@ -1130,7 +1127,6 @@ set_option maxHeartbeats 0 in
 -- same slow-not-stuck kernel unfolding as `hcode_cSolve` above: `cSolve`'s `rfind'`-freeness is
 -- witnessed purely by the goal's own inductive shape, so `constructor` walks the whole private
 -- structure by repeated weak-head reduction — no name from `DecisionListSolver` is ever written.
-private theorem rfindFree_cDecide : RfindFree cDecide := by repeat constructor
 
 private theorem rfindFree_cForced : RfindFree cForced := by repeat constructor
 

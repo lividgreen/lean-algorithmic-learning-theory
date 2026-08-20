@@ -101,6 +101,8 @@ and the telescope divides by the gap `1 − λ² = 4η(1−η)` instead of being
   `mixingHoeffding_frozen_samePair_correctMean` — the matched pair that locates the same-class noise
   dependence in the ANSWER: one configuration, refuted at the flat answer at every positive
   constant, satisfied at the displaced answer at every constant.
+* `derivedNoise`, `obs_derivedNoise` — the **derived-noise bridge**: every Boolean sequence is the
+  window-`k` chain's own observation of its own derived noise, `derivedNoise k o`.
 
 ## Scope
 
@@ -209,6 +211,39 @@ private theorem chi_obs_add {k : ℕ} (hk : 0 < k) (ξ : ℕ → Bool) (u : ℕ)
       = ParityWalk.chi (obs k ξ (u + k)) := by
   rw [obs_add hk, ParityWalk.chi_not, ParityWalk.chi_xor, ParityWalk.zeta_eq_neg_chi]
   ring
+
+/-! ## The derived-noise bridge -/
+
+/-- **Every Boolean sequence, fed back as its own window-`k` noise** ([Growth] §5). `o`'s first `k`
+values are its own; past that, `derivedNoise k o u` is the noise bit `obs_add` would need to carry
+`o`'s own window-`k` chain from `o (u - k)` to `o u`. -/
+def derivedNoise (k : ℕ) (o : ℕ → Bool) (u : ℕ) : Bool :=
+  if u < k then o u else !(xor (o (u - k)) (o u))
+
+/-- **The window-`k` chain on `derivedNoise k o` reproduces `o` exactly** ([Growth] §5). Strong
+induction on `u`:
+below `k` both sides are `o`'s own value (`obs_of_lt`); past `k`, `obs_add` and `derivedNoise`'s own
+definition combine to the Boolean identity `!(a ⊕ !(a ⊕ b)) = b`. So every Boolean sequence is the
+window-`k` chain's own observation of its own derived noise — `SubstitutionComposite.subNoise` is
+`derivedNoise 8 subObs` (`SubstitutionComposite.subNoise_eq_derivedNoise`), and this is that fact's
+`k`-generic, source-generic form. -/
+theorem obs_derivedNoise {k : ℕ} (hk : 0 < k) (o : ℕ → Bool) :
+    obs k (derivedNoise k o) = o := by
+  funext u
+  induction u using Nat.strong_induction_on with
+  | _ u ih =>
+    by_cases hu : u < k
+    · rw [obs_of_lt (derivedNoise k o) hu]
+      simp [derivedNoise, hu]
+    · rw [Nat.not_lt] at hu
+      obtain ⟨t, rfl⟩ : ∃ t, u = t + k := ⟨u - k, by omega⟩
+      have hrec := obs_add (k := k) hk (derivedNoise k o) t
+      rw [hrec, ih t (by omega)]
+      have hn : derivedNoise k o (t + k) = !(xor (o t) (o (t + k))) := by
+        simp only [derivedNoise]
+        rw [if_neg (by omega : ¬ t + k < k), show t + k - k = t from by omega]
+      rw [hn]
+      cases o t <;> cases o (t + k) <;> simp
 
 /-! ## The noiseless window map -/
 
@@ -2867,3 +2902,7 @@ set_option linter.style.longLine false
 /-- info: 'NoisyWindowChain.empiricalMean_deviation_le_of_window_bounds' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms NoisyWindowChain.empiricalMean_deviation_le_of_window_bounds
+
+/-- info: 'NoisyWindowChain.obs_derivedNoise' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms NoisyWindowChain.obs_derivedNoise

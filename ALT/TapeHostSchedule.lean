@@ -32,6 +32,13 @@ under three named conditions relating the window-noise density `η`, the cross-c
   horizon on, under `2 * η ≤ τ`, `μ ≤ τ`, `3 * τ + μ ≤ 1`.
 * `identificationHorizon`, `schedSurvivors_eq_singleton_of_horizon` — the horizon as an explicit
   natural number.
+* `sharpHorizon`, `schedSurvivors_eq_singleton_sharp` — the sharp identification window: the same
+  conclusion under the honest per-margin hypotheses (`2η ≤ τ`, `μ < 2τ`, `2τ + μ < 1`), at the
+  explicit horizon `sharpHorizon`.
+* `identifies_of_lt_quarter` — at every density `η < (1 - μ) / 4` with `μ < 1 / 2`, some admissible
+  `τ` identifies from `sharpHorizon`'s horizon on.
+* `not_identifies_of_gt_quarter` — the converse: past that density, every admissible `τ` leaves a
+  wrong literal surviving.
 
 ## Scope
 

@@ -75,6 +75,7 @@ import ALT.GradedApplication
 import ALT.GradedConjugation
 import ALT.GradedSimulation
 import ALT.GrowingComposite
+import ALT.GrowingHostWitness
 import ALT.GrowingWorld
 import ALT.GrunwaldMehtaDiscovery
 import ALT.HellingerBridge
@@ -92,6 +93,11 @@ import ALT.NoisyWindowChain
 import ALT.ParameterizedNNO
 import ALT.ParityCounterexample
 import ALT.ParityWalk
+import ALT.PeriodicObservability
+import ALT.Persistence.Core
+import ALT.Persistence.Counting
+import ALT.Persistence.MovingLens
+import ALT.Persistence.Robustness
 import ALT.PersistenceCapacity
 import ALT.PersistentWalk
 import ALT.PolyTime
@@ -129,6 +135,10 @@ import ALT.SearchCost
 import ALT.SearchSpace
 import ALT.SkewFiber
 import ALT.StructureFunction
+import ALT.SubstitutionClass
+import ALT.SubstitutionComposite
+import ALT.SubstitutionSchedule
+import ALT.SubstitutionSource
 import ALT.SubstrateClass
 import ALT.SubstrateEmergence
 import ALT.SurpriseBudget
@@ -164,6 +174,8 @@ series, cited in docstrings as:
 * **[Discovery]** — MDL dominance and finite-time rule discovery;
 * **[SQ]** — polynomial-time convergence under statistical queries;
 * **[Persistence]** — resource-bounded persistence capacity: the priced decoder;
+* **[Growth]** — endogenous observability on growing hosts: statistical-query
+  learning from substitution sources at explicit horizons;
 * **[Inevitability]** — the realization-synthesis capstone: two independent routes to
   a reflective subsystem, and the open problem of realizing both on one witness.
 

@@ -13,7 +13,7 @@ set_option linter.style.header false
 set_option linter.style.openClassical false
 
 /-!
-# Genuine SQ objects: concept class, statistical dimension, oracle ([SQ] §3, FV-J)
+# Genuine SQ objects: concept class, statistical query (SQ) dimension, oracle ([SQ] §3, FV-J)
 
 Provenance: [SQ], §3.1 (the SQ oracle answers a query
 `φ : Input → [−1,1]` with an estimate of `E_D[φ]` within tolerance `τ`), §3.4 (the statistical

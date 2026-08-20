@@ -157,15 +157,8 @@ private def cReadDataC : Code := comp right right
 private def cReadDataP : Code := comp cReadDataC cN
 
 private theorem val_cN (n x : ℕ) : val cN (Nat.pair n x) = n := by simp [cN, val_left]
-private theorem val_cX (n x : ℕ) : val cX (Nat.pair n x) = x := by simp [cX, val_right]
 private theorem val_cReadDataC (inst : ℕ) : val cReadDataC inst = readData inst := by
   simp [cReadDataC, val_comp, val_right, readData]
-private theorem val_cReadKP (n x : ℕ) : val cReadKP (Nat.pair n x) = readK n := by
-  simp [cReadKP, val_comp, val_cReadK, val_cN]
-private theorem val_cReadMP (n x : ℕ) : val cReadMP (Nat.pair n x) = readM n := by
-  simp [cReadMP, val_comp, val_cReadM, val_cN]
-private theorem val_cReadDataP (n x : ℕ) : val cReadDataP (Nat.pair n x) = readData n := by
-  simp [cReadDataP, val_comp, val_cReadDataC, val_cN]
 
 /-- `mkEx b x`, from `⟨n, x⟩`, for a literal bit `b`. -/
 private def cMkExB (b : ℕ) : Code := pair (constCode b) cX

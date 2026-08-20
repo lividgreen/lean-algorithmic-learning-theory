@@ -2907,6 +2907,13 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms SQEnvelope.fvA4_envelope_discharged
 
+-- `hident_load_bearing` — the negative-results-as-guards practice: a near-duplicate witness
+-- (a constant answer functional over `Fin N`) proving `subset_card_le_sqDim_of_ident`'s `hident`
+-- load-bearing, per `/design` §4.172's finding that the direct `|V|` bound is FALSE without it.
+/-- info: 'SQEnvelope.hident_load_bearing' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms SQEnvelope.hident_load_bearing
+
 -- [SQ] §2 prefix-free Kolmogorov complexity `KP` is a SEMIMEASURE (FV-KP): the universal
 -- a-priori / Solomonoff–Levin bound `∑ₓ 2⁻ᴷᴾ⁽ˣ⁾ ≤ 1` (`kraft_KP`, via Mathlib's Kraft route +
 -- the injective least-index `K`), and the [Discovery] prior `w(R') = 2⁻ᴷᴾ⁽ᵉⁿᶜᵒᵈᵉ ᴿ'⁾` as a

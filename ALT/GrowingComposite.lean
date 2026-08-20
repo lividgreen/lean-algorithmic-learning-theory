@@ -11,7 +11,7 @@ import ALT.DamageGate
 set_option linter.style.header false
 
 /-!
-# The growing composite: a noisy window chain over a growing autonomous source
+# The growing composite: a noisy window chain over a growing autonomous source ([Growth] §3)
 
 `GrowingWorld.lean` states the staged square at an arbitrary carrier and stress-tests it against a
 single accretive tape; this file composes that tape's own growing-source variant with
@@ -322,8 +322,9 @@ theorem not_eventuallyPeriodic_obs_of_not {k : ℕ} (hk : 0 < k) {ξ : ℕ → B
     (h : ¬ EventuallyPeriodic ξ) : ¬ EventuallyPeriodic (NoisyWindowChain.obs k ξ) :=
   fun hobs => h (eventuallyPeriodic_of_eventuallyPeriodic_obs hk hobs)
 
-/-- **The contrast.** `DamageGate.quietStream`, the designed source of [Inevitability] §6 Theorem
-6.6(v″), sits on the forced side: past its last firing the noise reads identically `false`, so
+/-- **The contrast** ([Growth] §3). `DamageGate.quietStream`, the designed source of
+[Inevitability] §6 Theorem 6.6(v″), sits on the forced side: past its last firing the noise reads
+identically `false`, so
 `obs_add` gives a plain alternation and the observation is eventually periodic at period `2 * k`. -/
 theorem eventuallyPeriodic_obs_quietStream (k : ℕ) (hk : 0 < k) (j m : ℕ) :
     EventuallyPeriodic (NoisyWindowChain.obs k (DamageGate.quietStream j m)) := by

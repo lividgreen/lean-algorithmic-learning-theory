@@ -403,7 +403,7 @@ structure SubstrateE {ι V : Type*} (U : Decoupling.Mem ι V → Decoupling.Mem 
 /-- **`𝒮_L` (the learning route-class).** `Substrate` plus [SQ]'s full named statistical set,
 carried WITHOUT WEAKENING: `realizability` and `windowSufficiency` (carried, uninterpreted —
 no reusable Lean object for either exists in the corpus); `assumptionA` (a rule class of
-polynomial statistical dimension, via `ParityCounterexample.PolyBounded` on the genuine
+polynomial statistical query (SQ) dimension, via `ParityCounterexample.PolyBounded` on the genuine
 `SQObjects.sqDim`, read as a family indexed by `r`, exactly `SQObjects.survivors_polyBounded_of_separated`'s
 own shape); `benignSeparation` (`ε₀ = Ω(1/r)`); and `e1`, observability at a quantitative-mixing
 rate, via `BirkhoffTool.MixingHoeffding` — carried, not proved, exactly as its own module

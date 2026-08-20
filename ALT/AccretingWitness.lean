@@ -10,7 +10,8 @@ import ALT.PersistenceCapacity
 set_option linter.style.header false
 
 /-!
-# The accreting healer world: the escape witness's skeleton ([Guests] §3 + §5)
+# The accreting healer world: the escape witness's skeleton
+([Guests] §3 + §5; [Growth] §2 Theorem 2.5)
 
 `GrowingWorld.lean` states the staged square a guest of a growing host must close
 ([Inevitability] §6); this file builds the instance that closes it while keeping [Guests] §5's
@@ -154,7 +155,8 @@ private theorem healWorld_map_eq_of_sum_lt {k : ℕ} :
             healWorld_encRec_eq]
         rw [List.map_cons, List.map_cons, hhdheal, hmapheal]
 
-/-- **The staged margin, as one-step erasure** ([Guests] §3): from a codeword state at stage `t`,
+/-- **The staged margin, as one-step erasure** ([Guests] §3; [Growth] §2 Theorem 2.5): from a
+codeword state at stage `t`,
 any habitat perturbation totalling fewer than `2 ^ k` flipped cells — same length, same environment
 — is erased in one step: the update lands on the exact same next state. Every habitat block absorbs
 at most the total budget, so each individually stays within the healing radius

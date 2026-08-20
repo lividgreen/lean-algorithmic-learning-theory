@@ -12,6 +12,31 @@ import Mathlib.Tactic.LinearCombination
 
 /-!
 # Block-pair correlation profile
+
+## Main results
+
+* `cyclicCorr`, `aperiodicCorr`, `crossTail` — the three correlation sums: cyclic (over `ZMod N`),
+  aperiodic (over a finite word), and cross-tail (the wrap-around remainder between two words).
+* `blockSeq`, `blockSeq_val` — a two-word, sign-modulated block sequence, and its value.
+* `cyclicCorr_blockSeq`, `cyclicCorr_blockSeq_zone`, `cyclicCorr_blockSeq_spike` — the block
+  sequence's own cyclic correlation, split into its "zone" (bulk) and "spike" (boundary) parts.
+* `cyclicCorrPrefix`, `cyclicCorrWindow` — the prefix and sliding-window correlation sums, with
+  `cyclicCorrPrefix_add_period`, `cyclicCorrPrefix_mod_period`, `cyclicCorrWindow_eq_sub` their
+  periodicity and telescoping identities.
+* `cyclicCorrPrefix_blockSeq_zone`/`_spike`, `cyclicCorrWindow_blockSeq_zone`/`_spike`,
+  `cyclicCorrWindow_blockSeq_family_zone` — the block sequence's own prefix and window
+  correlations, zone and spike parts.
+* `singleWindow` — the single-offset sliding window sum.
+* `tmSign`, `tau`, `blockSign`, `tmPrefix` — the Thue–Morse sign, its block-paired form, the
+  running block sign, and its prefix product, with `tmSign_balance`, `tmSign_partial_odd`,
+  `tmSign_partial_abs_le_one`, `tau_partial_even_abs_le_one`, `tau_partial_odd_abs_le_one`,
+  `blockSign_sq`, `blockSign_mul_noWrap`, `blockSign_mul_wrap`, `blockSign_transition_even`/`_odd`,
+  `tmPrefix_two_mul`/`_add_one`, `blockSign_eq_tmPrefix` their bounds and identities.
+* `wordU`, `wordV` — the certified length-`24` design pair, with `blockSeq_wordU_wordV_correlation`
+  and its prefix/window specializations (`cyclicCorrPrefix_blockSeq_wordU_wordV_zone`/`_spike`,
+  `cyclicCorrWindow_blockSeq_wordU_wordV_zone`/`_spike`, `singleWindow_blockSeq_wordU_wordV_bound`,
+  `blockSeq_wordU_wordV_sq`) the exact correlation profile `BlockPairHost`/`BlockPairCriterion`
+  consume.
 -/
 
 namespace BlockPairProfile
@@ -544,14 +569,6 @@ private theorem singlePrefix_eq_full_sum {N : ℕ} [NeZero N] (x : ZMod N → �
     singlePrefix x N = ∑ t : ZMod N, x t := by
   unfold singlePrefix
   exact sum_range_natCast_eq_univ x
-
-private lemma sum_range_mul_eq_sum_blocks (f : ℕ → ℤ) (L J : ℕ) :
-    ∑ t ∈ Finset.range (J * L), f t =
-      ∑ j ∈ Finset.range J, ∑ p ∈ Finset.range L, f (j * L + p) := by
-  induction J with
-  | zero => simp
-  | succ n ih =>
-    rw [show (n + 1) * L = n * L + L from by ring, Finset.sum_range_add, ih, Finset.sum_range_succ]
 
 /-- The word carried by ℕ-indexed block `j`, depending only on its parity: `u` on even blocks, `v`
 on odd blocks. -/

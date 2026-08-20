@@ -460,11 +460,11 @@ its cost runs a nested `i`-fold loop, making the per-step cost grow with the ite
 def wcg : Code :=
   comp left (pair (comp right right) (comp (prec zero zero) (pair zero (comp left right))))
 
-theorem rfindFree_wcg : RfindFree wcg := by
+private theorem rfindFree_wcg : RfindFree wcg := by
   simp only [wcg, RfindFree, and_self]
 
 /-- `wcg` computes the accumulator slot `⟨_, ⟨_, acc⟩⟩ ↦ acc` (its value ignores the nested loop). -/
-theorem wcg_val (x : ℕ) : val wcg x = (x.unpair.2).unpair.2 := by
+private theorem wcg_val (x : ℕ) : val wcg x = (x.unpair.2).unpair.2 := by
   simp only [wcg, val_comp, val_pair, val_left, val_right, Nat.unpair_pair]
 
 /-- The per-step cost of `wcg` grows LINEARLY with the iteration index `i = (x.unpair.2).unpair.1`

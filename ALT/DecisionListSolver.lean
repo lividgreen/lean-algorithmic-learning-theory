@@ -73,8 +73,6 @@ private def cHead : Code := comp left right
 /-- `tailL` as a `Code` (`comp right right`). -/
 private def cTail : Code := comp right right
 
-private theorem rfindFree_cHead : RfindFree cHead := ⟨trivial, trivial⟩
-private theorem rfindFree_cTail : RfindFree cTail := ⟨trivial, trivial⟩
 private theorem val_cHead (L : ℕ) : val cHead L = headL L := by
   simp only [cHead, val_comp, val_left, val_right, headL]
 private theorem val_cTail (L : ℕ) : val cTail L = tailL L := by
@@ -498,12 +496,6 @@ Sub-code `val` laws at the step input `X = ⟨a, ⟨i, acc⟩⟩` (canonical rea
 feature peel, then bottom-up `tc` bounds culminating in `tc_cStep_le`: under bit operands every gate is
 `O(1)` and the only scaling cost is the feature peel to index `jOf a`. -/
 
-private theorem vs_cAcc (a i acc : ℕ) : val cAcc (Nat.pair a (Nat.pair i acc)) = acc := by
-  simp only [cAcc, val_comp, val_right, Nat.unpair_pair]
-private theorem vs_cMs (a i acc : ℕ) : val cMs (Nat.pair a (Nat.pair i acc)) = msOf acc := by
-  simp only [cMs, cAcc, val_comp, val_left, val_right, Nat.unpair_pair, msOf]
-private theorem vs_cEx (a i acc : ℕ) : val cEx (Nat.pair a (Nat.pair i acc)) = exOf acc := by
-  simp only [cEx, cAcc, val_comp, val_left, val_right, Nat.unpair_pair, exOf]
 private theorem vs_cZ0 (a i acc : ℕ) : val cZ0 (Nat.pair a (Nat.pair i acc)) = z0Of acc := by
   simp only [cZ0, cAcc, val_comp, val_left, val_right, Nat.unpair_pair, z0Of]
 private theorem vs_cZ1 (a i acc : ℕ) : val cZ1 (Nat.pair a (Nat.pair i acc)) = z1Of acc := by
@@ -514,16 +506,10 @@ private theorem vs_cPa (a i acc : ℕ) : val cPa (Nat.pair a (Nat.pair i acc)) =
   simp only [cPa, cP, val_comp, val_left, val_right, Nat.unpair_pair, pOf]
 private theorem vs_cB (a i acc : ℕ) : val cB (Nat.pair a (Nat.pair i acc)) = headL (msOf acc) := by
   simp only [cB, cMs, cAcc, val_comp, val_cHead, val_left, val_right, Nat.unpair_pair, msOf]
-private theorem vs_cE (a i acc : ℕ) : val cE (Nat.pair a (Nat.pair i acc)) = headL (exOf acc) := by
-  simp only [cE, cEx, cAcc, val_comp, val_cHead, val_left, val_right, Nat.unpair_pair, exOf]
 private theorem vs_cLbl (a i acc : ℕ) :
     val cLbl (Nat.pair a (Nat.pair i acc)) = lblOf (headL (exOf acc)) := by
   simp only [cLbl, cE, cEx, cAcc, val_comp, val_cHead, val_left, val_right, Nat.unpair_pair, exOf,
     lblOf]
-private theorem vs_cFv (a i acc : ℕ) :
-    val cFv (Nat.pair a (Nat.pair i acc)) = fvOf (headL (exOf acc)) := by
-  simp only [cFv, cE, cEx, cAcc, val_comp, val_cHead, val_left, val_right, Nat.unpair_pair, exOf,
-    fvOf]
 private theorem vs_cFeat (a i acc : ℕ) :
     val cFeat (Nat.pair a (Nat.pair i acc)) = featOf (headL (exOf acc)) (jOf a) := by
   simp only [cFeat, cFv, cE, cEx, cAcc, cJa, cJ, val_comp, val_cHead, val_cPeel, val_pair, val_left,
@@ -906,9 +892,6 @@ private def cRevPref : Code := comp right (comp right right)
 /-- The reverse step code: `⟨tailL remaining, cons (headL remaining) prefix⟩`. -/
 private def cRevStep : Code :=
   pair (comp cTail cRevRem) (pair (constCode 1) (pair (comp cHead cRevRem) cRevPref))
-
-private theorem rfindFree_cRevStep : RfindFree cRevStep := by
-  simp only [cRevStep, cRevRem, cRevPref, cHead, cTail, constCode, RfindFree, and_self]
 
 private theorem val_cRevStep (a i acc : ℕ) : val cRevStep (Nat.pair a (Nat.pair i acc)) = revStepFn acc := by
   simp only [cRevStep, cRevRem, cRevPref, val_pair, val_comp, val_left, val_right, val_cHead,
@@ -1382,13 +1365,6 @@ private theorem val_cMux (x y c : ℕ) : val cMux (Nat.pair (Nat.pair x y) c) = 
   | zero => simp [cMux, val_prec_zero, val_right, Nat.unpair_pair]
   | succ k => simp [cMux, val_prec_succ, val_comp, val_left, Nat.unpair_pair]
 
-private theorem tc_cMux_le (x y c : ℕ) : tc cMux (Nat.pair (Nat.pair x y) c) ≤ 4 * c + 2 := by
-  unfold cMux
-  have h := tc_prec_le (cf := right) (cg := comp left left) (B := 3)
-    (fun z => by simp [tc_comp, tc_left]) (Nat.pair x y) c
-  simp only [tc_right] at h
-  omega
-
 /-! The packed input `⟨inst, mask⟩` of `findLit`, and its accumulator `⟨found, ⟨j, ⟨p, label⟩⟩⟩`. -/
 
 /-- The instance. -/
@@ -1429,12 +1405,8 @@ private theorem purityVal_sawAny (n : ℕ) : (purityVal n).unpair.2.unpair.2
 private theorem z1_purityAcc_le_one (n : ℕ) : z1Of (purityAcc n) ≤ 1 := by
   unfold purityAcc; exact inv_z1_le_one _ _ _ _ _
 
-private theorem isPureLit_le_one (inst mask j p : ℕ) : isPureLit inst mask j p ≤ 1 := by
-  unfold isPureLit; rw [purityVal_fst]; exact bNot_le_one _
 private theorem litLabel_le_one (inst mask j p : ℕ) : litLabel inst mask j p ≤ 1 := by
   unfold litLabel; rw [purityVal_snd]; exact z1_purityAcc_le_one _
-private theorem sawAnyLit_le_one (inst mask j p : ℕ) : sawAnyLit inst mask j p ≤ 1 := by
-  unfold sawAnyLit; rw [purityVal_sawAny]; exact bOr_le_one _ _
 private theorem coverLit_le_one (inst mask j p : ℕ) : coverLit inst mask j p ≤ 1 := bAnd_le_one _ _
 
 /-- The **folded verdict** `⟨coverLit, litLabel⟩` produced by `cFold`, kept as one opaque atom so the
@@ -2738,10 +2710,6 @@ def ruleL (r : ℕ) : ℕ := r.unpair.2.unpair.2
 /-- Field projections of a literal triple, over VARIABLE fields — apply by `rw` to avoid `simp`'s
 `Nat.unpair_pair` scanning into (and `whnf`-descending) a symbolic `findLitVal` field. -/
 private theorem ruleJ_pair (a b : ℕ) : ruleJ (Nat.pair a b) = a := by simp only [ruleJ, Nat.unpair_pair]
-private theorem ruleP_pair (a p l : ℕ) : ruleP (Nat.pair a (Nat.pair p l)) = p := by
-  simp only [ruleP, Nat.unpair_pair]
-private theorem ruleL_pair (a p l : ℕ) : ruleL (Nat.pair a (Nat.pair p l)) = l := by
-  simp only [ruleL, Nat.unpair_pair]
 
 /-- **1-DL evaluation** (first-match). `evalDLn rules default e` = the label of the first rule that
 fires on `e`, else `default`. A rule fires iff its feature-`ruleJ` bit of `e` matches `ruleP`

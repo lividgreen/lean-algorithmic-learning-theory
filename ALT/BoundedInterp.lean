@@ -1004,36 +1004,6 @@ def codeDepth : Code → ℕ
   | Code.prec cf cg => 1 + max (codeDepth cf) (codeDepth cg)
   | Code.rfind' cf => 1 + codeDepth cf
 
-private theorem codeDepth_pos (c : Code) : 0 < codeDepth c := by
-  cases c <;> simp [codeDepth]
-
-private theorem codeDepth_pair_left (cf cg : Code) :
-    codeDepth cf < codeDepth (Code.pair cf cg) := by
-  simp only [codeDepth]; omega
-
-private theorem codeDepth_pair_right (cf cg : Code) :
-    codeDepth cg < codeDepth (Code.pair cf cg) := by
-  simp only [codeDepth]; omega
-
-private theorem codeDepth_comp_left (cf cg : Code) :
-    codeDepth cf < codeDepth (Code.comp cf cg) := by
-  simp only [codeDepth]; omega
-
-private theorem codeDepth_comp_right (cf cg : Code) :
-    codeDepth cg < codeDepth (Code.comp cf cg) := by
-  simp only [codeDepth]; omega
-
-private theorem codeDepth_prec_left (cf cg : Code) :
-    codeDepth cf < codeDepth (Code.prec cf cg) := by
-  simp only [codeDepth]; omega
-
-private theorem codeDepth_prec_right (cf cg : Code) :
-    codeDepth cg < codeDepth (Code.prec cf cg) := by
-  simp only [codeDepth]; omega
-
-private theorem codeDepth_rfind' (cf : Code) : codeDepth cf < codeDepth (Code.rfind' cf) := by
-  simp only [codeDepth]; omega
-
 /-! ## Well-formedness is preserved along a run -/
 
 @[simp] private theorem cfStk_descend (c n k : ℕ) : cfStk (descend c n k) = k := by simp [descend]
@@ -1126,20 +1096,6 @@ theorem stkDepth_prec_descend (cf cg : Code) (a m k : ℕ) :
   rw [stepUFn_descend]
   simp only [stepDescend, Denumerable.ofNat_encode, Nat.unpair_pair, cfStk_descend]
   exact stkDepth_cons _ _
-
-/-- **The loop never accumulates.** A turn of the loop replaces its cell and leaving the loop pops
-it, so a configuration returning into a loop frame is never more than one cell above the frame's
-tail — no matter how many turns remain. -/
-private theorem stkDepth_precFrame_return {v f k : ℕ} (h : frTag f = 3) :
-    stkDepth (cfStk (stepReturn v f k)) ≤ stkDepth k + 1 := by
-  obtain ⟨cgn, aa, yy, rr, hp⟩ :
-      ∃ cgn aa yy rr, frPay f = Nat.pair cgn (Nat.pair aa (Nat.pair yy rr)) :=
-    ⟨(frPay f).unpair.1, (frPay f).unpair.2.unpair.1,
-      (frPay f).unpair.2.unpair.2.unpair.1, (frPay f).unpair.2.unpair.2.unpair.2, by
-        simp [Nat.pair_unpair]⟩
-  cases rr with
-  | zero => simp [stepReturn, h, hp]
-  | succ r => simp [stepReturn, h, hp, stkDepth_cons]
 
 @[simp] private theorem stkDepth_zero : stkDepth 0 = 0 := by rw [stkDepth]; simp
 
@@ -1237,8 +1193,6 @@ private def ConfigOK (s D : ℕ) : Prop :=
 private theorem framePend_tag0 {f : ℕ} (h : frTag f = 0) :
     framePend f = codeDepth (Denumerable.ofNat Code (frPay f).unpair.1) := by simp [framePend, h]
 
-private theorem framePend_tag1 {f : ℕ} (h : frTag f = 1) : framePend f = 0 := by simp [framePend, h]
-
 private theorem framePend_tag2 {f : ℕ} (h : frTag f = 2) :
     framePend f = codeDepth (Denumerable.ofNat Code (frPay f)) := by simp [framePend, h]
 
@@ -1247,9 +1201,6 @@ private theorem framePend_tag3 {f : ℕ} (h : frTag f = 3) :
 
 private theorem framePend_tag4 {f : ℕ} (h : frTag f = 4) :
     framePend f = codeDepth (Denumerable.ofNat Code (frPay f).unpair.1) := by simp [framePend, h]
-
-private theorem framePend_other {f t : ℕ} (h : frTag f = t + 5) : framePend f = 0 := by
-  simp [framePend, h]
 
 private theorem configOK_stepDescend {c n k D : ℕ}
     (hd : codeDepth (Denumerable.ofNat Code c) + stkDepth k ≤ D) (hs : StackOK k D) :
@@ -1452,35 +1403,6 @@ private theorem step_left (n stk : ℕ) :
 private theorem step_right (n stk : ℕ) :
     stepUFn (descend (Encodable.encode Code.right) n stk) = ret n.unpair.2 stk := by
   rw [stepUFn_descend]; simp [stepDescend]
-
-private theorem step_pair (cf cg n stk : ℕ) :
-    stepUFn (descend (Encodable.encode (Code.pair (Denumerable.ofNat Code cf)
-        (Denumerable.ofNat Code cg))) n stk)
-      = descend cf n (stkCons (frame 0 (Nat.pair cg n)) stk) := by
-  rw [stepUFn_descend]
-  simp [stepDescend, Denumerable.encode_ofNat]
-
-private theorem step_comp (cf cg n stk : ℕ) :
-    stepUFn (descend (Encodable.encode (Code.comp (Denumerable.ofNat Code cf)
-        (Denumerable.ofNat Code cg))) n stk)
-      = descend cg n (stkCons (frame 2 cf) stk) := by
-  rw [stepUFn_descend]
-  simp [stepDescend, Denumerable.encode_ofNat]
-
-private theorem step_prec (cf cg a m stk : ℕ) :
-    stepUFn (descend (Encodable.encode (Code.prec (Denumerable.ofNat Code cf)
-        (Denumerable.ofNat Code cg))) (Nat.pair a m) stk)
-      = descend cf a (stkCons (frame 3 (Nat.pair cg (Nat.pair a (Nat.pair 0 m)))) stk) := by
-  rw [stepUFn_descend]
-  simp [stepDescend, Denumerable.encode_ofNat]
-
-private theorem step_rfind (cf a m stk : ℕ) :
-    stepUFn (descend (Encodable.encode (Code.rfind' (Denumerable.ofNat Code cf)))
-        (Nat.pair a m) stk)
-      = descend cf (Nat.pair a m)
-          (stkCons (frame 4 (Nat.pair cf (Nat.pair a m))) stk) := by
-  rw [stepUFn_descend]
-  simp [stepDescend, Denumerable.encode_ofNat]
 
 /-! ### The returning transitions -/
 

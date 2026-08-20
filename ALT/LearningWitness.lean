@@ -327,7 +327,7 @@ theorem integral_zeta_noiseCoord (p : unitInterval) (i : ℕ) :
   norm_num
   ring
 
-/-! ## The single-literal rule class: separation and statistical dimension -/
+/-! ## The single-literal rule class: separation and statistical query (SQ) dimension -/
 
 /-- The `k` single-literal predictors over a length-`k` window: literal `i` predicts the complement
 of window coordinate `i`.  Literal `0` is the substrate's own rule; the other `k − 1` are the

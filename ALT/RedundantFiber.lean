@@ -136,13 +136,6 @@ theorem dRun_eq_wRunFrom_of_lt (W : ℕ) (M : ℕ → Fin C → Bool) (w₀ : WV
       rw [dRun, if_neg ht, ih (fun u hu => hfree u (by omega))]
       rfl
 
-/-- **The empty schedule damages nothing**: `dRun` at `H = ∅` is exactly the undamaged run, every
-index vacuously hit-free. -/
-private theorem dRun_eq_wRunFrom_of_empty (W : ℕ) (M : ℕ → Fin C → Bool) (w₀ : WVec C W)
-    (hit : ℕ → WVec C W) (t : ℕ) :
-    dRun W M w₀ ∅ hit t = wRunFrom W (missFit M) w₀ t :=
-  dRun_eq_wRunFrom_of_lt W M w₀ ∅ hit (fun u _ => Finset.notMem_empty u)
-
 /-- **The reading settles for every finite hit schedule** ([Inevitability] §6, Finding 2 —
 recovery). Eventual realizability of the same candidate that the undamaged fiber would need is
 enough: the run settles past its last hit exactly as an ordinary one does

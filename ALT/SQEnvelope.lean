@@ -63,21 +63,31 @@ already handles the pairwise-SEPARATED survivor case):
   with `A = m = 1` — closing the loop with the literal `PolyBounded` chain, exactly as FV-J's
   `survivors_polyBounded_of_separated` does, but with class-level identifiability replacing the
   survivor-set separation hypothesis.
+* `hident_load_bearing` (negative-results-as-guards; `/design` §4.172): a near-duplicate witness
+  proving `hident` load-bearing for `subset_card_le_sqDim_of_ident` — over `Fin N` (`N ≥ 2`) with a
+  constant answer functional, `sqDim = 1` while `V.card = N`, so the envelope's conclusion is FALSE
+  without identifiability, for every `N`.
 
 ## The identifiability hypothesis (named, flagged prominently)
 `subset_card_le_sqDim_of_ident` / `fvA4_envelope_discharged` assume
 `hident : ∀ i ∈ M, ∀ j ∈ M, (∀ φ, |ans φ i − ans φ j| ≤ 2τ) → i = j` — "distinct candidate rules are
 `2τ`-distinguishable on some query". This is where [SQ]'s "deterministic distinct rules are
 distinguishable" lives. It is a real hypothesis: with it, the covering map is injective and the
-version space collapses onto a separated family; WITHOUT it, bounding the near-duplicate clusters
-inside a covering ball by the extra `poly(k)` factor of App A's `poly(d_SQ)·poly(k)` is exactly the
-harder BFJKMR clustering argument (which needs the `[−1,1]` answer range and a per-query packing
-count), and stays in prose. Flagged, not hidden.
+version space collapses onto a separated family. WITHOUT it, `|V|` is UNBOUNDED by `sqDim` and the
+query count — distinct candidates can share one answer functional (a near-duplicate cluster), so no
+direct bound on `|V|` exists to prove (`/design` §4.172: the `[−1,1]` per-query packing bounds only
+the distinct `τ`-rounded answer-VECTORS on the schedule — the net — not the survivor count, and even
+that count is exponential in the query number, not `poly`). Flagged, not hidden;
+`hident_load_bearing` below guards the hypothesis with the near-duplicate witness.
+The identifiability-FREE maintained-net envelope is already machine-checked, in the sibling module
+this file imports: `SQObjects.versionSpace_net_envelope`. It is the FORCED object without `hident`,
+not a sidestep of a harder-but-available direct `|V|` bound — no such bound exists.
 
 ## What this does NOT establish (out of scope / stays in prose; no overclaiming)
-* Not the full BFJKMR `poly(d_SQ)·poly(k)` clustering bound WITHOUT identifiability (the harder
-  argument above); we deliver the LINEAR envelope `≤ sqDim` under identifiability, which is stronger
-  than `poly(d_SQ)` where it applies and suffices to discharge FV-A4.
+* Not a direct bound on `|V|` WITHOUT identifiability — `/design` §4.172 found none exists (a
+  near-duplicate class makes `|V|` unbounded while `sqDim` stays `1`; witnessed below by
+  `hident_load_bearing`). We deliver the LINEAR envelope `≤ sqDim` under identifiability, which
+  discharges FV-A4; the identifiability-free case rides the net (`versionSpace_net_envelope`).
 * Not Szörényi's Theorem 2 query lower bound `(dτ²−1)/2` (a nice-to-have companion needing the
   correlation/ℓ² geometry) — de-scoped.
 * Not the concrete schedule for a named class (the `ans`, oracle `o`, and schedule `Qs` are abstract
@@ -248,5 +258,54 @@ theorem fvA4_envelope_discharged (τ : ℝ) (hτ : 0 ≤ τ)
     simpa using hcast
   · filter_upwards with r
     positivity
+
+/-- **Guard: `hident` in `subset_card_le_sqDim_of_ident` is load-bearing** (the near-duplicate
+witness; `/design` §4.172). Over `Fin N` (`N ≥ 2`) with a CONSTANT answer functional (`ans _ i = 0`
+for every query and every candidate — the generic case for distinct programs computing the same
+function, which is exactly why identifiability is a real hypothesis rather than a formality), no
+query separates any two candidates, so `sqDim univ 1 ans = 1`; but the whole class is its own
+`2τ`-survivor set, so `V.card = N`. `hident` fails here (every pair shares an identical answer, so
+`2τ`-closeness never forces equality), and the envelope's conclusion is FALSE for every `N ≥ 2`:
+`|V|` is unbounded while `sqDim` stays `1` — the design record's residue, machine-checked: without
+identifiability the direct `|V|` bound does not merely stay unproved, it fails, and the maintained
+net (`SQObjects.versionSpace_net_envelope`) is the forced object. -/
+theorem hident_load_bearing (N : ℕ) (hN : 2 ≤ N) :
+    ∃ (M V : Finset (Fin N)) (τ : ℝ) (ans : Unit → Fin N → ℝ),
+      0 ≤ τ ∧ V ⊆ M ∧ ¬ V.card ≤ sqDim M τ ans ∧
+      ¬ (∀ i ∈ M, ∀ j ∈ M, (∀ φ, |ans φ i - ans φ j| ≤ 2 * τ) → i = j) := by
+  have h0N : 0 < N := by omega
+  have h1N : 1 < N := by omega
+  have hi01 : (⟨0, h0N⟩ : Fin N) ≠ ⟨1, h1N⟩ := by
+    simp only [ne_eq, Fin.mk.injEq]
+    omega
+  refine ⟨Finset.univ, Finset.univ, 1, fun _ _ => 0, zero_le_one, Finset.Subset.refl _, ?_, ?_⟩
+  · have hdim : sqDim (Finset.univ : Finset (Fin N)) 1
+        (fun (_ : Unit) (_ : Fin N) => (0:ℝ)) = 1 := by
+      apply le_antisymm
+      · apply Finset.sup_le
+        intro S hS
+        rw [Finset.mem_filter, Finset.mem_powerset] at hS
+        by_contra hcard
+        push Not at hcard
+        obtain ⟨i, hiS, j, hjS, hij⟩ := Finset.one_lt_card.mp hcard
+        obtain ⟨φ, hφ⟩ := hS.2.2 i hiS j hjS hij
+        unfold Separates at hφ
+        simp only [sub_self, abs_zero] at hφ
+        linarith
+      · have hmem : ({(⟨0, h0N⟩ : Fin N)} : Finset (Fin N)) ∈
+            (Finset.univ : Finset (Fin N)).powerset.filter
+              (SepFam Finset.univ 1 (fun (_ : Unit) (_ : Fin N) => (0:ℝ))) := by
+          rw [Finset.mem_filter, Finset.mem_powerset]
+          exact ⟨Finset.subset_univ _, Finset.subset_univ _,
+            fun i hi j hj hij => absurd
+              ((Finset.mem_singleton.mp hi).trans (Finset.mem_singleton.mp hj).symm) hij⟩
+        have hle := Finset.le_sup (f := Finset.card) hmem
+        rw [Finset.card_singleton] at hle
+        exact hle
+    rw [hdim, Finset.card_univ, Fintype.card_fin]
+    omega
+  · intro hident
+    exact hi01 (hident ⟨0, h0N⟩ (Finset.mem_univ _) ⟨1, h1N⟩ (Finset.mem_univ _)
+      (fun _ => by norm_num))
 
 end SQEnvelope

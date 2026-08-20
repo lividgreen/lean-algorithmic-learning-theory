@@ -11,7 +11,7 @@ set_option linter.style.header false
 
 /-!
 # The growing-world skeleton: staged squares, factor closure, and a tape's guest
-([Guests] §2 objects over [Inevitability] §6's stage machinery)
+([Guests] §2 objects over [Inevitability] §6's stage machinery; [Growth] §2)
 
 A **guest** of a world is a factor: a law of its own, reached by a reading that intertwines the
 host's step with it ([Guests] §2, Definitions 2.1–2.3). `[Inevitability]` §6's ratchet needs that
@@ -71,7 +71,8 @@ definition specialized to `X = Mem ι V`; `advances_iff` below is the coherence 
 def Advances (U : X → X) (Ω : ℕ → Set X) : Prop :=
   ∀ t, ∀ s ∈ Ω t, U s ∈ Ω (t + 1)
 
-/-- **The staged square** ([Guests] §2 over [Inevitability] §6): one host step, read one stage
+/-- **The staged square** ([Guests] §2 over [Inevitability] §6; [Growth] §2): one host step, read
+one stage
 later, is one step of the guest's own law `F` applied to the current reading. Same orientation as
 `PersistenceCapacity.Intertwines`, restricted at each `t` to the stage `Ω t` the host admits there
 — `stagedSquare_const_iff` below makes that restriction precise at the constant family. -/
@@ -184,10 +185,6 @@ theorem advances_tapeStageB : Advances Decoupling.tapeWrite tapeStageB := by
     simp only [Decoupling.tapeWrite]
     rw [if_neg (by omega : a ≠ 0), if_neg (by rw [h0]; omega : a ≠ s 0 + 1)]
     exact hzero a (by omega)
-
-private theorem stagedSquare_tapeRead_tapeStageB :
-    StagedSquare Decoupling.tapeWrite Decoupling.tapeWrite tapeRead tapeStageB :=
-  stagedSquare_antitone tapeStageB_subset_tapeStage stagedSquare_tapeRead
 
 /-- On the binary sub-stages, `tapeRead` is the identity: a stage state already looks like its own
 reading, since it already carries its own counter at cell `0` and reads as `0` past `t` — the same

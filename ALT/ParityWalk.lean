@@ -91,11 +91,6 @@ lemma chi_not (b : Bool) : chi (!b) = -chi b := by cases b <;> norm_num [chi]
 
 @[simp] private lemma abs_zeta (b : Bool) : |zeta b| = 1 := by cases b <;> norm_num [zeta]
 
-private lemma chi_mem_Icc (b : Bool) : chi b ∈ Set.Icc (-1 : ℝ) 1 := by cases b <;> norm_num [chi]
-
-private lemma zeta_sub_mem_Icc (b : Bool) (m : ℝ) : zeta b - m ∈ Set.Icc (-1 - m) (1 - m) := by
-  cases b <;> norm_num [zeta]
-
 private lemma zeta_mem_Icc (b : Bool) : zeta b ∈ Set.Icc (-1 : ℝ) 1 := by
   cases b <;> norm_num [zeta]
 
@@ -177,12 +172,6 @@ theorem chi_par (ξ : ℕ → Bool) (d : ℕ) :
   | succ d ih =>
     rw [par_succ, chi_xor, chi_not, ih, Finset.prod_range_succ, zeta_eq_neg_chi (ξ d)]
 
-/-- **The one-step character recursion.**  This is the property that makes the parity walk fit the
-signed-sum engine: its character multiplies by the noise character at every step. -/
-private lemma chi_walk_succ (x₀ : Bool) (ξ : ℕ → Bool) (s : ℕ) :
-    chi (walk x₀ ξ s) * zeta (ξ s) = chi (walk x₀ ξ (s + 1)) := by
-  rw [walk_succ, chi_not, chi_xor, zeta_eq_neg_chi]; ring
-
 /-- The noise parity is measurable once the noise bits it reads are. -/
 private lemma measurable_par {Ω : Type*} {m : MeasurableSpace Ω} {ζ : ℕ → Ω → Bool} (s : ℕ)
     (hζ : ∀ j, j < s → Measurable[m] (ζ j)) :
@@ -248,9 +237,6 @@ private lemma block_subset_pastSet {A : ℕ → Set ℕ} (hdisj : ∀ u v, u ≠
     {u n : ℕ} (h : u < n) : A u ⊆ pastSet A n :=
   fun _ hi v hv => Set.disjoint_left.mp (hdisj u v (by omega)) hi
 
-private lemma pastAlg_mono (ξ : ℕ → Ω → Bool) {a b : ℕ} (h : a ≤ b) : pastAlg ξ a ≤ pastAlg ξ b :=
-  iSup₂_mono' fun i hi => ⟨i, lt_of_lt_of_le hi h, le_rfl⟩
-
 lemma pastAlg_le [MeasurableSpace Ω] {ξ : ℕ → Ω → Bool} (hmeas : ∀ i, Measurable (ξ i)) (n : ℕ) :
     pastAlg ξ n ≤ (inferInstance : MeasurableSpace Ω) :=
   iSup₂_le fun i _ => (hmeas i).comap_le
@@ -262,11 +248,6 @@ lemma noiseAlg_le [MeasurableSpace Ω] {ξ : ℕ → Ω → Bool} (hmeas : ∀ i
 lemma measurable_pastAlg_xi {ξ : ℕ → Ω → Bool} {i n : ℕ} (hi : i < n) :
     Measurable[pastAlg ξ n] (ξ i) :=
   Measurable.of_comap_le (le_biSup (fun j => MeasurableSpace.comap (ξ j) inferInstance) hi)
-
-/-- Any real-valued reading of a past noise bit is measurable for the past σ-algebra. -/
-private lemma measurable_pastAlg_comp {ξ : ℕ → Ω → Bool} {i n : ℕ} (hi : i < n) (f : Bool → ℝ) :
-    Measurable[pastAlg ξ n] (fun ω => f (ξ i ω)) :=
-  measurable_from_top.comp (measurable_pastAlg_xi hi)
 
 variable [MeasurableSpace Ω] {P : Measure Ω} {ξ : ℕ → Ω → Bool}
 

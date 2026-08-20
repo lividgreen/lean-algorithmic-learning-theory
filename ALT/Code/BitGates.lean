@@ -41,12 +41,12 @@ open TimeCost
 /-- Reshape `n ↦ ⟨0, n⟩` so a `prec` recurses on the value `n` (seed `0`). -/
 def cShape0 : Code := pair zero (pair left right)
 
-theorem rfindFree_cShape0 : RfindFree cShape0 := ⟨trivial, trivial, trivial⟩
+private theorem rfindFree_cShape0 : RfindFree cShape0 := ⟨trivial, trivial, trivial⟩
 
 theorem val_cShape0 (n : ℕ) : val cShape0 n = Nat.pair 0 n := by
   simp only [cShape0, val_pair, val_zero, val_left, val_right, Nat.pair_unpair]
 
-theorem tc_cShape0 (n : ℕ) : tc cShape0 n = 5 := by
+private theorem tc_cShape0 (n : ℕ) : tc cShape0 n = 5 := by
   simp only [cShape0, tc_pair, tc_zero, tc_left, tc_right]
 
 /-- `[n ≠ 0]` as a `prec` recursing on the value: base `0`, step `1`. -/
@@ -54,7 +54,7 @@ def isPosCore : Code := prec zero (constCode 1)
 /-- Positivity indicator `n ↦ [n ≠ 0]` (bit-closed). -/
 def cIsPos : Code := comp isPosCore cShape0
 
-theorem rfindFree_isPosCore : RfindFree isPosCore := ⟨trivial, rfindFree_constCode 1⟩
+private theorem rfindFree_isPosCore : RfindFree isPosCore := ⟨trivial, rfindFree_constCode 1⟩
 theorem rfindFree_cIsPos : RfindFree cIsPos := ⟨rfindFree_isPosCore, rfindFree_cShape0⟩
 
 theorem val_isPosCore (a n : ℕ) : val isPosCore (Nat.pair a n) = if n = 0 then 0 else 1 := by
@@ -66,7 +66,7 @@ theorem val_isPosCore (a n : ℕ) : val isPosCore (Nat.pair a n) = if n = 0 then
 theorem val_cIsPos (n : ℕ) : val cIsPos n = if n = 0 then 0 else 1 := by
   rw [cIsPos, val_comp, val_cShape0, val_isPosCore]
 
-theorem tc_isPosCore_le (a n : ℕ) : tc isPosCore (Nat.pair a n) ≤ 4 * n + 2 := by
+private theorem tc_isPosCore_le (a n : ℕ) : tc isPosCore (Nat.pair a n) ≤ 4 * n + 2 := by
   unfold isPosCore
   have h := tc_prec_le (cf := zero) (cg := constCode 1) (B := 3)
     (fun x => tc_constCode_le 1 x) a n
@@ -85,7 +85,7 @@ def notCore : Code := prec (constCode 1) zero
 itself, giving `val cNot n = [n = 0]`. -/
 def cNot : Code := comp notCore cShape0
 
-theorem rfindFree_notCore : RfindFree notCore := ⟨rfindFree_constCode 1, trivial⟩
+private theorem rfindFree_notCore : RfindFree notCore := ⟨rfindFree_constCode 1, trivial⟩
 theorem rfindFree_cNot : RfindFree cNot := ⟨rfindFree_notCore, rfindFree_cShape0⟩
 
 theorem val_notCore (a n : ℕ) : val notCore (Nat.pair a n) = if n = 0 then 1 else 0 := by
@@ -97,7 +97,7 @@ theorem val_notCore (a n : ℕ) : val notCore (Nat.pair a n) = if n = 0 then 1 e
 theorem val_cNot (n : ℕ) : val cNot n = if n = 0 then 1 else 0 := by
   rw [cNot, val_comp, val_cShape0, val_notCore]
 
-theorem tc_notCore_le (a n : ℕ) : tc notCore (Nat.pair a n) ≤ 2 * n + 4 := by
+private theorem tc_notCore_le (a n : ℕ) : tc notCore (Nat.pair a n) ≤ 2 * n + 4 := by
   unfold notCore
   have h := tc_prec_le (cf := constCode 1) (cg := zero) (B := 1)
     (fun x => (tc_zero x).le) a n
@@ -123,10 +123,10 @@ def orCore : Code := prec cIsPos (constCode 1)
 `a` there and `cOr ⟨a, b⟩` is the disjunction in the natural argument order. -/
 def cOr : Code := comp orCore cSwap
 
-theorem rfindFree_orCore : RfindFree orCore := ⟨rfindFree_cIsPos, rfindFree_constCode 1⟩
+private theorem rfindFree_orCore : RfindFree orCore := ⟨rfindFree_cIsPos, rfindFree_constCode 1⟩
 theorem rfindFree_cOr : RfindFree cOr := ⟨rfindFree_orCore, rfindFree_cSwap⟩
 
-theorem val_orCore (b a : ℕ) :
+private theorem val_orCore (b a : ℕ) :
     val orCore (Nat.pair b a) = if a = 0 then (if b = 0 then 0 else 1) else 1 := by
   unfold orCore
   cases a with
@@ -137,7 +137,7 @@ theorem val_cOr (a b : ℕ) :
     val cOr (Nat.pair a b) = if a = 0 then (if b = 0 then 0 else 1) else 1 := by
   rw [cOr, val_comp, val_cSwap, val_orCore]
 
-theorem tc_orCore_le (b a : ℕ) : tc orCore (Nat.pair b a) ≤ 4 * b + 4 * a + 9 := by
+private theorem tc_orCore_le (b a : ℕ) : tc orCore (Nat.pair b a) ≤ 4 * b + 4 * a + 9 := by
   unfold orCore
   have h := tc_prec_le (cf := cIsPos) (cg := constCode 1) (B := 3)
     (fun x => tc_constCode_le 1 x) b a

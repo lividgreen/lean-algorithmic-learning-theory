@@ -129,7 +129,7 @@ theorem eval_projEnc (a y m : ℕ) :
   rw [projEnc, eval_comp_some (eval_projIH a y m), eval_right']
 
 /-- The step template's eval law: advance the state via `cR` and append the current state. -/
-theorem eval_stepWrap {cR : Code} {rs : ℕ → ℕ} (hcR : ∀ x, eval cR x = Part.some (rs x))
+private theorem eval_stepWrap {cR : Code} {rs : ℕ → ℕ} (hcR : ∀ x, eval cR x = Part.some (rs x))
     (a y m : ℕ) :
     eval (stepWrap cR) (Nat.pair a (Nat.pair y m)) =
       Part.some (Nat.pair (rs m.unpair.1) (Nat.pair m.unpair.2 m.unpair.1)) := by
@@ -176,7 +176,7 @@ theorem eval_assembly {cR : Code} {rs : ℕ → ℕ} (hcR : ∀ x, eval cR x = P
   rw [assembly, eval_comp_some hin, eval_collector hcR]
 
 /-- The assembly computes `orbitAcc rs n` from input `0` (the `Computes` form). -/
-theorem computes_assembly {cR : Code} {rs : ℕ → ℕ} (hcR : ∀ x, eval cR x = Part.some (rs x))
+private theorem computes_assembly {cR : Code} {rs : ℕ → ℕ} (hcR : ∀ x, eval cR x = Part.some (rs x))
     (n : ℕ) : Computes (assembly cR n) (orbitAcc rs n) := eval_assembly hcR n
 
 /-! ## Length accounting -/
@@ -187,7 +187,7 @@ theorem elen_projState : elen projState = 15 := by decide
 theorem elen_projEnc : elen projEnc = 15 := by decide
 
 /-- The step template's length is a fixed constant plus the rule's length. -/
-theorem elen_stepWrap (cR : Code) : elen (stepWrap cR) = elen cR + 54 := by
+private theorem elen_stepWrap (cR : Code) : elen (stepWrap cR) = elen cR + 54 := by
   rw [stepWrap, E_len_pair, E_len_comp, E_len_pair, elen_projState, elen_projEnc]
   omega
 
@@ -248,16 +248,16 @@ projection/stepWrap cost lemmas below feed the generic `TimeCost.tc_prec_le` eng
 open TimeCost
 
 /-- `tc projIH x = 3` — a fixed cost (`comp right right`), independent of `x`. -/
-theorem tc_projIH (x : ℕ) : tc projIH x = 3 := by
+private theorem tc_projIH (x : ℕ) : tc projIH x = 3 := by
   simp [projIH, tc_comp]
 
 /-- `tc projState x = 5` — a fixed cost (`comp left projIH`), independent of `x` AND of the value
 `val projIH x` threaded through it (the outer `left` discards its argument's magnitude). -/
-theorem tc_projState (x : ℕ) : tc projState x = 5 := by
+private theorem tc_projState (x : ℕ) : tc projState x = 5 := by
   simp [projState, tc_comp, tc_projIH]
 
 /-- `tc projEnc x = 5` — a fixed cost (`comp right projIH`), independent of `x` and of the value. -/
-theorem tc_projEnc (x : ℕ) : tc projEnc x = 5 := by
+private theorem tc_projEnc (x : ℕ) : tc projEnc x = 5 := by
   simp [projEnc, tc_comp, tc_projIH]
 
 /-- **One collector step costs a fixed `18` plus one call to the rule `cR`.** The `18` is the

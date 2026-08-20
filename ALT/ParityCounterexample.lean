@@ -11,7 +11,7 @@ set_option linter.style.header false
 /-!
 # Parity counterexample to Assumption A ([SQ], §5)
 
-Provenance: [SQ], §3.4 (statistical dimension + Assumption A),
+Provenance: [SQ], §3.4 (statistical query (SQ) dimension + Assumption A),
 §4 (Theorem 4.1, which assumes `d_SQ = poly(r)`), and §5 ("What about Parity?"). The mathematical
 content is the elementary "exponential beats every polynomial".
 
