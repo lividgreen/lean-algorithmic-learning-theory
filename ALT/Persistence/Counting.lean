@@ -965,6 +965,24 @@ theorem CbH_collapse (b d : ℕ) :
       ≤ 2 ^ (2 * b + d + 2) := Nat.pow_le_pow_right (by norm_num) (by omega)
     _ < Nat.card ↥(orbit (Perm (Fin n)) (ℓ 0)) := hval ▸ hlt
 
+/-- **No every-world entropic floor exceeds `2b + 3`** ([Persistence] §7, Corollary 7.5(i), and
+§12.2's optimality open). Corollary 7.5(i)'s floor `(1/2 − o(1)) · b` holds over *every*
+permutation world, while its cap `2b + d + 2` (`CbH_collapse`) is generic, not universal. This is
+the other bound: some world's entropic capacity sits at or below `2 ^ (2 * b + 3)`, one line from
+`CbH_collapse` at `d = 1` — the exceeding worlds number at most half of `n !`, so the complement is
+inhabited, with no side condition (`n = 0` included). So no floor holding over every world can
+exceed `2b + 3`. -/
+theorem exists_perm_CbH_le (b : ℕ) : ∃ U : Perm (Fin n), CbH U b ≤ 2 ^ (2 * b + 3) := by
+  by_contra hcon
+  push Not at hcon
+  have huniv : {U : Perm (Fin n) | 2 ^ (2 * b + 1 + 2) < CbH U b} = Set.univ :=
+    Set.eq_univ_of_forall hcon
+  have hcollapse := CbH_collapse (n := n) b 1
+  rw [huniv, Set.ncard_univ, Nat.card_eq_fintype_card, Fintype.card_perm,
+    Fintype.card_fin] at hcollapse
+  have hpos := Nat.factorial_pos n
+  omega
+
 /-! ### The marking floor ([Persistence] §5, Proposition 5.3)
 
 The cap above is one side of Corollary 7.5(i); this is the other. Mark `r` distinguished points of
@@ -2717,7 +2735,11 @@ noncomputable def rangeCode : Nat.Partrec.Code :=
     (_root_.Partrec.nat_iff.mp (Primrec.to_comp
       (Primrec.encode.comp Primrec.list_range)).partrec))
 
-private theorem eval_rangeCode (k : ℕ) :
+/-- `rangeCode`'s evaluation law: consumed outside this module by
+`GrowingPrice.exists_qualifying_pair_of_pos`'s witness, which prices the identity lens
+`id : Fin N → Fin N` (`lensCode_id`) the same way this module prices `k`'s own numeral — hence
+public, unlike its `itinBuilder`/`markBuilder` siblings. -/
+theorem eval_rangeCode (k : ℕ) :
     Nat.Partrec.Code.eval rangeCode k = Part.some (Encodable.encode (List.range k)) := by
   have h := congrFun (Classical.choose_spec (Nat.Partrec.Code.exists_code.mp
     (_root_.Partrec.nat_iff.mp (Primrec.to_comp

@@ -85,6 +85,7 @@ import ALT.SkewFiber
 import ALT.AccretingWitness
 import ALT.AccretiveDecoupling
 import ALT.GrowingWorld
+import ALT.GrowingCore
 import ALT.SurpriseBudget
 import ALT.WeightedFiber
 import ALT.QuantizationRate
@@ -203,6 +204,54 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 /-- info: 'AccretingWitness.ncard_guestStage_accRead' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms AccretingWitness.ncard_guestStage_accRead
+
+-- The growing core (`ALT/GrowingCore.lean`): the merge quotient manufactures a conservation guest
+-- from any update alone, with no hypothesis; every injective-law staged-square reading factors
+-- through it (universality); at a finite carrier it is in bijection with the recurrent core; and
+-- the accreting healer world's decode reading is one concrete consumer.
+/-- info: 'GrowingCore.mergeLaw_injective' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms GrowingCore.mergeLaw_injective
+
+/-- info: 'GrowingCore.stagedSquare_merge' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms GrowingCore.stagedSquare_merge
+
+/-- info: 'GrowingCore.merges_invariant_of_stagedSquare' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms GrowingCore.merges_invariant_of_stagedSquare
+
+/-- info: 'GrowingCore.exists_mergeMk_injective' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms GrowingCore.exists_mergeMk_injective
+
+/-- info: 'GrowingCore.advances_mergeStage' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms GrowingCore.advances_mergeStage
+
+/-- info: 'GrowingCore.mergeStage_injOn' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms GrowingCore.mergeStage_injOn
+
+/-- info: 'GrowingCore.nat_card_mergeQuot_eq_core' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms GrowingCore.nat_card_mergeQuot_eq_core
+
+/-- info: 'GrowingCore.mergeRead_eq_of_merges' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms GrowingCore.mergeRead_eq_of_merges
+
+/-- info: 'GrowingCore.accMerges_of_accErasure' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms GrowingCore.accMerges_of_accErasure
+
+/-- info: 'GrowingCore.accLaw_injective' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms GrowingCore.accLaw_injective
+
+/-- info: 'GrowingCore.accRead_merges_invariant' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms GrowingCore.accRead_merges_invariant
 
 -- The surprise-budget assembly: [Discovery]'s event count priced in cells, against [Persistence]'s
 -- robustness margin and repair tax. Two survival theorems under two different (independent)
@@ -816,6 +865,10 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 /-- info: 'PersistenceCapacity.CbH_collapse' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms PersistenceCapacity.CbH_collapse
+
+/-- info: 'PersistenceCapacity.exists_perm_CbH_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PersistenceCapacity.exists_perm_CbH_le
 
 -- [Persistence] §5, Proposition 5.3 (the combinatorial half) + §7, Corollary 7.5(i) (the floor):
 -- `r` marks riding the world carry entropy `log₂ (n ! / (n − r)!)` over EVERY permutation world.
@@ -1756,6 +1809,10 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms PersistenceCapacity.carries_frame_eqOn_core
 
+/-- info: 'PersistenceCapacity.carries_frame_zero_congr' does not depend on any axioms -/
+#guard_msgs (whitespace := lax) in
+#print axioms PersistenceCapacity.carries_frame_zero_congr
+
 -- choice-free: the two predicates are one predicate, and `Equiv.Perm.coe_pow` is the only step.
 /-- info: 'PersistenceCapacity.permCarries_iff_carries' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
@@ -1776,6 +1833,14 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 /-- info: 'PersistenceCapacity.CbHue_perm' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms PersistenceCapacity.CbHue_perm
+
+-- the floor does not survive irreversibility ([Persistence] §7, Proposition 7.9(ii)): fold a
+-- transient basin into a fixed cycle core and the generic entropic floor is gone, at every fixed
+-- label count -- `basinWorld_confine` is the mechanism (a transient state's reference-frame
+-- reading is pinned to one core fibre), `card_basinWorld_carries_le` the count it forces.
+/-- info: 'PersistenceCapacity.card_basinWorld_carries_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PersistenceCapacity.card_basinWorld_carries_le
 
 /-- info: 'PersistenceCapacity.KE_iterate_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in

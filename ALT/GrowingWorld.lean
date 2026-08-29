@@ -11,7 +11,7 @@ set_option linter.style.header false
 
 /-!
 # The growing-world skeleton: staged squares, factor closure, and a tape's guest
-([Guests] §2 objects over [Inevitability] §6's stage machinery; [Growth] §2)
+([Guests] §2 objects over [Inevitability] §6's stage machinery; [Guests] §7)
 
 A **guest** of a world is a factor: a law of its own, reached by a reading that intertwines the
 host's step with it ([Guests] §2, Definitions 2.1–2.3). `[Inevitability]` §6's ratchet needs that
@@ -71,11 +71,11 @@ definition specialized to `X = Mem ι V`; `advances_iff` below is the coherence 
 def Advances (U : X → X) (Ω : ℕ → Set X) : Prop :=
   ∀ t, ∀ s ∈ Ω t, U s ∈ Ω (t + 1)
 
-/-- **The staged square** ([Guests] §2 over [Inevitability] §6; [Growth] §2): one host step, read
-one stage
-later, is one step of the guest's own law `F` applied to the current reading. Same orientation as
-`PersistenceCapacity.Intertwines`, restricted at each `t` to the stage `Ω t` the host admits there
-— `stagedSquare_const_iff` below makes that restriction precise at the constant family. -/
+/-- **The staged square** ([Guests] §2 over [Inevitability] §6; [Guests] §7 Definition 7.3): one
+host step, read one stage later, is one step of the guest's own law `F` applied to the current
+reading. Same orientation as `PersistenceCapacity.Intertwines`, restricted at each `t` to the stage
+`Ω t` the host admits there — `stagedSquare_const_iff` below makes that restriction precise at the
+constant family. -/
 def StagedSquare (U : X → X) (F : M → M) (ℓ : ℕ → X → M) (Ω : ℕ → Set X) : Prop :=
   ∀ t, ∀ s ∈ Ω t, ℓ (t + 1) (U s) = F (ℓ t s)
 

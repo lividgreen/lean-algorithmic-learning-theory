@@ -11,7 +11,7 @@ set_option linter.style.header false
 
 /-!
 # The accreting crossing package: uniform excess, eventual hosting, and the assembled witness
-([Growth] §2 Theorem 2.5)
+([Guests] §7 Theorem 7.5)
 
 `ALT/AccretingWitness.lean` builds the accreting healer world's guest — a growing habitat whose
 stage is its own block count, closing the staged square from every state with no codeword
@@ -88,7 +88,7 @@ theorem eventually_hostsAt (g : ℕ) :
 
 /-- **The accreting escape witness, packaged**: the accreting healer world's landed skeleton — the
 staged square from every state, the one-step erasure margin, and the doubling extent
-([Guests] §3/§5; [Growth] §2 Theorem 2.5) — beside the uniform excess's eventual-hosting crossing:
+([Guests] §3/§5, §7 Theorem 7.5) — beside the uniform excess's eventual-hosting crossing:
 a Gödel size `gTS`, fixed with the
 theory, that every stage past some `t₀` hosts and at which the guest's stage-`(t+1)` budget
 delivers a reflective object representing an underivable `𝗣𝗔⁻` truth outright. So "the crossing

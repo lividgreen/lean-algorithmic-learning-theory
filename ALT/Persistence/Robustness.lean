@@ -35,6 +35,11 @@ sub-systems into towers, and prices what survives a perturbation.
   else.
 * `CbHue_le_CbHe` — **owning beats renting by at most the clock, over an arbitrary
   endofunction**, via a clamped reindexing that repeats by construction.
+* `card_basinWorld_carries_le` — **the floor does not survive irreversibility**
+  ([Persistence] §7, Proposition 7.9(ii)): fold a fixed-cycle core and one-step transient basins
+  into a world and the entropic floor Corollary 7.5(i) gives every permutation world is gone — at
+  most `2 ^ (b + 1) * (c - 1) ^ tr` of the `c ^ tr` worlds of that shape admit ANY non-constant
+  affordable carried family, at any fixed label count.
 * `Intertwines.comp` / `uniformBudget_comp` / `tower_no_free_lunch` / `entropy_comp_le` — **the
   tower** ([Persistence] §10.2 + §2): squares compose, dilations multiply, budgets add; stacking
   buys structure, never generic capacity, and entropy is antitone up the levels. Beside it, the
@@ -684,8 +689,10 @@ predicate at an invertible update, so the two carrying notions in this file are 
 
 **What the entropy is valued in.** Definition 2.2 measures a lens's carried entropy on a finite
 `S ⊆ Mem` as the log-size of its relabelling class *on `S`* — its orbit under `Sym (S)` — and prices
-a persistent family by `E (ℓ₀)`, the entropy on the **recurrent core**, "the only part of a lens the
-persistence identity constrains". So `CbHe` values a family at
+a persistent family by `E (ℓ₀)`, the entropy on the **recurrent core**. The persistence identity is
+not silent off the core: it pins `ℓ 0` everywhere, forcing it through the retraction onto the core
+(`carries_frame_zero_congr`), and only the LATER frames are free there, reading a state off the
+image of `U^[t]` however they like. So `CbHe` values a family at
 `Nat.card (orbit (Perm ↥(core U)) (coreLens U (ℓ 0)))`, which is Definition 2.2's `2 ^ (E (ℓ₀))` on
 `S = core U`, and `carries_coreLens_eq` is what entitles it to price a whole family by frame zero:
 on the core every frame is one relabelling of `ℓ 0`, so all frames share a profile. Over a
@@ -867,6 +874,167 @@ theorem CbHe_perm (U : Perm (Fin n)) (b : ℕ) : CbHe (⇑U) b = CbH U b := by
 /-- The uniform objects agree likewise: `CbHu` is `CbHue` at an invertible update. -/
 theorem CbHue_perm (U : Perm (Fin n)) (b : ℕ) : CbHue (⇑U) b = CbHu U b := by
   rw [CbHue, CbHu, uniformBudgetedEntropiesE_perm]
+
+/-! ## The floor does not survive irreversibility ([Persistence] §7, Proposition 7.9)
+
+`CbHe_le_core_factorial` just above is the CAP over a general endofunction world, and it is
+unaffected by what follows. This section is the FLOOR beneath it, and it does not survive:
+Corollary 7.5(i) floors `CbH` at `(1/2 − o(1)) · b` over EVERY permutation world, but fold a core
+of transient states into it and the floor is gone — generically the capacity is exactly zero,
+however large the core. Reversibility is not a convenience in that corollary's hypothesis; it is
+what makes the retraction onto the core the identity, and folding it forces the reading to pay for
+the fold, a description of the WORLD rather than of the reading. -/
+
+/-- **The world of a `c`-cycle core with one-step basins**: a fixed cycle `cyc` runs the first `c`
+states, and each of `tr` further states is routed directly into the core by `β`. Every world of
+this shape shares the same core (the first `c` states) and differs only in `β`, so the `c ^ tr`
+choices of `β` enumerate the worlds of the shape outright. -/
+def basinWorld {c tr : ℕ} (cyc : Perm (Fin c)) (β : Fin tr → Fin c) : Fin (c + tr) → Fin (c + tr) :=
+  Fin.append (fun i => Fin.castAdd tr (cyc i)) (fun j => Fin.castAdd tr (β j))
+
+/-- The world acts as the fixed cycle on the core. -/
+@[simp] private theorem basinWorld_core {c tr : ℕ} (cyc : Perm (Fin c)) (β : Fin tr → Fin c)
+    (i : Fin c) : basinWorld cyc β (Fin.castAdd tr i) = Fin.castAdd tr (cyc i) := by
+  simp [basinWorld, Fin.append_left]
+
+/-- The world routes a transient state into the core by `β`, in one step. -/
+@[simp] private theorem basinWorld_transient {c tr : ℕ} (cyc : Perm (Fin c)) (β : Fin tr → Fin c)
+    (j : Fin tr) : basinWorld cyc β (Fin.natAdd c j) = Fin.castAdd tr (β j) := by
+  simp [basinWorld, Fin.append_right]
+
+/-- **The reference frame at a transient state is pinned by the frame at the core state one cycle
+step behind its landing point** — reading the persistence identity at `t = 1` twice, once through
+the transient route and once through the core route it lands beside, and matching the two. This is
+the mechanism behind Proposition 7.9(i): `carries_frame_zero_congr` gives the general merging
+statement, and this is what merging costs a transient state specifically, in THIS shape of world. -/
+private theorem basinWorld_confine {c tr k : ℕ} {cyc : Perm (Fin c)} {β : Fin tr → Fin c}
+    {ℓ : Lens (Fin (c + tr)) (Fin k)} (h : Carries (basinWorld cyc β) ℓ) (j : Fin tr) :
+    ℓ 0 (Fin.castAdd tr (cyc.symm (β j))) = ℓ 0 (Fin.natAdd c j) := by
+  have e1 : ℓ 1 (Fin.castAdd tr (β j)) = ℓ 0 (Fin.natAdd c j) := by
+    have := h.2 1 (Fin.natAdd c j)
+    rwa [Function.iterate_one, basinWorld_transient] at this
+  have e2 : ℓ 1 (Fin.castAdd tr (β j)) = ℓ 0 (Fin.castAdd tr (cyc.symm (β j))) := by
+    have := h.2 1 (Fin.castAdd tr (cyc.symm (β j)))
+    rwa [Function.iterate_one, basinWorld_core, Equiv.apply_symm_apply] at this
+  rw [← e1, e2]
+
+/-- A non-constant function's fibres are all proper: none of them is the whole domain, so each has
+at most `c - 1` elements. -/
+private theorem card_fiber_le_of_nonconst {c k : ℕ} {f : Fin c → Fin k} (hf : ∃ x y, f x ≠ f y)
+    (v : Fin k) : Nat.card {x : Fin c // f x = v} ≤ c - 1 := by
+  obtain ⟨x, y, hxy⟩ := hf
+  have hne : {x : Fin c | f x = v} ≠ Set.univ := by
+    intro heq
+    exact hxy (by rw [show f x = v from Set.eq_univ_iff_forall.mp heq x,
+      show f y = v from Set.eq_univ_iff_forall.mp heq y])
+  have hssub : {x : Fin c | f x = v} ⊂ Set.univ := Set.ssubset_univ_iff.mpr hne
+  have hlt := Set.ncard_lt_ncard hssub Set.finite_univ
+  rw [Set.ncard_univ, Nat.card_eq_fintype_card, Fintype.card_fin] at hlt
+  have hcast : Nat.card {x : Fin c // f x = v} = {x : Fin c | f x = v}.ncard :=
+    Nat.card_coe_set_eq _
+  omega
+
+/-- The `β` compatible with a fixed core reading `g` and transient reading `hval` — landing, for
+each transient state, in the core fibre its own table entry names — is a Pi type of fibres. -/
+private noncomputable def compatEquiv {c tr k : ℕ} (cyc : Perm (Fin c)) (g : Fin c → Fin k)
+    (hval : Fin tr → Fin k) : {β : Fin tr → Fin c // ∀ j, g (cyc.symm (β j)) = hval j}
+      ≃ ∀ j : Fin tr, {x : Fin c // g (cyc.symm x) = hval j} :=
+  Equiv.subtypePiEquivPi (p := fun (j : Fin tr) (x : Fin c) => g (cyc.symm x) = hval j)
+
+/-- **The confined count** ([Persistence] §7, Proposition 7.9(ii)'s counting core): the `β`
+compatible with a fixed NON-CONSTANT core reading `g` and a fixed transient reading `hval` number
+at most `(c - 1) ^ tr` — each of the `tr` transient states is confined to one fibre of `g`, and a
+non-constant `g`'s fibres are all of size at most `c - 1`. -/
+private theorem card_compat_le {c tr k : ℕ} (cyc : Perm (Fin c)) {g : Fin c → Fin k}
+    (hg : ∃ x y, g x ≠ g y) (hval : Fin tr → Fin k) :
+    Nat.card {β : Fin tr → Fin c // ∀ j, g (cyc.symm (β j)) = hval j} ≤ (c - 1) ^ tr := by
+  rw [Nat.card_congr (compatEquiv cyc g hval), Nat.card_pi]
+  have hgc : ∃ x y, (fun x => g (cyc.symm x)) x ≠ (fun x => g (cyc.symm x)) y := by
+    obtain ⟨x, y, hxy⟩ := hg
+    exact ⟨cyc x, cyc y, by simpa using hxy⟩
+  calc ∏ j : Fin tr, Nat.card {x : Fin c // g (cyc.symm x) = hval j}
+      ≤ ∏ _j : Fin tr, (c - 1) :=
+        Finset.prod_le_prod (fun _ _ => Nat.zero_le _)
+          (fun j _ => card_fiber_le_of_nonconst hgc (hval j))
+    _ = (c - 1) ^ tr := by rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+
+/-- At most `2 ^ (b + 1)` reference frames on `Fin n → Fin k` are affordable at budget `b` —
+`card_KE_le`'s counting bound, pulled back along `lensCode`'s injectivity. -/
+private theorem card_affordable_le (n k b : ℕ) :
+    Nat.card {f : Fin n → Fin k // KE (lensCode f) ≤ b} ≤ 2 ^ (b + 1) := by
+  haveI : Finite {v : ℕ // KE v ≤ b} := (finite_KE_le b).to_subtype
+  have hinj : Function.Injective
+      (fun f : {f : Fin n → Fin k // KE (lensCode f) ≤ b} =>
+        (⟨lensCode f.1, f.2⟩ : {v : ℕ // KE v ≤ b})) := by
+    intro a a' hab
+    exact Subtype.ext (lensCode_injective (congrArg Subtype.val hab))
+  have hle := Nat.card_le_card_of_injective _ hinj
+  have heq : Nat.card {v : ℕ // KE v ≤ b} = {v : ℕ | KE v ≤ b}.ncard := Nat.card_coe_set_eq _
+  have hcard := card_KE_le b
+  omega
+
+/-- **Proposition 7.9(ii)** ([Persistence] §7): fix a `c`-cycle core and route each of `tr`
+transient states directly into it by `β`. At budget `b`, over a fixed label count `k`, at most
+`2 ^ (b + 1) * (c - 1) ^ tr` of the `c ^ tr` worlds of this shape admit ANY non-constant affordable
+carried family — a vanishing fraction as `tr → ∞` at fixed `c`, `b`, `k`, however large the core:
+folding the carrier into a core forces the reading to pay for the fold, which is a description of
+the world and not of the reading.
+
+The mechanism: a carried family's reference frame at a transient state is pinned, by
+`basinWorld_confine`, to agree with the reference frame at one specific core state — so once the
+frame is fixed and affordable (`card_affordable_le`), each transient state has at most `c - 1`
+places left to be routed to (`card_compat_le`), and the two bounds multiply. -/
+theorem card_basinWorld_carries_le (c tr k b : ℕ) (cyc : Perm (Fin c)) :
+    Nat.card {β : Fin tr → Fin c //
+        ∃ ℓ : ℕ → Fin (c + tr) → Fin k, Carries (basinWorld cyc β) ℓ ∧ PermBudget ℓ b ∧
+          ∃ x y : Fin c, ℓ 0 (Fin.castAdd tr x) ≠ ℓ 0 (Fin.castAdd tr y)}
+      ≤ 2 ^ (b + 1) * (c - 1) ^ tr := by
+  classical
+  set AffN := {f : Fin (c + tr) → Fin k //
+      KE (lensCode f) ≤ b ∧ ∃ x y : Fin c, f (Fin.castAdd tr x) ≠ f (Fin.castAdd tr y)}
+    with hAffdef
+  have hAffCard : Nat.card AffN ≤ 2 ^ (b + 1) := by
+    haveI : Finite {v : ℕ // KE v ≤ b} := (finite_KE_le b).to_subtype
+    have hinj : Function.Injective
+        (fun f : AffN => (⟨lensCode f.1, f.2.1⟩ : {v : ℕ // KE v ≤ b})) :=
+      fun a a' hab => Subtype.ext (lensCode_injective (congrArg Subtype.val hab))
+    have hle := Nat.card_le_card_of_injective _ hinj
+    have heq : Nat.card {v : ℕ // KE v ≤ b} = {v : ℕ | KE v ≤ b}.ncard := Nat.card_coe_set_eq _
+    have hcard := card_KE_le b
+    omega
+  haveI hAffFin : Finite AffN := by
+    haveI : Finite {v : ℕ // KE v ≤ b} := (finite_KE_le b).to_subtype
+    exact Finite.of_injective (fun f : AffN => (⟨lensCode f.1, f.2.1⟩ : {v : ℕ // KE v ≤ b}))
+      (fun a a' hab => Subtype.ext (lensCode_injective (congrArg Subtype.val hab)))
+  haveI : Fintype AffN := Fintype.ofFinite _
+  set Compat : AffN → (Fin tr → Fin c) → Prop :=
+      fun f β' => ∀ j, f.1 (Fin.castAdd tr (cyc.symm (β' j))) = f.1 (Fin.natAdd c j)
+    with hCompatdef
+  -- the sigma type: an affordable non-constant frame, and a `β'` compatible with it
+  have hSigmaCard : Nat.card {p : AffN × (Fin tr → Fin c) // Compat p.1 p.2}
+      ≤ 2 ^ (b + 1) * (c - 1) ^ tr := by
+    rw [Nat.card_congr (Equiv.subtypeProdEquivSigmaSubtype Compat), Nat.card_sigma]
+    calc ∑ f : AffN, Nat.card {β' // Compat f β'}
+        ≤ ∑ _f : AffN, (c - 1) ^ tr := by
+          refine Finset.sum_le_sum fun f _ => ?_
+          exact card_compat_le cyc f.2.2 (fun j => f.1 (Fin.natAdd c j))
+      _ = Nat.card AffN * (c - 1) ^ tr := by
+          rw [Finset.sum_const, Finset.card_univ, Nat.card_eq_fintype_card, smul_eq_mul]
+      _ ≤ 2 ^ (b + 1) * (c - 1) ^ tr := Nat.mul_le_mul_right _ hAffCard
+  have hΦinj : Function.Injective (fun s : {β : Fin tr → Fin c //
+        ∃ ℓ : ℕ → Fin (c + tr) → Fin k, Carries (basinWorld cyc β) ℓ ∧ PermBudget ℓ b ∧
+          ∃ x y : Fin c, ℓ 0 (Fin.castAdd tr x) ≠ ℓ 0 (Fin.castAdd tr y)} =>
+      (⟨(⟨s.2.choose 0, s.2.choose_spec.2.1 0, s.2.choose_spec.2.2⟩, s.1),
+        fun j => basinWorld_confine s.2.choose_spec.1 j⟩ :
+        {p : AffN × (Fin tr → Fin c) // Compat p.1 p.2})) := by
+    intro s s' hss'
+    exact Subtype.ext (congrArg Prod.snd (congrArg Subtype.val hss'))
+  calc Nat.card {β : Fin tr → Fin c // ∃ ℓ : ℕ → Fin (c + tr) → Fin k,
+        Carries (basinWorld cyc β) ℓ ∧ PermBudget ℓ b ∧
+          ∃ x y : Fin c, ℓ 0 (Fin.castAdd tr x) ≠ ℓ 0 (Fin.castAdd tr y)}
+      ≤ Nat.card {p : AffN × (Fin tr → Fin c) // Compat p.1 p.2} :=
+        Nat.card_le_card_of_injective _ hΦinj
+    _ ≤ 2 ^ (b + 1) * (c - 1) ^ tr := hSigmaCard
 
 /-! ## Time dilation: the rule transports at `O (log τ)`
 
@@ -1191,8 +1359,8 @@ theorem CbHev_le_factorial (U : Fin n → Fin n) {B : Finset (Fin n)} (hB : ∀ 
 `CbHu_le_CbH` compares the two budgets over a permutation world, where a carried family's frames
 repeat with the world's period and the owner's clock therefore never counts past `orderOf U`. Over a
 general endofunction that argument is unavailable as stated: `lensCode` prices the AMBIENT table,
-frames off the recurrent core are unconstrained by the persistence identity, and so the frames of a
-carried family need not repeat at all.
+and it is the LATER frames — `ℓ t` for `t ≥ 1` — that are unconstrained wherever they read off the
+image of `U^[t]`, so the frames of a carried family need not repeat at all.
 
 They do not have to. The capacity is a supremum over families *achieving a value*, not a statement
 about the family one is handed — so it is enough to exhibit, for each uniform family, SOME per-frame
@@ -1444,7 +1612,7 @@ set_option linter.style.longLine false in
 #guard_msgs (whitespace := lax) in
 #print axioms Intertwines.fixed_bijective
 
-/-! ### The lossy ledger ([Guests] §2 Remark 2.4(a); [Persistence] §8.2)
+/-! ### The lossy ledger ([Guests] §2 Remark 2.4(a); [Guests] §9.2)
 
 The coset argument behind `ledger_graded` only ever reads the world through a reference frame and
 its own one-step image; it never uses that the family is itself persistent. So a lossy guest law
@@ -1456,7 +1624,7 @@ decreases for `d` steps starting at `Set.range F` forces `Set.range F` to carry 
 elements, since each step drops the count by at least one and the chain's last term is
 non-empty. -/
 
-/-- **The lossy ledger** ([Guests] §2 Remark 2.4(a); [Persistence] §8.2, the dynamical reading): a
+/-- **The lossy ledger** ([Guests] §2 Remark 2.4(a); [Guests] §9.2, the dynamical reading): a
 lossy guest law `F` running behind a persistent family `ℓ` is priced exactly as `ledger_graded`
 prices a persistent family's own two frames, with `F ∘ ℓ 0` as the reference frame — the coset term
 runs over `F ∘ ℓ 0`'s fibres rather than `ℓ 0`'s.
@@ -1545,13 +1713,13 @@ private theorem chain_card_add_le {c : ℕ → ℕ} {d : ℕ} (h : ∀ j < d, c 
     have h2 : c d + d ≤ c 0 := ih (fun j hj => h j (hj.trans (Nat.lt_succ_self d)))
     omega
 
-/-- **The image-chain bound** ([Guests] §8.2): if a law's iterated images strictly decrease for `d`
+/-- **The image-chain bound** ([Guests] §9.2): if a law's iterated images strictly decrease for `d`
 steps starting at its own image — `Set.range F ⊃ Set.range (F^[2]) ⊃ ⋯ ⊃ Set.range (F^[d])`, each
 inclusion strict, with the chain's last term `Set.range (F^[d])` non-empty — then
 `d ≤ Nat.card (Set.range F)`. Elementary: each strict step drops the image's cardinality by at
 least one, and the last image contributes at least the one further element non-emptiness
 guarantees. This is what turns a lossy guest's settling depth into a resolution bound on the same
-frame `ledger_graded_lossy` prices ([Guests] §8.2). -/
+frame `ledger_graded_lossy` prices ([Guests] §9.2). -/
 theorem settlingDepth_le_card_range {F : Fin m → Fin m} {d : ℕ}
     (hchain : ∀ j, j + 1 < d → Set.range (F^[j + 2]) ⊂ Set.range (F^[j + 1]))
     (hlast : (Set.range (F^[d])).Nonempty) :
@@ -1572,7 +1740,7 @@ set_option linter.style.longLine false in
 #guard_msgs (whitespace := lax) in
 #print axioms settlingDepth_le_card_range
 
-/-- **The resolution clause, at the parity guest's own witness** ([Guests] §8.2): the parity-then-
+/-- **The resolution clause, at the parity guest's own witness** ([Guests] §9.2): the parity-then-
 die guest's law `fun _ => 0` has a SINGLETON range, so `settlingDepth_le_card_range`'s resolution
 bound pins any settling depth this law admits to at most one step — depth one at resolution one
 prices nothing. This is the guard `intertwines_parityLens`/`parityLens_intertwines_not_carries`
@@ -1597,7 +1765,7 @@ set_option linter.style.longLine false in
 #guard_msgs (whitespace := lax) in
 #print axioms settlingDepth_parityLens_le_one
 
-/-! ### The law-blind count and its ledger ([Guests] §8.2)
+/-! ### The law-blind count and its ledger ([Guests] §9.2)
 
 Persistence prices the world against ONE named law. The count behind it is coarser: among every
 permutation SOME law could explain — quantifying the law away entirely — how many are there?
@@ -1607,13 +1775,13 @@ own law only on the domain lens's actual image, so the count splits into a choic
 map — at most `(card range ℓ') ^ (card range ℓ)` of them — times one `ℓ'`-fibre-stabilizer coset
 per choice (`∏ᵢ (fibreᵢ)!`, `card_stabilizer_lens`). -/
 
-/-- **The permutations some law explains** ([Guests] §8.2): the set a fixed pair of lenses
+/-- **The permutations some law explains** ([Guests] §9.2): the set a fixed pair of lenses
 `(ℓ, ℓ')` cannot distinguish from carrying a law of its own — quantifying the law away, unlike
 `PermCarries`/`Intertwines`, which each fix one. -/
 def LawBlind (ℓ ℓ' : Fin n → Fin m) : Set (Perm (Fin n)) :=
   {V : Perm (Fin n) | ∃ f : Fin m → Fin m, ℓ' ∘ ⇑V = f ∘ ℓ}
 
-/-- **The law-blind count** ([Guests] §8.2): at most `(card range ℓ') ^ (card range ℓ)` guesses at
+/-- **The law-blind count** ([Guests] §9.2): at most `(card range ℓ') ^ (card range ℓ)` guesses at
 the induced partial law, each pinning `V` down to one `ℓ'`-fibre-stabilizer coset — one map guess
 per point `ℓ` actually reads, times `card_stabilizer_lens`'s own coset size. -/
 theorem card_lawBlind_le (ℓ ℓ' : Fin n → Fin m) :
@@ -1699,7 +1867,7 @@ set_option linter.style.longLine false in
 #guard_msgs (whitespace := lax) in
 #print axioms card_lawBlind_le
 
-/-! ### The law-blind ledger, over the paired frame ([Guests] §8.2)
+/-! ### The law-blind ledger, over the paired frame ([Guests] §9.2)
 
 `card_lawBlind_le` counts; this enumerates. A fixed decoder recovers `U`'s own table from the
 paired frame `pairLens ℓ ℓ'` plus an index into the SAME set the count bounds —
@@ -1779,7 +1947,7 @@ private theorem lbOK_iff (n t0 t1 w i j : ℕ) :
     · right; exact h hcond
     · left; exact hcond
 
-/-- **The doubly-bounded law-blind search** ([Guests] §8.2): every pair of positions in `[0, n)`
+/-- **The doubly-bounded law-blind search** ([Guests] §9.2): every pair of positions in `[0, n)`
 respects `lbOK` — `candBijBool`'s own outer shape, folded over `lbOK` instead of `pairOK`. -/
 private def lbBool (n t0 t1 w : ℕ) : Bool :=
   (List.range n).all fun i => (List.range n).all fun j => lbOK n t0 t1 w i j
@@ -2105,7 +2273,7 @@ private theorem eval_pairedGradedBuilderLB (a : ℕ) :
 paired frame code, and the coset index, `pairedLedgerConst`'s own shape at the law-blind builder. -/
 noncomputable def pairedLedgerConstLB : ℕ := elen pairedGradedBuilderLB + 2 * (15 + elen dbl) + 15
 
-/-- **The law-blind ledger** ([Guests] §8.2): one step of an intertwining square — `ℓ' ∘ U = F ∘ ℓ`
+/-- **The law-blind ledger** ([Guests] §9.2): one step of an intertwining square — `ℓ' ∘ U = F ∘ ℓ`
 for SOME `F`, which `Intertwines` supplies at every `t` — prices `U` against the paired frame
 `pairLens ℓ ℓ'` plus an index into `card_lawBlind_le`'s own count, no term reading `F` at all: the
 address is `(ℓ, ℓ')` alone, quantifying the law away exactly as `LawBlind` does. Mirrors

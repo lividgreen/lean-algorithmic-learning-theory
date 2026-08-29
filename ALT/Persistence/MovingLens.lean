@@ -22,10 +22,11 @@ can be read off the observer's first two frames.
 
 ## Main results
 
-* `corePerm` / `carries_coreLens_eq` / `carries_frame_eqOn_core` — **the frames are determined on
-  the core**: over ANY endofunction world, `U` restricted to the core is a permutation `corePerm`,
-  and a carried family satisfies `ℓ t = ℓ 0 ∘ (corePerm U ^ t)⁻¹` there. Off the core the
-  identity constrains nothing. On the core every frame is the reference frame, transported.
+* `corePerm` / `carries_coreLens_eq` / `carries_frame_eqOn_core` / `carries_frame_zero_congr` —
+  **the frames are determined on the core, and the reference frame is pinned everywhere**: over
+  ANY endofunction world, `U` restricted to the core is a permutation `corePerm`, and a carried
+  family satisfies `ℓ t = ℓ 0 ∘ (corePerm U ^ t)⁻¹` there. `ℓ 0` itself is forced through the
+  retraction onto the core; what stays free are the later frames, off the image of `U^[t]`.
 * `lens_bijOn_core` / `ledger` / `ledger_determines` — the price of the escape: if the family
   carries a MAXIMAL model then every frame is a bijection on the core and `U` restricted to the
   core is `ℓ₁⁻¹ ∘ ℓ₀` — the world's recurrent rule is recoverable from the observer's first two
@@ -54,11 +55,13 @@ reference frame *on the recurrent core*, on the ground that "on the core every f
 composed with a power of the core permutation, so all frames share one profile". This section proves
 that, for an arbitrary endofunction world.
 
-Off the core there is nothing to prove and nothing to say. `U` need not be injective on the
-transient states, distinct frames may read them however they like, and the persistence identity
-constrains none of it. On the core `U` *is* a bijection (`core_bijOn`), hence a genuine permutation
-`corePerm` of the core, and the identity solves for `ℓ t` exactly as it does over a permutation
-world (`permCarries_frame_eq`) — the difference being that here the inverse exists only after
+Off the core the identity is not silent: it still pins the reference frame. `ℓ 0` is forced through
+the retraction onto the core, so it already agrees on any two states the dynamics ever merges
+(`carries_frame_zero_congr`). What it leaves free are the LATER frames — `ℓ t` for `t ≥ 1` may read
+a state off the image of `U^[t]` however it likes, and the identity says nothing there. On the core
+`U` *is* a bijection (`core_bijOn`), hence a genuine permutation `corePerm` of the core, and the
+identity solves for `ℓ t` there exactly as it does over a permutation world
+(`permCarries_frame_eq`) — the difference being that here the inverse exists only after
 restricting. -/
 
 /-- **The recurrent rule, as a permutation of the core.** `U` restricts to a bijection there
@@ -108,8 +111,10 @@ prices a whole family by `E (ℓ₀)`.
 
 `corePerm U ^ t` is invertible, so the persistence identity `ℓ t ∘ U^[t] = ℓ 0` solves on the core
 for `ℓ t = ℓ 0 ∘ (corePerm U ^ t)⁻¹`: a carried family has no freedom on the core past its reference
-frame, over ANY endofunction world. Whatever the frames do on the transient states — where they are
-wholly unconstrained — the recurrent part of every reading is one relabelling of `ℓ 0`.
+frame, over ANY endofunction world — the recurrent part of every reading is one relabelling of
+`ℓ 0`. Off the core it is only the LATER frames that are unconstrained: `ℓ t` for `t ≥ 1` may read a
+transient state off the image of `U^[t]` however it likes. `ℓ 0` itself is pinned everywhere, forced
+through the retraction onto the core (`carries_frame_zero_congr`).
 
 Spelled as an explicit composition rather than through the relabelling action, for the reason given
 at `arrowAction` below: the two are definitionally equal, and only this one means what it says after
@@ -121,9 +126,20 @@ theorem carries_coreLens_eq [Finite X] {U : X → X} {ℓ : Lens X M} (h : Carri
   rw [← corePerm_pow_apply U t ((corePerm U ^ t)⁻¹ x)] at hy
   simpa [coreLens] using hy
 
+/-- **The reference frame factors through the retraction onto the core** ([Persistence] §2,
+Definition 2.2; §6, Theorem 6.1's own proof step). Persistence at any `t` merging two states forces
+`ℓ 0` to read them alike — no finiteness and no stabilizing index needed, this holds at whatever `t`
+merges the two states, which is the sharp form. Only the LATER frames are free, and only off the
+image of `U^[t]` (`carries_coreLens_eq`). Over a permutation world the content is empty: the
+retraction is the identity, and every state is already its own image. -/
+theorem carries_frame_zero_congr {U : X → X} {ℓ : Lens X M} (h : Carries U ℓ) {s s' : X} {t : ℕ}
+    (hst : U^[t] s = U^[t] s') : ℓ 0 s = ℓ 0 s' := by
+  rw [← h.2 t s, ← h.2 t s', hst]
+
 /-- **Determination on the core, ambiently**: the same statement read back in `X`, with the core
-permutation's inverse spelled as `U`'s inverse along the core. `Set.EqOn` is the honest form — off
-the core the identity says nothing. -/
+permutation's inverse spelled as `U`'s inverse along the core. `Set.EqOn` is the honest form —
+off the core THIS equation says nothing, `invFunOn` having no meaning there. The identity itself is
+not silent off the core: it pins `ℓ 0` everywhere (`carries_frame_zero_congr`). -/
 theorem carries_frame_eqOn_core [Finite X] [Nonempty X] {U : X → X} {ℓ : Lens X M}
     (h : Carries U ℓ) (t : ℕ) :
     Set.EqOn (ℓ t) (ℓ 0 ∘ (Function.invFunOn U (core U))^[t]) (core U) := by

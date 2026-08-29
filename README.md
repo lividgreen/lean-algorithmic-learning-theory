@@ -54,13 +54,14 @@ points:
 | [`GodelThreshold.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/GodelThreshold.html) | the capacity threshold at which self-representation turns into incompleteness |
 | [`LearningWitness.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/LearningWitness.html) | an explicit system that meets those prerequisites — built, not assumed to exist |
 | [`GrowingHostWitness.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/GrowingHostWitness.html) | a growing world that emits its own learning oracle, membership proved from its own dynamics |
+| [`GrowingSeamWitness.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/GrowingSeamWitness.html) | a growing world in both route-classes at once — learning from its own emitted process, emergence from its own growth — at any envelope-profile source |
 
 ## Verification standard
 
 - No `sorry`, `admit`, or `native_decide`; standard axioms only
   (`propext`, `Classical.choice`, `Quot.sound`) — several cores are
   choice-free, and the structural capstone depends on no axioms at all.
-- **Build-enforced axiom hygiene**: 1063 `#guard_msgs in #print axioms` guards
+- **Build-enforced axiom hygiene**: 1120 `#guard_msgs in #print axioms` guards
   assert each capstone's exact axiom set; `lake build` fails on any drift.
 - **CI-enforced whole-library audit**: every declaration under `ALT` — not only
   the guarded capstones — is checked against the same allowlist by
@@ -192,9 +193,15 @@ replace them.
   and quantitative mixing cannot coexist on a finite alphabet — a process each
   of whose observations is determined by the previous `k` is eventually
   periodic, choice-free. The `MixingHoeffding` rate hypothesis is pinned at
-  both ends: a *theorem* at the i.i.d. end, a vacuity guard at non-positive
-  constants, and genuine refutability at every positive constant — the
-  constant is where the hypothesis's content lives. A horizon-bounded twin
+  both ends — a *theorem* at the i.i.d. end, a vacuity guard at non-positive
+  constants, and genuine refutability at every positive constant, the
+  constant being where the hypothesis's content lives — and now **derived
+  outright at finite state** (`MarkovHoeffding.lean`): every finite-state
+  Markov chain with an operator-norm spectral gap has a machine-checked
+  trajectory law and satisfies the tail at it, at an explicit constant
+  (`exists_mixingHoeffding_of_gap`, via the transfer-operator induction
+  `transferIter_invariant`) — dependent-process concentration of a kind
+  Mathlib itself does not yet carry. A horizon-bounded twin
   (`MixingHoeffdingTo N`, what a learner reading one orbit segment actually
   consumes) carries its own vacuity floor and refutations; on it, the oracle
   over a whole scheduled query class is derived from a single orbit segment
@@ -521,6 +528,76 @@ replace them.
   The world grows, and what it grows is its own oracle. Boundary: the code
   region is read-only by construction but carries no computational role — it
   exists because the class asks for a code/work split.
+- **The growing core: the merge quotient as the canonical conservation
+  guest** (`GrowingCore.lean`, `GrowingCoreCrossing.lean`): two states of a
+  growing world eventually merge when some iterate identifies them, and the
+  quotient carries an induced law that is injective with no hypothesis at all
+  (`mergeLaw_injective`) and closes the staged square at every stage family
+  (`stagedSquare_merge`). Every injective-law staged reading factors through
+  it (`merges_invariant_of_stagedSquare`, `exists_mergeMk_injective`), so its
+  retained profile is the exact ceiling on every conservation guest's extent;
+  at a finite constant-stage host it is in bijection with the recurrent core
+  (`mergeQuotCoreEquiv`), and robustness is merging by construction — the
+  accreting witness's one-step erasure is a one-step merge
+  (`accMerges_of_accErasure`). The witness's crossing generalizes from its own
+  budget `t + 1` to any monotone unbounded budget profile
+  (`eventually_hosts_uniform`). Boundary: no pricing and no ownership claim —
+  an affordable canonical-representative selector stays a named hypothesis at
+  paper level, and identifying a guest's stage budget with its bit count is
+  the interpretive step owed there.
+- **The memory width: a clock is not a memory** (`MemoryWidth.lean`): the
+  antichain width of the retained profile under the induced law's
+  reachability (`memWidth`, `ℕ∞`-valued), monotone with no hypothesis beyond
+  `Advances` (`memWidth_mono`). The successor world's retained profile is
+  unbounded while its width stays at one (`memWidth_nat_succ_eq_one`), and a
+  fast counter meets the flag hypothesis read at set level — its profile in
+  bijection with `Bool^t` — with the same width
+  (`mergeStage_nat_succ_fastClock_encard`): the raw class count decides
+  nothing. The accreting witness's width is at least `2^(t+1)` in any
+  environment (`memWidth_accreting_ge`), exact at a trivial one
+  (`memWidth_accreting_eq_of_trivialEnv`), and the crossing composes from the
+  width (`eventually_hosts_uniform_of_accreting_memWidth`). Boundary: a
+  separation, not a dichotomy — an antichain-shaped conservation guest can
+  exceed the width (`exists_conservationGuest_extent_gt_memWidth`).
+- **The pricing economy's growing form** (`GrowingPrice.lean`): the
+  fixed-carrier Collapse Theorem does not transport — determination fails for
+  a merely injective stage law (`exists_ne_frames_agreeing_on_range`) — while
+  the graded ledger's coset count does, with falling factorials where the
+  fixed carrier has factorials (`card_stageLaws`, `card_lawsConsistentWith`)
+  and the originals recovered at equal sizes. The Kraft union collapse in pair
+  form (`collapse_union_staged`) is non-vacuous (`exists_qualifying_pair_of_pos`)
+  and is read at a growing world's own stage law (`collapse_union_growing`).
+  The staged capacity `CbHs` is two-sided: capped at `2b + d + 2` outside a
+  `2^{-d}` fraction of candidates (`CbHs_collapse`), floored by a marking
+  family uniformly in the stage law (`CbHs_ge_marking`), the fixed-carrier
+  capacity recovered at the world's own embedding (`CbH_le_CbHs`) — and the
+  floor is optimal in its own quantifier: no family floors the staged
+  capacity above `2b + 3` uniformly in the stage law
+  (`exists_candidate_capacity_le`). A telescope realizes any sequence of
+  injections as some growing world's own stage law
+  (`telescope_realizes_lawSequence`), which is why growth cannot sharpen the
+  bound. Boundary: the complexity-form transport of the ledger's `K(U) ≤ …`
+  display is not attempted; the growing-world statements are relative to a
+  chosen enumeration of the two retained profiles and price only the
+  stage-to-stage law.
+- **The growing seam, class-level: one growing world in both route-classes**
+  (`GrowingSeamWitness.lean`): the accreting healer world fused with an
+  arbitrary fed observation `o`, the appended block carrying `o`'s next value
+  read off the habitat's own length, so the decoded word at stage `t` is
+  exactly the observation prefix (`seamOrbit_fst`). The emergence package
+  transports with no hypothesis on `o` (`seam_outgrows_paMinus`); a packed
+  realization folds the habitat into one `Decoupling.Mem` whose own
+  observation cell reproduces `o` along its orbit
+  (`seamHostSubstrateTraj_eq_obs`); the packed carrier is a member of `𝒮_L`
+  at any envelope-profile source, its E1 drawn from the envelope theorem on
+  its own process (`seamHostWitness_substrateL`), and a member of `𝒮_E` at any
+  `o` whatever, at the same numerals (`seamHostWitness_substrateE`). The
+  overlap bundle ties the two at the same dynamics (`growingSeam_overlap`),
+  and the substitution instance is recovered exactly
+  (`growingSeam_overlap_subObs`). Boundary: the packed realization drops the
+  environment coordinate; no description-length pricing appears; the
+  witness's affordability and the budget-to-bit-count identification stay
+  paper-level.
 
 ## Papers
 
@@ -530,7 +607,10 @@ the series by bracketed short-title keys: **[Decoupling]** (decoupling and the
 categorical threshold for representational reflection), **[Discovery]** (MDL
 dominance and finite-time rule discovery), **[SQ]** (polynomial-time
 convergence under statistical queries), **[Persistence]** (resource-bounded
-persistence capacity: the priced decoder), **[Growth]** (endogenous
+persistence capacity: the priced decoder), **[Guests]** (a description-length
+theory of systems running inside finite and growing dynamical systems: priced
+factors, the Witness World, emergence, and growing worlds with their growing
+core, memory width and staged collapse), **[Growth]** (endogenous
 observability on growing hosts: statistical-query learning from substitution
 sources at explicit horizons), and **[Inevitability]** (the
 realization-synthesis capstone: two independent routes to a reflective

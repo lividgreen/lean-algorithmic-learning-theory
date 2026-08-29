@@ -122,7 +122,7 @@ stays prose and is never represented here.  **A theorem with no row in this
 section is not a theorem that assumes nothing** — an anonymous hypothesis (a
 bare equation, an upstream typeclass, an unnamed `∀`-statement) carries no
 row by design, same as a theorem that is genuinely hypothesis-free.
-`scripts/hypratchet.py` reads this section as a delta ratchet, never an
+The hypothesis ratchet reads this section as a delta ratchet, never an
 absolute gate, on exactly this rule's own precedent (`visratchet`'s seed rule
 was wrong four times before it stabilized).
 

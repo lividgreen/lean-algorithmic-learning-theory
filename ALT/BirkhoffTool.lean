@@ -27,9 +27,13 @@ and connects it to the FV-E oracle interface.
 
 * `MixingHoeffding` — the FJS-shaped (Fan–Jiang–Sun, JMLR 22(139), 2021, Thm 1) *quantitative*
   single-orbit Hoeffding tail with the variance proxy inflated by a spectral-gap constant `c ≥ 1`.
-  Proving `MixingHoeffding` from a spectral gap (i.e. proving FJS) is registered as its own future
-  target; here it is a named premise, exactly as the qualitative Tool (i) does not by itself give a
-  rate.  At `c = 1` (`λ = 0`, i.i.d.) it is exactly `SQOracle.sq_oracle_concentration`.
+  `ALT.MarkovHoeffding.mixingHoeffding_of_gap` DERIVES it, for a finite-state chain, from an
+  operator-norm spectral gap (`GapContraction`) and a chain trajectory law (`IsChainMeasure`), at
+  an explicit constant `cGap lam`; here it stays a named premise, exactly as the qualitative
+  Tool (i) does not by itself give a rate.  The derivation's own `IsChainMeasure` hypothesis is
+  now discharged unconditionally too: `ALT.MarkovHoeffding.exists_mixingHoeffding_of_gap` supplies
+  a chain measure for every `Stochastic`/`GapContraction` pair, via Mathlib's Ionescu-Tulcea
+  construction.  At `c = 1` (`λ = 0`, i.i.d.) it is exactly `SQOracle.sq_oracle_concentration`.
 * `mixing_oracle_sample_complexity`, `mixing_oracle_tail` — the oracle-error corollaries derived
   *from* `MixingHoeffding`: `n ≥ (2c/τ²)·log(2/δ)` single-orbit steps answer an SQ query to
   tolerance `τ` with confidence `≥ 1 − δ`, in the exact shapes the FV-E interface
@@ -125,8 +129,10 @@ the mixing constant `c = (1 + λ)/(1 − λ) ≥ 1`.  (For a query bounded in `[
 factor `1`.)
 
 This is the single-orbit analogue of `SQOracle.sq_oracle_concentration`; at `c = 1` (`λ = 0`,
-the i.i.d. case) the two coincide.  It is stated as a *hypothesis*: deriving it from a spectral gap
-(i.e. proving FJS) is a separate future target, not attempted here. -/
+the i.i.d. case) the two coincide.  It is stated as a *hypothesis*: `ALT.MarkovHoeffding.
+mixingHoeffding_of_gap` derives it, for a finite-state chain, from an operator-norm spectral gap
+and a chain trajectory law, at an explicit (non-sharp) constant `cGap lam`; `ALT.MarkovHoeffding.
+exists_mixingHoeffding_of_gap` supplies that chain trajectory law too, unconditionally. -/
 def MixingHoeffding (μ : Measure (ℕ → X)) (Z : ℕ → (ℕ → X) → ℝ) (predZ c : ℝ) : Prop :=
   ∀ (n : ℕ) (τ : ℝ), 1 ≤ n → 0 ≤ τ →
     μ.real {ω | τ ≤ |empiricalMean Z n ω - predZ|} ≤ 2 * Real.exp (-(n : ℝ) * τ ^ 2 / (2 * c))

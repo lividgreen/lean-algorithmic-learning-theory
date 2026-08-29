@@ -9,6 +9,7 @@ import ALT.GodelCheckerComplete
 import ALT.GodelComplete
 import ALT.ExcessOrderComplete
 import ALT.AccretingExcess
+import ALT.GrowingCoreCrossing
 import ALT.SubstrateEmergence
 import ALT.BlockPairOverlap
 import ALT.TapeHostOverlap
@@ -172,6 +173,21 @@ delivered at that stage's own budget. Axiom-clean via the same `𝗣𝗔⁻` fin
 /-- info: 'AccretingWitness.accreting_outgrows_paMinus' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms AccretingWitness.accreting_outgrows_paMinus
+
+/-! ## The generalized crossing (`ALT/GrowingCoreCrossing.lean`)
+
+`eventually_hostsAt`'s fixed budget `t + 1` pulled back to an arbitrary monotone unbounded budget
+profile — `hostsAt_mono` is the whole glue, so this needs nothing beyond the package above. -/
+
+-- Eventual hosting at an arbitrary monotone unbounded budget. Constructive, like its `t + 1` case.
+/-- info: 'AccretingWitness.eventually_hostsAt_ofBudget' does not depend on any axioms -/
+#guard_msgs (whitespace := lax) in
+#print axioms AccretingWitness.eventually_hostsAt_ofBudget
+
+-- The generalized package — one Gödel size, threaded through `κ` in place of the witness's `t + 1`.
+/-- info: 'AccretingWitness.eventually_hosts_uniform' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms AccretingWitness.eventually_hosts_uniform
 
 -- [Inevitability] §2 Definition 2.3, the class-level `𝒮_E` constructor's crossing clause: a
 -- Gödel size fixed once, that every sufficiently hosting capacity represents — routes through

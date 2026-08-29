@@ -75,7 +75,11 @@ import ALT.GradedApplication
 import ALT.GradedConjugation
 import ALT.GradedSimulation
 import ALT.GrowingComposite
+import ALT.GrowingCore
+import ALT.GrowingCoreCrossing
 import ALT.GrowingHostWitness
+import ALT.GrowingPrice
+import ALT.GrowingSeamWitness
 import ALT.GrowingWorld
 import ALT.GrunwaldMehtaDiscovery
 import ALT.HellingerBridge
@@ -88,6 +92,8 @@ import ALT.LearningWitnessComplete
 import ALT.LogMassEvent
 import ALT.MDLCoding
 import ALT.MDLDominance
+import ALT.MarkovHoeffding
+import ALT.MemoryWidth
 import ALT.MinimalityWitness
 import ALT.NoisyWindowChain
 import ALT.ParameterizedNNO
@@ -174,6 +180,9 @@ series, cited in docstrings as:
 * **[Discovery]** — MDL dominance and finite-time rule discovery;
 * **[SQ]** — polynomial-time convergence under statistical queries;
 * **[Persistence]** — resource-bounded persistence capacity: the priced decoder;
+* **[Guests]** — a description-length theory of systems running inside finite and growing
+  dynamical systems: priced factors, the Witness World, emergence, and growing worlds with
+  their growing core, memory width and staged collapse;
 * **[Growth]** — endogenous observability on growing hosts: statistical-query
   learning from substitution sources at explicit horizons;
 * **[Inevitability]** — the realization-synthesis capstone: two independent routes to

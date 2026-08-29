@@ -3,9 +3,11 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.Probability.Independence.ZeroOne
-import Mathlib.Probability.Independence.Integration
-import Mathlib.Probability.Moments.SubGaussian
+module
+
+public import Mathlib.Probability.Independence.ZeroOne
+public import Mathlib.Probability.Independence.Integration
+public import Mathlib.Probability.Moments.SubGaussian
 
 /-!
 # The two-state parity walk and its sign-weighted Azuma bound
@@ -58,6 +60,8 @@ constant that comes out carries **no dependence on the noise rate**.
   a separate parameter, so a query read through a *window* pays a boundary allowance in the lag
   alone and never in its own offset.
 -/
+
+@[expose] public section
 
 namespace ParityWalk
 
@@ -680,6 +684,8 @@ theorem chiSum_tail (hmeas : ∀ i, Measurable (ξ i)) (hindep : iIndepFun ξ P)
 end Tail
 
 end ParityWalk
+
+end
 
 /-! ## Axiom audit
 
