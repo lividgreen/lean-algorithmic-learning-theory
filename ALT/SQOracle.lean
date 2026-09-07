@@ -126,7 +126,7 @@ private theorem tail_le
   have hsub : {ω | τ ≤ empiricalMean Z n ω - predZ} ⊆
       {ω | (n : ℝ) * τ ≤ ∑ i ∈ Finset.range n, (Z i ω - predZ)} := by
     intro ω hω
-    simp only [Set.mem_setOf_eq] at hω ⊢
+    simp only [Set.mem_ofPred_eq] at hω ⊢
     rw [hTeq ω]
     exact mul_le_mul_of_nonneg_left hω hnpos.le
   refine le_trans (measureReal_mono hsub (measure_ne_top μ _)) (hb.trans_eq ?_)
@@ -167,7 +167,7 @@ theorem sq_oracle_concentration
   have hLset : {ω | τ ≤ empiricalMean (fun i ω => -(Z i ω)) n ω - -predZ}
       = {ω | τ ≤ predZ - empiricalMean Z n ω} := by
     ext ω
-    simp only [Set.mem_setOf_eq, hempneg ω]
+    simp only [Set.mem_ofPred_eq, hempneg ω]
     constructor <;> intro h <;> linarith
   rw [hLset] at hL0
   -- Union bound: `{τ ≤ |empiricalMean − predZ|}` sits inside
@@ -175,7 +175,7 @@ theorem sq_oracle_concentration
   have hsubU : {ω | τ ≤ |empiricalMean Z n ω - predZ|} ⊆
       {ω | τ ≤ empiricalMean Z n ω - predZ} ∪ {ω | τ ≤ predZ - empiricalMean Z n ω} := by
     intro ω hω
-    simp only [Set.mem_setOf_eq, Set.mem_union] at hω ⊢
+    simp only [Set.mem_ofPred_eq, Set.mem_union] at hω ⊢
     rcases abs_choice (empiricalMean Z n ω - predZ) with h | h
     · left; rwa [h] at hω
     · right; rw [h] at hω; linarith
@@ -232,7 +232,7 @@ theorem sq_oracle_sample_complexity
     have hset : {ω | |empiricalMean Z n ω - predZ| < τ}
         = {ω | τ ≤ |empiricalMean Z n ω - predZ|}ᶜ := by
       ext ω
-      simp only [Set.mem_setOf_eq, Set.mem_compl_iff, not_le]
+      simp only [Set.mem_ofPred_eq, Set.mem_compl_iff, not_le]
     rw [hset, measureReal_compl hsetmeas, probReal_univ]
   rw [hcompl]
   linarith [hconc, hexple]
@@ -251,7 +251,7 @@ theorem sq_oracle_truth_survives
   have hsc := sq_oracle_sample_complexity Z predZ n τ δ hmeas hbdd hindep hmean hn1 hτ hδ0 hδ1 hn
   refine hsc.trans (measureReal_mono ?_ (measure_ne_top μ _))
   intro ω hω
-  simp only [Set.mem_setOf_eq] at hω ⊢
+  simp only [Set.mem_ofPred_eq] at hω ⊢
   exact SQVersionSpace.truth_survives_pruning predZ (empiricalMean Z n ω) τ hτ.le hω.le
 
 /-! ### The W-attack: window-noise budget `2η ≤ τ` ([SQ] §3.1)
@@ -320,7 +320,7 @@ theorem sq_oracle_truth_survives_noisy
   have hsc := sq_oracle_sample_complexity Z a n τ δ hmeas hbdd hindep hmean hn1 hτ hδ0 hδ1 hn
   refine hsc.trans (measureReal_mono ?_ (measure_ne_top μ _))
   intro ω hω
-  simp only [Set.mem_setOf_eq] at hω ⊢
+  simp only [Set.mem_ofPred_eq] at hω ⊢
   exact SQVersionSpace.truth_survives_pruning_noisy predR a (empiricalMean Z n ω) τ η hτ.le hη
     hbudget hω.le hnoise
 
@@ -343,7 +343,7 @@ theorem sq_oracle_uniform_tail (Qs : Finset Q) (emp : Q → Ω → ℝ) (tru : Q
     μ {ω | ∃ φ ∈ Qs, τ < |emp φ ω - tru φ|} ≤ Qs.card * ENNReal.ofReal δ := by
   have hset : {ω | ∃ φ ∈ Qs, τ < |emp φ ω - tru φ|}
       = ⋃ φ ∈ Qs, {ω | τ < |emp φ ω - tru φ|} := by
-    ext ω; simp only [Set.mem_setOf_eq, Set.mem_iUnion, exists_prop]
+    ext ω; simp only [Set.mem_ofPred_eq, Set.mem_iUnion, exists_prop]
   rw [hset]
   calc μ (⋃ φ ∈ Qs, {ω | τ < |emp φ ω - tru φ|})
       ≤ ∑ φ ∈ Qs, μ {ω | τ < |emp φ ω - tru φ|} := measure_biUnion_finset_le Qs _
@@ -363,7 +363,7 @@ theorem empirical_isSQOracle (Qs : Finset Q) (emp : Q → Ω → ℝ) (tru : Q �
       ({ω | SQObjects.IsSQOracle (fun φ : ↥Qs => emp (↑φ) ω) (fun φ : ↥Qs => tru (↑φ)) τ}ᶜ)
         = {ω | ∃ φ ∈ Qs, τ < |emp φ ω - tru φ|} := by
     ext ω
-    simp only [Set.mem_compl_iff, Set.mem_setOf_eq, SQObjects.IsSQOracle, not_forall, not_le,
+    simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, SQObjects.IsSQOracle, not_forall, not_le,
       Subtype.exists, exists_prop]
   rw [hcompl]
   exact sq_oracle_uniform_tail Qs emp tru τ δ htail
@@ -393,7 +393,7 @@ theorem empirical_isSQOracle_of_iid (Qs : Finset Q) (hQs : Qs.Nonempty)
       (hindep φ hφ) (hmean φ hφ) hn1 hτ.le
     calc μ {ω | τ < |empiricalMean (Zq φ) n ω - tru φ|}
         ≤ μ {ω | τ ≤ |empiricalMean (Zq φ) n ω - tru φ|} :=
-          measure_mono (Set.setOf_subset_setOf.mpr fun ω h => le_of_lt h)
+          measure_mono (Set.ofPred_subset_ofPred.mpr fun ω h => le_of_lt h)
       _ = ENNReal.ofReal (μ.real {ω | τ ≤ |empiricalMean (Zq φ) n ω - tru φ|}) :=
           (ENNReal.ofReal_toReal (measure_ne_top μ _)).symm
       _ ≤ ENNReal.ofReal (2 * Real.exp (-(n : ℝ) * τ ^ 2 / 2)) := ENNReal.ofReal_le_ofReal hconc

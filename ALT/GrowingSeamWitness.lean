@@ -254,7 +254,7 @@ theorem seamOrbit_fst (k : ℕ) (o : ℕ → Bool) (π : Mem ι_J Bool → Mem �
 open ExcessOrder
 open RealizabilityCCC RealizabilityRecursor
 open AdditiveComplexity
-open LO.FirstOrder LO.FirstOrder.Arithmetic
+open FFL.FirstOrder FFL.FirstOrder.Arithmetic
 
 /-- **The seam world's escape witness, packaged**: `accreting_outgrows_paMinus`'s shape at
 `seamUpdate` / `seamLaw` — the skeleton clauses transported above, beside the uniform excess's

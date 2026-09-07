@@ -71,7 +71,7 @@ namespace BlockPairOverlap
 open Equiv MulAction
 open RealizabilityCCC RealizabilityRecursor
 open PersistenceCapacity Decoupling AdditiveComplexity
-open LO.FirstOrder LO.FirstOrder.Arithmetic
+open FFL.FirstOrder FFL.FirstOrder.Arithmetic
 
 attribute [local instance] arrowAction
 

@@ -16,7 +16,7 @@ set_option linter.style.longLine false
 Provenance: closes the imported hypothesis of `ALT/GodelCore.lean` — and hence the capstone
 `ALT/Reflective.lean` — using upstream `FormalizedFormalLogic/Foundation`, first discharged at
 rev `b47cf447` on Lean 4.31 + Mathlib v4.31 and re-verified at each pin bump since, via
-`LO.FirstOrder.Arithmetic.exists_true_but_unprovable_sentence` (Gödel's first
+`FFL.FirstOrder.Arithmetic.exists_true_but_unprovable_sentence_of_sigma1sound` (Gödel's first
 incompleteness theorem for arithmetic theories `T` with `[T.Δ₁] [𝗥₀ ⪯ T] [T.SoundOnHierarchy 𝚺 1]`).
 
 ## The shared `Incompleteness` symbol
@@ -36,16 +36,17 @@ discharge into the Mathlib-side excess statement.
 `Classical.choice`, `Quot.sound`) — `Δ₁`/`𝗥₀ ⪯`/`ℕ↓[ℒₒᵣ] ⊧*` are HYPOTHESES, nothing concrete is
 synthesized. This is the faithful §5.3-class statement: it applies to ANY `T` with `[T.Δ₁] [𝗥₀ ⪯ T]`
 and `ℕ`-soundness (which covers §5.3's IΔ₀ abstractly). The two concrete `𝗜𝚺₁` witnesses below are
-axiom-clean too — Foundation's `𝗜𝚺₁.Δ₁` definability is a theorem (`ISigma1_delta1Definable`) — so
+axiom-clean too — Foundation's `𝗜𝚺₁.Δ₁` definability is a theorem (an anonymous instance) — so
 this file, and with the `𝗣𝗔⁻`/`𝗜𝚺₁` capstones of `ALT/GodelChecker.lean` /
 `ALT/GodelCheckerComplete.lean` the whole Foundation side, carries **no named axioms**.
 
 ## The concrete `𝗜𝚺₁` witnesses (also axiom-clean)
 This file also ships two concrete `𝗜𝚺₁` witnesses: `isigma1_represents_underivable_truth`, and a
 bounded-decision witness `isigma1_decides_bounded_nonprovability` over an abstract sound checker. Both
-instantiate `exists_true_but_unprovable_sentence 𝗜𝚺₁`, whose `𝗜𝚺₁.Δ₁` requirement is met by
-Foundation's `Δ₁`-definability *theorem* `LO.FirstOrder.Arithmetic.ISigma1_delta1Definable` (the
-`𝗜𝚺₁`/`𝗣𝗔` `Δ₁`-definability, discharged upstream), so both are **fully axiom-clean**
+instantiate `exists_true_but_unprovable_sentence_of_sigma1sound 𝗜𝚺₁`, whose `𝗜𝚺₁.Δ₁` requirement is met by
+Foundation's `Δ₁`-definability *theorem* (an anonymous instance in its own
+`Incompleteness/Definability.lean`, the `𝗜𝚺₁`/`𝗣𝗔` `Δ₁`-definability, discharged upstream), so both
+are **fully axiom-clean**
 (`#print axioms` = `propext, Classical.choice, Quot.sound`). They sit beside the `𝗣𝗔⁻` capstones
 (`GodelChecker.paMinus_decides_bounded_nonprovability`,
 `GodelCheckerComplete.paMinus_complete_decides`): since `𝗣𝗔⁻ ⊊ 𝗜𝚺₁`, unprovability in `𝗣𝗔⁻` is the
@@ -69,7 +70,7 @@ most faithful axiom-clean non-vacuity *witness* is `𝗣𝗔⁻` (finite, Δ₁ 
 
 namespace GodelComplete
 
-open LO.FirstOrder LO.FirstOrder.Arithmetic
+open FFL.FirstOrder FFL.FirstOrder.Arithmetic
 
 /-- Adapter (axiom-clean): for any arithmetic theory `T` with `Δ₁`-definability, `𝗥₀ ⪯ T`, and truth
 in `ℕ` (which gives `SoundOnHierarchy 𝚺 1` for free), Foundation's first incompleteness theorem
@@ -78,7 +79,7 @@ discharges the literal `GodelThreshold.Incompleteness` — a sentence true in `�
 theorem incompleteness_of_arith (T : ArithmeticTheory) [T.Δ₁] [𝗥₀ ⪯ T] [ℕ↓[ℒₒᵣ] ⊧* T] :
     ∃ gTS, GodelThreshold.Incompleteness (Encodable.encode : Sentence ℒₒᵣ → ℕ)
       (fun δ => T ⊢ δ) (fun δ => ℕ↓[ℒₒᵣ] ⊧ δ) gTS := by
-  obtain ⟨δ, htrue, hunprov⟩ := exists_true_but_unprovable_sentence T
+  obtain ⟨δ, htrue, hunprov⟩ := exists_true_but_unprovable_sentence_of_sigma1sound T
   exact ⟨Encodable.encode δ, δ, rfl, htrue, hunprov⟩
 
 /-! ## The concrete `𝗜𝚺₁` witnesses (axiom-clean via the upstream `Δ₁`-definability theorem) -/
@@ -89,7 +90,8 @@ with NO remaining hypothesis. The depth `gTS + 1` equals
 `(ParameterizedNNO.cyclicParamNNO (gTS + 1)).depth`; the NNO-object form is
 `GodelThreshold.reflective_of_depth` on the Mathlib side, kept a separate term here (see the
 shared-symbol note above). Foundation's `𝗜𝚺₁.Δ₁` instance is a theorem
-(`ISigma1_delta1Definable`, discharged upstream), so this witness is **fully axiom-clean**. -/
+(an anonymous instance in its `Incompleteness/Definability.lean`, discharged upstream), so this
+witness is **fully axiom-clean**. -/
 theorem isigma1_represents_underivable_truth :
     ∃ gTS : ℕ, GodelThreshold.RepresentsUnderivableTruth (Encodable.encode : Sentence ℒₒᵣ → ℕ)
       (fun δ => (𝗜𝚺₁ : ArithmeticTheory) ⊢ δ) (fun δ => ℕ↓[ℒₒᵣ] ⊧ δ) (gTS + 1) := by
@@ -101,14 +103,15 @@ proof relation `Prf` on `Sentence ℒₒᵣ` (`sound`: accepts ⇒ `𝗜𝚺₁ 
 `G` (true in `ℕ`, unprovable in `𝗜𝚺₁`) is decided as bounded-non-provable — nothing within budget is
 accepted (NO `sorry`, NO degenerate always-`false` checker). `ALT/GodelChecker.lean` supplies a
 *concrete* computable `Prf` discharging the hypothesis (`isigma1_decides_bounded_nonprovability'`).
-Foundation's `𝗜𝚺₁.Δ₁` instance is a theorem (`ISigma1_delta1Definable`, discharged upstream), so this
+Foundation's `𝗜𝚺₁.Δ₁` instance is a theorem (an anonymous instance in its
+`Incompleteness/Definability.lean`, discharged upstream), so this
 witness is **fully axiom-clean**. -/
 theorem isigma1_decides_bounded_nonprovability
     (Prf : Sentence ℒₒᵣ → ℕ → Bool) (Mchk : ℕ)
     (sound : ∀ φ p, Prf φ p = true → (𝗜𝚺₁ : ArithmeticTheory) ⊢ φ) :
     ∃ G : Sentence ℒₒᵣ, (ℕ↓[ℒₒᵣ] ⊧ G) ∧ ((𝗜𝚺₁ : ArithmeticTheory) ⊬ G) ∧
       ∀ p, p ≤ Mchk → Prf G p = false := by
-  obtain ⟨δ, htrue, hunprov⟩ := exists_true_but_unprovable_sentence 𝗜𝚺₁
+  obtain ⟨δ, htrue, hunprov⟩ := exists_true_but_unprovable_sentence_of_sigma1sound 𝗜𝚺₁
   refine ⟨δ, htrue, hunprov, fun p _ => ?_⟩
   by_contra h
   rw [Bool.not_eq_false] at h

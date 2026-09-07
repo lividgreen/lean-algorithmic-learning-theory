@@ -461,10 +461,10 @@ theorem dSurpriseSet_card_shift (b : ℕ) (M : ℕ → Fin C → Bool) (e₀ : F
     have hmin : min n (τ + 1) = τ + 1 := by omega
     set emb : ℕ ↪ ℕ := ⟨fun x => τ + 1 + x, fun a b hab => by
       change τ + 1 + a = τ + 1 + b at hab; omega⟩ with hemb
+    have hembApply : ∀ x, emb x = τ + 1 + x := fun _ => rfl
     have hrange : Finset.range n = Finset.range (τ + 1) ∪ (Finset.range (n - (τ + 1))).map emb := by
       ext x
-      simp only [Finset.mem_range, Finset.mem_union, Finset.mem_map, hemb,
-        Function.Embedding.coeFn_mk]
+      simp only [Finset.mem_range, Finset.mem_union, Finset.mem_map, hembApply]
       constructor
       · intro hx
         by_cases hxlt : x < τ + 1
@@ -475,7 +475,7 @@ theorem dSurpriseSet_card_shift (b : ℕ) (M : ℕ → Fin C → Bool) (e₀ : F
       rw [Finset.disjoint_left]
       rintro x hx1 hx2
       simp only [Finset.mem_range] at hx1
-      simp only [Finset.mem_map, hemb, Function.Embedding.coeFn_mk] at hx2
+      simp only [Finset.mem_map, hembApply] at hx2
       obtain ⟨u, -, hu⟩ := hx2
       omega
     have e1 : (Finset.range (τ + 1)).filter (fun t => θ < dWrongMass b M e₀ H hit t)
@@ -490,7 +490,7 @@ theorem dSurpriseSet_card_shift (b : ℕ) (M : ℕ → Fin C → Bool) (e₀ : F
       rw [Finset.filter_map, Finset.card_map, dSurpriseSet]
       congr 1
       refine Finset.filter_congr fun u _ => ?_
-      simp only [Function.comp_apply, hemb, Function.Embedding.coeFn_mk]
+      simp only [Function.comp_apply, hembApply]
       rw [dWrongMass_shift b M e₀ H hit hτmem hτmin u]
     rw [hmin, dSurpriseSet, hrange, Finset.filter_union,
       Finset.card_union_of_disjoint

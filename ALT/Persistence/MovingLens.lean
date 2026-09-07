@@ -102,7 +102,7 @@ private theorem omegaPerm_pow_apply [Finite X] (U : X → X) {B : Set X} (hB : �
 
 /-- A lens **restricted to the recurrent core** — the only part of it the persistence identity
 constrains, and the part [Persistence] §2, Definition 2.2 measures the carried entropy of. This is
-`Set.restrict` at `core U`; the ω-limit sections below use `Set.restrict` directly. -/
+`Set.domRestrict` at `core U`; the ω-limit sections below use `Set.domRestrict` directly. -/
 def coreLens (U : X → X) (f : X → M) : ↥(core U) → M := fun x => f x
 
 /-- **Every frame is the reference frame, transported by the recurrent rule** — the endofunction

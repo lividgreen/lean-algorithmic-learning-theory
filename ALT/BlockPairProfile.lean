@@ -378,7 +378,7 @@ theorem cyclicCorr_blockSeq {L : ℕ} [NeZero L] {m M' : ℕ} [NeZero m] (hm : m
           crossTail v u d := by
   subst hm
   have hd : d ≤ L := by omega
-  haveI : NeZero M' := ⟨fun h => (NeZero.ne (2 * M')) (by rw [h, mul_zero])⟩
+  have : NeZero M' := ⟨fun h => (NeZero.ne (2 * M')) (by rw [h, mul_zero])⟩
   unfold cyclicCorr
   rw [sum_combine]
   simp_rw [inner_sum_eq u v ε hε _ d hd]
@@ -854,7 +854,7 @@ theorem cyclicCorrPrefix_blockSeq_zone {L : ℕ} [NeZero L] {m M' : ℕ} [NeZero
     |cyclicCorrPrefix (blockSeq u v ε) d T| ≤ (2 + 2 * P) * (L : ℤ) := by
   subst hm
   have hd : d ≤ L := by omega
-  haveI : NeZero M' := ⟨fun h => (NeZero.ne (2 * M')) (by rw [h, mul_zero])⟩
+  have : NeZero M' := ⟨fun h => (NeZero.ne (2 * M')) (by rw [h, mul_zero])⟩
   have hm2 : Even (2 * M') := ⟨M', by ring⟩
   set J := T / L with hJdef
   set r := T % L with hrdef
@@ -967,7 +967,7 @@ theorem cyclicCorrPrefix_blockSeq_spike {L : ℕ} [NeZero L] {m M' : ℕ} [NeZer
       (4 * P * (k : ℤ) + Q) * (L : ℤ) := by
   subst hm
   have hd : k ≤ L := by omega
-  haveI : NeZero M' := ⟨fun h => (NeZero.ne (2 * M')) (by rw [h, mul_zero])⟩
+  have : NeZero M' := ⟨fun h => (NeZero.ne (2 * M')) (by rw [h, mul_zero])⟩
   have hm2 : Even (2 * M') := ⟨M', by ring⟩
   set J := T / L with hJdef
   set r := T % L with hrdef
@@ -1138,7 +1138,7 @@ theorem cyclicCorrWindow_blockSeq_spike {L : ℕ} [NeZero L] {m M' : ℕ} [NeZer
     |2 * (L : ℤ) * cyclicCorrWindow (blockSeq u v ε) k p n -
         (n : ℤ) * (aperiodicCorr u k + aperiodicCorr v k)| ≤
       2 * (4 * P * (k : ℤ) + Q) * (L : ℤ) := by
-  haveI : NeZero M' := ⟨fun h => (NeZero.ne m) (by rw [hm, h, mul_zero])⟩
+  have : NeZero M' := ⟨fun h => (NeZero.ne m) (by rw [hm, h, mul_zero])⟩
   have hcycspike : cyclicCorr (blockSeq u v ε) k =
       (M' : ℤ) * (aperiodicCorr u k + aperiodicCorr v k) :=
     cyclicCorr_blockSeq_spike hm u v ε hε hk1 hkL heven0 hodd0
@@ -2689,5 +2689,198 @@ theorem singleWindow_blockSeq_family_bound (M r : ℕ) [NeZero (2 * (2 * M))] [N
     (blockSign_sq _) (abs_antiExt_le_one seedU seedU_abs_le_one r)
     (abs_antiExt_le_one seedV seedV_abs_le_one r)
     (singlePrefix_blockSeq_antiExt_period_zero M r) 4 (abs_antiExt_sumPartial_le_four M r) p n
+
+/-! ## A second certified pair: literal `2`, length `22`, spike lag `6`
+
+A second word pair, found by exhaustive search (`../annex/probes/e1_shifted_spike_pair.py`,
+committed and self-asserting): length `22`, with its spike — the lag where the two words'
+aperiodic correlations agree rather than cancel — at `6` instead of the certified pair's `8`. This
+is what makes literal `2` (rather than `0`) the rule this pair identifies, since the schedule's own
+offset `a` correlates against lag `8 - a` (`BlockPairObservability.chiProd_eq_cyclicCorrWindow`),
+and `8 - 2 = 6`. Every lemma below mirrors the certified pair's own instance section (`wordU`/
+`wordV` through `blockSeq_wordU_wordV_sq`), transposed to this pair, its length, and its spike lag;
+only the window-level bounds are stated, since the profile-class criterion needs no more. -/
+
+/-- The first length-`22` word of the second certified pair. -/
+def wordU2 : Fin 22 → ℤ :=
+  ![-1, -1, -1, 1, -1, 1, 1, 1, 1, -1, 1, -1, -1, -1, -1, 1, -1, 1, 1, 1, 1, -1]
+
+/-- The second length-`22` word of the second certified pair. -/
+def wordV2 : Fin 22 → ℤ :=
+  ![-1, -1, 1, -1, -1, -1, 1, 1, -1, 1, 1, 1, -1, -1, 1, -1, -1, -1, 1, 1, -1, 1]
+
+private lemma aperiodicCorr_wordU2_wordV2_zone {d : ℕ} (hd1 : 1 ≤ d) (hd8 : d ≤ 8) (hd6 : d ≠ 6) :
+    aperiodicCorr wordU2 d + aperiodicCorr wordV2 d = 0 := by
+  interval_cases d <;> first | omega | decide
+
+private lemma aperiodicCorr_wordU2_wordV2_spike :
+    aperiodicCorr wordU2 6 + aperiodicCorr wordV2 6 = -32 := by decide
+
+private lemma wordU2_abs_le_one (p : Fin 22) : |wordU2 p| ≤ 1 := by fin_cases p <;> decide
+
+private lemma wordV2_abs_le_one (p : Fin 22) : |wordV2 p| ≤ 1 := by fin_cases p <;> decide
+
+private lemma aperiodicCorr_wordU2_eq_wordV2_spike :
+    aperiodicCorr wordU2 6 = aperiodicCorr wordV2 6 := by decide
+
+private lemma hRemU2_wordU2_wordV2 (η : ℤ) (hη : η * η = 1) (r : ℕ) (hr : r ≤ 22) :
+    |2 * (22 : ℤ) * blockRemainder wordU2 wordV2 η 6 r -
+        (r : ℤ) * (aperiodicCorr wordU2 6 + aperiodicCorr wordV2 6)| ≤ (10 : ℤ) * 22 := by
+  rcases eq_one_or_neg_one_of_sq_eq_one hη with rfl | rfl <;> interval_cases r <;> decide
+
+private lemma hRemV2_wordU2_wordV2 (η : ℤ) (hη : η * η = 1) (r : ℕ) (hr : r ≤ 22) :
+    |2 * (22 : ℤ) * blockRemainder wordV2 wordU2 η 6 r -
+        (r : ℤ) * (aperiodicCorr wordU2 6 + aperiodicCorr wordV2 6)| ≤ (10 : ℤ) * 22 := by
+  rcases eq_one_or_neg_one_of_sq_eq_one hη with rfl | rfl <;> interval_cases r <;> decide
+
+/-- **The zone window bound, instantiated at the second certified pair.** Every cyclic window at a
+lag `1 ≤ d ≤ 8`, `d ≠ 6`, of arbitrary phase and length, deviates from zero by at most
+`2 * (4 * 22)`. -/
+theorem cyclicCorrWindow_blockSeq_wordU2_wordV2_zone (M : ℕ) [NeZero (2 * (2 * M))]
+    {d : ℕ} (hd1 : 1 ≤ d) (hd8 : d ≤ 8) (hd6 : d ≠ 6) (p n : ℕ) :
+    |cyclicCorrWindow (blockSeq wordU2 wordV2 (blockSign (2 * (2 * M)))) d p n| ≤
+      2 * ((2 + 2 * 1) * (22 : ℤ)) :=
+  cyclicCorrWindow_blockSeq_zone rfl wordU2 wordV2 (blockSign (2 * (2 * M))) (blockSign_sq _)
+    wordU2_abs_le_one wordV2_abs_le_one hd1 (le_refl d) (by omega)
+    (aperiodicCorr_wordU2_wordV2_zone hd1 hd8 hd6) (blockSign_transition_even M)
+    (blockSign_transition_odd M) 1 (hPeven_blockSign M) (hPodd_blockSign M) p n
+
+/-- **The spike window bound, instantiated at the second certified pair.** Every cyclic window at
+the spike lag `6`, of arbitrary phase and length, has `2 * 22`-scaled trend deviation at most
+`2 * ((4 * 6 + 10) * 22)`. -/
+theorem cyclicCorrWindow_blockSeq_wordU2_wordV2_spike (M : ℕ) [NeZero (2 * (2 * M))] (p n : ℕ) :
+    |2 * (22 : ℤ) * cyclicCorrWindow (blockSeq wordU2 wordV2 (blockSign (2 * (2 * M)))) 6 p n -
+        (n : ℤ) * (aperiodicCorr wordU2 6 + aperiodicCorr wordV2 6)| ≤
+      2 * ((4 * 1 * (6 : ℤ) + 10) * 22) :=
+  cyclicCorrWindow_blockSeq_spike rfl wordU2 wordV2 (blockSign (2 * (2 * M))) (blockSign_sq _)
+    wordU2_abs_le_one wordV2_abs_le_one (by norm_num) (by norm_num) (blockSign_transition_even M)
+    (blockSign_transition_odd M) aperiodicCorr_wordU2_eq_wordV2_spike 1 (hPeven_blockSign M)
+    (hPodd_blockSign M) 10 hRemU2_wordU2_wordV2 hRemV2_wordU2_wordV2 p n
+
+/-! ### The single-site instance -/
+
+private lemma wordU2_sum : (∑ p : Fin 22, wordU2 p) = 0 := by decide
+
+private lemma wordV2_sum : (∑ p : Fin 22, wordV2 p) = -2 := by decide
+
+private lemma wordSumAtNat_wordU2_wordV2_even (t : ℕ) :
+    (∑ p : Fin 22, wordAtNat wordU2 wordV2 (2 * t) p) = 0 := by
+  have heq : wordAtNat wordU2 wordV2 (2 * t) = wordU2 := by
+    unfold wordAtNat; rw [if_pos ⟨t, two_mul t⟩]
+  rw [heq, wordU2_sum]
+
+private lemma wordSumAtNat_wordU2_wordV2_odd (t : ℕ) :
+    (∑ p : Fin 22, wordAtNat wordU2 wordV2 (2 * t + 1) p) = -2 := by
+  have heq : wordAtNat wordU2 wordV2 (2 * t + 1) = wordV2 := by
+    unfold wordAtNat; rw [if_neg (by rw [Nat.even_iff]; omega : ¬ Even (2 * t + 1))]
+  rw [heq, wordV2_sum]
+
+/-- The running signed word-sum, at an even-length prefix: `wordU2`'s zero balance kills every
+even-block term (`signAtNat_blockSign_even` reads the sign constantly `1` there), so the value is
+`-2` times a Thue–Morse partial sum, `wordV2`'s own sum. -/
+private lemma wordSumPartial_wordU2_wordV2_two_mul (M : ℕ) [NeZero (2 * (2 * M))] :
+    ∀ t, 2 * t ≤ 2 * (2 * M) →
+      (∑ j ∈ Finset.range (2 * t), signAtNat (blockSign (2 * (2 * M))) j *
+          (∑ p : Fin 22, wordAtNat wordU2 wordV2 j p)) = -2 * ∑ i ∈ Finset.range t, tmSign i := by
+  intro t
+  induction t with
+  | zero => intro _; simp
+  | succ n ih =>
+    intro ht
+    have hstep : (∑ j ∈ Finset.range (2 * (n + 1)),
+        signAtNat (blockSign (2 * (2 * M))) j * (∑ p : Fin 22, wordAtNat wordU2 wordV2 j p)) =
+        (∑ j ∈ Finset.range (2 * n),
+          signAtNat (blockSign (2 * (2 * M))) j * (∑ p : Fin 22, wordAtNat wordU2 wordV2 j p)) +
+        signAtNat (blockSign (2 * (2 * M))) (2 * n) *
+          (∑ p : Fin 22, wordAtNat wordU2 wordV2 (2 * n) p) +
+        signAtNat (blockSign (2 * (2 * M))) (2 * n + 1) *
+          (∑ p : Fin 22, wordAtNat wordU2 wordV2 (2 * n + 1) p) := by
+      rw [show 2 * (n + 1) = 2 * n + 1 + 1 from by ring, Finset.sum_range_succ,
+        Finset.sum_range_succ]
+    rw [hstep, ih (by omega), signAtNat_blockSign_even _ n (by omega),
+      wordSumAtNat_wordU2_wordV2_even, signAtNat_blockSign_odd _ n (by omega),
+      wordSumAtNat_wordU2_wordV2_odd, Finset.sum_range_succ]
+    ring
+
+private lemma wordSumPartial_wordU2_wordV2_two_mul_add_one (M : ℕ) [NeZero (2 * (2 * M))] :
+    ∀ t, 2 * t + 1 ≤ 2 * (2 * M) →
+      (∑ j ∈ Finset.range (2 * t + 1), signAtNat (blockSign (2 * (2 * M))) j *
+          (∑ p : Fin 22, wordAtNat wordU2 wordV2 j p)) = -2 * ∑ i ∈ Finset.range t, tmSign i := by
+  intro t ht
+  rw [Finset.sum_range_succ, wordSumPartial_wordU2_wordV2_two_mul M t (by omega),
+    signAtNat_blockSign_even _ t (by omega), wordSumAtNat_wordU2_wordV2_even]
+  ring
+
+/-- **The running signed word-sum is bounded by `2`** at every prefix, independent of `M`:
+`tmSign_partial_abs_le_one` transported along `wordSumPartial_wordU2_wordV2_two_mul`/
+`_two_mul_add_one`. -/
+private lemma abs_wordSumPartial_wordU2_wordV2_le_two (M : ℕ) [NeZero (2 * (2 * M))] (J : ℕ)
+    (hJ : J ≤ 2 * (2 * M)) :
+    |∑ j ∈ Finset.range J, signAtNat (blockSign (2 * (2 * M))) j *
+        (∑ p : Fin 22, wordAtNat wordU2 wordV2 j p)| ≤ (2 : ℤ) := by
+  have htwo : ∀ t : ℕ, |(-2 : ℤ) * ∑ i ∈ Finset.range t, tmSign i| ≤ (2 : ℤ) := by
+    intro t
+    have h1 := tmSign_partial_abs_le_one t
+    have heq : |(-2 : ℤ) * ∑ i ∈ Finset.range t, tmSign i|
+        = 2 * |∑ i ∈ Finset.range t, tmSign i| := by rw [abs_mul]; norm_num
+    rw [heq]; linarith
+  rcases Nat.even_or_odd J with ⟨t, ht⟩ | ⟨t, ht⟩
+  · rw [ht, ← two_mul, wordSumPartial_wordU2_wordV2_two_mul M t (by omega)]
+    exact htwo t
+  · rw [ht, wordSumPartial_wordU2_wordV2_two_mul_add_one M t (by omega)]
+    exact htwo t
+
+private theorem singlePrefix_blockSeq_wordU2_wordV2_bound (M : ℕ) [NeZero (2 * (2 * M))] (T : ℕ)
+    (hT : T ≤ 2 * (2 * M) * 22) :
+    |singlePrefix (blockSeq wordU2 wordV2 (blockSign (2 * (2 * M)))) T| ≤ (2 : ℤ) + 22 :=
+  singlePrefix_blockSeq_bound wordU2 wordV2 (blockSign (2 * (2 * M))) (blockSign_sq _)
+    wordU2_abs_le_one wordV2_abs_le_one 2 (abs_wordSumPartial_wordU2_wordV2_le_two M) T hT
+
+private lemma singlePrefix_blockSeq_wordU2_wordV2_full (M : ℕ) [NeZero (2 * (2 * M))] :
+    singlePrefix (blockSeq wordU2 wordV2 (blockSign (2 * (2 * M)))) (2 * (2 * M) * 22) = 0 := by
+  have hb := singlePrefix_blockSeq_blocks wordU2 wordV2 (blockSign (2 * (2 * M)))
+    (2 * (2 * M)) le_rfl
+  rw [hb, wordSumPartial_wordU2_wordV2_two_mul M (2 * M) le_rfl, tmSign_balance M, mul_zero]
+
+private lemma singlePrefix_blockSeq_wordU2_wordV2_period_zero (M : ℕ) [NeZero (2 * (2 * M))] :
+    ∑ t : ZMod (2 * (2 * M) * 22), blockSeq wordU2 wordV2 (blockSign (2 * (2 * M))) t = 0 := by
+  rw [← singlePrefix_eq_full_sum]
+  exact singlePrefix_blockSeq_wordU2_wordV2_full M
+
+/-- **The single-site window bound, instantiated at the second certified pair.** Every cyclic
+window of arbitrary phase and length deviates from zero by at most `2 * (2 + 22)`. -/
+theorem singleWindow_blockSeq_wordU2_wordV2_bound (M : ℕ) [NeZero (2 * (2 * M))] (p n : ℕ) :
+    |singleWindow (blockSeq wordU2 wordV2 (blockSign (2 * (2 * M)))) p n| ≤ 2 * ((2 : ℤ) + 22) :=
+  singleWindow_blockSeq_bound wordU2 wordV2 (blockSign (2 * (2 * M))) (blockSign_sq _)
+    wordU2_abs_le_one wordV2_abs_le_one (singlePrefix_blockSeq_wordU2_wordV2_period_zero M)
+    2 (abs_wordSumPartial_wordU2_wordV2_le_two M) p n
+
+private lemma wordU2_sq (p : Fin 22) : wordU2 p * wordU2 p = 1 := by fin_cases p <;> decide
+
+private lemma wordV2_sq (p : Fin 22) : wordV2 p * wordV2 p = 1 := by fin_cases p <;> decide
+
+/-- **The second certified design is exactly `±1`-valued**: `blockSeq` at this pair squares to `1`
+everywhere, mirroring `blockSeq_wordU_wordV_sq`. -/
+theorem blockSeq_wordU2_wordV2_sq (M : ℕ) [NeZero (2 * (2 * M))]
+    (x : ZMod (2 * (2 * M) * 22)) :
+    blockSeq wordU2 wordV2 (blockSign (2 * (2 * M))) x *
+      blockSeq wordU2 wordV2 (blockSign (2 * (2 * M))) x = 1 := by
+  unfold blockSeq
+  have hε := blockSign_sq (2 * (2 * M)) (blockIdx x)
+  split_ifs
+  · have hu := wordU2_sq (blockOff x)
+    calc blockSign (2 * (2 * M)) (blockIdx x) * wordU2 (blockOff x) *
+          (blockSign (2 * (2 * M)) (blockIdx x) * wordU2 (blockOff x))
+        = (blockSign (2 * (2 * M)) (blockIdx x) * blockSign (2 * (2 * M)) (blockIdx x)) *
+            (wordU2 (blockOff x) * wordU2 (blockOff x)) := by ring
+      _ = 1 * 1 := by rw [hε, hu]
+      _ = 1 := by ring
+  · have hv := wordV2_sq (blockOff x)
+    calc blockSign (2 * (2 * M)) (blockIdx x) * wordV2 (blockOff x) *
+          (blockSign (2 * (2 * M)) (blockIdx x) * wordV2 (blockOff x))
+        = (blockSign (2 * (2 * M)) (blockIdx x) * blockSign (2 * (2 * M)) (blockIdx x)) *
+            (wordV2 (blockOff x) * wordV2 (blockOff x)) := by ring
+      _ = 1 * 1 := by rw [hε, hv]
+      _ = 1 := by ring
 
 end BlockPairProfile

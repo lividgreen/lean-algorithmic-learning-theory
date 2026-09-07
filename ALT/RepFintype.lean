@@ -113,7 +113,7 @@ finite-set CCC (exponential closure) together with `cyclicParamNNO (gTS+1)` of d
 on the finite object `ZMod (gTS+2)`. Unlike the earlier `Type` stand-in, the CCC conjunct genuinely
 uses finiteness, and the recursor is an object of the same category. -/
 theorem reflective_satisfiable (gTS : ℕ) : Reflective gTS :=
-  ⟨fun _ _ hX hY => by haveI := hX; haveI := hY; exact inferInstance,
+  ⟨fun _ _ hX hY => by have := hX; have := hY; exact inferInstance,
     gTS + 1, Nat.lt_succ_self gTS, ⟨cyclicParamNNO (gTS + 1)⟩⟩
 
 end RepFintype

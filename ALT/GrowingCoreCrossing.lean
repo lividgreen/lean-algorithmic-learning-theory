@@ -38,7 +38,7 @@ namespace AccretingWitness
 open ExcessOrder
 open RealizabilityCCC RealizabilityRecursor
 open PersistenceCapacity Decoupling AdditiveComplexity
-open LO.FirstOrder LO.FirstOrder.Arithmetic
+open FFL.FirstOrder FFL.FirstOrder.Arithmetic
 
 /-- **Eventual hosting at an arbitrary monotone unbounded budget profile** ([Guests] §7 Theorem
 7.7(vi)): generalizes `eventually_hostsAt`'s fixed `t + 1` to any `κ` that is monotone and

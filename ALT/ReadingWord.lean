@@ -436,7 +436,7 @@ theorem guard_arc_pattern_not_rMin :
     haveI : Fact (Nat.Prime 11) := ⟨by decide⟩
     arcs (decimate (fun i : ZMod 11 => decide (i.val < 5)) (3 : ZMod 11)) = 3 ∧
       rMin (decimate (fun i : ZMod 11 => decide (i.val < 5)) (3 : ZMod 11)) = 1 := by
-  haveI : Fact (Nat.Prime 11) := ⟨by decide⟩
+  have : Fact (Nat.Prime 11) := ⟨by decide⟩
   exact ⟨by decide, by decide⟩
 
 /-! ### Proposition 8.20's floor: separating sets -/

@@ -704,7 +704,7 @@ theorem wFrames_separate_of_settled [NeZero C] (hW : 2 ≤ W) (hC : 2 ≤ C) (S 
         wPredFrame n₁ W dec ((wWorld W S (predFitPos S dec))^[n₁ * (W + 1) ^ C]
           (finProdFinEquiv (x, finFunctionFinEquiv (pack W (settled W c₀) : WVec C W)))) := by
   refine ⟨fun hsurj => ?_, fun z => ?_⟩
-  · haveI : Nontrivial (Fin C) := Fin.nontrivial_iff_two_le.mpr hC
+  · have : Nontrivial (Fin C) := Fin.nontrivial_iff_two_le.mpr hC
     obtain ⟨c₁, hc₁⟩ := exists_ne c₀
     obtain ⟨x, hx⟩ := hsurj c₁
     exact hc₁ (hx.symm.trans

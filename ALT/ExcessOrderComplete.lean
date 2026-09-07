@@ -59,7 +59,7 @@ namespace ExcessOrder
 open RealizabilityCCC RealizabilityRecursor
 open PersistenceCapacity Decoupling AdditiveComplexity
 open Equiv MulAction
-open LO.FirstOrder LO.FirstOrder.Arithmetic
+open FFL.FirstOrder FFL.FirstOrder.Arithmetic
 
 -- `•` on the recurrent-core reading is the relabelling action `U • ℓ = ℓ ∘ U⁻¹`, as in `ExcessOrder`.
 attribute [local instance] arrowAction
@@ -99,7 +99,7 @@ theorem outgrows_paMinus (κ : ℕ) :
         CapacityLayer.FitsIn (recursorAsm R.depth) κ ∧
         ∃ M, GodelThreshold.RepresentsUnderivableTruth (Encodable.encode : Sentence ℒₒᵣ → ℕ)
           (fun δ => (𝗣𝗔⁻ : ArithmeticTheory) ⊢ δ) (fun δ => ℕ↓[ℒₒᵣ] ⊧ δ) M := by
-  haveI : (𝗣𝗔⁻ : ArithmeticTheory).Δ₁ := Theory.Δ₁.ofFinite 𝗣𝗔⁻ PeanoMinus.finite
+  have : (𝗣𝗔⁻ : ArithmeticTheory).Δ₁ := Theory.Δ₁.ofFinite 𝗣𝗔⁻ PeanoMinus.finite
   exact outgrows_arith κ 𝗣𝗔⁻
 
 /-- **The Witness World's guest unconditionally outgrows its host at `𝗣𝗔⁻`** ([Persistence] §5/§7 +

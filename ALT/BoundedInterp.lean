@@ -677,8 +677,7 @@ theorem eval_rfind'_unfold (cf : Code) (a m : ℕ) :
   rw [hev m, Part.mem_map_iff, Part.mem_bind_iff]
   constructor
   · rintro ⟨n, hn, rfl⟩
-    rw [Nat.mem_rfind] at hn
-    obtain ⟨hspec, hmin⟩ := hn
+    obtain ⟨hspec, hmin⟩ := Nat.mem_rfind.mp hn
     rw [probe_true] at hspec
     cases n with
     | zero => exact ⟨0, by simpa using hspec, by simp⟩
@@ -687,7 +686,7 @@ theorem eval_rfind'_unfold (cf : Code) (a m : ℕ) :
         refine ⟨w, by simpa using hw, ?_⟩
         rw [if_neg hwne, hev (m + 1), Part.mem_map_iff]
         refine ⟨n', ?_, by omega⟩
-        rw [Nat.mem_rfind]
+        apply Nat.mem_rfind.mpr
         refine ⟨probe_true.2 ?_, ?_⟩
         · rw [show n' + (m + 1) = n' + 1 + m from by omega]
           exact hspec
@@ -701,16 +700,15 @@ theorem eval_rfind'_unfold (cf : Code) (a m : ℕ) :
       rw [if_pos rfl, Part.mem_some_iff] at hx
       subst hx
       refine ⟨0, ?_, by omega⟩
-      rw [Nat.mem_rfind]
+      apply Nat.mem_rfind.mpr
       refine ⟨probe_true.2 (by simpa using hv), ?_⟩
       intro i hi
       exact absurd hi (Nat.not_lt_zero i)
     · rw [if_neg hv0, hev (m + 1), Part.mem_map_iff] at hx
       obtain ⟨n', hn', rfl⟩ := hx
-      rw [Nat.mem_rfind] at hn'
-      obtain ⟨hspec, hmin⟩ := hn'
+      obtain ⟨hspec, hmin⟩ := Nat.mem_rfind.mp hn'
       refine ⟨n' + 1, ?_, by omega⟩
-      rw [Nat.mem_rfind]
+      apply Nat.mem_rfind.mpr
       refine ⟨probe_true.2 ?_, ?_⟩
       · rw [show n' + 1 + m = n' + (m + 1) from by omega]
         exact probe_true.1 hspec
@@ -785,12 +783,17 @@ private theorem denote_stepDescend (c n k : ℕ) :
       have hpf := pair_frame_bind (Encodable.encode cf) (Encodable.encode cg) n k
       simpa only [Denumerable.ofNat_encode] using hpf
   | comp cf cg =>
-      simp only [stepDescend, hc, denote_descend, Denumerable.ofNat_encode, eval,
-        Part.bind_eq_bind, Part.bind_assoc]
-      congr 1
-      funext v
-      rw [stackDenote_cons]
-      simp only [frTag_frame, frPay_frame, Denumerable.ofNat_encode]
+      simp only [stepDescend, hc, denote_descend, Denumerable.ofNat_encode, eval]
+      have hassoc : (cg.eval n >>= cf.eval).bind (stackDenote k)
+          = (cg.eval n).bind (fun v => (cf.eval v).bind (stackDenote k)) :=
+        Part.bind_assoc (cg.eval n) cf.eval (stackDenote k)
+      have hcont : stackDenote (stkCons (frame 2 (Encodable.encode cf)) k)
+          = fun v => (cf.eval v).bind (stackDenote k) := by
+        funext v
+        rw [stackDenote_cons]
+        simp only [frTag_frame, frPay_frame, Denumerable.ofNat_encode]
+      rw [hcont]
+      exact hassoc.symm
   | prec cf cg =>
       obtain ⟨a, m, rfl⟩ : ∃ a m, n = Nat.pair a m :=
         ⟨n.unpair.1, n.unpair.2, (Nat.pair_unpair n).symm⟩

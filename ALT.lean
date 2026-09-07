@@ -7,6 +7,7 @@ import ALT.AccretingExcess
 import ALT.AccretingWitness
 import ALT.AccretiveDecoupling
 import ALT.AdditiveComplexity
+import ALT.AlgorithmicProbability
 import ALT.AxiomAuditFoundation
 import ALT.AxiomAuditMathlib
 import ALT.BasinSettling
@@ -16,6 +17,7 @@ import ALT.BinaryKraft
 import ALT.Birkhoff.AxiomAudit
 import ALT.Birkhoff.PointwiseBirkhoff
 import ALT.BirkhoffTool
+import ALT.BitStringPrimrec
 import ALT.BlockPairCriterion
 import ALT.BlockPairFamilyCriterion
 import ALT.BlockPairHost
@@ -23,6 +25,7 @@ import ALT.BlockPairObservability
 import ALT.BlockPairOverlap
 import ALT.BlockPairPrice
 import ALT.BlockPairProfile
+import ALT.BlockPairTower
 import ALT.BlockPairWitness
 import ALT.BoundedInterp
 import ALT.CanonicalFormLens
@@ -32,13 +35,20 @@ import ALT.CapacityThreshold
 import ALT.CartesianClosed
 import ALT.CategoricalThreshold
 import ALT.ChainDependencyAudit
+import ALT.ChaitinIncompleteness
+import ALT.ChaitinLadder
 import ALT.CheckerWorkspace
 import ALT.ChengCCC
 import ALT.Code.BitGates
 import ALT.Code.EvalLaws
 import ALT.Code.SizeArith
 import ALT.CodeArith
+import ALT.CodeDataRate
 import ALT.CodePacking
+import ALT.CodingTheorem
+import ALT.CodingTheoremBitwise
+import ALT.CodingTheoremDecoder
+import ALT.CodingTheoremWeak
 import ALT.Collector
 import ALT.CommitmentSeam
 import ALT.ConjunctionPredictor
@@ -51,6 +61,8 @@ import ALT.DecisionListPredictor
 import ALT.DecisionListSolver
 import ALT.DecoupledSimulation
 import ALT.Decoupling
+import ALT.DeepLadder
+import ALT.DerivedStages
 import ALT.DeterministicDiscovery
 import ALT.EpsilonZeroBound
 import ALT.EvoAbsorption
@@ -58,8 +70,10 @@ import ALT.ExcessOrder
 import ALT.ExcessOrderComplete
 import ALT.ExpensiveLens
 import ALT.ExtensionalDiscovery
+import ALT.ExtremeTapWidth
 import ALT.FiniteHorizonDiscovery
 import ALT.FiniteInfoTheory
+import ALT.FiniteWorldWidth
 import ALT.FixedLensCriterion
 import ALT.FlooredMixture
 import ALT.FrameItinerary
@@ -87,6 +101,7 @@ import ALT.KReconnection
 import ALT.KolmogorovBitlen
 import ALT.KolmogorovComplexity
 import ALT.KolmogorovTimeBounded
+import ALT.KraftChaitin
 import ALT.LearningWitness
 import ALT.LearningWitnessComplete
 import ALT.LogMassEvent
@@ -110,6 +125,7 @@ import ALT.PolyTime
 import ALT.PolyTimeAccounting
 import ALT.PrefixComplexity
 import ALT.PrefixInvariance
+import ALT.PrefixMachine
 import ALT.PriorNormalization
 import ALT.QuantizationRate
 import ALT.ReadingWord
@@ -139,6 +155,9 @@ import ALT.SQVersionSpace
 import ALT.SampleComplexity
 import ALT.SearchCost
 import ALT.SearchSpace
+import ALT.ShiftedSpikeCriterion
+import ALT.ShiftedSpikeHost
+import ALT.ShiftedSpikeTower
 import ALT.SkewFiber
 import ALT.StructureFunction
 import ALT.SubstitutionClass

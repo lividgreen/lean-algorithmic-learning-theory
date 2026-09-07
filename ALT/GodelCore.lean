@@ -29,7 +29,7 @@ Status: PROVED as pure logic (`#print axioms` → standard axioms only).
 
 -- "This file stays deliberately light (core Lean plus `Mathlib.Order.Basic`)", so that both the
 -- Mathlib side and the Foundation side can import it: neither side's weight is in scope here.
-assert_not_exists LO.FirstOrder.Arithmetic.exists_true_but_unprovable_sentence
+assert_not_exists FFL.FirstOrder.Arithmetic.exists_true_but_unprovable_sentence_of_sigma1sound
 assert_not_exists ParameterizedNNO.ParamNNO
 assert_not_exists Nat.Partrec.Code
 assert_not_exists CategoryTheory.Functor

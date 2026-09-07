@@ -40,6 +40,9 @@ consumer — the landed decode reading factors through the merge quotient at eve
   (`merges_refl` / `merges_symm` / `merges_trans`), and its quotient is the canonical carrier.
 * `mergeLaw` / `mergeLaw_injective` / `stagedSquare_merge` — the induced law is well-defined,
   injective with no hypothesis, and closes the staged square identically at every stage family.
+* `mergeMk_injective_of_injective` — at an injective `U`, `mergeMk U` is itself injective: no two
+  distinct states ever merge, since an injective law's iterates cancel the witnessing equation
+  outright.
 * `merges_invariant_of_stagedSquare` — **universality**: any injective-law staged-square reading is
   merge-invariant per stage, so it factors through the quotient (`exists_mergeMk_injective`).
 * `mergeStage` / `advances_mergeStage` / `mergeStage_injOn` — **the retained profile** `R_t`: the
@@ -148,6 +151,15 @@ theorem mergeLaw_injective (U : X → X) : Function.Injective (mergeLaw U) := by
       intro hxy
       rw [mergeLaw_mergeMk, mergeLaw_mergeMk] at hxy
       exact Quotient.sound (merges_of_merges_apply (Quotient.exact hxy))
+
+/-- **`mergeMk` itself is injective when `U` is**: `Merges U s s'` unwinds to `∃ k, U^[k] s = U^[k]
+s'`, and an injective `U` has injective iterates, so the witnessing equation collapses to `s = s'`
+directly — no merging happens at all. -/
+theorem mergeMk_injective_of_injective {U : X → X} (hU : Function.Injective U) :
+    Function.Injective (mergeMk U) := by
+  intro s s' hss'
+  obtain ⟨k, hk⟩ := Quotient.exact hss'
+  exact hU.iterate k hk
 
 /-- **The staged square, at every stage family, with no hypothesis**: the quotient map is a
 time-independent reading that closes the square against `mergeLaw` identically — this is the

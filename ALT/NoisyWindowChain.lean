@@ -594,8 +594,8 @@ theorem mixingHoeffding_noisyWindowChain
     with hB
   have hsub : traj k ξ ⁻¹' A ⊆ B := by
     intro ω hω
-    simp only [hA, Set.mem_preimage, Set.mem_setOf_eq] at hω
-    simp only [hB, Set.mem_setOf_eq]
+    simp only [hA, Set.mem_preimage, Set.mem_ofPred_eq] at hω
+    simp only [hB, Set.mem_ofPred_eq]
     rw [empiricalMean_sub_coordMean φ hn] at hω
     set S : ℝ := ∑ u ∈ Finset.range n, ParityWalk.chi (traj k ξ ω u) with hS
     have hval : |coordCoef φ * ((n : ℝ)⁻¹ * S)| = |coordCoef φ| * ((n : ℝ)⁻¹ * |S|) := by
@@ -619,7 +619,7 @@ theorem mixingHoeffding_noisyWindowChain
   · -- beyond the observable's own range the event is empty
     have hempty : B = ∅ := by
       ext ω
-      simp only [hB, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le]
+      simp only [hB, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_le]
       calc |∑ u ∈ Finset.range n, ParityWalk.chi (traj k ξ ω u)| ≤ (n : ℝ) :=
             abs_chiSum_traj_le ω n
         _ < (n : ℝ) * τ := by nlinarith
@@ -654,7 +654,7 @@ theorem mixingHoeffding_noisyWindowChain
     rw [hNk] at htail
     have hsetB : B = {ω | ((n : ℝ) * τ - 2 * k) + 2 * k
         ≤ |∑ u ∈ Finset.range n, ParityWalk.chi (obs k (fun i => ξ i ω) u)|} := by
-      ext ω; simp only [hB, Set.mem_setOf_eq, traj]; constructor <;> intro h <;> linarith
+      ext ω; simp only [hB, Set.mem_ofPred_eq, traj]; constructor <;> intro h <;> linarith
     rw [hsetB]
     refine htail.trans ?_
     -- compare the two exponents
@@ -845,7 +845,7 @@ theorem not_mixingHoeffding_pinned_pair {Ω : Type*} [MeasurableSpace Ω] (P : M
         (((measurable_empiricalMean_pair ψ a b n).sub_const _).abs)
     have hpre : traj k (fun i (_ : Ω) => w i) ⁻¹' A = Set.univ := by
       ext ω
-      simp only [hA, Set.mem_preimage, Set.mem_setOf_eq, Set.mem_univ, iff_true, hemp ω]
+      simp only [hA, Set.mem_preimage, Set.mem_ofPred_eq, Set.mem_univ, iff_true, hemp ω]
       linarith
     have hone : (Measure.map (traj k (fun i (_ : Ω) => w i)) P).real A = 1 := by
       simp [Measure.real, Measure.map_apply hFmeas hAmeas, hpre]
@@ -857,7 +857,7 @@ theorem not_mixingHoeffding_pinned_pair {Ω : Type*} [MeasurableSpace Ω] (P : M
     have hempty : {o : ℕ → Bool | τ ≤ |SQOracle.empiricalMean
         (fun (_ : ℕ) (_ : ℕ → Bool) => (1 : ℝ)) n o - 0|} = ∅ := by
       ext o
-      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le, hconst o]
+      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_le, hconst o]
       simpa using hτ1
     rw [hempty, measureReal_empty]
     positivity
@@ -904,7 +904,7 @@ theorem not_mixingHoeffdingTo_pinned_pair {Ω : Type*} [MeasurableSpace Ω] (P :
         (((measurable_empiricalMean_pair ψ a b n).sub_const _).abs)
     have hpre : traj k (fun i (_ : Ω) => w i) ⁻¹' A = Set.univ := by
       ext ω
-      simp only [hA, Set.mem_preimage, Set.mem_setOf_eq, Set.mem_univ, iff_true, hemp ω]
+      simp only [hA, Set.mem_preimage, Set.mem_ofPred_eq, Set.mem_univ, iff_true, hemp ω]
       linarith
     have hone : (Measure.map (traj k (fun i (_ : Ω) => w i)) P).real A = 1 := by
       simp [Measure.real, Measure.map_apply hFmeas hAmeas, hpre]
@@ -916,7 +916,7 @@ theorem not_mixingHoeffdingTo_pinned_pair {Ω : Type*} [MeasurableSpace Ω] (P :
     have hempty : {o : ℕ → Bool | τ ≤ |SQOracle.empiricalMean
         (fun (_ : ℕ) (_ : ℕ → Bool) => (1 : ℝ)) n o - 0|} = ∅ := by
       ext o
-      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le, hconst o]
+      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_le, hconst o]
       simpa using hτ1
     rw [hempty, measureReal_empty]
     positivity
@@ -1483,7 +1483,7 @@ private lemma pairChar_tail (hk : 1 ≤ k) (hmeas : ∀ i, Measurable (ξ i)) (h
   refine le_trans (measureReal_mono ?_ (measure_ne_top _ _)) (le_trans htail ?_)
   · -- the extra terms past the last whole block cost at most one block
     intro ω hω
-    simp only [Set.mem_setOf_eq] at hω ⊢
+    simp only [Set.mem_ofPred_eq] at hω ⊢
     have hext := abs_chiSum_extend (fun t => pairObs k a b (fun i => ξ i ω) t)
       (k * L * M + k * L) r
     rw [← hr] at hext
@@ -1581,7 +1581,7 @@ theorem mixingHoeffding_noisyWindowChain_pair
   · -- beyond the observable's own range the event is empty
     have hempty : traj k ξ ⁻¹' A = ∅ := by
       ext ω
-      simp only [hA, Set.mem_preimage, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false,
+      simp only [hA, Set.mem_preimage, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false,
         not_le]
       obtain ⟨h1, h2⟩ := abs_le.mp (hempabs (traj k ξ ω))
       obtain ⟨h3, h4⟩ := abs_le.mp hmeanabs
@@ -1632,7 +1632,7 @@ theorem mixingHoeffding_noisyWindowChain_pair
           |∑ t ∈ Finset.range n, ParityWalk.chi (obs k (fun i => ξ i ω) (t + off))|}
           = {ω | ((n : ℝ) * τ / 3 - 2 * (k : ℝ)) + 2 * (k : ℝ) ≤
             |∑ t ∈ Finset.range n, ParityWalk.chi (obs k (fun i => ξ i ω) (t + off))|} := by
-        ext ω; simp only [Set.mem_setOf_eq]; constructor <;> intro hh <;> linarith
+        ext ω; simp only [Set.mem_ofPred_eq]; constructor <;> intro hh <;> linarith
       rw [hset]
       refine h.trans (mul_le_mul_of_nonneg_left (Real.exp_le_exp.mpr ?_) (by norm_num))
       rw [neg_div, neg_le_neg_iff, div_le_div_iff₀ (by positivity) (by positivity)]
@@ -1662,7 +1662,7 @@ theorem mixingHoeffding_noisyWindowChain_pair
           |∑ t ∈ Finset.range n, ParityWalk.chi (pairObs k a b (fun i => ξ i ω) t)|}
           = {ω | ((n : ℝ) * τ / 3 - 5 * ((k * L : ℕ) : ℝ)) + 5 * ((k * L : ℕ) : ℝ) ≤
             |∑ t ∈ Finset.range n, ParityWalk.chi (pairObs k a b (fun i => ξ i ω) t)|} := by
-        ext ω; simp only [Set.mem_setOf_eq]; constructor <;> intro hh <;> linarith
+        ext ω; simp only [Set.mem_ofPred_eq]; constructor <;> intro hh <;> linarith
       rw [hset]
       refine h.trans (mul_le_mul_of_nonneg_left (Real.exp_le_exp.mpr ?_) (by norm_num))
       rw [neg_div, neg_le_neg_iff, div_le_div_iff₀ (by positivity) (by positivity)]
@@ -1686,9 +1686,9 @@ theorem mixingHoeffding_noisyWindowChain_pair
           ∪ {ω | (n : ℝ) * τ / 3 ≤
             |∑ t ∈ Finset.range n, ParityWalk.chi (pairObs k a b (fun i => ξ i ω) t)|} := by
       intro ω hω
-      simp only [hA, Set.mem_preimage, Set.mem_setOf_eq] at hω
+      simp only [hA, Set.mem_preimage, Set.mem_ofPred_eq] at hω
       by_contra hcon
-      simp only [Set.mem_union, not_or, Set.mem_setOf_eq, not_le] at hcon
+      simp only [Set.mem_union, not_or, Set.mem_ofPred_eq, not_le] at hcon
       obtain ⟨⟨h1, h2⟩, h3⟩ := hcon
       have hid := empiricalMean_sub_pairMean ψ a b hn (traj k ξ ω)
       have htr : ∀ u, traj k ξ ω u = obs k (fun i => ξ i ω) u := fun _ => rfl
@@ -1919,7 +1919,7 @@ theorem mixingHoeffding_frozen_samePair_correctMean
         {o : ℕ → Bool | τ ≤ |SQOracle.empiricalMean (pairEnsemble pairChar 0 3) n o - (-1)|}
           = ∅ := by
       ext ω
-      simp only [Set.mem_preimage, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le,
+      simp only [Set.mem_preimage, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_le,
         hemp ω]
       simpa using hτ0
     have hzero : (Measure.map (traj 3 (fun i (_ : Ω) => frozenWord i)) P).real
@@ -2031,7 +2031,7 @@ theorem mixingHoeffding_noisyWindowChain_pair_lagK
   · -- beyond the observable's own range the event is empty
     have hempty : traj k ξ ⁻¹' A = ∅ := by
       ext ω
-      simp only [hA, Set.mem_preimage, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false,
+      simp only [hA, Set.mem_preimage, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false,
         not_le]
       obtain ⟨h1, h2⟩ := abs_le.mp (hempabs (traj k ξ ω))
       obtain ⟨h3, h4⟩ := abs_le.mp hansabs
@@ -2081,7 +2081,7 @@ theorem mixingHoeffding_noisyWindowChain_pair_lagK
           |∑ t ∈ Finset.range n, ParityWalk.chi (obs k (fun i => ξ i ω) (t + off))|}
           = {ω | ((n : ℝ) * τ / 3 - 2 * (k : ℝ)) + 2 * (k : ℝ) ≤
             |∑ t ∈ Finset.range n, ParityWalk.chi (obs k (fun i => ξ i ω) (t + off))|} := by
-        ext ω; simp only [Set.mem_setOf_eq]; constructor <;> intro hh <;> linarith
+        ext ω; simp only [Set.mem_ofPred_eq]; constructor <;> intro hh <;> linarith
       rw [hset]
       refine h.trans (mul_le_mul_of_nonneg_left (Real.exp_le_exp.mpr ?_) (by norm_num))
       rw [neg_div, neg_le_neg_iff, div_le_div_iff₀ (by norm_num) (by positivity)]
@@ -2111,9 +2111,9 @@ theorem mixingHoeffding_noisyWindowChain_pair_lagK
           ∪ {ω | (n : ℝ) * τ / 3 ≤
             |∑ t ∈ Finset.range n, (ParityWalk.zeta (ξ (t + (a + k)) ω) - m)|} := by
       intro ω hω
-      simp only [hA, Set.mem_preimage, Set.mem_setOf_eq] at hω
+      simp only [hA, Set.mem_preimage, Set.mem_ofPred_eq] at hω
       by_contra hcon
-      simp only [Set.mem_union, not_or, Set.mem_setOf_eq, not_le] at hcon
+      simp only [Set.mem_union, not_or, Set.mem_ofPred_eq, not_le] at hcon
       obtain ⟨⟨h1, h2⟩, h3⟩ := hcon
       have hid := empiricalMean_sub_samePairMean ψ a (a + k) hn m (traj k ξ ω)
       have htr : ∀ u, traj k ξ ω u = obs k (fun i => ξ i ω) u := fun _ => rfl
@@ -2442,7 +2442,7 @@ private lemma measurable_sum_classSum {a r n : ℕ} {s : Finset ℕ} (hr : r < k
   have hne : r' ≠ r := fun h => hrs (h ▸ hr')
   refine (measurable_classSum a r' n).mono (ParityWalk.noiseAlg_mono ξ ?_) le_rfl
   intro i hi
-  simp only [Set.mem_compl_iff, Set.mem_setOf_eq]
+  simp only [Set.mem_compl_iff, Set.mem_ofPred_eq]
   rw [hi]
   exact residue_ne_of_ne hr (hs r' hr') hne
 
@@ -2654,7 +2654,7 @@ theorem mixingHoeffding_noisyWindowChain_pair_lag_mul
   · -- beyond the observable's own range the event is empty
     have hempty : traj k ξ ⁻¹' A = ∅ := by
       ext ω
-      simp only [hA, Set.mem_preimage, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false,
+      simp only [hA, Set.mem_preimage, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false,
         not_le]
       obtain ⟨h1, h2⟩ := abs_le.mp (hempabs (traj k ξ ω))
       obtain ⟨h3, h4⟩ := abs_le.mp hansabs
@@ -2711,7 +2711,7 @@ theorem mixingHoeffding_noisyWindowChain_pair_lag_mul
           |∑ t ∈ Finset.range n, ParityWalk.chi (obs k (fun i => ξ i ω) (t + off))|}
           = {ω | ((n : ℝ) * τ / 3 - 2 * (k : ℝ)) + 2 * (k : ℝ) ≤
             |∑ t ∈ Finset.range n, ParityWalk.chi (obs k (fun i => ξ i ω) (t + off))|} := by
-        ext ω; simp only [Set.mem_setOf_eq]; constructor <;> intro hh <;> linarith
+        ext ω; simp only [Set.mem_ofPred_eq]; constructor <;> intro hh <;> linarith
       rw [hset]
       have hstep1 : Real.exp (-((n : ℝ) * τ / 3 - 2 * (k : ℝ)) ^ 2 / (2 * ((n - k : ℕ) : ℝ)))
           ≤ Real.exp (-((n : ℝ) * τ ^ 2 / 32)) := by
@@ -2765,9 +2765,9 @@ theorem mixingHoeffding_noisyWindowChain_pair_lag_mul
             |∑ t ∈ Finset.range n,
               (ParityWalk.chi (pairObs k a (a + k * d) (fun i => ξ i ω) t) - m ^ d)|} := by
       intro ω hω
-      simp only [hA, Set.mem_preimage, Set.mem_setOf_eq] at hω
+      simp only [hA, Set.mem_preimage, Set.mem_ofPred_eq] at hω
       by_contra hcon
-      simp only [Set.mem_union, not_or, Set.mem_setOf_eq, not_le] at hcon
+      simp only [Set.mem_union, not_or, Set.mem_ofPred_eq, not_le] at hcon
       obtain ⟨⟨h1, h2⟩, h3⟩ := hcon
       have hid := empiricalMean_sub_samePairMean ψ a (a + k * d) hn (m ^ d) (traj k ξ ω)
       have htr : ∀ u, traj k ξ ω u = obs k (fun i => ξ i ω) u := fun _ => rfl

@@ -348,7 +348,7 @@ load-bearing for the identity — only for which `List ℕ` the decoder below is
 theorem consistentWith_sort_eq_consistent_bminus (ℓ : ℕ → Fin n → Fin m) (B : Finset ℕ) :
     ConsistentWith ℓ (B.sort (· ≤ ·)) = Consistent ℓ (Bminus B) := by
   ext V
-  simp only [ConsistentWith, Consistent, Set.mem_setOf_eq, Finset.mem_sort, Bminus,
+  simp only [ConsistentWith, Consistent, Set.mem_ofPred_eq, Finset.mem_sort, Bminus,
     Finset.mem_filter]
   constructor
   · intro h t ⟨htB, ht1, ht1B⟩ x
@@ -363,7 +363,7 @@ pairs `t = t' + 1` inside `[0, k)` are exactly the times `t ∈ [1, k)`, `t' := 
 theorem consistentWith_range_eq_consistent_ico (ℓ : ℕ → Fin n → Fin m) (k : ℕ) :
     ConsistentWith ℓ (List.range k) = Consistent ℓ (Finset.Ico 1 k) := by
   ext V
-  simp only [ConsistentWith, Consistent, Set.mem_setOf_eq, List.mem_range, Finset.mem_Ico]
+  simp only [ConsistentWith, Consistent, Set.mem_ofPred_eq, List.mem_range, Finset.mem_Ico]
   constructor
   · intro h t ⟨ht1, htk⟩ x
     exact h t htk (t - 1) (by omega) (by omega) x
@@ -521,7 +521,7 @@ private theorem guard_zeroS_load_bearing :
   have hempty : Consistent guardSkewLens ({0, 1} : Finset ℕ) = ∅ := by
     rw [Set.eq_empty_iff_forall_notMem]
     intro V
-    simp only [Consistent, Set.mem_setOf_eq]
+    simp only [Consistent, Set.mem_ofPred_eq]
     revert V
     decide
   have hpos : (∏ z : (↥({0, 1} : Finset ℕ) → Fin 2),
@@ -547,7 +547,7 @@ private theorem guard_permCarries_load_bearing :
   have hempty : Consistent guardArbitraryLens ({1} : Finset ℕ) = ∅ := by
     rw [Set.eq_empty_iff_forall_notMem]
     intro V
-    simp only [Consistent, Set.mem_setOf_eq]
+    simp only [Consistent, Set.mem_ofPred_eq]
     revert V
     decide
   have hpos : (∏ z : (↥({1} : Finset ℕ) → Fin 2),
@@ -572,7 +572,7 @@ private theorem guard_hinj_load_bearing :
     have h12 : itinerary guardSkewLens ({1} : Finset ℕ) 1
         = itinerary guardSkewLens ({1} : Finset ℕ) 2 := by decide
     exact absurd (hinj h12) (by decide)
-  · simp only [Consistent, Set.mem_setOf_eq]
+  · simp only [Consistent, Set.mem_ofPred_eq]
     decide
 
 private def guardRegionU : Perm (Fin 4) := Equiv.swap 0 1 * Equiv.swap 2 3
@@ -608,7 +608,7 @@ private theorem guard_region_nonvacuous :
     have h23 : itinerary guardRegionLens ({1, 2} : Finset ℕ) 2
         = itinerary guardRegionLens ({1, 2} : Finset ℕ) 3 := by decide
     exact absurd (hinj h23) (by decide)
-  · simp only [Consistent, Set.mem_setOf_eq]
+  · simp only [Consistent, Set.mem_ofPred_eq]
     decide
 
 end FrameItinerary

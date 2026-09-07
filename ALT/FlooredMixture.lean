@@ -3076,7 +3076,7 @@ theorem wrongMass_rotMiss (b : ℕ) {t : ℕ} (ht : t ≤ b) :
   · have hmiss0 : missCount (rotMiss C) 0 t = t / C + 1 := by
       rw [missCount_rotMiss]
       simp only [Fin.val_zero]
-      rw [if_pos hrpos]
+      simp [hrpos]
     have hK1 : 1 ≤ t - t / C := by
       have := missCount_le (rotMiss C) 0 t
       rw [hmiss0] at this

@@ -239,7 +239,7 @@ theorem detFactor_stronglyMeasurable (pred : ι → (s : ℕ) → (Fin s → X) 
   have hEq : detFactor pred i s
       = Set.indicator {ω : ℕ → X | pred i s (fun k => ω k) = ω s} (fun _ => (1 : ℝ)) := by
     funext ω
-    simp only [detFactor, Set.indicator_apply, Set.mem_setOf_eq]
+    simp only [detFactor, Set.indicator_apply, Set.mem_ofPred_eq]
   rw [hEq]
   exact (@stronglyMeasurable_const (ℕ → X) ℝ (coordFil X (s + 1)) _ (1 : ℝ)).indicator hSet
 

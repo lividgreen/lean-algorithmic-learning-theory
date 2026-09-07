@@ -984,7 +984,7 @@ private theorem val_stepReturnU (v f k : ℕ) :
     · by_cases h2 : f.unpair.1 = 2
       · simp [h2]
       · by_cases h3 : f.unpair.1 = 3
-        · simp only [h3, Nat.reduceEqDiff, reduceIte]
+        · simp only [h3, Nat.reduceEqDiff, reduceIte]; rfl
         · by_cases h4 : f.unpair.1 = 4
           · simp only [h4, Nat.reduceEqDiff, reduceIte]
           · simp only [h0, h1, h2, h3, h4, reduceIte]

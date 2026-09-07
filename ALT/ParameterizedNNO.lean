@@ -132,7 +132,7 @@ theorem ParamNNO.bounded_recursor (P : ParamNNO W) {A : Type*} (a : A) (f : A �
       ∀ h₁ h₂ : W → A, P.Recurses a f h₁ → P.Recurses a f h₂ →
         ∀ k, k ≤ P.depth → h₁ (P.succ^[k] P.zero) = h₂ (P.succ^[k] P.zero) := by
   classical
-  haveI : Nonempty (Fin (P.depth + 1)) := ⟨0⟩
+  have : Nonempty (Fin (P.depth + 1)) := ⟨0⟩
   -- The inverse of the (injective) orbit map recovers the index `k` of each orbit point.
   have hg : ∀ k : ℕ, k ≤ P.depth →
       (Function.invFun P.orbit (P.succ^[k] P.zero)).val = k := by

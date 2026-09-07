@@ -103,8 +103,8 @@ private theorem baseWorld_moves (hz : 2 ≤ z) (hc : 2 ≤ c) : ∀ x, baseWorld
 descends through `baseWorld` with law the `z`-shift. The wrap step is where `z ∣ c * z` bites. -/
 theorem baseLens_descent (hz : 2 ≤ z) (hc : 2 ≤ c) (x : Fin (c * z)) :
     baseLens z c (baseWorld z c x) = (finRotate z) (baseLens z c x) := by
-  haveI : NeZero (c * z) := ⟨by positivity⟩
-  haveI : NeZero z := ⟨by omega⟩
+  have : NeZero (c * z) := ⟨by positivity⟩
+  have : NeZero z := ⟨by omega⟩
   apply Fin.ext
   have hdvd : z ∣ c * z := ⟨c, by ring⟩
   have h1 : ((1 : Fin (c * z)) : ℕ) = 1 := by
@@ -209,7 +209,7 @@ private theorem centralizer_card_le {N : ℕ} [NeZero N] (U₀ : Equiv.Perm (Fin
   have hinj : Set.InjOn (fun g : Equiv.Perm (Fin N) => g 0)
       ↑(Finset.univ.filter (fun g : Equiv.Perm (Fin N) => g * U₀ * g⁻¹ = U₀)) := by
     intro g hg g' hg' heq
-    simp only [Finset.coe_filter, Finset.mem_univ, true_and, Set.mem_setOf_eq] at hg hg'
+    simp only [Finset.coe_filter, Finset.mem_univ, true_and, Set.mem_ofPred_eq] at hg hg'
     have hg2 : g * U₀ = U₀ * g := mul_inv_eq_iff_eq_mul.mp hg
     have hg2' : g' * U₀ = U₀ * g' := mul_inv_eq_iff_eq_mul.mp hg'
     have heq' : g 0 = g' 0 := heq
@@ -287,7 +287,7 @@ theorem lens_collapse_count (L : ℕ) :
   rw [hprod] at h
   have hset : {V : Equiv.Perm (Fin (c * z)) | KE (lensCode (conjLens z c V)) ≤ L}
       = {V : Equiv.Perm (Fin (c * z)) | KE (lensCode (V • baseLens z c)) ≤ L} := by
-    ext V; simp only [Set.mem_setOf_eq, heq V]
+    ext V; simp only [Set.mem_ofPred_eq, heq V]
   rw [hset]; exact h
 
 private theorem exists_double_witness {N : ℕ} (Bad1 Bad2 : Set (Equiv.Perm (Fin N)))
@@ -324,7 +324,7 @@ theorem expensiveLens_family (z c L₁ L₂ : ℕ) (hz : 2 ≤ z) (hc : 2 ≤ c)
       ∧ (∀ i, Nat.card {x : Fin (c * z) // conjLens z c V x = i} = c)
       ∧ L₁ < KE (lensCode (conjLens z c V))
       ∧ L₂ < KE (lensCode (⇑(conjWorld z c V))) := by
-  haveI : NeZero (c * z) := ⟨by positivity⟩
+  have : NeZero (c * z) := ⟨by positivity⟩
   have hB1 := lens_collapse_count (z := z) (c := c) L₁
   have hB2 := conj_collapse_count (baseWorld z c) (baseWorld_isCycle hz hc)
     (baseWorld_moves hz hc) L₂

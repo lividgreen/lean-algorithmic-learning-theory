@@ -315,7 +315,7 @@ theorem collapse_union_staged {n m k : ℕ} (d : ℕ) :
          * Nat.card {μ' : Fin n ↪ Fin m // ∀ q, ℓ' (μ' q) = ℓ q} < POP}
       = ⋃ p ∈ idx, T p := by
     ext μ
-    simp only [Set.mem_setOf_eq, Set.mem_iUnion, hTdef, hidxdef, Finset.mem_filter,
+    simp only [Set.mem_ofPred_eq, Set.mem_iUnion, hTdef, hidxdef, Finset.mem_filter,
       Finset.mem_univ, true_and]
     constructor
     · rintro ⟨ℓ, ℓ', hcons, hq⟩
@@ -636,7 +636,7 @@ theorem CbHs_collapse {n m : ℕ} (k b d : ℕ) :
     (collapse_union_staged (n := n) (m := m) (k := k) d)
   rintro μ ⟨ℓ, ℓ', hcons, hbℓ, hbℓ', hlt⟩
   refine ⟨ℓ, ℓ', hcons, ?_⟩
-  haveI : Nonempty {μ' : Fin n ↪ Fin m // ∀ q, ℓ' (μ' q) = ℓ q} := ⟨⟨μ, hcons⟩⟩
+  have : Nonempty {μ' : Fin n ↪ Fin m // ∀ q, ℓ' (μ' q) = ℓ q} := ⟨⟨μ, hcons⟩⟩
   have hded : 0 < Nat.card {μ' : Fin n ↪ Fin m // ∀ q, ℓ' (μ' q) = ℓ q} := Nat.card_pos
   calc 2 ^ (KE (lensCode ℓ) + KE (lensCode ℓ') + d + 2)
         * Nat.card {μ' : Fin n ↪ Fin m // ∀ q, ℓ' (μ' q) = ℓ q}
@@ -824,6 +824,410 @@ theorem exists_candidate_capacity_le {n m : ℕ} (hnm : n ≤ m) (k b : ℕ) :
   have hpos : 0 < m.descFactorial n := Nat.descFactorial_pos.mpr hnm
   omega
 
+/-! ## The alphabet-uniform cap ([Guests] §7 Theorem 7.13, extended; §9.2's alphabet paragraph)
+
+`CbHs_collapse`'s cap holds at each label alphabet `k` separately: the union behind it
+(`collapse_union_staged`) runs `kraft_lensCode`'s Kraft step over frames valued in the SAME `Fin
+k`, which is injective only at a fixed codomain, and nothing in `StagedBudgetedEntropies` bounds
+the alphabet by `n` or `m`. §9.2 names the gap directly: "no statement here caps the capacity
+uniformly over alphabets."
+
+The route below does not repair the per-alphabet Kraft step; it replaces it. Every frame pair
+`(ℓ, ℓ')`, at ANY label count `k`, normalizes to one pair at the FIXED alphabet `Fin m` — rank each
+label by its first-occurrence position in `ℓ'`'s own table (`rankOf`). `lensTable` mentions no
+codomain, so the normalized pair lands at `Fin m` whatever `k` was, and the per-alphabet union that
+priced `collapse_union_staged` over frame CODES is replaced by a count over normalized-PAIR codes
+(`card_KE_le`) — one fixed alphabet, no Kraft sum, no union over label counts at all. -/
+
+/-! ### The rank map: normalizing a frame pair to the later carrier's own alphabet -/
+
+private theorem lensTable_length {n m : ℕ} (ℓ : Fin n → Fin m) : (lensTable ℓ).length = n := by
+  simp [lensTable]
+
+private theorem mem_lensTable_apply {n m : ℕ} (ℓ : Fin n → Fin m) (q : Fin n) :
+    ((ℓ q : Fin m) : ℕ) ∈ lensTable ℓ := by
+  simp only [lensTable]
+  exact List.mem_map_of_mem (List.mem_finRange q)
+
+/-- **The rank map** ([Guests] §7, the alphabet-uniform round, Finding 1): the first-occurrence
+position of a label in the LATER frame's own table, landing at the fixed carrier `Fin m` whatever
+label count the input came from — `lensTable` mentions no codomain, which is why no union over
+alphabets is needed below. -/
+private def rankOf {m k : ℕ} (ℓ' : Fin m → Fin k) (hm : 0 < m) : Fin k → Fin m := fun v =>
+  if h : List.idxOf (v : ℕ) (lensTable ℓ') < m then ⟨List.idxOf (v : ℕ) (lensTable ℓ'), h⟩
+  else ⟨0, hm⟩
+
+private theorem rankOf_eq_idxOf {m k : ℕ} {ℓ' : Fin m → Fin k} {hm : 0 < m} {v : Fin k}
+    (h : (v : ℕ) ∈ lensTable ℓ') :
+    ((rankOf ℓ' hm v : Fin m) : ℕ) = List.idxOf (v : ℕ) (lensTable ℓ') := by
+  have hlt : List.idxOf (v : ℕ) (lensTable ℓ') < m :=
+    (List.idxOf_lt_length_of_mem h).trans_eq (lensTable_length ℓ')
+  simp only [rankOf, dif_pos hlt]
+
+/-- **The rank map is injective on the labels its own frame table carries** ([Guests] §7, Finding
+1: "distinct present values have distinct first-occurrence indices"): two present labels agreeing
+on their `rankOf` image share the SAME table position (`List.getElem_idxOf`), hence the same
+value. -/
+private theorem rankOf_injOn_mem {m k : ℕ} (ℓ' : Fin m → Fin k) (hm : 0 < m) :
+    Set.InjOn (rankOf ℓ' hm) {v : Fin k | (v : ℕ) ∈ lensTable ℓ'} := by
+  intro v1 hv1 v2 hv2 heq
+  have e1 : ((rankOf ℓ' hm v1 : Fin m) : ℕ) = List.idxOf (v1 : ℕ) (lensTable ℓ') :=
+    rankOf_eq_idxOf hv1
+  have e2 : ((rankOf ℓ' hm v2 : Fin m) : ℕ) = List.idxOf (v2 : ℕ) (lensTable ℓ') :=
+    rankOf_eq_idxOf hv2
+  have hidx : List.idxOf (v1 : ℕ) (lensTable ℓ') = List.idxOf (v2 : ℕ) (lensTable ℓ') := by
+    rw [← e1, ← e2, heq]
+  have hltL1 : List.idxOf (v1 : ℕ) (lensTable ℓ') < (lensTable ℓ').length :=
+    List.idxOf_lt_length_of_mem hv1
+  have hltL2 : List.idxOf (v2 : ℕ) (lensTable ℓ') < (lensTable ℓ').length :=
+    List.idxOf_lt_length_of_mem hv2
+  have hg1 := List.getElem_idxOf hltL1
+  have hg2 := List.getElem_idxOf hltL2
+  have hv12 : (v1 : ℕ) = (v2 : ℕ) := by
+    simp only [hidx] at hg1
+    exact hg1.symm.trans hg2
+  exact Fin.val_injective hv12
+
+/-- Rank the later frame's own table: needs no hypothesis on `ℓ'`, its own values are trivially
+present in it. -/
+private theorem lensTable_rankOf_comp_right {m k : ℕ} (ℓ' : Fin m → Fin k) (hm : 0 < m) :
+    lensTable (rankOf ℓ' hm ∘ ℓ') = (lensTable ℓ').map fun v => List.idxOf v (lensTable ℓ') := by
+  simp only [lensTable, Function.comp_apply, List.map_map]
+  exact List.map_congr_left fun q _ => rankOf_eq_idxOf (mem_lensTable_apply ℓ' q)
+
+/-- Rank the earlier frame's table: needs consistency, which puts every value of `ℓ` inside `ℓ'`'s
+own table (`ℓ q = ℓ' (μ q)`). -/
+private theorem lensTable_rankOf_comp_left {n m k : ℕ} {ℓ : Fin n → Fin k} {ℓ' : Fin m → Fin k}
+    {μ : Fin n ↪ Fin m} (hcons : ∀ q, ℓ' (μ q) = ℓ q) (hm : 0 < m) :
+    lensTable (rankOf ℓ' hm ∘ ℓ) = (lensTable ℓ).map fun v => List.idxOf v (lensTable ℓ') := by
+  simp only [lensTable, Function.comp_apply, List.map_map]
+  refine List.map_congr_left fun q _ => ?_
+  have hmem : ((ℓ q : Fin k) : ℕ) ∈ lensTable ℓ' := hcons q ▸ mem_lensTable_apply ℓ' (μ q)
+  exact rankOf_eq_idxOf hmem
+
+/-- **The normalized pair stays consistent with the same candidate** ([Guests] §7, Finding 1): one
+line, `ρ` applied to both sides of the original consistency equation. -/
+private theorem rankOf_consistent {n m k : ℕ} {ℓ : Fin n → Fin k} {ℓ' : Fin m → Fin k}
+    {μ : Fin n ↪ Fin m} (hcons : ∀ q, ℓ' (μ q) = ℓ q) (hm : 0 < m) :
+    ∀ q, (rankOf ℓ' hm ∘ ℓ') (μ q) = (rankOf ℓ' hm ∘ ℓ) q :=
+  fun q => congrArg (rankOf ℓ' hm) (hcons q)
+
+/-! ### Orbit preservation under an injective-on-range post-composition -/
+
+private theorem range_orbit_eq {n : ℕ} {β : Type*} (ℓ : Fin n → β) {ℓ₁ : Fin n → β}
+    (h : ℓ₁ ∈ orbit (Equiv.Perm (Fin n)) ℓ) : Set.range ℓ₁ = Set.range ℓ := by
+  obtain ⟨σ, hσ⟩ := MulAction.mem_orbit_iff.mp h
+  have hℓ₁ : ℓ₁ = ℓ ∘ ⇑σ⁻¹ := by rw [← hσ]; funext x; exact smul_lens_apply' σ ℓ x
+  rw [hℓ₁]
+  exact EquivLike.range_comp ℓ σ⁻¹
+
+private theorem orbit_postcomp_eq_image {n : ℕ} {β γ : Type*} (ρ : β → γ) (ℓ : Fin n → β) :
+    orbit (Equiv.Perm (Fin n)) (ρ ∘ ℓ)
+      = (fun ℓ₁ : Fin n → β => ρ ∘ ℓ₁) '' orbit (Equiv.Perm (Fin n)) ℓ := by
+  ext f
+  simp only [Set.mem_image]
+  constructor
+  · intro hf
+    obtain ⟨σ, hσ⟩ := MulAction.mem_orbit_iff.mp hf
+    refine ⟨σ • ℓ, ⟨σ, rfl⟩, ?_⟩
+    rw [← hσ]
+    funext x
+    simp only [Function.comp_apply, smul_lens_apply']
+  · rintro ⟨ℓ₁, hℓ₁, rfl⟩
+    obtain ⟨σ, hσ⟩ := MulAction.mem_orbit_iff.mp hℓ₁
+    refine ⟨σ, ?_⟩
+    funext x
+    simp only [Function.comp_apply, smul_lens_apply', ← hσ]
+
+/-- **Orbit preservation under an injective-on-range post-composition** ([Guests] §7, the
+alphabet-uniform round): composing a frame with any map injective on the frame's own values changes
+no relabelling class's SIZE — a self-standing fact about any post-composition, with no reference to
+`rankOf` at all. -/
+theorem orbit_postcomp_card_eq {n : ℕ} {β γ : Type*} (ρ : β → γ) (ℓ : Fin n → β)
+    (hρ : Set.InjOn ρ (Set.range ℓ)) :
+    Nat.card ↥(orbit (Equiv.Perm (Fin n)) (ρ ∘ ℓ)) = Nat.card ↥(orbit (Equiv.Perm (Fin n)) ℓ) := by
+  have hinj : Set.InjOn (fun ℓ₁ : Fin n → β => ρ ∘ ℓ₁) (orbit (Equiv.Perm (Fin n)) ℓ) := by
+    intro ℓ₁ h₁ ℓ₂ h₂ heq
+    have hr1 := range_orbit_eq ℓ h₁
+    have hr2 := range_orbit_eq ℓ h₂
+    funext x
+    exact hρ (hr1 ▸ ⟨x, rfl⟩) (hr2 ▸ ⟨x, rfl⟩) (congrFun heq x)
+  rw [orbit_postcomp_eq_image]
+  simp only [Nat.card_coe_set_eq]
+  exact Set.InjOn.ncard_image hinj
+
+/-! ### The rank builder: the normalization as a single fixed program -/
+
+private def rankFun (p : ℕ) : ℕ :=
+  Nat.pair
+    (Encodable.encode
+      (((Encodable.decode (α := List ℕ) p.unpair.1).getD []).map fun v =>
+        List.idxOf v ((Encodable.decode (α := List ℕ) p.unpair.2).getD [])))
+    (Encodable.encode
+      (((Encodable.decode (α := List ℕ) p.unpair.2).getD []).map fun v =>
+        List.idxOf v ((Encodable.decode (α := List ℕ) p.unpair.2).getD [])))
+
+private theorem primrec_rankFun : Primrec rankFun := by
+  have hdec1 : Primrec fun p : ℕ => (Encodable.decode (α := List ℕ) p.unpair.1).getD [] :=
+    Primrec.option_getD.comp (Primrec.decode.comp (Primrec.fst.comp Primrec.unpair))
+      (Primrec.const [])
+  have hdec2 : Primrec fun p : ℕ => (Encodable.decode (α := List ℕ) p.unpair.2).getD [] :=
+    Primrec.option_getD.comp (Primrec.decode.comp (Primrec.snd.comp Primrec.unpair))
+      (Primrec.const [])
+  have hg : Primrec fun q : ℕ × ℕ =>
+      List.idxOf q.2 ((Encodable.decode (α := List ℕ) q.1.unpair.2).getD []) :=
+    Primrec.list_idxOf.comp Primrec.snd (hdec2.comp Primrec.fst)
+  have hmap1 : Primrec fun p : ℕ =>
+      (((Encodable.decode (α := List ℕ) p.unpair.1).getD []).map fun v =>
+        List.idxOf v ((Encodable.decode (α := List ℕ) p.unpair.2).getD [])) :=
+    Primrec.list_map hdec1 hg
+  have hmap2 : Primrec fun p : ℕ =>
+      (((Encodable.decode (α := List ℕ) p.unpair.2).getD []).map fun v =>
+        List.idxOf v ((Encodable.decode (α := List ℕ) p.unpair.2).getD [])) :=
+    Primrec.list_map hdec2 hg
+  exact Primrec₂.natPair.comp (Primrec.encode.comp hmap1) (Primrec.encode.comp hmap2)
+
+private theorem partrec_rankFun : Nat.Partrec rankFun :=
+  _root_.Partrec.nat_iff.mp primrec_rankFun.to_comp.partrec
+
+/-- **The fixed rank-normalization program** ([Guests] §7, the alphabet-uniform round): extracted
+from universality (`Nat.Partrec.Code.exists_code`), independent of `n`, `m`, `k`, and every frame —
+one program whose `elen` is the fixed constant `CbHs_collapse_uniform`'s exponent carries, exactly
+as `BinaryConstant.dbl`'s `elen` is a fixed uncontrolled constant. -/
+noncomputable def rankBuilder : Nat.Partrec.Code :=
+  Classical.choose (Nat.Partrec.Code.exists_code.mp partrec_rankFun)
+
+private theorem eval_rankBuilder (p : ℕ) :
+    Nat.Partrec.Code.eval rankBuilder p = Part.some (rankFun p) := by
+  have h := congrFun (Classical.choose_spec (Nat.Partrec.Code.exists_code.mp partrec_rankFun)) p
+  simpa [rankBuilder] using h
+
+/-- **The rank builder's frame-level law** ([Guests] §7, Finding 3): on the joint code of a
+consistent pair, `rankBuilder` computes the joint code of the RANKED pair — `rankFun`'s two
+`List.idxOf` maps are, by `lensTable_rankOf_comp_left`/`_right`, exactly `lensTable` of `rankOf ℓ'
+hm ∘ ℓ` and of `rankOf ℓ' hm ∘ ℓ'`. -/
+private theorem eval_rankBuilder_pair {n m k : ℕ} {ℓ : Fin n → Fin k} {ℓ' : Fin m → Fin k}
+    {μ : Fin n ↪ Fin m} (hcons : ∀ q, ℓ' (μ q) = ℓ q) (hm : 0 < m) :
+    Nat.Partrec.Code.eval rankBuilder (Nat.pair (lensCode ℓ) (lensCode ℓ'))
+      = Part.some (Nat.pair (lensCode (rankOf ℓ' hm ∘ ℓ)) (lensCode (rankOf ℓ' hm ∘ ℓ'))) := by
+  rw [eval_rankBuilder]
+  simp only [rankFun, lensCode, Nat.unpair_pair, Encodable.encodek, Option.getD_some]
+  rw [← lensTable_rankOf_comp_left hcons hm, ← lensTable_rankOf_comp_right ℓ' hm]
+
+/-- **The price, in the composition shape** ([Guests] §7, Finding 2): `minCode` of the input joint
+code, composed with the fixed rank builder. `invariance_general`'s LOADED-value route is barred by
+the standing trap — it would pay `Nat.size` of the encoded tables themselves; this pays only the
+builder's own fixed length plus the input pair's `KE`. -/
+private theorem KE_rankBuilder_pair_le {n m k : ℕ} {ℓ : Fin n → Fin k} {ℓ' : Fin m → Fin k}
+    {μ : Fin n ↪ Fin m} (hcons : ∀ q, ℓ' (μ q) = ℓ q) (hm : 0 < m) :
+    KE (Nat.pair (lensCode (rankOf ℓ' hm ∘ ℓ)) (lensCode (rankOf ℓ' hm ∘ ℓ')))
+      ≤ KE (lensCode ℓ) + KE (lensCode ℓ') + elen rankBuilder + 6 := by
+  set z := Nat.pair (lensCode ℓ) (lensCode ℓ') with hz
+  have hd : Nat.Partrec.Code.eval (minCode z) 0 = Part.some z := (exists_min_E z).choose_spec.1
+  have hcomp : KolmogorovComplexity.Computes (Nat.Partrec.Code.comp rankBuilder (minCode z))
+      (Nat.pair (lensCode (rankOf ℓ' hm ∘ ℓ)) (lensCode (rankOf ℓ' hm ∘ ℓ'))) := by
+    change Nat.Partrec.Code.eval (Nat.Partrec.Code.comp rankBuilder (minCode z)) 0 = _
+    rw [CodeEvalLaws.eval_comp_some hd, hz]
+    exact eval_rankBuilder_pair hcons hm
+  have hle := KE_comp_le hcomp
+  have hsub : KE z ≤ KE (lensCode ℓ) + KE (lensCode ℓ') + 3 := KE_subadditive _ _
+  rw [elen_minCode] at hle
+  omega
+
+/-! ### The count, and the capstone -/
+
+private theorem exists_mem_stagedBudgetedEntropies_gt {n m : ℕ} {μ : Fin n ↪ Fin m} {b E : ℕ}
+    (h : 2 ^ E < CbHs μ b) : ∃ N ∈ StagedBudgetedEntropies μ b, 2 ^ E < N := by
+  rcases (StagedBudgetedEntropies μ b).eq_empty_or_nonempty with he | hne
+  · exfalso
+    have h0 : CbHs μ b = 0 := by
+      change sSup (StagedBudgetedEntropies μ b) = 0
+      simp [he, csSup_empty]
+    rw [h0] at h
+    exact Nat.not_lt_zero _ h
+  · exact exists_lt_of_lt_csSup hne h
+
+/-- **The Kraft-free union collapse, normalized-pair form** ([Guests] §7, the alphabet-uniform
+round, Finding 4): the qualifying normalized pairs at the fixed alphabet `Fin m` number at most
+`2 ^ (B + 1)` (their joint codes are distinct — `lensCode_injective'` at fixed sizes plus `Nat.pair`
+injectivity — and bounded at cost `B`, so `card_KE_le` caps the index), and each contributes at
+most `POP / 2 ^ (B + d + 2)` candidates to the union — a single fixed threshold rather than a
+per-pair Kraft weight, so the whole bound is arithmetic in `ℕ` with no real-valued sum. -/
+private theorem collapse_union_normalized {n m : ℕ} (B d : ℕ) :
+    {μ : Fin n ↪ Fin m | ∃ (ℓR : Fin n → Fin m) (ℓR' : Fin m → Fin m),
+        (∀ q, ℓR' (μ q) = ℓR q) ∧ KE (Nat.pair (lensCode ℓR) (lensCode ℓR')) ≤ B ∧
+        2 ^ (B + d + 2) * Nat.card {μ' : Fin n ↪ Fin m // ∀ q, ℓR' (μ' q) = ℓR q}
+          < m.descFactorial n}.ncard * 2 ^ d
+      ≤ m.descFactorial n := by
+  classical
+  set POP := m.descFactorial n with hPOP
+  set idx := Finset.univ.filter fun p : (Fin n → Fin m) × (Fin m → Fin m) =>
+      KE (Nat.pair (lensCode p.1) (lensCode p.2)) ≤ B ∧
+      2 ^ (B + d + 2) * Nat.card {μ' : Fin n ↪ Fin m // ∀ q, p.2 (μ' q) = p.1 q} < POP
+    with hidxdef
+  set T : (Fin n → Fin m) × (Fin m → Fin m) → Set (Fin n ↪ Fin m) :=
+    fun p => {μ | ∀ q, p.2 (μ q) = p.1 q} with hTdef
+  have hsub : {μ : Fin n ↪ Fin m | ∃ (ℓR : Fin n → Fin m) (ℓR' : Fin m → Fin m),
+        (∀ q, ℓR' (μ q) = ℓR q) ∧ KE (Nat.pair (lensCode ℓR) (lensCode ℓR')) ≤ B ∧
+        2 ^ (B + d + 2) * Nat.card {μ' : Fin n ↪ Fin m // ∀ q, ℓR' (μ' q) = ℓR q} < POP}
+      = ⋃ p ∈ idx, T p := by
+    ext μ
+    simp only [Set.mem_ofPred_eq, Set.mem_iUnion, hTdef, hidxdef, Finset.mem_filter,
+      Finset.mem_univ, true_and]
+    constructor
+    · rintro ⟨ℓR, ℓR', hcons, hB, hlt⟩
+      exact ⟨(ℓR, ℓR'), ⟨hB, hlt⟩, hcons⟩
+    · rintro ⟨⟨ℓR, ℓR'⟩, ⟨hB, hlt⟩, hcons⟩
+      exact ⟨ℓR, ℓR', hcons, hB, hlt⟩
+  have hidxsubcost : idx ⊆ Finset.univ.filter fun p : (Fin n → Fin m) × (Fin m → Fin m) =>
+      KE (Nat.pair (lensCode p.1) (lensCode p.2)) ≤ B := by
+    intro p hp
+    rw [hidxdef, Finset.mem_filter] at hp
+    exact Finset.mem_filter.mpr ⟨Finset.mem_univ p, hp.2.1⟩
+  have hcardcost : (Finset.univ.filter fun p : (Fin n → Fin m) × (Fin m → Fin m) =>
+      KE (Nat.pair (lensCode p.1) (lensCode p.2)) ≤ B).card ≤ 2 ^ (B + 1) := by
+    have hinj : Set.InjOn (fun p : (Fin n → Fin m) × (Fin m → Fin m) =>
+        Nat.pair (lensCode p.1) (lensCode p.2))
+        ↑(Finset.univ.filter fun p : (Fin n → Fin m) × (Fin m → Fin m) =>
+          KE (Nat.pair (lensCode p.1) (lensCode p.2)) ≤ B) := by
+      intro p _ q _ heq
+      obtain ⟨h1, h2⟩ := Nat.pair_eq_pair.mp heq
+      exact Prod.ext (lensCode_injective' h1) (lensCode_injective' h2)
+    rw [← Finset.card_image_of_injOn hinj]
+    have hsubset : (↑((Finset.univ.filter fun p : (Fin n → Fin m) × (Fin m → Fin m) =>
+        KE (Nat.pair (lensCode p.1) (lensCode p.2)) ≤ B).image
+        fun p => Nat.pair (lensCode p.1) (lensCode p.2)) : Set ℕ) ⊆ {z : ℕ | KE z ≤ B} := by
+      intro z hz
+      simp only [Finset.coe_image, Finset.coe_filter, Finset.mem_univ, true_and, Set.mem_image,
+        Set.mem_ofPred_eq] at hz
+      obtain ⟨p, hp, rfl⟩ := hz
+      exact hp
+    calc ((Finset.univ.filter fun p : (Fin n → Fin m) × (Fin m → Fin m) =>
+        KE (Nat.pair (lensCode p.1) (lensCode p.2)) ≤ B).image
+        fun p => Nat.pair (lensCode p.1) (lensCode p.2)).card
+        = (↑((Finset.univ.filter fun p : (Fin n → Fin m) × (Fin m → Fin m) =>
+            KE (Nat.pair (lensCode p.1) (lensCode p.2)) ≤ B).image
+            fun p => Nat.pair (lensCode p.1) (lensCode p.2)) : Set ℕ).ncard :=
+          (Set.ncard_coe_finset _).symm
+      _ ≤ {z : ℕ | KE z ≤ B}.ncard := Set.ncard_le_ncard hsubset (finite_KE_le B)
+      _ ≤ 2 ^ (B + 1) := card_KE_le B
+  have hidxcard : idx.card ≤ 2 ^ (B + 1) := le_trans (Finset.card_le_card hidxsubcost) hcardcost
+  have hUB : (⋃ p ∈ idx, T p).ncard ≤ ∑ p ∈ idx, (T p).ncard :=
+    Finset.set_ncard_biUnion_le idx T
+  have hcardTeq : ∀ p, (T p).ncard = Nat.card {μ' : Fin n ↪ Fin m // ∀ q, p.2 (μ' q) = p.1 q} :=
+    fun p => by rw [hTdef]; exact (Nat.card_coe_set_eq _).symm
+  have hterm : ∀ p ∈ idx, (T p).ncard * 2 ^ (B + d + 2) ≤ POP := by
+    intro p hp
+    rw [hidxdef, Finset.mem_filter] at hp
+    rw [hcardTeq, Nat.mul_comm]
+    exact le_of_lt hp.2.2
+  have hsum : (∑ p ∈ idx, (T p).ncard) * 2 ^ (B + d + 2) ≤ idx.card * POP := by
+    calc (∑ p ∈ idx, (T p).ncard) * 2 ^ (B + d + 2)
+        = ∑ p ∈ idx, (T p).ncard * 2 ^ (B + d + 2) := by rw [Finset.sum_mul]
+      _ ≤ ∑ _p ∈ idx, POP := Finset.sum_le_sum hterm
+      _ = idx.card * POP := by rw [Finset.sum_const, smul_eq_mul]
+  have hfinal : (⋃ p ∈ idx, T p).ncard * 2 ^ (B + d + 2) ≤ 2 ^ (B + 1) * POP :=
+    calc (⋃ p ∈ idx, T p).ncard * 2 ^ (B + d + 2)
+        ≤ (∑ p ∈ idx, (T p).ncard) * 2 ^ (B + d + 2) := Nat.mul_le_mul_right _ hUB
+      _ ≤ idx.card * POP := hsum
+      _ ≤ 2 ^ (B + 1) * POP := Nat.mul_le_mul_right _ hidxcard
+  have hpoweq : 2 ^ (B + d + 2) = 2 ^ (B + 1) * 2 ^ (d + 1) := by
+    rw [← pow_add]; congr 1; omega
+  have h2B1 : 0 < 2 ^ (B + 1) := Nat.pow_pos (by norm_num)
+  have hcancel : (⋃ p ∈ idx, T p).ncard * 2 ^ (d + 1) ≤ POP := by
+    apply Nat.le_of_mul_le_mul_left _ h2B1
+    calc 2 ^ (B + 1) * ((⋃ p ∈ idx, T p).ncard * 2 ^ (d + 1))
+        = (⋃ p ∈ idx, T p).ncard * (2 ^ (B + 1) * 2 ^ (d + 1)) := by ring
+      _ = (⋃ p ∈ idx, T p).ncard * 2 ^ (B + d + 2) := by rw [hpoweq]
+      _ ≤ 2 ^ (B + 1) * POP := hfinal
+  rw [hsub]
+  calc (⋃ p ∈ idx, T p).ncard * 2 ^ d
+      ≤ (⋃ p ∈ idx, T p).ncard * 2 ^ (d + 1) :=
+        Nat.mul_le_mul_left _ (Nat.pow_le_pow_right (by norm_num) (by omega))
+    _ ≤ POP := hcancel
+
+/-- **The alphabet-uniform cap** ([Guests] §7, Theorem 7.13(ii) extended; §9.2's alphabet
+paragraph): the staged capacity's cap over EVERY label alphabet at once, at the per-alphabet
+order — the doubled budget the normalization pays never reaches the exponent, which stays `2 * b`
+plus a fixed constant rather than growing with the alphabet. Degenerate carriers (`m = 0`) cost
+nothing: `Fin n ↪ Fin 0` forces `n = 0`, whose sole candidate carries at most `0! = 1` at any
+budget. -/
+theorem CbHs_collapse_uniform {n m : ℕ} (b d : ℕ) :
+    {μ : Fin n ↪ Fin m | 2 ^ (2 * b + elen rankBuilder + d + 8) < CbHs μ b}.ncard * 2 ^ d
+      ≤ m.descFactorial n := by
+  rcases Nat.eq_zero_or_pos m with hm0 | hm
+  · subst hm0
+    have hempty : {μ : Fin n ↪ Fin 0 | 2 ^ (2 * b + elen rankBuilder + d + 8) < CbHs μ b} = ∅ := by
+      ext μ
+      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_lt]
+      have hn0 : n = 0 := by
+        have hle := Fintype.card_le_of_embedding μ
+        simpa using hle
+      subst hn0
+      have hcap : CbHs μ b ≤ Nat.factorial 0 :=
+        csSup_le' (fun N hN => stagedBudgetedEntropies_le hN)
+      have h1 : Nat.factorial 0 ≤ 2 ^ (2 * b + elen rankBuilder + d + 8) := by
+        rw [Nat.factorial_zero]
+        exact Nat.one_le_two_pow
+      omega
+    rw [hempty, Set.ncard_empty]
+    simp
+  · set B := 2 * b + elen rankBuilder + 6 with hBdef
+    have hEeq : 2 * b + elen rankBuilder + d + 8 = B + d + 2 := by rw [hBdef]; omega
+    have hsub : {μ : Fin n ↪ Fin m | 2 ^ (2 * b + elen rankBuilder + d + 8) < CbHs μ b}
+        ⊆ {μ : Fin n ↪ Fin m | ∃ (ℓR : Fin n → Fin m) (ℓR' : Fin m → Fin m),
+             (∀ q, ℓR' (μ q) = ℓR q) ∧ KE (Nat.pair (lensCode ℓR) (lensCode ℓR')) ≤ B ∧
+             2 ^ (B + d + 2) * Nat.card {μ' : Fin n ↪ Fin m // ∀ q, ℓR' (μ' q) = ℓR q}
+               < m.descFactorial n} := by
+      intro μ hμ
+      simp only [Set.mem_ofPred_eq] at hμ
+      rw [hEeq] at hμ
+      obtain ⟨N, hN, hNlt⟩ := exists_mem_stagedBudgetedEntropies_gt hμ
+      obtain ⟨k, ℓ, ℓ', hcons, hbℓ, hbℓ', hNeq⟩ := hN
+      refine ⟨rankOf ℓ' hm ∘ ℓ, rankOf ℓ' hm ∘ ℓ', rankOf_consistent hcons hm, ?_, ?_⟩
+      · have hprice := KE_rankBuilder_pair_le hcons hm
+        omega
+      · have : Nonempty {μ' : Fin n ↪ Fin m //
+            ∀ q, (rankOf ℓ' hm ∘ ℓ') (μ' q) = (rankOf ℓ' hm ∘ ℓ) q} :=
+          ⟨⟨μ, rankOf_consistent hcons hm⟩⟩
+        have hded : 0 < Nat.card {μ' : Fin n ↪ Fin m //
+            ∀ q, (rankOf ℓ' hm ∘ ℓ') (μ' q) = (rankOf ℓ' hm ∘ ℓ) q} := Nat.card_pos
+        have hInjRange : Set.InjOn (rankOf ℓ' hm) (Set.range ℓ) :=
+          (rankOf_injOn_mem ℓ' hm).mono (by
+            rintro v ⟨q, rfl⟩
+            exact hcons q ▸ mem_lensTable_apply ℓ' (μ q))
+        have horbit : Nat.card ↥(orbit (Equiv.Perm (Fin n)) (rankOf ℓ' hm ∘ ℓ)) = N := by
+          rw [orbit_postcomp_card_eq (rankOf ℓ' hm) ℓ hInjRange]
+          exact hNeq.symm
+        have hNlt' :
+            2 ^ (B + d + 2) < Nat.card ↥(orbit (Equiv.Perm (Fin n)) (rankOf ℓ' hm ∘ ℓ)) := by
+          rw [horbit]; exact hNlt
+        calc 2 ^ (B + d + 2) * Nat.card {μ' : Fin n ↪ Fin m //
+              ∀ q, (rankOf ℓ' hm ∘ ℓ') (μ' q) = (rankOf ℓ' hm ∘ ℓ) q}
+            < Nat.card ↥(orbit (Equiv.Perm (Fin n)) (rankOf ℓ' hm ∘ ℓ)) *
+              Nat.card {μ' : Fin n ↪ Fin m //
+                ∀ q, (rankOf ℓ' hm ∘ ℓ') (μ' q) = (rankOf ℓ' hm ∘ ℓ) q} :=
+              mul_lt_mul_of_pos_right hNlt' hded
+          _ ≤ m.descFactorial n := orbit_mul_deductible_le (rankOf ℓ' hm ∘ ℓ) (rankOf ℓ' hm ∘ ℓ')
+    calc {μ : Fin n ↪ Fin m | 2 ^ (2 * b + elen rankBuilder + d + 8) < CbHs μ b}.ncard * 2 ^ d
+        ≤ {μ : Fin n ↪ Fin m | ∃ (ℓR : Fin n → Fin m) (ℓR' : Fin m → Fin m),
+             (∀ q, ℓR' (μ q) = ℓR q) ∧ KE (Nat.pair (lensCode ℓR) (lensCode ℓR')) ≤ B ∧
+             2 ^ (B + d + 2) * Nat.card {μ' : Fin n ↪ Fin m // ∀ q, ℓR' (μ' q) = ℓR q}
+               < m.descFactorial n}.ncard * 2 ^ d :=
+          Nat.mul_le_mul_right _ (Set.ncard_le_ncard hsub (Set.toFinite _))
+      _ ≤ m.descFactorial n := collapse_union_normalized B d
+
+/-- **The alphabet-uniform cap, at a growing world** ([Guests] §7 Theorem 7.13's extension, read at
+a growing world's own stage law): `CbHs_collapse_uniform` at `stageLawEmb`'s own domain and
+codomain sizes, in `CbHs_collapse_growing`'s own shape. -/
+theorem CbHs_collapse_uniform_growing {X : Type*} {U : X → X} {Ω : ℕ → Set X} (hadv : Advances U Ω)
+    (t b d : ℕ) (hf : (mergeStage U Ω t).Finite) (hf' : (mergeStage U Ω (t + 1)).Finite) :
+    Nonempty (Fin hf.toFinset.card ↪ Fin hf'.toFinset.card) ∧
+    {μ : Fin hf.toFinset.card ↪ Fin hf'.toFinset.card |
+       2 ^ (2 * b + elen rankBuilder + d + 8) < CbHs μ b}.ncard * 2 ^ d
+      ≤ hf'.toFinset.card.descFactorial hf.toFinset.card :=
+  ⟨⟨stageLawEmb hadv t hf hf'⟩, CbHs_collapse_uniform b d⟩
+
 /-! ## The guard: a real growing world reaches the bridge -/
 
 /-- The successor world's initial-segment stages advance: `s ≤ t` gives `s + 1 ≤ t + 1`. The
@@ -837,7 +1241,7 @@ private theorem advances_natSucc_slowClock : Advances Nat.succ (fun t => Set.Iic
 private theorem finite_mergeStage_natSucc_slowClock (t : ℕ) :
     (mergeStage Nat.succ (fun t => Set.Iic t) t).Finite := by
   rw [← Set.encard_ne_top_iff, mergeStage_nat_succ_slowClock_encard]
-  exact_mod_cast (ENat.coe_lt_top t.succ).ne
+  exact_mod_cast (ENat.natCast_lt_top t.succ).ne
 
 /-- The chosen enumeration's count matches the paper's own `t + 1`, read off the same `encard`
 equation that supplies finiteness. -/
@@ -924,7 +1328,7 @@ private theorem sigmaMk_injective (ns : ℕ → ℕ) (t : ℕ) :
 private theorem telescopeΩ_eq_range (ns : ℕ → ℕ) (t : ℕ) :
     telescopeΩ ns t = Set.range (fun q : Fin (ns t) => (⟨t, q⟩ : Σ t, Fin (ns t))) := by
   ext s
-  simp only [telescopeΩ, Set.mem_setOf_eq, Set.mem_range]
+  simp only [telescopeΩ, Set.mem_ofPred_eq, Set.mem_range]
   constructor
   · intro hs
     subst hs
@@ -1049,7 +1453,9 @@ private theorem stageLawEmb_apply_eq {X : Type*} {U : X → X} {Ω : ℕ → Set
   obtain ⟨p1, p2, hfact⟩ := stageLawEmb_factorization hadv t hf hf'
   refine ⟨p1, p2, fun x => ?_⟩
   rw [hfact]
-  simp only [Function.Embedding.trans_apply, Function.Embedding.coeFn_mk, Equiv.symm_apply_apply]
+  simp only [Function.Embedding.trans_apply, Function.Embedding.coeFn_mk,
+    Equiv.symm_apply_apply]
+  rfl
 
 /-- **The telescope realizes every injection sequence** ([Guests] §7 Theorem 7.11's boundary,
 *"Growth does not sharpen the bound"*): for ANY `ns` and ANY sequence of injections `lam` between
@@ -1176,3 +1582,11 @@ set_option linter.style.longLine false
 /-- info: 'GrowingPrice.exists_candidate_capacity_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms GrowingPrice.exists_candidate_capacity_le
+
+/-- info: 'GrowingPrice.CbHs_collapse_uniform' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms GrowingPrice.CbHs_collapse_uniform
+
+/-- info: 'GrowingPrice.CbHs_collapse_uniform_growing' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms GrowingPrice.CbHs_collapse_uniform_growing

@@ -5,6 +5,7 @@ Authors: Mykola Palamarchuk
 -/
 import Foundation.FirstOrder.Incompleteness.Examples
 import Foundation.FirstOrder.Bootstrapping.DerivabilityCondition.D1
+import Foundation.FirstOrder.Incompleteness.Speedup
 import ALT.GodelCore
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
@@ -82,14 +83,15 @@ executable complete derivation checker, in Foundation; upstream-PR targets).
 `paMinus_complete_decides` at `T★ = 𝗣𝗔⁻` (`PeanoMinus`) — **fully axiom-clean** (`#print axioms` =
 `propext, Classical.choice, Quot.sound`); `Δ₁` via `Theory.Δ₁.ofFinite`. The parallel `𝗜𝚺₁` witness
 `isigma1_complete_decides` (the same statement at `𝗜𝚺₁`) is **also fully axiom-clean**: Foundation's
-`𝗜𝚺₁.Δ₁` definability is a *theorem* (`ISigma1_delta1Definable`, discharged upstream), so it carries
+`𝗜𝚺₁.Δ₁` definability is a *theorem* (an anonymous instance in its
+`Incompleteness/Definability.lean`, discharged upstream), so it carries
 no named axiom either. `𝗣𝗔⁻ ⊊ 𝗜𝚺₁`, so the `𝗣𝗔⁻` capstone is the weaker, more faithful (§5.3-class)
 statement, and the `𝗜𝚺₁` form is the parallel witness at Foundation's canonical Σ₁-induction theory.
 -/
 
 namespace GodelCheckerComplete
 
-open LO LO.FirstOrder LO.FirstOrder.Arithmetic LO.FirstOrder.Arithmetic.Bootstrapping
+open FFL FFL.FirstOrder FFL.FirstOrder.Arithmetic FFL.FirstOrder.Arithmetic.Bootstrapping
 
 /-- Sentences of the language of ordered rings — the `Formula` object of §6.3. -/
 abbrev S : Type := Sentence ℒₒᵣ
@@ -174,10 +176,10 @@ theorem decide_false_of_provable (T : ArithmeticTheory) [T.Δ₁] {φ : S} (h : 
   obtain ⟨p, hp⟩ := Prf_complete T h
   exact ⟨p, decide_false_of_bounded_proof T p φ (le_refl p) hp⟩
 
-/-- Concrete non-vacuity: `⊤` (provable via `verum!`) is decided `false` at some budget, so `Decide`
+/-- Concrete non-vacuity: `⊤` (provable via `verum`) is decided `false` at some budget, so `Decide`
 genuinely distinguishes provable from unprovable sentences. -/
 theorem decide_nonvacuous (T : ArithmeticTheory) [T.Δ₁] : ∃ M, Decide T M (⊤ : S) = false :=
-  decide_false_of_provable T LO.Entailment.verum!
+  decide_false_of_provable T FFL.Entailment.verum
 
 /-! ### Capstones — §6.3 L2b for the real Gödel sentence, now a complete decision -/
 
@@ -195,7 +197,7 @@ length); by `decide_false_of_bounded_proof` a bounded proof would have flipped i
 `propext, Classical.choice, Quot.sound`. -/
 theorem paMinus_complete_decides (M : ℕ) :
     ∃ G : S, (ℕ↓[ℒₒᵣ] ⊧ G) ∧ ((𝗣𝗔⁻ : ArithmeticTheory) ⊬ G) ∧ Decide 𝗣𝗔⁻ M G = true := by
-  obtain ⟨G, htrue, hunprov⟩ := exists_true_but_unprovable_sentence 𝗣𝗔⁻
+  obtain ⟨G, htrue, hunprov⟩ := exists_true_but_unprovable_sentence_of_sigma1sound 𝗣𝗔⁻
   refine ⟨G, htrue, hunprov, ?_⟩
   rw [decide_eq_true_iff]
   intro p _ hpf
@@ -204,16 +206,46 @@ theorem paMinus_complete_decides (M : ℕ) :
 /-- **§6.3 Theorem 6.3, L2b — complete, for the real `𝗜𝚺₁` Gödel sentence.** The `𝗜𝚺₁` counterpart of
 `paMinus_complete_decides`: the real Gödel sentence `G` of `𝗜𝚺₁` (true in `ℕ`, unprovable in `𝗜𝚺₁`)
 is decided as bounded-non-provable by the **sound-and-complete** decision morphism, for every budget
-`M`. Foundation's `𝗜𝚺₁.Δ₁` instance is a *theorem* (`ISigma1_delta1Definable`, discharged upstream),
+`M`. Foundation's `𝗜𝚺₁.Δ₁` instance is a *theorem* (an anonymous instance in its
+`Incompleteness/Definability.lean`, discharged upstream),
 so this witness is **fully axiom-clean**: `#print axioms` = `propext, Classical.choice, Quot.sound`.
 `𝗣𝗔⁻ ⊊ 𝗜𝚺₁`, so `paMinus_complete_decides` above is the weaker, more faithful (§5.3-class)
 statement. -/
 theorem isigma1_complete_decides (M : ℕ) :
     ∃ G : S, (ℕ↓[ℒₒᵣ] ⊧ G) ∧ ((𝗜𝚺₁ : ArithmeticTheory) ⊬ G) ∧ Decide 𝗜𝚺₁ M G = true := by
-  obtain ⟨G, htrue, hunprov⟩ := exists_true_but_unprovable_sentence 𝗜𝚺₁
+  obtain ⟨G, htrue, hunprov⟩ := exists_true_but_unprovable_sentence_of_sigma1sound 𝗜𝚺₁
   refine ⟨G, htrue, hunprov, ?_⟩
   rw [decide_eq_true_iff]
   intro p _ hpf
   exact hunprov (Prf_sound 𝗜𝚺₁ hpf)
+
+/-! ### The decision is `ComputablePred` (Mathlib's sense of computable)
+
+`Decide` is a total classical `Bool`-valued function (§ above); this section certifies that its
+verdict is, in Mathlib's `ComputablePred`/`Computable` sense, a computable one — a code on the same
+machine the AIT modules of this development price. It is neither a runnable decider (Foundation
+ships no `Decidable`/`Primrec` instance for `Bootstrapping.Proof` itself — the documented wall
+above) nor a `Rep(S)` morphism at the bounded recursor's capacity, which stays open. -/
+
+/-- The bounded-provability predicate underlying `Decide` is `ComputablePred`: Foundation's own
+`computablePred_bddExists_proof`, negated, at `F := Prod.snd` and `bd := Prod.fst`. -/
+theorem computablePred_decide (T : ArithmeticTheory) [T.Δ₁] :
+    ComputablePred fun q : ℕ × S => Decide T q.1 q.2 = true := by
+  have h : ComputablePred fun a : ℕ × S => ∃ d ≤ a.1, Bootstrapping.Proof T d (⌜a.2⌝ : ℕ) :=
+    computablePred_bddExists_proof (T := T) (F := (Prod.snd : ℕ × S → S))
+      (bd := (Prod.fst : ℕ × S → ℕ)) Computable.snd Computable.fst
+  refine h.not.of_eq (fun q => ?_)
+  rw [decide_eq_true_iff]
+  constructor
+  · intro hne p hp hpf; exact hne ⟨p, hp, hpf⟩
+  · rintro hall ⟨d, hd, hpf⟩; exact hall d hd hpf
+
+/-- The convenience `Bool`-valued form: `Decide` itself, as opposed to the `= true` predicate, is
+`Computable`. -/
+theorem computable_decide (T : ArithmeticTheory) [T.Δ₁] :
+    Computable fun q : ℕ × S => Decide T q.1 q.2 := by
+  obtain ⟨_, hc⟩ := computablePred_decide T
+  refine hc.of_eq (fun q => ?_)
+  cases h : Decide T q.1 q.2 <;> simp [h]
 
 end GodelCheckerComplete

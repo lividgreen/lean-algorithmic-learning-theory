@@ -91,8 +91,8 @@ theorem realizes_comp {A B C : Assembly} {g : B.carrier → C.carrier} {f : A.ca
   obtain ⟨rg, hrg⟩ := hg
   refine ⟨rg.comp rf, fun x => ?_⟩
   have hcomp : (rg.comp rf).eval (A.enc x) = (rf.eval (A.enc x)).bind rg.eval := rfl
-  rw [hcomp, hrf x, Part.bind_some]
-  exact hrg (f x)
+  rw [hcomp, hrf x]
+  exact (Part.bind_some _ rg.eval).trans (hrg (f x))
 
 /-- The **realizability category** of finite assemblies: morphisms are exactly the code-realizable
 functions (the realizer existentially witnessed — functions as data). A genuine
@@ -246,11 +246,10 @@ an encoded realizer to an argument — `E · ⟨⌜r⌝, a⟩ = r · a`. Built f
 theorem universal_evaluator :
     ∃ E : Nat.Partrec.Code, ∀ (r : Nat.Partrec.Code) (a : ℕ),
       E.eval (Nat.pair (Encodable.encode r) a) = r.eval a := by
-  have hp : Nat.Partrec (fun n : ℕ => Code.eval (Denumerable.ofNat Code n.unpair.1) n.unpair.2) := by
-    rw [← Partrec.nat_iff]
-    exact Code.eval_part.comp
+  have hp : Nat.Partrec (fun n : ℕ => Code.eval (Denumerable.ofNat Code n.unpair.1) n.unpair.2) :=
+    Partrec.nat_iff.mp (Code.eval_part.comp
       ((Computable.ofNat Code).comp (Computable.fst.comp Primrec.unpair.to_comp))
-      (Computable.snd.comp Primrec.unpair.to_comp)
+      (Computable.snd.comp Primrec.unpair.to_comp))
   obtain ⟨E, hE⟩ := Nat.Partrec.Code.exists_code.mp hp
   refine ⟨E, fun r a => ?_⟩
   have h2 := congrFun hE (Nat.pair (Encodable.encode r) a)
@@ -278,7 +277,7 @@ abbrev counterAssembly (n : ℕ) : Assembly :=
 theorem exists_code_tracks_succ (n : ℕ) :
     ∃ c : Nat.Partrec.Code, ∀ x : ZMod (n + 1),
       c.eval (ZMod.val x) = Part.some (ZMod.val (x + 1)) := by
-  haveI : NeZero (n + 1) := ⟨n.succ_ne_zero⟩
+  have : NeZero (n + 1) := ⟨n.succ_ne_zero⟩
   have hg : Computable (fun m => (m + 1) % (n + 1)) :=
     (Primrec.nat_mod.comp Primrec.succ (Primrec.const (n + 1))).to_comp
   obtain ⟨c, hc⟩ := Nat.Partrec.Code.exists_code.mp (Partrec.nat_iff.mp hg)

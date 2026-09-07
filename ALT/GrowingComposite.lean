@@ -398,7 +398,7 @@ private theorem dirac_tail_iff {X : Type*} [MeasurableSpace X] (ω₀ : ℕ → 
     · have hAmeas : MeasurableSet {ω | τ ≤ |SQOracle.empiricalMean Z n ω - predZ|} :=
         measurableSet_le measurable_const ((hempmeas.sub_const predZ).abs)
       have hnotmem : ω₀ ∉ {ω | τ ≤ |SQOracle.empiricalMean Z n ω - predZ|} := by
-        simp only [Set.mem_setOf_eq, not_le]
+        simp only [Set.mem_ofPred_eq, not_le]
         exact lt_of_le_of_lt hle hτcase
       have hval : (MeasureTheory.Measure.dirac ω₀).real
           {ω | τ ≤ |SQOracle.empiricalMean Z n ω - predZ|} = 0 := by

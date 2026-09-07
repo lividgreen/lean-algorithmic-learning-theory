@@ -45,7 +45,7 @@ theorem ville_inequality [IsFiniteMeasure μ]
       have hmeasA : MeasurableSet (A N) := by
         have hrw : A N = ⋃ n ∈ Finset.range (N + 1), {ω | lam ≤ Z n ω} := by
           rw [hA]; ext ω
-          simp only [Set.mem_setOf_eq, Set.mem_iUnion, Finset.mem_range, Nat.lt_succ_iff,
+          simp only [Set.mem_ofPred_eq, Set.mem_iUnion, Finset.mem_range, Nat.lt_succ_iff,
             exists_prop]
         rw [hrw]
         exact Finset.measurableSet_biUnion _ fun n _ =>
@@ -55,7 +55,7 @@ theorem ville_inequality [IsFiniteMeasure μ]
         intro ω
         by_cases hω : ω ∈ A N
         · rw [Set.indicator_of_mem hω]
-          rw [hA, Set.mem_setOf_eq] at hω
+          rw [hA, Set.mem_ofPred_eq] at hω
           obtain ⟨n, hnN, hZn⟩ := hω
           exact Set.mem_Ici.mp (stoppedValue_hittingBtwn_mem (u := Z) (n := 0) (m := N)
             ⟨n, ⟨Nat.zero_le _, hnN⟩, hZn⟩)
@@ -83,12 +83,12 @@ theorem ville_inequality [IsFiniteMeasure μ]
   -- STEP 4 (N → ∞): monotone union + continuity from below.
   have hmono : Monotone A := by
     intro N M hNM ω hω
-    simp only [hA, Set.mem_setOf_eq] at hω ⊢
+    simp only [hA, Set.mem_ofPred_eq] at hω ⊢
     obtain ⟨n, hn, hZ⟩ := hω
     exact ⟨n, hn.trans hNM, hZ⟩
   have hunion : (⋃ N, A N) = {ω | ∃ n, lam ≤ Z n ω} := by
     ext ω
-    simp only [hA, Set.mem_iUnion, Set.mem_setOf_eq]
+    simp only [hA, Set.mem_iUnion, Set.mem_ofPred_eq]
     constructor
     · rintro ⟨N, n, _, hZ⟩; exact ⟨n, hZ⟩
     · rintro ⟨n, hZ⟩; exact ⟨n, n, le_refl n, hZ⟩

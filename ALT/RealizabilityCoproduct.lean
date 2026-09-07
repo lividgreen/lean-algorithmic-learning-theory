@@ -365,7 +365,7 @@ theorem zA_boundedAlgAsm_eq (M : ℕ) : zA (boundedAlgAsm M) = (0 : Fin (M + 1))
 lemma boundedAlgAsm_orbit_val (M n : ℕ) :
     ((sA (boundedAlgAsm M))^[n] (zA (boundedAlgAsm M))).val = min n M := by
   induction n with
-  | zero => rw [zA_boundedAlgAsm_eq]; simp
+  | zero => rw [zA_boundedAlgAsm_eq]; simp; rfl
   | succ n ih =>
       rw [Function.iterate_succ_apply', sA_boundedAlgAsm_eq]
       change min (((sA (boundedAlgAsm M))^[n] (zA (boundedAlgAsm M))).val + 1) M = min (n + 1) M

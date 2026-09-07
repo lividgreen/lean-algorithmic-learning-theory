@@ -82,7 +82,7 @@ theorem computable_nat_size : Computable Nat.size := by
       = fun m => (Part.some (Nat.size m) : Part ℕ) := by
     funext m
     apply Part.eq_some_iff.mpr
-    rw [Nat.mem_rfind]
+    apply Nat.mem_rfind.mpr
     constructor
     · simp [Nat.size_le.mp (le_refl (Nat.size m))]
     · intro k hk

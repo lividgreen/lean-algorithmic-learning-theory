@@ -43,7 +43,7 @@ sub-systems into towers, and prices what survives a perturbation.
 * `Intertwines.comp` / `uniformBudget_comp` / `tower_no_free_lunch` / `entropy_comp_le` — **the
   tower** ([Persistence] §10.2 + §2): squares compose, dilations multiply, budgets add; stacking
   buys structure, never generic capacity, and entropy is antitone up the levels. Beside it, the
-  guest ledgers ([Guests] §2, §4, §8.2): the reversible-host dichotomy, the lossy and law-blind
+  guest ledgers ([Guests] §2, §4, §9.2): the reversible-host dichotomy, the lossy and law-blind
   ledgers, and the two-block and conjugation guests (every division of the bill is realized).
 * `hasMargin_iff` / `repair_tax` / `majority_margin` — the **robustness margin** ([Persistence]
   §10.1 + §2): it factors into basin fatness and local constancy, it is paid for in carried
@@ -407,7 +407,7 @@ private theorem card_fiber_unionLens_left {n₁ n₂ k₁ k₂ : ℕ} (ℓ₁ : 
       ≃ {i : Fin n₁ // ℓ₁ 0 i = a} :=
     Equiv.subtypeEquiv (Equiv.refl _) (fun i => by
       simp [unionLens, finSumFinEquiv_apply_left, Fin.append_left, Fin.castAdd_inj])
-  haveI hemp :
+  have hemp :
       IsEmpty {j : Fin n₂ //
         unionLens ℓ₁ ℓ₂ 0 (finSumFinEquiv (Sum.inr j)) = Fin.castAdd k₂ a} := by
     constructor
@@ -432,7 +432,7 @@ private theorem card_fiber_unionLens_right {n₁ n₂ k₁ k₂ : ℕ} (ℓ₁ :
       ≃ {j : Fin n₂ // ℓ₂ 0 j = b} :=
     Equiv.subtypeEquiv (Equiv.refl _) (fun j => by
       simp [unionLens, finSumFinEquiv_apply_right, Fin.append_right, Fin.natAdd_inj])
-  haveI hemp :
+  have hemp :
       IsEmpty {i : Fin n₁ // unionLens ℓ₁ ℓ₂ 0 (finSumFinEquiv (Sum.inl i)) = Fin.natAdd k₁ b} := by
     constructor
     rintro ⟨i, hi⟩
@@ -740,7 +740,7 @@ an equivalence of orbits: the two orbit cardinalities multiply the *same* fibre 
 *same* factorial, and the fibre product is positive. -/
 private theorem card_orbit_congr {α β : Type*} [Finite α] (e : α ≃ β) (f : α → Fin m) :
     Nat.card ↥(orbit (Perm α) f) = Nat.card ↥(orbit (Perm β) (f ∘ ⇑e.symm)) := by
-  haveI : Finite β := Finite.of_equiv α e
+  have : Finite β := Finite.of_equiv α e
   have hα := card_orbit_mul_prod_fiber_card f
   have hβ := card_orbit_mul_prod_fiber_card (f ∘ ⇑e.symm)
   have hfib : ∀ i : Fin m,
@@ -962,7 +962,7 @@ private theorem card_compat_le {c tr k : ℕ} (cyc : Perm (Fin c)) {g : Fin c �
 `card_KE_le`'s counting bound, pulled back along `lensCode`'s injectivity. -/
 private theorem card_affordable_le (n k b : ℕ) :
     Nat.card {f : Fin n → Fin k // KE (lensCode f) ≤ b} ≤ 2 ^ (b + 1) := by
-  haveI : Finite {v : ℕ // KE v ≤ b} := (finite_KE_le b).to_subtype
+  have : Finite {v : ℕ // KE v ≤ b} := (finite_KE_le b).to_subtype
   have hinj : Function.Injective
       (fun f : {f : Fin n → Fin k // KE (lensCode f) ≤ b} =>
         (⟨lensCode f.1, f.2⟩ : {v : ℕ // KE v ≤ b})) := by
@@ -994,7 +994,7 @@ theorem card_basinWorld_carries_le (c tr k b : ℕ) (cyc : Perm (Fin c)) :
       KE (lensCode f) ≤ b ∧ ∃ x y : Fin c, f (Fin.castAdd tr x) ≠ f (Fin.castAdd tr y)}
     with hAffdef
   have hAffCard : Nat.card AffN ≤ 2 ^ (b + 1) := by
-    haveI : Finite {v : ℕ // KE v ≤ b} := (finite_KE_le b).to_subtype
+    have : Finite {v : ℕ // KE v ≤ b} := (finite_KE_le b).to_subtype
     have hinj : Function.Injective
         (fun f : AffN => (⟨lensCode f.1, f.2.1⟩ : {v : ℕ // KE v ≤ b})) :=
       fun a a' hab => Subtype.ext (lensCode_injective (congrArg Subtype.val hab))
@@ -1002,11 +1002,11 @@ theorem card_basinWorld_carries_le (c tr k b : ℕ) (cyc : Perm (Fin c)) :
     have heq : Nat.card {v : ℕ // KE v ≤ b} = {v : ℕ | KE v ≤ b}.ncard := Nat.card_coe_set_eq _
     have hcard := card_KE_le b
     omega
-  haveI hAffFin : Finite AffN := by
-    haveI : Finite {v : ℕ // KE v ≤ b} := (finite_KE_le b).to_subtype
+  have hAffFin : Finite AffN := by
+    have : Finite {v : ℕ // KE v ≤ b} := (finite_KE_le b).to_subtype
     exact Finite.of_injective (fun f : AffN => (⟨lensCode f.1, f.2.1⟩ : {v : ℕ // KE v ≤ b}))
       (fun a a' hab => Subtype.ext (lensCode_injective (congrArg Subtype.val hab)))
-  haveI : Fintype AffN := Fintype.ofFinite _
+  have : Fintype AffN := Fintype.ofFinite _
   set Compat : AffN → (Fin tr → Fin c) → Prop :=
       fun f β' => ∀ j, f.1 (Fin.castAdd tr (cyc.symm (β' j))) = f.1 (Fin.natAdd c j)
     with hCompatdef
@@ -1214,12 +1214,12 @@ relabelling — so it lands in the same orbit. This is what makes the value of a
 independent of *when* it is read, and it is the engine of both directions of the reduction. -/
 theorem orbit_restrict_iterate {U : Fin n → Fin n} {B : Set (Fin n)} (hB : ∀ s ∈ B, U s ∈ B)
     (f : Fin n → Fin m) (t : ℕ) :
-    orbit (Perm ↥(omegaLimit U B)) ((omegaLimit U B).restrict (f ∘ U^[t]))
-      = orbit (Perm ↥(omegaLimit U B)) ((omegaLimit U B).restrict f) := by
-  have h : (omegaLimit U B).restrict (f ∘ U^[t])
-      = ((omegaPerm U hB ^ t)⁻¹) • ((omegaLimit U B).restrict f) := by
+    orbit (Perm ↥(omegaLimit U B)) ((omegaLimit U B).domRestrict (f ∘ U^[t]))
+      = orbit (Perm ↥(omegaLimit U B)) ((omegaLimit U B).domRestrict f) := by
+  have h : (omegaLimit U B).domRestrict (f ∘ U^[t])
+      = ((omegaPerm U hB ^ t)⁻¹) • ((omegaLimit U B).domRestrict f) := by
     funext x
-    simp only [smul_lens_apply, inv_inv, Set.restrict_apply, Function.comp_apply,
+    simp only [smul_lens_apply, inv_inv, Set.domRestrict_apply, Function.comp_apply,
       omegaPerm_pow_apply]
   rw [h, orbit_smul]
 
@@ -1228,8 +1228,8 @@ theorem orbit_restrict_iterate {U : Fin n → Fin n} {B : Set (Fin n)} (hB : ∀
 zero. -/
 theorem carriesOn_restrict_eq {U : Fin n → Fin n} {B : Set (Fin n)} (hB : ∀ s ∈ B, U s ∈ B)
     {ℓ : ℕ → Fin n → Fin m} (h : CarriesOn U ℓ (omegaLimit U B)) (t : ℕ) :
-    (omegaLimit U B).restrict (ℓ t)
-      = (omegaLimit U B).restrict (ℓ 0) ∘ ⇑(omegaPerm U hB ^ t)⁻¹ := by
+    (omegaLimit U B).domRestrict (ℓ t)
+      = (omegaLimit U B).domRestrict (ℓ 0) ∘ ⇑(omegaPerm U hB ^ t)⁻¹ := by
   funext x
   have hy := h.2 t (((omegaPerm U hB ^ t)⁻¹ x : ↥(omegaLimit U B)) : Fin n)
     ((omegaPerm U hB ^ t)⁻¹ x).2
@@ -1241,7 +1241,7 @@ relabelling-class sizes of the reference frame *restricted to `S`* ([Persistence
 2.2, whose `E_S` is measured on exactly such an `S`). -/
 def EntropiesOn (U : Fin n → Fin n) (S : Set (Fin n)) (b : ℕ) : Set ℕ :=
   {N : ℕ | ∃ k : ℕ, ∃ ℓ : ℕ → Fin n → Fin k, CarriesOn U ℓ S ∧ PermBudget ℓ b ∧
-      N = Nat.card ↥(orbit (Perm ↥S) (S.restrict (ℓ 0)))}
+      N = Nat.card ↥(orbit (Perm ↥S) (S.domRestrict (ℓ 0)))}
 
 /-- **The exact entropic capacity on a region**, in cardinality form. `CbHe` is the case
 `S = core U` up to the reference frame's relabelling. -/
@@ -1253,7 +1253,7 @@ relabelling class, on the attractor, of the value a settling family settles to. 
 def EventualEntropies (U : Fin n → Fin n) (B : Finset (Fin n)) (b : ℕ) : Set ℕ :=
   {N : ℕ | ∃ k : ℕ, ∃ ℓ : ℕ → Fin n → Fin k, ∃ v : Fin n → Fin k,
       EventuallyCarries U ℓ B v ∧ PermBudget ℓ b ∧
-      N = Nat.card ↥(orbit (Perm ↥(omegaLimit U ↑B)) ((omegaLimit U ↑B).restrict v))}
+      N = Nat.card ↥(orbit (Perm ↥(omegaLimit U ↑B)) ((omegaLimit U ↑B).domRestrict v))}
 
 /-- **The eventual entropic capacity from a basin** ([Persistence] §10.1 read at §5's budget): the
 largest carried entropy an observer can settle to from `B`, at `b` bits per frame. -/
@@ -1285,7 +1285,7 @@ theorem eventualEntropies_eq (U : Fin n → Fin n) {B : Finset (Fin n)} (hB : �
     have himg : (U^[T]) '' (↑B : Set (Fin n)) = omegaLimit U ↑B := by
       rw [homega]; exact hNst T (le_max_right _ _)
     -- the value is read at `T` through the world's own iterate, hence in `ℓ T`'s class
-    have hveq : (omegaLimit U ↑B).restrict v = (omegaLimit U ↑B).restrict (ℓ T ∘ U^[T]) := by
+    have hveq : (omegaLimit U ↑B).domRestrict v = (omegaLimit U ↑B).domRestrict (ℓ T ∘ U^[T]) := by
       funext x
       have hxB : (x : Fin n) ∈ B := omegaLimit_subset U (↑B) x.2
       exact (hTf _ hxB T (hTge _ hxB)).symm
@@ -1338,9 +1338,9 @@ theorem CbHev_eq_CbHeOn (U : Fin n → Fin n) {B : Finset (Fin n)} (hB : ∀ i �
 private theorem entropiesOn_le {U : Fin n → Fin n} {S : Set (Fin n)} {b N : ℕ}
     (h : N ∈ EntropiesOn U S b) : N ≤ (Nat.card ↥S)! := by
   obtain ⟨k, ℓ, -, -, rfl⟩ := h
-  have hprod : 0 < ∏ i : Fin k, (Nat.card {x : ↥S // S.restrict (ℓ 0) x = i})! :=
+  have hprod : 0 < ∏ i : Fin k, (Nat.card {x : ↥S // S.domRestrict (ℓ 0) x = i})! :=
     Finset.prod_pos fun i _ => Nat.factorial_pos _
-  exact card_orbit_mul_prod_fiber_card (S.restrict (ℓ 0)) ▸ Nat.le_mul_of_pos_right _ hprod
+  exact card_orbit_mul_prod_fiber_card (S.domRestrict (ℓ 0)) ▸ Nat.le_mul_of_pos_right _ hprod
 
 /-- **The attractor is the ceiling on eventual capacity** — the §3 ceiling, relativized to a basin
 and read in the entropic currency. A transient buys no more than the attractor can hold. -/
@@ -1393,7 +1393,7 @@ private theorem clamp_zero (U : Fin n → Fin n) : clamp U 0 = 0 := by
 /-- The core permutation's period is at most `n !`. -/
 private theorem orderOf_corePerm_le (U : Fin n → Fin n) : orderOf (corePerm U) ≤ n ! := by
   classical
-  haveI : Fintype ↥(core U) := Fintype.ofFinite _
+  have : Fintype ↥(core U) := Fintype.ofFinite _
   have h := orderOf_le_card_univ (x := corePerm U)
   rw [Fintype.card_perm] at h
   refine h.trans (Nat.factorial_le ?_)
@@ -1811,7 +1811,7 @@ theorem card_lawBlind_le (ℓ ℓ' : Fin n → Fin m) :
         simpa [hSdef] using h
       obtain ⟨fW, hfW⟩ := hWA
       have hWv : Φ W = v := hWmem.2
-      haveI : Fintype ↥(stabilizer (Perm (Fin n)) ℓ') := Fintype.ofFinite _
+      have : Fintype ↥(stabilizer (Perm (Fin n)) ℓ') := Fintype.ofFinite _
       have hmaps : ∀ U ∈ S.filter fun V => Φ V = v,
           W * U⁻¹ ∈ (stabilizer (Perm (Fin n)) ℓ' : Set (Perm (Fin n))).toFinset := by
         intro U hU
@@ -2166,8 +2166,8 @@ private theorem candListLB_length_le (hn : 0 < n) {ℓ ℓ' : Fin n → Fin m}
   classical
   set t0 := lensCode ℓ with ht0
   set t1 := lensCode ℓ' with ht1
-  haveI : Finite (LawBlind ℓ ℓ') := Set.toFinite _
-  haveI : Fintype ↥(LawBlind ℓ ℓ') := Fintype.ofFinite _
+  have : Finite (LawBlind ℓ ℓ') := Set.toFinite _
+  have : Fintype ↥(LawBlind ℓ ℓ') := Fintype.ofFinite _
   have hnodup : (candListLB n t0 t1).Nodup := List.nodup_range.filter _
   have hmem : ∀ w ∈ (candListLB n t0 t1).toFinset, w < n ^ n ∧ isValidLB n t0 t1 w := by
     intro w hw
@@ -3696,7 +3696,7 @@ and the lift is injective, so no two relabellings of the factor collide. -/
 private theorem card_orbit_le_liftFst {n₁ n₂ k₁ : ℕ} (ℓ₀ : Fin n₁ → Fin k₁) (hn₂ : 0 < n₂) :
     Nat.card ↥(orbit (Perm (Fin n₁)) ℓ₀)
       ≤ Nat.card ↥(orbit (Perm (Fin (n₁ * n₂))) (liftFst ℓ₀ n₂)) := by
-  haveI : Finite ↥(orbit (Perm (Fin (n₁ * n₂))) (liftFst ℓ₀ n₂)) := Set.toFinite _
+  have : Finite ↥(orbit (Perm (Fin (n₁ * n₂))) (liftFst ℓ₀ n₂)) := Set.toFinite _
   refine Nat.card_le_card_of_injective
     (fun x : ↥(orbit (Perm (Fin n₁)) ℓ₀) => (⟨liftFst x.1 n₂, ?_⟩ :
       ↥(orbit (Perm (Fin (n₁ * n₂))) (liftFst ℓ₀ n₂)))) ?_
@@ -6164,7 +6164,7 @@ theorem carries_emergeLens {n m : ℕ} (U : Fin n → Fin n) (θ : Fin n → Fin
     (hsurj : Function.Surjective (fun s => θ (U^[n] s))) :
     Carries U (emergeLens U θ) := by
   classical
-  haveI : Fintype ↥(core U) := Fintype.ofFinite _
+  have : Fintype ↥(core U) := Fintype.ofFinite _
   have hord : orderOf (corePerm U) ∣ Nat.factorial n := by
     refine dvd_trans orderOf_dvd_card ?_
     rw [Fintype.card_perm]

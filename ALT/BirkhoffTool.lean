@@ -361,7 +361,7 @@ theorem mixingHoeffdingTo_of_le_floor
     have hn0 : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
     have hempty : {ω : ℕ → X | τ ≤ |empiricalMean Z n ω - predZ|} = ∅ := by
       ext ω
-      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le]
+      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_le]
       have hZbound : |empiricalMean Z n ω| ≤ 1 := by
         unfold empiricalMean
         rw [abs_mul, abs_of_nonneg (inv_nonneg.mpr (Nat.cast_nonneg n))]
@@ -479,7 +479,7 @@ theorem not_mixingHoeffding_of_periodic_ne
   have hval : empiricalMean Z (n₀ * Pd) = fun _ => avg := funext fun ω => hper ω n₀ hn0_pos
   have hsetuniv : {ω : ℕ → X | τ ≤ |empiricalMean Z (n₀ * Pd) ω - predZ|} = Set.univ := by
     ext ω
-    simp only [Set.mem_setOf_eq, Set.mem_univ, iff_true, hval, hτdef]
+    simp only [Set.mem_ofPred_eq, Set.mem_univ, iff_true, hval, hτdef]
     linarith [hgap]
   rw [hsetuniv, probReal_univ] at hb
   have hgt : (2 * c * Real.log 2 : ℝ) < (n₀ : ℝ) * τ ^ 2 := by
@@ -572,7 +572,7 @@ theorem mixing_oracle_sample_complexity_to
       = 1 - μ.real {ω | τ ≤ |empiricalMean Z n ω - predZ|} := by
     have hset : {ω | |empiricalMean Z n ω - predZ| < τ}
         = {ω | τ ≤ |empiricalMean Z n ω - predZ|}ᶜ := by
-      ext ω; simp only [Set.mem_setOf_eq, Set.mem_compl_iff, not_le]
+      ext ω; simp only [Set.mem_ofPred_eq, Set.mem_compl_iff, not_le]
     rw [hset, measureReal_compl hsetmeas, probReal_univ]
   rw [hcompl]; linarith
 
@@ -606,7 +606,7 @@ theorem mixing_oracle_tail_to
   have hexple := mixing_exp_le_delta hc hτ hδ0 hn
   -- The strict-tail event sits inside the closed-tail event of `MixingHoeffdingTo`.
   have hsub : {ω | τ < |empiricalMean Z n ω - predZ|} ⊆ {ω | τ ≤ |empiricalMean Z n ω - predZ|} :=
-    Set.setOf_subset_setOf.2 fun _ => le_of_lt
+    Set.ofPred_subset_ofPred.2 fun _ => le_of_lt
   have hle : μ.real {ω | τ < |empiricalMean Z n ω - predZ|} ≤ δ :=
     le_trans (measureReal_mono hsub (measure_ne_top μ _)) (by linarith)
   -- Convert the real-valued bound back to `ℝ≥0∞`.
@@ -646,7 +646,7 @@ theorem mixing_oracle_truth_survives_noisy_to
   have hsc := mixing_oracle_sample_complexity_to μ Z a c N n τ δ hmix hc hmeas hn1 hnN hτ hδ0 hn
   refine hsc.trans (measureReal_mono ?_ (measure_ne_top μ _))
   intro ω hω
-  simp only [Set.mem_setOf_eq] at hω ⊢
+  simp only [Set.mem_ofPred_eq] at hω ⊢
   exact SQVersionSpace.truth_survives_pruning_noisy predR a (empiricalMean Z n ω) τ η hτ.le hη
     hbudget hω.le hnoise
 

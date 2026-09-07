@@ -245,7 +245,7 @@ coverage witness (`SkewFiber.surjective_fittestFrame_of_fixed`) lives in. -/
 theorem not_corrects_of_faithful [NeZero P] (fit : Fin C → ℕ) (hC : 2 ≤ C) :
     ¬ Corrects (gaGen fit fun _ : Fin P => id) Set.univ 1 := by
   intro hcorr
-  haveI : Nontrivial (Fin C) := Fin.nontrivial_iff_two_le.mpr hC
+  have : Nontrivial (Fin C) := Fin.nontrivial_iff_two_le.mpr hC
   obtain ⟨c₀, hc₀⟩ := Finite.exists_min fit
   obtain ⟨b, hb⟩ := exists_ne c₀
   set s : Pop P C := fun _ => c₀ with hs_def
@@ -318,9 +318,10 @@ This is stated over the *whole* ω-limit's coverage, not the initial-population 
 **not** refute `SkewFiber.fiber_emergence_pricing`'s hypothesis outright. -/
 theorem not_surjective_of_margin [NeZero P] (fit : Fin C → ℕ) (vary : Fin P → Fin C → Fin C)
     (hC : 2 ≤ C) (hmargin : HasMargin (gaGen fit vary) Set.univ (fittest fit) 1) :
-    ¬ Function.Surjective (Set.restrict (omegaLimit (gaGen fit vary) Set.univ) (fittest fit)) := by
+    ¬ Function.Surjective
+        (Set.domRestrict (omegaLimit (gaGen fit vary) Set.univ) (fittest fit)) := by
   intro hsurj
-  haveI : Nontrivial (Fin C) := Fin.nontrivial_iff_two_le.mpr hC
+  have : Nontrivial (Fin C) := Fin.nontrivial_iff_two_le.mpr hC
   have hconst : ∀ a : Fin C, (fun _ : Fin P => a) ∈ omegaLimit (gaGen fit vary) Set.univ := by
     intro a
     obtain ⟨⟨s, hs⟩, hval⟩ := hsurj a
@@ -342,7 +343,7 @@ codewords already contradict. -/
 theorem not_hasMargin_of_faithful [NeZero P] (fit : Fin C → ℕ) (hC : 2 ≤ C) :
     ¬ HasMargin (gaGen fit fun _ : Fin P => id) Set.univ (fittest fit) 1 := by
   intro hmargin
-  haveI : Nontrivial (Fin C) := Fin.nontrivial_iff_two_le.mpr hC
+  have : Nontrivial (Fin C) := Fin.nontrivial_iff_two_le.mpr hC
   have hfixed : ∀ c : Fin C, (fun _ : Fin P => c) ∈
       omegaLimit (gaGen fit fun _ : Fin P => id) Set.univ := by
     intro c

@@ -114,9 +114,9 @@ theorem algorithm_discovery_of_mixingTo
     hmix hc hn1 hnN hτ hδ0 hn
   refine le_trans (measure_mono ?_) hcov
   intro ω hω
-  simp only [Set.mem_setOf_eq] at hω
+  simp only [Set.mem_ofPred_eq] at hω
   obtain ⟨hreal, hsep, hnconc⟩ := hω
-  simp only [Set.mem_compl_iff, Set.mem_setOf_eq, SQObjects.IsSQOracle]
+  simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, SQObjects.IsSQOracle]
   intro hosc
   apply hnconc
   have hclose : ∀ t, ∀ φ ∈ sched t, |empiricalMean (Z ↑φ) n ω - stat iR φ| ≤ τ := by

@@ -76,7 +76,7 @@ theorem prodAsm_fitsIn {A B : Asm} {sa sb : ℕ} (hA : FitsIn A sa) (hB : FitsIn
     FitsIn (prodAsm A B) (sa + sb) := by
   obtain ⟨hAf, hAc⟩ := hA
   obtain ⟨hBf, hBc⟩ := hB
-  haveI := hAf; haveI := hBf
+  have := hAf; have := hBf
   refine ⟨inferInstanceAs (Finite (A.carrier × B.carrier)), ?_⟩
   have hcard : Nat.card (prodAsm A B).carrier = Nat.card A.carrier * Nat.card B.carrier :=
     Nat.card_prod _ _
@@ -93,7 +93,7 @@ theorem coprodAsm_fitsIn {A B : Asm} {sa sb : ℕ}
     FitsIn (RealizabilityCoproduct.coprodAsm A B) (max sa sb + 1) := by
   obtain ⟨hAf, hAc⟩ := hA
   obtain ⟨hBf, hBc⟩ := hB
-  haveI := hAf; haveI := hBf
+  have := hAf; have := hBf
   refine ⟨inferInstanceAs (Finite (A.carrier ⊕ B.carrier)), ?_⟩
   have hcard : Nat.card (RealizabilityCoproduct.coprodAsm A B).carrier
       = Nat.card A.carrier + Nat.card B.carrier := Nat.card_sum
@@ -117,7 +117,7 @@ the encoding is inherited from `A`, so carving out a decidable predicate never g
 theorem subAsm_fitsIn {A : Asm} {P : A.carrier → Prop} {s : ℕ} (h : FitsIn A s) :
     FitsIn (RealizabilitySubobject.subAsm A P) s := by
   obtain ⟨hfin, hcard⟩ := h
-  haveI := hfin
+  have := hfin
   refine ⟨inferInstanceAs (Finite {a : A.carrier // P a}), ?_⟩
   calc Nat.card (RealizabilitySubobject.subAsm A P).carrier
       = Nat.card {a : A.carrier // P a} := rfl
@@ -149,7 +149,7 @@ theorem powAsm_fitsIn_iff (A : Asm) [Fintype A.carrier]
       invFun := fun f => ⟨f, hA _ f⟩
       left_inv := fun _ => Subtype.ext rfl
       right_inv := fun _ => rfl }
-  haveI : Finite (expAsm A RealizabilitySubobject.boolAsm).carrier :=
+  have : Finite (expAsm A RealizabilitySubobject.boolAsm).carrier :=
     Finite.of_equiv _ e.symm
   have hcard : Nat.card (expAsm A RealizabilitySubobject.boolAsm).carrier
       = 2 ^ Fintype.card A.carrier := by

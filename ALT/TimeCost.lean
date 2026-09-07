@@ -133,7 +133,9 @@ theorem eval_eq_val : ∀ {c : Code}, RfindFree c → ∀ n, eval c n = Part.som
       intro hc n
       obtain ⟨hf, hg⟩ := hc
       simp only [eval]
-      rw [ihg hg n, Part.bind_eq_bind, Part.bind_some, ihf hf (val cg n), val_comp]
+      rw [ihg hg n]
+      exact (Part.bind_some (val cg n) cf.eval).trans
+        ((ihf hf (val cg n)).trans (congrArg Part.some (val_comp cf cg n).symm))
   | prec cf cg ihf ihg =>
       intro hc n
       obtain ⟨hf, hg⟩ := hc

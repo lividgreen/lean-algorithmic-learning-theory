@@ -50,6 +50,13 @@ import ALT.PrefixComplexity
 import ALT.AdditiveComplexity
 import ALT.BinaryConstant
 import ALT.PrefixInvariance
+import ALT.CodeDataRate
+import ALT.PrefixMachine
+import ALT.BitStringPrimrec
+import ALT.AlgorithmicProbability
+import ALT.CodingTheoremDecoder
+import ALT.KraftChaitin
+import ALT.CodingTheorem
 import ALT.StructureFunction
 import ALT.SearchCost
 import ALT.SearchSpace
@@ -160,6 +167,13 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 /-- info: 'Decoupling.exists_strictly_accretive_decoupling' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms Decoupling.exists_strictly_accretive_decoupling
+
+-- The committing substrate: an arbitrary stream committed one entry per stage, generalizing the
+-- fixed-symbol tape above — Proposition 6.2's first theorem consumer, `accretive_persists` applied
+-- to a stream instance rather than reproved.
+/-- info: 'Decoupling.seqDecode_hereditary' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms Decoupling.seqDecode_hereditary
 
 -- The growing-world skeleton ([Guests] §2 over [Inevitability] §6): factor closure at an arbitrary
 -- carrier, coherence with the fixed-carrier `Intertwines`, the guard showing the tape's
@@ -277,7 +291,7 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms SurpriseBudget.survives_of_correctsWithin
 
-/-- info: 'SurpriseBudget.survives_of_invariant' depends on axioms: [propext, Quot.sound] -/
+/-- info: 'SurpriseBudget.survives_of_invariant' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms SurpriseBudget.survives_of_invariant
 
@@ -296,7 +310,7 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 -- The settling companion: the damaged trajectory settles whenever the undamaged reading does, in
 -- both the abstract and the purely dynamical form, plus guard families showing this is a
 -- companion question to Proposition 6.1(iii) rather than a fourth sufficient condition.
-/-- info: 'SurpriseBudget.settles_traj_of_settles' depends on axioms: [propext, Quot.sound] -/
+/-- info: 'SurpriseBudget.settles_traj_of_settles' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms SurpriseBudget.settles_traj_of_settles
 
@@ -327,7 +341,7 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms SurpriseBudget.exists_fixedPoint_of_corrects
 
-/-- info: 'SurpriseBudget.survives_of_invariant_of_corrects' depends on axioms: [propext, Quot.sound] -/
+/-- info: 'SurpriseBudget.survives_of_invariant_of_corrects' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms SurpriseBudget.survives_of_invariant_of_corrects
 
@@ -760,6 +774,61 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 /-- info: 'AdditiveComplexity.card_KE_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms AdditiveComplexity.card_KE_le
+
+-- The serialization's codes grow at `1 + 4√3 ≈ 7.928` per node, below the `8` its three bits
+-- could carry: a node-counted refinement of `card_KE_le`, via a truncated-Cauchy-square bound on
+-- the counting generating function's singularity.
+/-- info: 'CodeDataRate.card_codesOfNodes_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms CodeDataRate.card_codesOfNodes_le
+
+-- The data rate of `KE` is bounded away from one bit per bit: no constant makes
+-- `KE x ≤ (1 + 1/500) · Nat.size x + c` for every `x`, hence no constant makes `KE` an ideal code
+-- even for its own computable measures.
+/-- info: 'CodeDataRate.KE_data_rate' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms CodeDataRate.KE_data_rate
+
+-- The prefix-free-ification `pfy`'s domain, read as bit-strings, contains no member a proper
+-- prefix of another: the standard greedy-by-stage construction of a prefix machine.
+/-- info: 'PrefixMachine.pfy_prefixFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.pfy_prefixFree
+
+-- The prefix complexity `KB` (over the universal prefix machine `pfy`) is additively below the
+-- additive complexity `KE`: hardcode a datum-free guard, halting on input `0` alone.
+/-- info: 'PrefixMachine.KB_le_KE' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.KB_le_KE
+
+-- `KB` is a semimeasure: `∑ₓ 2⁻ᴷᴮ⁽ˣ⁾ ≤ 1`, the double sum over machines and their prefix-free
+-- arguments bounded by `kraft_KP_E` and by Kraft over each prefix-free domain.
+/-- info: 'PrefixMachine.kraft_KB' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.kraft_KB
+
+-- The algorithmic probability `QB`: the shortest description is one term of its Kraft sum, so
+-- `2⁻ᴷᴮ⁽ˣ⁾ ≤ QB x`.
+/-- info: 'PrefixMachine.two_pow_neg_KB_le_QB' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.two_pow_neg_KB_le_QB
+
+-- `QB` is a semimeasure: `∑ₓ QB x ≤ 1`.
+/-- info: 'PrefixMachine.tsum_QB_le_one' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.tsum_QB_le_one
+
+-- `pfy` is partial recursive, uniformly in the machine: a bit-string layer over `natToBits`,
+-- `foldStep`, `newlyHalting` and `acceptedList`, closing the boundary `pfy`'s own definition flags.
+/-- info: 'PrefixMachine.pfy_partrec' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.pfy_partrec
+
+-- `QB` is lower-semicomputable: a computable, monotone dyadic approximation rising to it from
+-- below, over the bit-string layer's computability.
+/-- info: 'PrefixMachine.QB_lsc' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.QB_lsc
 
 -- [Persistence] §4, the static stratum. A lens with `ℓ ∘ U = ℓ` is exactly a function constant on
 -- the components of the transition graph — an equivalence between a dynamical condition and a
@@ -1946,7 +2015,7 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 -- into basin fatness and local constancy; `hasMargin_margin` attains the supremum, so the margin
 -- names a radius at which the reading really is robust; `repair_tax` prices a margin by sphere
 -- packing in the memory; `majority_margin` is the worked robust sub-system, margin at least one.
-/-- info: 'PersistenceCapacity.hasMargin_iff' depends on axioms: [propext, Quot.sound] -/
+/-- info: 'PersistenceCapacity.hasMargin_iff' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms PersistenceCapacity.hasMargin_iff
 
@@ -3618,7 +3687,7 @@ strict subset the guard pins verbatim. -/
 -- [Decoupling] §5.3/§6 Gödel threshold (`ALT/GodelThreshold.lean`), tied to `ParamNNO`: the
 -- Theorem 6.2 form — depth `> g(T_S)` under incompleteness ⟹ represents-an-underivable-truth. Pure
 -- threshold logic, so it is `Classical.choice`-free (`[propext, Quot.sound]`, a strict subset).
-/-- info: 'GodelThreshold.reflective_of_depth' depends on axioms: [propext, Quot.sound] -/
+/-- info: 'GodelThreshold.reflective_of_depth' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms GodelThreshold.reflective_of_depth
 
@@ -4195,3 +4264,44 @@ strict subset the guard pins verbatim. -/
 /-- info: 'TapeHostSurvival.comp_carries_survival' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms TapeHostSurvival.comp_carries_survival
+
+-- The coding theorem with a logarithmic loss: for a lower-semicomputable semimeasure, a decoder
+-- built from the level-`k` request/firing search over the approximation's own witness, its
+-- `gammaCode`/`bitsFixed` description read off the requester's rank among the firings.
+/-- info: 'PrefixMachine.coding_theorem_weak' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.coding_theorem_weak
+
+-- The instance of the coding theorem with a logarithmic loss at the algorithmic probability `QB`.
+/-- info: 'PrefixMachine.coding_theorem_weak_QB' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.coding_theorem_weak_QB
+
+-- The online Kraft–Chaitin assignment's own capstone: the words it ever assigns, over the whole
+-- history of a mass-respecting request stream, are pairwise prefix-free.
+/-- info: 'PrefixMachine.kcWord_prefixFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.kcWord_prefixFree
+
+-- Levin's coding theorem's request-stream budget: an improving step's own level, plus a silent
+-- step's own index, both shifted by two, keep the online Kraft–Chaitin partial sums at most one.
+/-- info: 'PrefixMachine.levinReq_mass' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.levinReq_mass
+
+-- Levin's coding theorem, the `O(1)` form: on the prefix machine every lower-semicomputable
+-- semimeasure is an ideal code up to an additive constant, via the online Kraft–Chaitin decoder.
+/-- info: 'PrefixMachine.coding_theorem' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.coding_theorem
+
+-- The instance of Levin's coding theorem at the algorithmic probability `QB`.
+/-- info: 'PrefixMachine.coding_theorem_QB' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.coding_theorem_QB
+
+-- Both directions at `QB`: with `two_pow_neg_KB_le_QB`, `QB` and `2 ^ (-KB)` agree up to a
+-- multiplicative constant.
+/-- info: 'PrefixMachine.QB_le_two_pow_mul' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.QB_le_two_pow_mul

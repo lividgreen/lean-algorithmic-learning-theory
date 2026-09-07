@@ -76,7 +76,7 @@ def RepClass (w : ℕ) : Set Asm := {A | CapacityLayer.FitsIn A w}
 capacity monotonicity `CapacityLayer.FitsIn.mono`. -/
 theorem RepClass_mono {w w' : ℕ} (h : w ≤ w') : RepClass w ⊆ RepClass w' := by
   intro A hA
-  simp only [RepClass, Set.mem_setOf_eq] at hA ⊢
+  simp only [RepClass, Set.mem_ofPred_eq] at hA ⊢
   exact hA.mono h
 
 /-- **The grade is a faithful order**: the inclusion `RepClass w ⊆ RepClass w'` holds **iff**
@@ -91,7 +91,7 @@ theorem RepClass_subset_iff {w w' : ℕ} : RepClass w ⊆ RepClass w' ↔ w ≤ 
   have hpow : 0 < 2 ^ w := by positivity
   -- the separating object: carrier `ZMod (2^w)`, exactly `2^w` elements
   have hin : recursorAsm (2 ^ w - 1) ∈ RepClass w := by
-    simp only [RepClass, Set.mem_setOf_eq]
+    simp only [RepClass, Set.mem_ofPred_eq]
     exact CapacityLayer.recursorAsm_fitsIn (2 ^ w - 1) w (by omega)
   have hout : CapacityLayer.FitsIn (recursorAsm (2 ^ w - 1)) w' := hsub hin
   have hcard : Nat.card (recursorAsm (2 ^ w - 1)).carrier = 2 ^ w := by

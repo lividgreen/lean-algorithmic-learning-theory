@@ -167,7 +167,7 @@ theorem charFn_eq_true_iff {A : Asm} (P : A.carrier → Prop) [DecidablePred P] 
   by_cases h : P a
   · exact iff_of_true (if_pos h) h
   · refine iff_of_false ?_ h
-    rw [if_neg h]; simp
+    simp [h]
 
 /-- The **characteristic map** `χ_P : A ⟶ Bool` of a comprehension subobject ([Decoupling] §4.2). A
 morphism because `A` is a finite object out of which every function is realized (`hA`, the §4.1

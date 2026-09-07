@@ -672,7 +672,7 @@ theorem witness_truth_survives_to [NeZero k] {Ω : Type*} [MeasurableSpace Ω] {
   have hkR : (1 : ℝ) ≤ (k : ℝ) := by exact_mod_cast hkpos
   have hc : (0 : ℝ) < samePairConst k := by
     rw [show samePairConst k = 48 * (k : ℝ) from rfl]; linarith
-  haveI : IsProbabilityMeasure (Measure.map (substrateTraj (k := k) ξ) P) := by
+  have : IsProbabilityMeasure (Measure.map (substrateTraj (k := k) ξ) P) := by
     rw [substrateTraj_eq_traj]
     exact Measure.isProbabilityMeasure_map (measurable_traj hkpos hmeas).aemeasurable
   refine BirkhoffTool.mixing_oracle_truth_survives_noisy_to _ _ (samePairMean ψ (-1))

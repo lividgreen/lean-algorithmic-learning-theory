@@ -128,9 +128,11 @@ def boundedAlg (M : ℕ) : Endofunctor.Algebra succEndo where
 lemma boundedAlg_orbit_val (M n : ℕ) :
     ((s (boundedAlg M))^[n] (z (boundedAlg M))).val = min n M := by
   induction n with
-  | zero => simp
+  | zero => simp; rfl
   | succ n ih =>
-      rw [Function.iterate_succ_apply', boundedAlg_s]
+      have hstep : (s (boundedAlg M)) ((s (boundedAlg M))^[n] (z (boundedAlg M)))
+          = boundedSucc M ((s (boundedAlg M))^[n] (z (boundedAlg M))) := boundedAlg_s M _
+      rw [Function.iterate_succ_apply', hstep]
       change min (((s (boundedAlg M))^[n] (z (boundedAlg M))).val + 1) M = min (n + 1) M
       rw [ih]; omega
 
@@ -202,15 +204,15 @@ def toSatHom (M : ℕ) (alg : Endofunctor.Algebra succEndo) (hsat : Sat M alg) :
 /-- The `inl`-square, extracted from `g`'s hom law: `g 0 = z`. -/
 lemma hom_zero (M : ℕ) (alg : Endofunctor.Algebra succEndo) (g : boundedAlg M ⟶ alg) :
     g.f (0 : Fin (M + 1)) = z alg := by
-  have h := ConcreteCategory.congr_hom g.h (Sum.inl PUnit.unit : succEndo.obj (Fin (M + 1)))
-  simp only [types_comp_apply] at h
+  have h : z alg = g.f (0 : Fin (M + 1)) :=
+    ConcreteCategory.congr_hom g.h (Sum.inl PUnit.unit : succEndo.obj (boundedAlg M).a)
   exact h.symm
 
 /-- The `inr`-square, extracted from `g`'s hom law: `g (succ k) = s (g k)`. -/
 lemma hom_succ (M : ℕ) (alg : Endofunctor.Algebra succEndo) (g : boundedAlg M ⟶ alg)
     (k : Fin (M + 1)) : g.f (boundedSucc M k) = s alg (g.f k) := by
-  have h := ConcreteCategory.congr_hom g.h (Sum.inr k : succEndo.obj (Fin (M + 1)))
-  simp only [types_comp_apply] at h
+  have h : s alg (g.f k) = g.f (boundedSucc M k) :=
+    ConcreteCategory.congr_hom g.h (Sum.inr k : succEndo.obj (boundedAlg M).a)
   exact h.symm
 
 /-- **Uniqueness on the orbit** (a genuine induction, not `Subsingleton`): any algebra hom

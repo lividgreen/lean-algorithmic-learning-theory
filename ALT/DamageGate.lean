@@ -378,7 +378,7 @@ theorem sourceStep_not_injective {k m : ℕ} (hm : 1 ≤ m) :
 
 end DamageGate
 
-/-- info: 'DamageGate.noiseGated_iff_witMiss' depends on axioms: [propext, Quot.sound] -/
+/-- info: 'DamageGate.noiseGated_iff_witMiss' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms DamageGate.noiseGated_iff_witMiss
 

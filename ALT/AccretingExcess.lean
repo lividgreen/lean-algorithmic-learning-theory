@@ -48,7 +48,7 @@ namespace AccretingWitness
 open ExcessOrder
 open RealizabilityCCC RealizabilityRecursor
 open PersistenceCapacity Decoupling AdditiveComplexity
-open LO.FirstOrder LO.FirstOrder.Arithmetic
+open FFL.FirstOrder FFL.FirstOrder.Arithmetic
 
 variable {ι_J : Type*}
 
@@ -65,7 +65,7 @@ theorem outgrows_paMinus_uniform :
         CapacityLayer.FitsIn (recursorAsm R.depth) κ ∧
         ∃ M, GodelThreshold.RepresentsUnderivableTruth (Encodable.encode : Sentence ℒₒᵣ → ℕ)
           (fun δ => (𝗣𝗔⁻ : ArithmeticTheory) ⊢ δ) (fun δ => ℕ↓[ℒₒᵣ] ⊧ δ) M := by
-  haveI : (𝗣𝗔⁻ : ArithmeticTheory).Δ₁ := Theory.Δ₁.ofFinite 𝗣𝗔⁻ PeanoMinus.finite
+  have : (𝗣𝗔⁻ : ArithmeticTheory).Δ₁ := Theory.Δ₁.ofFinite 𝗣𝗔⁻ PeanoMinus.finite
   obtain ⟨gTS, hInc⟩ := GodelComplete.incompleteness_of_arith 𝗣𝗔⁻
   refine ⟨gTS, fun κ Mchk hhost h1 h2 => ?_⟩
   obtain ⟨R, hdepth, hfits, himp⟩ :=

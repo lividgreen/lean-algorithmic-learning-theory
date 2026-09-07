@@ -128,7 +128,7 @@ theorem chainMeasure_cylinder_sum {P : V → V → ℝ} {pi : V → ℝ}
   have hset : {ω : ℕ → V | (fun i : Fin (m + 1) => ω (i : ℕ)) ∈ S} =
       ⋃ w ∈ S, {ω : ℕ → V | ∀ i : Fin (m + 1), ω (i : ℕ) = w i} := by
     ext ω
-    simp only [Set.mem_setOf_eq, Set.mem_iUnion]
+    simp only [Set.mem_ofPred_eq, Set.mem_iUnion]
     constructor
     · intro h; exact ⟨_, h, fun _ => rfl⟩
     · rintro ⟨w, hw, hweq⟩
@@ -136,7 +136,7 @@ theorem chainMeasure_cylinder_sum {P : V → V → ℝ} {pi : V → ℝ}
   rw [hset, MeasureTheory.measureReal_biUnion_finset]
   · exact Finset.sum_congr rfl fun w _ => hμ m w
   · intro w _ w' _ hne
-    simp only [Function.onFun, Set.disjoint_left, Set.mem_setOf_eq]
+    simp only [Function.onFun, Set.disjoint_left, Set.mem_ofPred_eq]
     intro ω hω hω'
     exact hne (funext fun i => (hω i).symm.trans (hω' i))
   · exact fun w _ => hcyl w
@@ -1150,7 +1150,7 @@ private theorem two_sided_tail_bound
       = {ω : ℕ → V | ((m + 1 : ℕ) : ℝ) * τ ≤ ∑ i : Fin (m + 1), g (ω i)}
         ∪ {ω : ℕ → V | ((m + 1 : ℕ) : ℝ) * τ ≤ ∑ i : Fin (m + 1), -g (ω i)} := by
     ext ω
-    simp only [Set.mem_setOf_eq, Set.mem_union, le_abs, Finset.sum_neg_distrib]
+    simp only [Set.mem_ofPred_eq, Set.mem_union, le_abs, Finset.sum_neg_distrib]
   rw [hset]
   refine (MeasureTheory.measureReal_union_le _ _).trans ?_
   have h1 := one_sided_tail_bound hP hst hpinn hpisum hlam0 hlam1 hgap hg0 hgbd hμ m hτ0 hτ2
@@ -1200,7 +1200,7 @@ theorem mixingHoeffding_of_gap
     have hset : {ω : ℕ → V | τ ≤ |SQOracle.empiricalMean (fun i ω => f (ω i)) (m + 1) ω - mean|}
         = {ω : ℕ → V | ((m + 1 : ℕ) : ℝ) * τ ≤ |∑ i : Fin (m + 1), g (ω i)|} := by
       ext ω
-      simp only [Set.mem_setOf_eq, SQOracle.empiricalMean]
+      simp only [Set.mem_ofPred_eq, SQOracle.empiricalMean]
       have hne : ((m + 1 : ℕ) : ℝ) ≠ 0 := by positivity
       have heq : (((m + 1 : ℕ) : ℝ))⁻¹ * ∑ i ∈ Finset.range (m + 1), f (ω i) - mean
           = ((m + 1 : ℕ) : ℝ)⁻¹ * ∑ i : Fin (m + 1), g (ω i) := by
@@ -1225,7 +1225,7 @@ theorem mixingHoeffding_of_gap
     have hempty : {ω : ℕ → V | τ ≤ |SQOracle.empiricalMean (fun i ω => f (ω i)) (m + 1) ω - mean|}
         = ∅ := by
       ext ω
-      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le]
+      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_le]
       have hbound : |SQOracle.empiricalMean (fun i ω => f (ω i)) (m + 1) ω - mean| ≤ 2 := by
         unfold SQOracle.empiricalMean
         have hne : ((m + 1 : ℕ) : ℝ) ≠ 0 := by positivity
@@ -1395,8 +1395,8 @@ omit [Nonempty V] in
 private theorem chainMeasure_isProb (P : V → V → ℝ) (pi : V → ℝ) (hP : Stochastic P)
     (hpos : ∀ x, 0 < pi x) (hsum : ∑ x, pi x = 1) :
     MeasureTheory.IsProbabilityMeasure (chainMeasure P pi hP) := by
-  haveI := fun n => chainKappa_isMarkov P hP n
-  haveI := piMeasure_isProb pi hpos hsum
+  have := fun n => chainKappa_isMarkov P hP n
+  have := piMeasure_isProb pi hpos hsum
   unfold chainMeasure
   infer_instance
 
@@ -1468,8 +1468,8 @@ private theorem master_step (P : V → V → ℝ) (pi : V → ℝ) (hP : Stochas
     haveI := fun n => chainKappa_isMarkov P hP n
     (chainMeasure P pi hP).map (Preorder.frestrictLe n) ⊗ₘ (chainKappa P n)
       = (chainMeasure P pi hP).map (fun x => (Preorder.frestrictLe n x, x (n + 1))) := by
-  haveI := fun n => chainKappa_isMarkov P hP n
-  haveI := piMeasure_isProb pi hpos hsum
+  have := fun n => chainKappa_isMarkov P hP n
+  have := piMeasure_isProb pi hpos hsum
   unfold chainMeasure
   exact ProbabilityTheory.Kernel.map_frestrictLe_trajMeasure_compProd_eq_map_trajMeasure
 
@@ -1505,7 +1505,7 @@ omit [Nonempty V] in
 private theorem chainMeasure_restrictFin_zero (P : V → V → ℝ) (pi : V → ℝ) (hP : Stochastic P)
     (hpos : ∀ x, 0 < pi x) (hsum : ∑ x, pi x = 1) (w : Fin 1 → V) :
     (chainMeasure P pi hP).map (restrictFin 0) {w} = ENNReal.ofReal (pi (w 0)) := by
-  haveI := fun n => chainKappa_isMarkov P hP n
+  have := fun n => chainKappa_isMarkov P hP n
   have hstep : (chainMeasure P pi hP).map (restrictFin 0)
       = ((chainMeasure P pi hP).map (Preorder.frestrictLe 0)).map (iicFinEquiv 0) :=
     (MeasureTheory.Measure.map_map Measurable.of_discrete
@@ -1545,8 +1545,8 @@ private theorem chainMeasure_restrictFin_succ (P : V → V → ℝ) (pi : V → 
     (chainMeasure P pi hP).map (restrictFin (n + 1)) {w'}
       = (chainMeasure P pi hP).map (restrictFin n) {Fin.init w'}
         * ENNReal.ofReal (P (w' (Fin.castSucc (Fin.last n))) (w' (Fin.last (n + 1)))) := by
-  haveI := fun n => chainKappa_isMarkov P hP n
-  haveI := piMeasure_isProb pi hpos hsum
+  have := fun n => chainKappa_isMarkov P hP n
+  have := piMeasure_isProb pi hpos hsum
   set μ := chainMeasure P pi hP
   set a0 : Π _ : (Finset.Iic n : Finset ℕ), V := (iicFinEquiv n).symm (Fin.init w') with ha0
   set b0 : V := w' (Fin.last (n + 1)) with hb0
@@ -1624,7 +1624,7 @@ theorem exists_chainMeasure
   intro n w
   have heq : {ω : ℕ → V | ∀ i : Fin (n + 1), ω (i : ℕ) = w i} = restrictFin n ⁻¹' {w} := by
     ext ω
-    simp only [Set.mem_setOf_eq, Set.mem_preimage, Set.mem_singleton_iff]
+    simp only [Set.mem_ofPred_eq, Set.mem_preimage, Set.mem_singleton_iff]
     exact (restrictFin_eq_iff n ω w).symm
   rw [heq, show (chainMeasure P pi hP).real (restrictFin n ⁻¹' {w})
       = ((chainMeasure P pi hP).map (restrictFin n) {w}).toReal from by
@@ -1653,7 +1653,7 @@ theorem exists_mixingHoeffding_of_gap
       IsChainMeasure P pi μ ∧
       BirkhoffTool.MixingHoeffding μ (fun i ω => f (ω i)) (∑ x, pi x * f x) (cGap lam) := by
   obtain ⟨μ, hμprob, hμchain⟩ := exists_chainMeasure P pi hP hst hpos hsum
-  haveI := hμprob
+  have := hμprob
   exact ⟨μ, hμprob, hμchain,
     mixingHoeffding_of_gap P pi lam hP hst hpos hsum hlam0 hlam1 hgap μ hμchain f hf⟩
 

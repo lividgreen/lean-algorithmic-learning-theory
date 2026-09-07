@@ -149,7 +149,7 @@ theorem search_phase_mass_ville_chain [IsFiniteMeasure μ]
   have hsub : {ω | C + Real.log (1 / δ) < ∑ i ∈ pruned ω, m ω i}
               ⊆ {ω | ∃ t, 1 / δ ≤ Z t ω} := by
     intro ω hω
-    simp only [Set.mem_setOf_eq] at hω ⊢
+    simp only [Set.mem_ofPred_eq] at hω ⊢
     by_contra h
     simp only [not_exists, not_le] at h
     have hbound := pruned_mass_le_budget (pruned ω) (m ω) (Φ ω) n C (Real.log (1 / δ))

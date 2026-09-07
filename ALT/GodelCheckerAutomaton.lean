@@ -37,7 +37,7 @@ assert_not_exists Decoupling.decoupling_iff_persists_all
 
 namespace GodelCheckerAutomaton
 
-open LO LO.Entailment LO.FirstOrder LO.FirstOrder.Arithmetic GodelChecker
+open FFL FFL.Entailment FFL.FirstOrder FFL.FirstOrder.Arithmetic GodelChecker
 
 /-- Cell alphabet: a code cell holds a sentence (`Sum.inl`), a work cell holds a step counter and
 running verdict (`Sum.inr`). -/

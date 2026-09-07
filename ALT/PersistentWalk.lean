@@ -213,7 +213,7 @@ theorem persistentSum_tail (hmeas : ∀ i, Measurable (ξ i)) (hindep : iIndepFu
   have hsub : {ω | 2 * ε + 4 * K ≤ |∑ t ∈ Finset.range (K * M + K), chi (o t ω)|}
       ⊆ {ω | ε ≤ |∑ c ∈ Finset.range K, S c ω|} := by
     intro ω hω
-    simp only [Set.mem_setOf_eq] at hω ⊢
+    simp only [Set.mem_ofPred_eq] at hω ⊢
     have hgen := abs_chiSum_le_gen (fun t => o t ω) (fun t => Y t ω) K ρ
       (abs_le.mpr ⟨by linarith, by linarith⟩) (fun t => hrec t ω) (K * M)
     rw [hsplit ω]

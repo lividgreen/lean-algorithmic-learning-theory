@@ -424,7 +424,9 @@ private theorem finFunctionFinEquiv_succ_val {n₂ P : ℕ} (w : Fin (P + 1) →
 private theorem finFunctionFinEquiv_modNat {n₂ P : ℕ} (w : Fin (P + 1) → Fin n₂) :
     (finFunctionFinEquiv w).modNat = w 0 := by
   apply Fin.ext
-  rw [Fin.coe_modNat, finFunctionFinEquiv_succ_val, Nat.add_mul_mod_self_left]
+  have h : (↑(finFunctionFinEquiv w).modNat : ℕ) = (finFunctionFinEquiv w : ℕ) % n₂ :=
+    Fin.coe_modNat _
+  rw [h, finFunctionFinEquiv_succ_val, Nat.add_mul_mod_self_left]
   exact Nat.mod_eq_of_lt (w 0).isLt
 
 /-- **The high digits of `finFunctionFinEquiv w` are the tail's own encoding.** -/
@@ -432,7 +434,9 @@ private theorem finFunctionFinEquiv_divNat {n₂ P : ℕ} (w : Fin (P + 1) → F
     (finFunctionFinEquiv w).divNat = finFunctionFinEquiv (Fin.tail w) := by
   have hn₂ : 0 < n₂ := lt_of_le_of_lt (Nat.zero_le _) (w 0).isLt
   apply Fin.ext
-  rw [Fin.coe_divNat, finFunctionFinEquiv_succ_val, Nat.add_mul_div_left _ _ hn₂,
+  have h : (↑(finFunctionFinEquiv w).divNat : ℕ) = (finFunctionFinEquiv w : ℕ) / n₂ :=
+    Fin.coe_divNat _
+  rw [h, finFunctionFinEquiv_succ_val, Nat.add_mul_div_left _ _ hn₂,
     Nat.div_eq_of_lt (w 0).isLt, Nat.zero_add]
 
 /-- **`powFiber` is componentwise `F i`, under the digit encoding** ([Inevitability] Theorem
@@ -524,16 +528,17 @@ theorem lensTable_powFiber (F : Fin n₁ → Fin n₂ → Fin n₂) (P : ℕ) :
       have hdival : (⟨q % n₂ ^ (P + 1), hrlt'⟩ : Fin (n₂ ^ (P + 1))).divNat
           = (⟨q % (n₂ ^ P * n₂) / n₂, hw1lt⟩ : Fin (n₂ ^ P)) := by
         apply Fin.ext
-        change ((⟨q % n₂ ^ (P + 1), hrlt'⟩ : Fin (n₂ ^ (P + 1))).divNat : ℕ)
-          = q % (n₂ ^ P * n₂) / n₂
-        rw [Fin.coe_divNat]
+        have hval : ((⟨q % n₂ ^ (P + 1), hrlt'⟩ : Fin (n₂ ^ (P + 1))).divNat : ℕ)
+            = (q % n₂ ^ (P + 1)) / n₂ := Fin.coe_divNat _
+        rw [hval]
         congr 1
       have hmodval : (⟨q % n₂ ^ (P + 1), hrlt'⟩ : Fin (n₂ ^ (P + 1))).modNat
           = (⟨q % n₂, hw2lt⟩ : Fin n₂) := by
         apply Fin.ext
-        change ((⟨q % n₂ ^ (P + 1), hrlt'⟩ : Fin (n₂ ^ (P + 1))).modNat : ℕ) = q % n₂
-        rw [Fin.coe_modNat, ← hmm]
-        congr 1
+        have hval : ((⟨q % n₂ ^ (P + 1), hrlt'⟩ : Fin (n₂ ^ (P + 1))).modNat : ℕ)
+            = (q % n₂ ^ (P + 1)) % n₂ := Fin.coe_modNat _
+        have hval2 : q % n₂ ^ (P + 1) % n₂ = q % n₂ := hmm
+        rw [hval, hval2]
       rw [hival, hdival, hmodval,
         lensTable_getD_fiberFlat (powFiber F P) ⟨q / (n₂ ^ P * n₂), hilt⟩
           ⟨q % (n₂ ^ P * n₂) / n₂, hw1lt⟩,
@@ -938,7 +943,7 @@ theorem not_surjective_fittestFrame_of_converged [NeZero P] (S : Fin n₁ → Fi
     ¬ Function.Surjective fun s =>
         fittestFrame P fit ((evoWorld S fit vary)^[n₁ * C ^ P] s) := by
   intro hsurj
-  haveI : Nontrivial (Fin C) := Fin.nontrivial_iff_two_le.mpr hC
+  have : Nontrivial (Fin C) := Fin.nontrivial_iff_two_le.mpr hC
   obtain ⟨c₁, hc₁⟩ := exists_ne c₀
   obtain ⟨s, hs⟩ := hsurj c₁
   exact hc₁ (hs.symm.trans (hconv s))

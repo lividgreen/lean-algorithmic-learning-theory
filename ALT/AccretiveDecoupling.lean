@@ -58,6 +58,11 @@ running instance below. The stage-indexed family is doing work; its *proof* is a
   faithful reading, disjoint stages, and the limit region *not* read-only. Without it every
   statement above would be satisfied by the constant family and the extension would be the old
   lemma in new clothes.
+* `seqWrite` / `seqDecode_hereditary` — **the committing substrate** ([Inevitability] §6,
+  `accretive_decoupling_iff`'s first theorem consumer): an arbitrary stream, one entry per stage,
+  committed onto the same append-only tape; every entry it writes is held under every later
+  commitment, at a footprint (`tapeRegion_bijective`) in bijection with the stream's own prefix,
+  cell for cell. What the stream's entries *are*, or how they are chosen, is outside this file.
 
 ## Scope
 
@@ -260,7 +265,7 @@ theorem faithful_tapeDecode (t : ℕ) : Faithful (tapeDecode t) (tapeRegion t) :
 /-- The limit region is exactly the union of the stages' regions. -/
 theorem tapeLimit_eq_iUnion : tapeLimit = {a | ∃ t, a ∈ tapeRegion t} := by
   ext a
-  simp only [tapeLimit, mem_tapeRegion, Set.mem_setOf_eq]
+  simp only [tapeLimit, mem_tapeRegion, Set.mem_ofPred_eq]
   exact ⟨fun h => ⟨a, h, le_refl a⟩, fun ⟨_, h, _⟩ => h⟩
 
 /-- **The union of the regions is not read-only.** So the accretive statement is *not* recoverable
@@ -294,5 +299,103 @@ theorem exists_strictly_accretive_decoupling :
     by rw [← tapeLimit_eq_iUnion]; exact not_accretes_tapeLimit⟩
 
 end GrowingCode
+
+/-! ## An arbitrary committed stream
+
+`tapeWrite` commits a single fixed symbol, `1`, at each stage. `seqWrite` generalizes it to commit
+an arbitrary stream `c : ℕ → ℕ`, one entry per stage — [Inevitability] §6, Proposition 6.2's first
+theorem consumer. `tapeRegion`, `tapeStage` and `tapeDecode` never mention what was written, only
+where, so they are reused verbatim; only the write itself changes. What survives is exactly what
+Proposition 6.2 gives: every committed cell held under every later step, at a footprint equal to
+the stream's own prefix length. What the stream's entries *are* — successive law-codes, or how they
+are chosen — is paper-side, not claimed here.
+-/
+
+section SequentialCommit
+
+variable (c : ℕ → ℕ)
+
+/-- Commit stream `c`, one entry per stage: bump the counter in cell `0`, write `c`'s `s 0`-th entry
+at the fresh cell just past the written region, and leave every other cell alone. Reduces to
+`tapeWrite` at the constant stream `fun _ => 1`. -/
+def seqWrite (c : ℕ → ℕ) (s : Mem ℕ ℕ) : Mem ℕ ℕ :=
+  fun a => if a = 0 then s 0 + 1 else if a = s 0 + 1 then c (s 0) else s a
+
+/-- The blank state before any commitment: counter `0`, every cell `0`. -/
+def seqStart : Mem ℕ ℕ := fun _ => 0
+
+/-- `seqWrite c` advances the stage exactly as `tapeWrite` does: the counter bump does not depend
+on what is written. -/
+theorem advances_seqWrite : Advances (seqWrite c) tapeStage := by
+  intro t s hs
+  rw [mem_tapeStage] at hs ⊢
+  simp [seqWrite, hs]
+
+/-- `seqWrite c` accretes on the same region as `tapeWrite`, by the same argument: at stage `t` it
+touches only the counter and the fresh cell `t + 1`, both outside `{1, …, t}`. -/
+theorem accretes_seqWrite : Accretes (seqWrite c) tapeRegion tapeStage := by
+  intro t s hs a ha
+  rw [mem_tapeStage] at hs
+  rw [mem_tapeRegion] at ha
+  simp only [seqWrite]
+  rw [if_neg (by omega), if_neg (by omega)]
+
+/-- The canonical run from the blank state: after `t` commitments the counter reads `t`, and cell
+`a` holds the `(a - 1)`-th entry of `c` for every written cell `1 ≤ a ≤ t`, `0` elsewhere. -/
+theorem seqWrite_iterate_seqStart (t : ℕ) :
+    (seqWrite c)^[t] seqStart =
+      fun a => if a = 0 then t else if 1 ≤ a ∧ a ≤ t then c (a - 1) else 0 := by
+  induction t with
+  | zero => funext a; simp only [Function.iterate_zero_apply, seqStart]; split_ifs <;> omega
+  | succ n ih =>
+    rw [Function.iterate_succ_apply', ih]
+    funext a
+    simp only [seqWrite]
+    split_ifs with h1 h2 h3 h4 h5 h6 <;> first | omega | (congr 1; omega)
+
+/-- The canonical run lands in stage `t`, so `accretive_persists` applies to it. -/
+theorem mem_tapeStage_seqWrite_iterate (t : ℕ) : (seqWrite c)^[t] seqStart ∈ tapeStage t := by
+  rw [mem_tapeStage, seqWrite_iterate_seqStart]
+  simp
+
+/-- **The committing substrate** ([Inevitability] §6, Proposition 6.2's first theorem consumer):
+every symbol `seqWrite` commits is held under every later commitment, forever. For every stage `t`
+and every later step `k`, the reading of the code region written by stage `t` is exactly the
+stream's own prefix — cell `a` holds `c (a - 1)` for `1 ≤ a ≤ t`, `0` elsewhere — no matter how many
+further commitments have since been made.
+
+Proof: `accretive_persists` at the canonical run, `(seqWrite c)^[t] seqStart`, which
+`mem_tapeStage_seqWrite_iterate` places in stage `t`; the run identification then evaluates both
+sides. This is the accretive equivalence consumed, not reproved — everything about *what* the
+stream commits, or how, stays outside this file. -/
+theorem seqDecode_hereditary (t k : ℕ) :
+    tapeDecode t ((seqWrite c)^[t + k] seqStart) =
+      fun a => if 1 ≤ a ∧ a ≤ t then c (a - 1) else 0 := by
+  have hstage := mem_tapeStage_seqWrite_iterate c t
+  have hpersist := accretive_persists tapeRegion_monotone (advances_seqWrite c)
+    (accretes_seqWrite c) (fun u => (faithful_tapeDecode u).dependsOn) t k _ hstage
+  rw [show t + k = k + t from by omega, Function.iterate_add_apply, hpersist,
+    seqWrite_iterate_seqStart]
+  funext a
+  simp only [tapeDecode]
+  split_ifs with h1 h2 <;> first | rfl | omega
+
+/-- **The committed footprint is exactly the prefix length**: the region held permanently after `t`
+commitments is in bijection with `Fin t` — `t` cells, with no slack. -/
+theorem tapeRegion_bijective (t : ℕ) :
+    Set.BijOn (fun i : Fin t => (i : ℕ) + 1) Set.univ (tapeRegion t) := by
+  refine ⟨fun i _ => ?_, fun i _ j _ hij => ?_, fun a ha => ?_⟩
+  · rw [mem_tapeRegion]
+    have := i.isLt
+    simp only
+    omega
+  · simp only at hij
+    exact Fin.ext (by omega)
+  · rw [mem_tapeRegion] at ha
+    refine ⟨⟨a - 1, by omega⟩, Set.mem_univ _, ?_⟩
+    simp only
+    omega
+
+end SequentialCommit
 
 end Decoupling

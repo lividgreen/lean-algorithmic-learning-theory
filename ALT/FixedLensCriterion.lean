@@ -478,10 +478,10 @@ theorem exists_blockCyclic_fixedLens {N c w : ℕ} [NeZero N] (hw : w ∣ N) (hc
   have hw0 : w ≠ 0 := by
     rintro rfl
     exact NeZero.ne N (zero_dvd_iff.mp hw)
-  haveI : NeZero w := ⟨hw0⟩
+  have : NeZero w := ⟨hw0⟩
   have hτdvd : N / w ∣ N := Nat.div_dvd_of_dvd hw
   have hτ0 : N / w ≠ 0 := fun h => NeZero.ne N (Nat.eq_zero_of_zero_dvd (h ▸ hτdvd))
-  haveI : NeZero (N / w) := ⟨hτ0⟩
+  have : NeZero (N / w) := ⟨hτ0⟩
   have hgcd : Nat.gcd N (N / w) = N / w := Nat.gcd_eq_right hτdvd
   have hper : ∀ x : ZMod N,
       Function.minimalPeriod ⇑((Equiv.addRight (1 : ZMod N)) ^ (N / w)) x = w := by
@@ -558,7 +558,7 @@ private theorem transitive_pow_of_coprime [Finite X] {U : X → X}
     (hU : ∀ x y : X, ∃ j : ℕ, U^[j] x = y) {x₀ : X} {N τ : ℕ} (hN0 : N ≠ 0)
     (hN : Function.minimalPeriod U x₀ = N) (hcop : Nat.Coprime N τ) :
     ∀ x y : X, ∃ j : ℕ, (U^[τ])^[j] x = y := by
-  haveI : NeZero N := ⟨hN0⟩
+  have : NeZero N := ⟨hN0⟩
   intro x y
   obtain ⟨i, hi⟩ := hU x₀ x
   obtain ⟨i', hi'⟩ := hU x₀ y

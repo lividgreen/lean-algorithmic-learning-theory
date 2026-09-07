@@ -37,6 +37,17 @@ believe are firsts of their kind: a learner verified **correct and
 polynomial-step at once**, a finite machine proved to satisfy a learning
 theory's prerequisites **from its own dynamics**, and a growing world whose
 own emitted history provably serves as its internal learner's oracle.
+Chaitin's incompleteness theorem is here as well, over Mathlib's universal
+machine and for every recursively enumerable consistent extension of 𝗥₀
+under consistency alone — to our knowledge the first in that setting, the one prior
+machine-checked treatment being an Agda formalization for a purpose-built
+machine and Basic Recursive Arithmetic.
+Levin's coding theorem is here too, over a universal prefix machine built from
+the serialized codes: every lower-semicomputable semimeasure lies within an
+additive constant of the ideal code length, and the machine's algorithmic
+probability is `2^{−K}` up to a constant factor — to our knowledge the first
+machine-checked proof of the coding theorem in any prover, on an online
+Kraft–Chaitin assignment verified with its invariant.
 
 **Start here:** the [**API reference**](https://lividgreen.github.io/lean-algorithmic-learning-theory/)
 is generated from the source and is the best way in — every definition and
@@ -55,13 +66,15 @@ points:
 | [`LearningWitness.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/LearningWitness.html) | an explicit system that meets those prerequisites — built, not assumed to exist |
 | [`GrowingHostWitness.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/GrowingHostWitness.html) | a growing world that emits its own learning oracle, membership proved from its own dynamics |
 | [`GrowingSeamWitness.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/GrowingSeamWitness.html) | a growing world in both route-classes at once — learning from its own emitted process, emergence from its own growth — at any envelope-profile source |
+| [`ChaitinIncompleteness.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/ChaitinIncompleteness.html) | Chaitin's incompleteness theorem over Mathlib's universal machine, for every recursively enumerable consistent extension of 𝗥₀ |
+| [`CodingTheorem.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/CodingTheorem.html) | Levin's coding theorem on a universal prefix machine — prefix complexity is `−log₂` of algorithmic probability up to an additive constant |
 
 ## Verification standard
 
 - No `sorry`, `admit`, or `native_decide`; standard axioms only
   (`propext`, `Classical.choice`, `Quot.sound`) — several cores are
   choice-free, and the structural capstone depends on no axioms at all.
-- **Build-enforced axiom hygiene**: 1120 `#guard_msgs in #print axioms` guards
+- **Build-enforced axiom hygiene**: 1209 `#guard_msgs in #print axioms` guards
   assert each capstone's exact axiom set; `lake build` fails on any drift.
 - **CI-enforced whole-library audit**: every declaration under `ALT` — not only
   the guarded capstones — is checked against the same allowlist by
@@ -258,6 +271,18 @@ replace them.
   complexity of a concrete rule (`ruleComplexity`). Boundary: two-machine
   invariance is deferred with a documented obstruction — Mathlib exposes a
   single fixed universal machine, and the classical bound needs two.
+- **The additive carrier's data rate** (`CodeDataRate.lean`): the
+  self-delimiting serialization spends exactly three bits per syntax node
+  (`elen_eq_three_mul_nodes`), yet the codes of `n` nodes number at most
+  `(11/10)·(159/20)^n` against the `8^n` three bits could carry
+  (`card_codesOfNodes_le`), so the additive complexity `KE` is bounded away
+  from one bit per bit: for every constant `c` some `x` has
+  `500·KE x > 501·size x + 500·c` (`KE_data_rate`). Read at the computable
+  measure `μ(x) ∝ 2^{−(1 + 1/500)·size x}`, no constant makes `KE` an ideal
+  code for it — the coding theorem cannot live on the additive carrier, which
+  is why it is proved on the prefix machine `KB` below. Boundary: the witness
+  is existential, no crossing size named; the exact growth constant
+  `1 + 4√3 ≈ 7.928` is prose, the artifact carrying the rational bound.
 
 ### Memory, persistence and the price of reading
 
@@ -313,7 +338,11 @@ replace them.
   radius reaching the whole memory, the only invariant reading distinguishes
   nothing. Separately, the decoupling equivalence holds verbatim on a
   monotonically *growing* code region, with an append-only witness showing
-  the statement does not reduce to one fixed partition.
+  the statement does not reduce to one fixed partition — and it has its first
+  theorem consumer, the committing substrate: `seqWrite` commits an arbitrary
+  stream append-only, every committed cell held under every later iterate
+  (`seqDecode_hereditary`), the permanent region in exact bijection with the
+  prefix length (`tapeRegion_bijective`).
 
 ### Realizability, self-representation and incompleteness
 
@@ -335,15 +364,91 @@ replace them.
 - **A sound bounded checker, and a classical sound-and-complete bounded
   decision** (`GodelChecker.lean`, `GodelCheckerComplete.lean`): two separate
   artifacts, not one — an *executable* sound bounded proof-checker, and a
-  *noncomputable* classically-packaged sound-and-complete bounded
-  non-provability decision (Foundation ships no `Decidable` instance for its
-  own proof relation), axiom-clean for the finite theory PA⁻, with
+  classically-packaged sound-and-complete bounded non-provability decision,
+  computable in Mathlib's sense (`computable_decide`, over Foundation's own
+  bounded-existential lemma for its proof relation) though not runnable
+  (Foundation ships no `Decidable` instance for its own proof relation),
+  axiom-clean for the finite theory PA⁻, with
   incompleteness discharged against
   [FormalizedFormalLogic/Foundation](https://github.com/FormalizedFormalLogic/Foundation);
   run by a two-cell decision automaton whose code cell is read-only — the
   sentence under test persists by the Decoupling Lemma while the work cell
   drives to the Gödel verdict (`ReflectiveAutomaton.lean`,
   `GodelCheckerAutomaton.lean`).
+- **Chaitin's incompleteness theorem over bit-length complexity**
+  (`ChaitinIncompleteness.lean`): for every `Δ₁`-axiomatized consistent
+  extension of `𝗥₀` — consistency alone, no soundness — the theory proves
+  "the bit-length complexity of `s` exceeds `n`" for no `n` at or above the
+  bit-length of one fixed-point program (`chaitin_theorem`), so all but
+  finitely many such true sentences are unprovable in it
+  (`chaitin_true_unprovable`), and both hold for every recursively
+  enumerable such extension by Craig's trick (`chaitin_theorem_of_RE`,
+  `chaitin_true_unprovable_of_RE`); the abstract Berry bound (`chaitin_bound`)
+  holds for any computably enumerable relation asserting only true lower
+  bounds, and the sentences are Foundation's own Σ₁ representation, negated.
+  The constant is a Kleene fixed point's length, named rather than computed.
+  The theorem then drives the deep ladder as a third rung selector at `𝗥₀`
+  (`ChaitinLadder.lean`): a chain of theories each certifying a description
+  length its predecessor could not.
+
+- **The deep ladder: the crossing recurs over each enlarged theory**
+  (`DeepLadder.lean`, `ChaitinLadder.lean`): a chain builder parametric in a
+  **rung selector** — a rule picking, at each theory in the chain, a sentence
+  true in `ℕ` and unprovable in it — with the theory appending that sentence
+  and the rung itself at every stage (`RungSelector`, `ladderTheory`, `rung`).
+  Every rung is true and unprovable in the theory it extends (`rung_true`,
+  `rung_unprovable`), the chain ascends strictly (`ladderTheory_lt_succ`),
+  and the internalization crossing recurs at every rung, hosted eventually and
+  forever after (`ladder_outgrows`, `accreting_ladder`), under the ladder's
+  own capacity bound (`ladder_card_le_at_budget`). Three selectors: a hidden
+  one at `𝗣𝗔⁻`, chosen from Foundation's incompleteness theorem
+  (`hiddenSelector`); the **explicit** one at `𝗜𝚺₁` — Foundation's own Gödel
+  sentence of each stage's standard provability predicate, exhibited rather
+  than chosen (`explicitSelector`, `explicitRung_eq_gödel` by `rfl`) — at
+  which every rung is provably equivalent to the consistency sentence of the
+  theory it extends and each successor theory is deductively equivalent to
+  Foundation's consistency extension (`explicitLadder_succ_equiv_con`), the
+  ladder as a consistency progression at finite stages, along which some
+  proof shortens by more than any computable function at every step
+  (`explicitLadder_speedup`); and Chaitin's at
+  `𝗥₀` (`chaitin_accreting_ladder`), its rung chosen by an epsilon like the
+  hidden one, starting at any `Δ₁`-definable true extension of `𝗥₀`. The
+  ladder couples to a growing host's own written code: under a padded commit
+  schedule the theory at stage `n` is exactly the code held in the committing
+  substrate's written region at the corresponding step, and stays held under
+  every later one (`committedTheory_at_commitStep`,
+  `ladderTheory_subset_committedTheory`). Registered as *Inevitability*
+  Proposition 6.16 and Remark 6.17, rows IN-54…IN-56. Boundary: no rate of
+  the ladder is stated and no rung's Gödel number is computed; the two
+  coordinates are stated side by side at one step index, no product update
+  built; the commit stream is designed.
+
+- **Levin's coding theorem on a universal prefix machine**
+  (`PrefixMachine.lean`, `BitStringPrimrec.lean`,
+  `AlgorithmicProbability.lean`, `CodingTheoremWeak.lean`,
+  `CodingTheoremBitwise.lean`, `CodingTheoremDecoder.lean`,
+  `KraftChaitin.lean`, `CodingTheorem.lean`): a description is a machine
+  serialized by the self-delimiting `E` followed by a binary argument, the
+  machine made prefix-free by stages (`pfy` — partial recursive uniformly in
+  the machine, `pfy_partrec`, over a bit-string layer proved primitive
+  recursive); the prefix complexity `KB` is Kraft-summable and below the
+  additive `KE` by a constant; its algorithmic probability `QB` is
+  lower-semicomputable (`QB_lsc`, a computable dyadic approximation rising to
+  it). The theorem comes in two forms. With a logarithmic loss,
+  `KB x ≤ k + 2·size k + C` whenever `2^{−k} < μ(x)`, for every
+  lower-semicomputable semimeasure `μ` (`coding_theorem_weak`) — a
+  self-delimiting header code (`gammaCode`), Markov's bound
+  (`card_exceeds_lt`) and a partial recursive decoder with a prefix-free
+  domain (`decodeFn`, `prefixFree_decodeFn_dom`), needing no online
+  assignment. In Levin's `O(1)` form, `KB x ≤ k + C` (`coding_theorem`), with
+  `2^{−KB} ≤ QB ≤ 2^C · 2^{−KB}` (`QB_le_two_pow_mul`): an online
+  Kraft–Chaitin assignment carrying its invariant (`kcRun_invariant`) is fed
+  the semimeasure's request stream, made total by dummy requests at its
+  silent steps at the price of one bit. Each constant is a code's length,
+  named rather than computed. Boundary: proved over one fixed universal
+  prefix machine; `QB`'s domination of every lower-semicomputable semimeasure
+  up to a constant is a one-line corollary stated as no declaration.
+
 - **An expressiveness excess order** (`ExcessOrder.lean`,
   `ExcessOrderComplete.lean`): representational classes graded by work-bit
   budget, inclusions strict exactly as the budget grows, an internalization
@@ -446,6 +551,44 @@ replace them.
   parametric in the sequence — not a statement about hosts in general;
   survival in the redundancy form, at a horizon, conditional on the named
   damage model; nothing lifetime-free.
+- **The certified host as a tower's own rung** (`BlockPairTower.lean`): the
+  same block-pair host re-read as the rung law of a `witnessWorld` tower — the
+  habitat's blocks running the host's own update beside a free environment
+  law — hosts that host as its guest's law-world exactly, surjectively and
+  with a full margin at every depth (`tower_hosts_rung`, the landed
+  `witness_world_hosts` instantiated, no new proof); loaded at the host's own
+  certified state, the tower's outer reading is the host's own trajectory
+  (`towerObs_eq_hostTraj`), so the schedule's pruning rule identifies the
+  rung's true literal on the tower exactly as on the host
+  (`tower_rung_identifies`). Registered as *Inevitability* Proposition 6.13,
+  row IN-52. Boundary: finite; the rung's rule identified, not its update; no
+  ownership clause (the rung law is not a permutation); level 2 cited from
+  `hostWitness_overlap`, not composed onto the tower.
+- **A second certified rung, and the differing-rules rung pair**
+  (`ShiftedSpikeCriterion.lean`, `ShiftedSpikeHost.lean`,
+  `ShiftedSpikeTower.lean`): the second certified word pair of
+  `BlockPairProfile.lean` (`wordU2`, `wordV2`; length `22`, spike lag `6`),
+  read as a Boolean observation (`designObs2`), meets the window-deviation
+  profile at its own correlation bounds and identifies literal `2` under the
+  schedule's pruning rule, with slack where the first host met the conditions
+  with equality (`shiftedSpike_identifies`; the landed identification
+  parametrized at an arbitrary literal, `schedSurvivors_eq_singleton_at`). A
+  lag-`6` host carries it — the fresh window bit complementing cell `2` where
+  the certified host's complements cell `0` — and its witness substrate
+  reproduces the design along its own orbit (`readObs_iterate_loadHost2`);
+  re-read as a tower's rung law, the schedule isolates literal `2` on the
+  tower exactly as on the host (`towerWorld2`, `tower_rung_identifies2`). The
+  capstone puts both rungs together (`descending_pair_commits`): two towers,
+  two identified rules, `0` and `2`, differing, and equal to the entries of a
+  two-entry stream (`literalStream`) that the committing substrate's
+  `seqWrite` holds under every later step — the composition the single rung
+  declined at a constant stream is a theorem at the first non-constant one.
+  Registered as *Inevitability* Proposition 6.15, row IN-53. Boundary: two
+  rungs in two towers, sequenced by the stream, not one tower descended
+  twice; the decode identity is stated at stage `2`, the pair's own length;
+  each rung's code-region literal is identified, not its update, and no
+  ownership is claimed; the second host's route-class membership is
+  deliberately not stated.
 
 ### Growing worlds: observability from the world's own growth
 
@@ -556,9 +699,63 @@ replace them.
   nothing. The accreting witness's width is at least `2^(t+1)` in any
   environment (`memWidth_accreting_ge`), exact at a trivial one
   (`memWidth_accreting_eq_of_trivialEnv`), and the crossing composes from the
-  width (`eventually_hosts_uniform_of_accreting_memWidth`). Boundary: a
+  width (`eventually_hosts_uniform_of_accreting_memWidth`). The width is
+  read off a **root set**: a subset of a stage that is already an antichain
+  and which every stage class reaches names the width exactly, with no
+  hypothesis on the update (`memWidth_eq_encard_of_isRootAntichain`; at a
+  state-level root set, `memWidth_eq_encard_of_rootSet`); a root antichain
+  always exists at a finite stage (`exists_isRootAntichain_of_finite_stage`,
+  classically), and under antisymmetry it is exactly the stage classes no
+  other stage class reaches (`memWidth_eq_encard_canonical_of_antisymmOn`),
+  each hypothesis pinned by a guard — the canonical set is empty at a finite
+  world whose width is positive (`exists_canonicalSet_empty_pos_memWidth`),
+  and the successor world on `ℤ` has positive width and no root antichain at
+  all (`pos_memWidth_not_exists_isRootAntichain_intSucc`). Boundary: a
   separation, not a dichotomy — an antichain-shaped conservation guest can
   exceed the width (`exists_conservationGuest_extent_gt_memWidth`).
+- **Derived worlds, and the width computed exactly at elementary cellular
+  automata** (`DerivedStages.lean`, `ExtremeTapWidth.lean`,
+  `FiniteWorldWidth.lean`): a world grown from a start region as its iterated
+  images (`derivedStages`) has its retained profile, hence its memory width,
+  capped by the region's own cardinality at every stage
+  (`memWidth_derivedStages_le`), so a finite seed never supplies the
+  certificate's crossing. On the finitely-supported configurations of the
+  line, the extreme-tap linear rules — elementary tables `90` and `150`
+  (`rule90`, `rule150`) — are additive and injective (`rule90_injective`),
+  spread their support by exactly one cell per step at each end, and every
+  nonzero orbit eventually leaves any fixed finite region
+  (`rule90_region_exit`); on the world derived from an `n`-cell region, read
+  at the region itself, their width is at least `2^(n−1)`
+  (`memWidth_rule90_derived_ge`) and exactly the size of the **root set**, the
+  region-supported states with no nonzero region-supported predecessor
+  (`rootSet`, `memWidth_rule90_derived_eq`), a count that closes in addition
+  form, `(rootSet rule90 n).encard + 2^(n−2) = 2^n + 1` at `2 ≤ n`
+  (`rootSet_encard_add`). Both facts are generic in the update and in two
+  endpoint-move constants (`memWidth_derived_eq_encard_rootSet`,
+  `rootSet_encard_add_of_hyps`), the identity update the guard that separates
+  them (`guard_id_rootSet_load_bearing`); a local table with a quiescent zero
+  becomes a radius-one rule (`tableRule`), one-sided permutivity in solved
+  form gives injectivity on that carrier
+  (`tableRule_injective_of_leftPermutive`,
+  `tableRule_injective_of_rightPermutive`), and four non-additive tables —
+  `30`, `86`, `154`, `210` — meet the hypotheses and share the exact width,
+  rule `30`'s equal to rule `90`'s (`memWidth_rule30_derived_eq_rule90`); the
+  two shifts, tables `170` and `240`, carry their own width and count at their
+  true endpoint moves (`memWidth_rule170_derived_eq`,
+  `rootSet_encard_add_rule170`, `memWidth_rule240_derived_eq`), and a guard
+  shows quiescence and permutivity alone do not pin the class-level spread
+  (`guard_rule170_max'_spread_load_bearing`). At a finite carrier under the
+  constant stage family the width is *Persistence*'s component count: the
+  induced law is a bijection of the merge quotient (`mergeLaw_bijective`),
+  reachability is symmetric (`reaches_symm`), and
+  `memWidth_eq_nat_card_orbitSetoid` identifies the two counts — while the
+  two-state swap shows the merge quotient is not the component quotient
+  (`exists_finiteWorld_component_ne_merge_card`). Registered as *Guests*
+  Propositions 7.14–7.21, rows GV-22…GV-29. Boundary: the counts are additive
+  (`ℕ∞` subtraction is truncated), the closed forms being the paper's
+  restatement; the permutivity-to-injectivity route is classical; the
+  finite-world identification relates counts, not capacities; the derived
+  cap says nothing about attainment beyond the tables named.
 - **The pricing economy's growing form** (`GrowingPrice.lean`): the
   fixed-carrier Collapse Theorem does not transport — determination fails for
   a merely injective stage law (`exists_ne_frames_agreeing_on_range`) — while
@@ -573,7 +770,14 @@ replace them.
   capacity recovered at the world's own embedding (`CbH_le_CbHs`) — and the
   floor is optimal in its own quantifier: no family floors the staged
   capacity above `2b + 3` uniformly in the stage law
-  (`exists_candidate_capacity_le`). A telescope realizes any sequence of
+  (`exists_candidate_capacity_le`). The cap also holds uniformly over label
+  alphabets, as a bound on `CbHs` itself (`CbHs_collapse_uniform`, and
+  `CbHs_collapse_uniform_growing` at a growing world): every pair normalizes
+  to the later carrier's alphabet by a first-occurrence rank — orbit sizes
+  survive any post-composition injective on the frame's values
+  (`orbit_postcomp_card_eq`) — and the normalized pair is priced as one
+  object through a fixed extracted program (`rankBuilder`), so the count of
+  affordable joint codes replaces the per-frame Kraft union. A telescope realizes any sequence of
   injections as some growing world's own stage law
   (`telescope_realizes_lawSequence`), which is why growth cannot sharpen the
   bound. Boundary: the complexity-form transport of the ledger's `K(U) ≤ …`

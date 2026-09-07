@@ -9,6 +9,7 @@ import ALT.GodelCheckerComplete
 import ALT.GodelComplete
 import ALT.ExcessOrderComplete
 import ALT.AccretingExcess
+import ALT.DeepLadder
 import ALT.GrowingCoreCrossing
 import ALT.SubstrateEmergence
 import ALT.BlockPairOverlap
@@ -17,6 +18,8 @@ import ALT.BlockPairCriterion
 import ALT.BlockPairFamilyCriterion
 import ALT.MinimalityWitness
 import ALT.TapeHostSurvival
+import ALT.ChaitinIncompleteness
+import ALT.ChaitinLadder
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -32,8 +35,9 @@ asserted one. Reached from the root `ALT` umbrella, so a routine `lake build` en
 
 Every guarded theorem is fully axiom-clean — `[propext, Classical.choice, Quot.sound]`, the standard
 triple, with **no named axioms anywhere**. This now includes the parallel `𝗜𝚺₁` witnesses:
-Foundation's `𝗜𝚺₁`/`𝗣𝗔` `Δ₁`-definability is a *theorem* (`ISigma1_delta1Definable`, discharged
-upstream), so the `𝗜𝚺₁` capstones are axiom-clean alongside the `𝗣𝗔⁻` ones (finite theory, `Δ₁` via
+Foundation's `𝗜𝚺₁`/`𝗣𝗔` `Δ₁`-definability is a *theorem* (an anonymous instance in its
+`Incompleteness/Definability.lean`, discharged upstream), so the `𝗜𝚺₁` capstones are axiom-clean
+alongside the `𝗣𝗔⁻` ones (finite theory, `Δ₁` via
 `Theory.Δ₁.ofFinite`) and the generic adapter. So a guard here breaks the build if *any* axiom —
 standard or named — is ever added. `(whitespace := lax)` normalizes the pretty-printer's line wrapping
 of the axiom list.
@@ -98,7 +102,8 @@ of the axiom list.
 #print axioms GodelCheckerComplete.decide_nonvacuous
 
 -- The parallel `𝗜𝚺₁` witnesses — now axiom-clean, since Foundation's `𝗜𝚺₁`/`𝗣𝗔` `Δ₁`-definability
--- is a theorem (`ISigma1_delta1Definable`, discharged upstream). Guarded alongside the `𝗣𝗔⁻`
+-- is a theorem (an anonymous instance in its `Incompleteness/Definability.lean`, discharged
+-- upstream). Guarded alongside the `𝗣𝗔⁻`
 -- capstones, which stay the more faithful (§5.3-class) witnesses (`𝗣𝗔⁻ ⊊ 𝗜𝚺₁`).
 /-- info: 'GodelChecker.isigma1_decides_bounded_nonprovability'' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
@@ -108,13 +113,23 @@ of the axiom list.
 #guard_msgs (whitespace := lax) in
 #print axioms GodelCheckerComplete.isigma1_complete_decides
 
+-- The decision is `ComputablePred` (Mathlib's sense), and the convenience `Computable` form.
+/-- info: 'GodelCheckerComplete.computablePred_decide' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms GodelCheckerComplete.computablePred_decide
+
+/-- info: 'GodelCheckerComplete.computable_decide' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms GodelCheckerComplete.computable_decide
+
 /-! ## Guard-gap closure — the §5.3/§6 incompleteness discharge (`ALT/GodelComplete.lean`)
 
 The axiom-clean generic adapter that discharges the imported `GodelThreshold.Incompleteness`
-hypothesis via upstream `FormalizedFormalLogic/Foundation` (pinned rev `b47cf447`), plus its two
-concrete `𝗜𝚺₁` witnesses. Per that file's BAR the adapter is axiom-clean, and the `𝗜𝚺₁` witnesses are
-too — Foundation's `𝗜𝚺₁`/`𝗣𝗔` `Δ₁`-definability is a theorem (`ISigma1_delta1Definable`, discharged
-upstream) — so nothing here carries a named axiom. -/
+hypothesis via upstream `FormalizedFormalLogic/Foundation` (first discharged at rev `b47cf447`,
+re-verified at each pin bump since), plus its two concrete `𝗜𝚺₁` witnesses. Per that file's BAR
+the adapter is axiom-clean, and the `𝗜𝚺₁` witnesses are too — Foundation's `𝗜𝚺₁`/`𝗣𝗔`
+`Δ₁`-definability is a theorem (an anonymous instance in its `Incompleteness/Definability.lean`,
+discharged upstream) — so nothing here carries a named axiom. -/
 
 -- Generic §5.3-class adapter — axiom-clean: for any `[T.Δ₁] [𝗥₀ ⪯ T] [ℕ↓[ℒₒᵣ] ⊧* T]`, Foundation's first
 -- incompleteness theorem discharges the literal `GodelThreshold.Incompleteness`.
@@ -173,6 +188,31 @@ delivered at that stage's own budget. Axiom-clean via the same `𝗣𝗔⁻` fin
 /-- info: 'AccretingWitness.accreting_outgrows_paMinus' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms AccretingWitness.accreting_outgrows_paMinus
+
+/-! ## The deep ladder (`ALT/DeepLadder.lean`)
+
+The crossing recurrence over each rung of the deep ladder — both at the hidden selector (chosen via
+`Classical.epsilon`) and at the explicit selector (Foundation's own Gödel sentence, exhibited). -/
+
+-- The recurrence at an arbitrary rung selector.
+/-- info: 'DeepLadder.accreting_ladder' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms DeepLadder.accreting_ladder
+
+-- The recurrence at the explicit selector, base `𝗜𝚺₁`.
+/-- info: 'DeepLadder.explicit_accreting_ladder' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms DeepLadder.explicit_accreting_ladder
+
+-- The explicit ladder's step IS the consistency step, at each theory's own predicate.
+/-- info: 'DeepLadder.explicitLadder_succ_equiv_con' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms DeepLadder.explicitLadder_succ_equiv_con
+
+-- The Ehrenfeucht–Mycielski speedup at the explicit ladder.
+/-- info: 'DeepLadder.explicitLadder_speedup' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms DeepLadder.explicitLadder_speedup
 
 /-! ## The generalized crossing (`ALT/GrowingCoreCrossing.lean`)
 
@@ -248,3 +288,31 @@ redundancy, so it routes through `𝗣𝗔⁻` too. -/
 /-- info: 'TapeHostSurvival.tapeHost_carries_survival' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms TapeHostSurvival.tapeHost_carries_survival
+
+/-! ## Chaitin's incompleteness theorem over `K_bitlen` (`ALT/ChaitinIncompleteness.lean`)
+
+The generic adapter (`Δ₁`-axiomatized consistent extensions of `𝗥₀`) is axiom-clean: the hypotheses
+`[T.Δ₁] [𝗥₀ ⪯ T] [FFL.Entailment.Consistent T]` are typeclass premises, nothing concrete is
+synthesized. -/
+
+/-- info: 'KolmogorovComplexity.chaitin_theorem' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms KolmogorovComplexity.chaitin_theorem
+
+-- The transport to recursively enumerable theories, via Craig's trick — axiom-clean, same reason.
+/-- info: 'KolmogorovComplexity.chaitin_theorem_of_RE' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms KolmogorovComplexity.chaitin_theorem_of_RE
+
+/-- info: 'KolmogorovComplexity.chaitin_true_unprovable_of_RE' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms KolmogorovComplexity.chaitin_true_unprovable_of_RE
+
+/-! ## Chaitin's incompleteness theorem as a deep-ladder rung selector (`ALT/ChaitinLadder.lean`)
+
+`chaitinSelector` instantiates `DeepLadder.RungSelector` at base `𝗥₀` from `chaitin_theorem`; the
+capstone recurrence restated at it is axiom-clean too. -/
+
+/-- info: 'DeepLadder.chaitin_accreting_ladder' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms DeepLadder.chaitin_accreting_ladder

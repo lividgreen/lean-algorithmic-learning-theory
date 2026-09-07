@@ -94,7 +94,7 @@ private theorem shiftedCycle_apply_of_le {k n : ℕ} {x : Fin n} (hx : k ≤ x.v
 inside a `finRotate`'s own `Fin`-valued argument (its index proof term depends on the value). -/
 private theorem finRotate_val_eq {m : ℕ} (_hm : 0 < m) (j : Fin m) :
     (finRotate m j).val = (j.val + 1) % m := by
-  haveI : NeZero m := ⟨by omega⟩
+  have : NeZero m := ⟨by omega⟩
   rw [finRotate_apply, Fin.val_add, Fin.val_one']
   simp [Nat.add_mod]
 
@@ -266,7 +266,7 @@ constant family's persistence). -/
 theorem convW_fixedPoints {n : ℕ} (hn : 4 ≤ n) (V : Equiv.Perm (Fin n)) :
     {x : Fin n | convW V x = x} = {V.symm ⟨0, by omega⟩, V.symm ⟨1, by omega⟩} := by
   ext x
-  simp only [Set.mem_setOf_eq, Set.mem_insert_iff, Set.mem_singleton_iff]
+  simp only [Set.mem_ofPred_eq, Set.mem_insert_iff, Set.mem_singleton_iff]
   rw [convW_fixed_iff hn, mem_convW_fixedPoints_iff hn]
 
 /-- **The reading `ℓ_V`**: the indicator of `{V⁻¹ 0, V⁻¹ 1}`. -/
@@ -423,7 +423,7 @@ theorem canonW_centralizer_card_le {n : ℕ} (hn : 4 ≤ n) :
       ↑(Finset.univ.filter
         (fun g : Equiv.Perm (Fin n) => g * canonW n * g⁻¹ = canonW n)) := by
     intro g hg g' hg' heq
-    simp only [Finset.coe_filter, Finset.mem_univ, true_and, Set.mem_setOf_eq] at hg hg'
+    simp only [Finset.coe_filter, Finset.mem_univ, true_and, Set.mem_ofPred_eq] at hg hg'
     replace hg : g * canonW n = canonW n * g := mul_inv_eq_iff_eq_mul.mp hg
     replace hg' : g' * canonW n = canonW n * g' := mul_inv_eq_iff_eq_mul.mp hg'
     simp only [Prod.mk.injEq] at heq

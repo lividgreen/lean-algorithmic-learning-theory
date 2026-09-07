@@ -188,6 +188,94 @@ theorem schedSurvivors_eq_singleton_of_horizon (h : Profile o S ρ W) (Wm : ℝ)
     linarith
   exact schedSurvivors_eq_singleton o h Wm hW hτ hη hρ0 hρ hμ0 hbudget hμτ hsep c hn1 hlt
 
+/-! ## Identification at an arbitrary index -/
+
+omit [NeZero N] in
+/-- **Identification, at an arbitrary distinguished index `j`.** `schedSurvivors_eq_singleton`
+localizes its index in exactly two hypotheses and its conclusion (`hρ0`/`ρ 0`, `hρ`'s exclusion of
+`0`, `{0}`) and its three closing inequalities — the truth's own same-class distance, its
+cross-class distances, a wrong literal's own-query distance — are symmetric under relabelling the
+distinguished index, since `LearningWitness.singleLiteralAns a i = if a = i then -1 else 0` is
+itself index-symmetric. This is the same theorem with `j` in place of `0`; the landed
+`schedSurvivors_eq_singleton` itself is untouched. -/
+theorem schedSurvivors_eq_singleton_at (j : Fin 8) (h : Profile o S ρ W) (Wm : ℝ)
+    (hW : ∀ a, W a ≤ Wm) {η τ μ : ℝ} (hτ : 0 < τ) (hη : 0 ≤ η) (hρj : ρ j = 2 * η - 1)
+    (hρ : ∀ a : Fin 8, a ≠ j → |ρ a| ≤ μ) (_hμ0 : 0 ≤ μ)
+    (hbudget : 2 * η ≤ τ) (hμτ : μ ≤ τ) (hsep : 3 * τ + μ ≤ 1)
+    (c : ZMod N) {n : ℕ} (hn1 : 1 ≤ n) (hn : (2 * S + Wm) / τ < n) :
+    schedSurvivors τ n (hostTraj o c) = {j} := by
+  have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn1
+  have h1 : (2 * S + Wm) < (n : ℝ) * τ := (div_lt_iff₀ hτ).mp hn
+  have hεlt : (2 * S + Wm) / (n : ℝ) < τ := by
+    rw [div_lt_iff₀ hn0]
+    nlinarith [h1]
+  have hε : ∀ a : Fin 8, |SQOracle.empiricalMean (pairEnsemble pairChar (a : ℕ) 8) n
+      (hostTraj o c) - ρ a| ≤ (2 * S + Wm) / (n : ℝ) := by
+    intro a
+    have hdb := deviation_bound o h c pairChar abs_pairChar_le_one a hn1
+    rw [pairMean_pairChar, pairCoefAB_pairChar, one_mul, zero_add] at hdb
+    have hWa : W a ≤ Wm := hW a
+    rw [le_div_iff₀ hn0]
+    nlinarith [hdb, hWa]
+  rw [Finset.eq_singleton_iff_unique_mem]
+  constructor
+  · -- the truth survives
+    simp only [schedSurvivors, Finset.mem_filter, Finset.mem_univ, true_and]
+    intro a
+    by_cases haj : a = j
+    · subst haj
+      have hlit : LearningWitness.singleLiteralAns a a = -1 := by
+        simp [LearningWitness.singleLiteralAns]
+      rw [hlit, abs_le]
+      obtain ⟨hεl, hεu⟩ := abs_le.mp (hε a)
+      constructor <;> nlinarith [hεl, hεu, hρj, hη, hbudget, hεlt]
+    · have hlit : LearningWitness.singleLiteralAns a j = 0 := by
+        unfold LearningWitness.singleLiteralAns
+        rw [if_neg haj]
+      rw [hlit, abs_le]
+      obtain ⟨hεl, hεu⟩ := abs_le.mp (hε a)
+      obtain ⟨hρl, hρu⟩ := abs_le.mp (hρ a haj)
+      constructor <;> nlinarith [hεl, hεu, hρl, hρu, hμτ, hεlt]
+  · -- every wrong literal is excluded, at its own query
+    intro i hi
+    by_contra hne
+    simp only [schedSurvivors, Finset.mem_filter, Finset.mem_univ, true_and] at hi
+    have hlit : LearningWitness.singleLiteralAns i i = -1 := by
+      simp [LearningWitness.singleLiteralAns]
+    have hb := hi i
+    rw [hlit] at hb
+    obtain ⟨hεl, hεu⟩ := abs_le.mp (hε i)
+    obtain ⟨hρl, hρu⟩ := abs_le.mp (hρ i hne)
+    have hx : (-1 : ℝ) - SQOracle.empiricalMean (pairEnsemble pairChar (i : ℕ) 8) n
+        (hostTraj o c) < -(2 * τ) := by nlinarith [hεl, hεu, hρl, hρu, hsep, hεlt]
+    have : |(-1 : ℝ) - SQOracle.empiricalMean (pairEnsemble pairChar (i : ℕ) 8) n
+        (hostTraj o c)| > 2 * τ := by
+      rw [abs_of_neg (by linarith [hx] : (-1 : ℝ) - SQOracle.empiricalMean
+          (pairEnsemble pairChar (i : ℕ) 8) n (hostTraj o c) < 0)]
+      linarith [hx]
+    linarith [hb, this]
+
+omit [NeZero N] in
+/-- `schedSurvivors_eq_singleton_at`, restated at the explicit horizon: identification at index
+`j` holds at every `n` at least `identificationHorizon S Wm τ` — the same horizon
+`schedSurvivors_eq_singleton_of_horizon` uses, since the bound does not depend on the distinguished
+index. -/
+theorem schedSurvivors_eq_singleton_of_horizon_at (j : Fin 8) (h : Profile o S ρ W) (Wm : ℝ)
+    (hW : ∀ a, W a ≤ Wm) {η τ μ : ℝ} (hτ : 0 < τ) (hη : 0 ≤ η) (hρj : ρ j = 2 * η - 1)
+    (hρ : ∀ a : Fin 8, a ≠ j → |ρ a| ≤ μ) (hμ0 : 0 ≤ μ)
+    (hbudget : 2 * η ≤ τ) (hμτ : μ ≤ τ) (hsep : 3 * τ + μ ≤ 1)
+    (c : ZMod N) {n : ℕ} (hn1 : 1 ≤ n) (hn : identificationHorizon S Wm τ ≤ n) :
+    schedSurvivors τ n (hostTraj o c) = {j} := by
+  have hlt : (2 * S + Wm) / τ < (n : ℝ) := by
+    have h1 : (2 * S + Wm) / τ < (⌊(2 * S + Wm) / τ⌋₊ : ℝ) + 1 := Nat.lt_floor_add_one _
+    have h2 : ((⌊(2 * S + Wm) / τ⌋₊ : ℝ) + 1) ≤ (n : ℝ) := by
+      have hn' : ⌊(2 * S + Wm) / τ⌋₊ + 1 ≤ n := hn
+      exact_mod_cast hn'
+    linarith
+  exact schedSurvivors_eq_singleton_at (o := o) (j := j) (h := h) (Wm := Wm) (hW := hW) (hτ := hτ)
+    (hη := hη) (hρj := hρj) (hρ := hρ) (_hμ0 := hμ0) (hbudget := hbudget) (hμτ := hμτ)
+    (hsep := hsep) (c := c) (hn1 := hn1) (hn := hlt)
+
 /-! ## The sharp identification window -/
 
 omit [NeZero N] in

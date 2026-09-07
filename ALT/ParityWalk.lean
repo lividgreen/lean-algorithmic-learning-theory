@@ -483,7 +483,7 @@ theorem hasSubgaussianMGF_blockSignedSum (hmeas : ∀ i, Measurable (ξ i)) (hin
 private lemma pastSet_singleton (d u : ℕ) :
     pastSet (fun v => ({v + d} : Set ℕ)) u = {i : ℕ | i < u + d} := by
   ext i
-  simp only [pastSet, Set.mem_setOf_eq, Set.mem_singleton_iff]
+  simp only [pastSet, Set.mem_ofPred_eq, Set.mem_singleton_iff]
   constructor
   · intro h
     by_contra hlt
@@ -522,7 +522,7 @@ lemma measureReal_abs_ge_le {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
   have h2 := h.neg.measure_ge_le hε
   have hsub : {ω | ε ≤ |X ω|} ⊆ {ω | ε ≤ X ω} ∪ {ω | ε ≤ (-X) ω} := by
     intro ω hω
-    simp only [Set.mem_setOf_eq, Set.mem_union, Pi.neg_apply] at hω ⊢
+    simp only [Set.mem_ofPred_eq, Set.mem_union, Pi.neg_apply] at hω ⊢
     rcases abs_choice (X ω) with hc | hc
     · exact Or.inl (hc ▸ hω)
     · exact Or.inr (hc ▸ hω)
@@ -661,7 +661,7 @@ theorem chiSum_tail_gen (hmeas : ∀ i, Measurable (ξ i)) (hindep : iIndepFun �
   have hsub : {ω | ε + 2 * K ≤ |∑ u ∈ Finset.range (N + K), chi (o u ω)|}
       ⊆ {ω | ε ≤ |signedSum ξ o m d N ω|} := by
     intro ω hω
-    simp only [Set.mem_setOf_eq] at hω ⊢
+    simp only [Set.mem_ofPred_eq] at hω ⊢
     have hgen := abs_chiSum_le_gen (fun u => o u ω) (fun u => zeta (ξ (u + d) ω)) K m
       (abs_le.mpr ⟨hm0, by linarith⟩) (fun u => hrec u ω) N
     simp only [signedSum]

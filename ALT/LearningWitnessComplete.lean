@@ -30,9 +30,9 @@ threshold predicate and the underivable-truth payload. This module composes that
   `Δ₁`-axiomatized (`Theory.Δ₁`, a Type-valued class, carried as the `Nonempty` it certifies since
   `Theory.Δ₁.ofFinite` packages a CHOSEN `Δ₁`-definition, not a bare fact), interprets `𝗥₀`
   (`𝗥₀ ⪯ 𝗣𝗔⁻`, already `Prop`-valued), ℕ-sound at the FAITHFUL "every provable sentence is true"
-  form (`∀ δ, 𝗣𝗔⁻ ⊢ δ → ℕ↓[ℒₒᵣ] ⊧ δ`, via `LO.FirstOrder.models_of_provable` — strictly stronger
+  form (`∀ δ, 𝗣𝗔⁻ ⊢ δ → ℕ↓[ℒₒᵣ] ⊧ δ`, via `FFL.FirstOrder.models_of_provable` — strictly stronger
   than "every axiom is true", which the bare instance `ℕ↓[ℒₒᵣ] ⊧* 𝗣𝗔⁻` alone would give), and
-  consistent, derived FROM that ℕ-truth (`LO.FirstOrder.consistent_of_model` at the standard model)
+  consistent, derived FROM that ℕ-truth (`FFL.FirstOrder.consistent_of_model` at the standard model)
   rather than assumed separately. `theoryConditions_paMinus` proves `SubstrateClass.TheoryConditions`
   at these four.
 * `witness_substrateL_paMinus`, `witness_substrateL_paMinus_bernoulli` — `LearningWitness.witness_substrateL`/
@@ -61,10 +61,10 @@ threshold predicate and the underivable-truth payload. This module composes that
 (i) additionally needs `2 ≤ gTS`; (ii) does not, because `ExcessOrder.outgrows`'s own
 `∀ Mchk, hostsAt κ g → g < Mchk → Mchk ≤ g² → …` shape is vacuous rather than false when no such
 `Mchk` exists (exactly `outgrows_arith`'s own device). `gTS` here is `Encodable.encode` of the actual
-Gödel sentence `exists_true_but_unprovable_sentence 𝗣𝗔⁻` delivers — deliberately kept opaque, so
-`2 ≤ gTS` is NOT discharged: nothing in this module pins that encoding's magnitude from below. Both
-conjuncts are nonetheless stated under the ONE `∃ gTS` the capstone binds, per the design record's
-own escape hatch for exactly this mismatch.
+Gödel sentence `exists_true_but_unprovable_sentence_of_sigma1sound 𝗣𝗔⁻` delivers — deliberately kept
+opaque, so `2 ≤ gTS` is NOT discharged: nothing in this module pins that encoding's magnitude from
+below. Both conjuncts are nonetheless stated under the ONE `∃ gTS` the capstone binds, per the
+design record's own escape hatch for exactly this mismatch.
 
 ## What this does NOT establish
 
@@ -84,7 +84,7 @@ namespace LearningWitness
 
 open MeasureTheory ProbabilityTheory NoisyWindowChain
 open RealizabilityCCC RealizabilityRecursor
-open LO.FirstOrder LO.FirstOrder.Arithmetic
+open FFL.FirstOrder FFL.FirstOrder.Arithmetic
 
 variable {k : ℕ}
 
@@ -100,7 +100,7 @@ theorem needed — the same route `ExcessOrderComplete.outgrows_paMinus` uses. -
 theorem paMinus_delta1 : PAMinusDelta1 := ⟨Theory.Δ₁.ofFinite 𝗣𝗔⁻ PeanoMinus.finite⟩
 
 /-- Definition 2.1's "interprets `𝗥₀`" condition at `𝗣𝗔⁻` — already `Prop`-valued
-(`LO.Entailment.WeakerThan`), so carried verbatim; `𝗥₀ ⪯ 𝗣𝗔⁻` is a global Foundation instance. -/
+(`FFL.Entailment.WeakerThan`), so carried verbatim; `𝗥₀ ⪯ 𝗣𝗔⁻` is a global Foundation instance. -/
 def PAMinusInterpretsR0 : Prop := 𝗥₀ ⪯ (𝗣𝗔⁻ : ArithmeticTheory)
 
 theorem paMinus_interpretsR0 : PAMinusInterpretsR0 :=
@@ -108,7 +108,7 @@ theorem paMinus_interpretsR0 : PAMinusInterpretsR0 :=
 
 /-- Definition 2.1's ℕ-soundness condition at `𝗣𝗔⁻`, at the FAITHFUL "every provable sentence is
 true" form — strictly stronger than "every axiom is true", which the bare global instance
-`ℕ↓[ℒₒᵣ] ⊧* 𝗣𝗔⁻` alone states. `LO.FirstOrder.models_of_provable` bridges the gap: provability plus
+`ℕ↓[ℒₒᵣ] ⊧* 𝗣𝗔⁻` alone states. `FFL.FirstOrder.models_of_provable` bridges the gap: provability plus
 axioms-true gives sentence-true. -/
 def PAMinusNSound : Prop := ∀ δ : Sentence ℒₒᵣ, (𝗣𝗔⁻ : ArithmeticTheory) ⊢ δ → ℕ↓[ℒₒᵣ] ⊧ δ
 
@@ -116,12 +116,12 @@ theorem paMinus_nsound : PAMinusNSound :=
   fun _ h => models_of_provable (inferInstance : ℕ↓[ℒₒᵣ] ⊧* (𝗣𝗔⁻ : ArithmeticTheory)) h
 
 /-- Definition 2.1's consistency condition at `𝗣𝗔⁻`, derived FROM ℕ-truth
-(`LO.FirstOrder.consistent_of_model` at the standard model `ℕ`) rather than assumed as a fifth,
+(`FFL.FirstOrder.consistent_of_model` at the standard model `ℕ`) rather than assumed as a fifth,
 independent fact — the route the design record names. -/
-def PAMinusConsistent : Prop := LO.Entailment.Consistent (𝗣𝗔⁻ : ArithmeticTheory)
+def PAMinusConsistent : Prop := FFL.Entailment.Consistent (𝗣𝗔⁻ : ArithmeticTheory)
 
 theorem paMinus_consistent : PAMinusConsistent :=
-  show LO.Entailment.Consistent (𝗣𝗔⁻ : ArithmeticTheory) from
+  show FFL.Entailment.Consistent (𝗣𝗔⁻ : ArithmeticTheory) from
     consistent_of_model (𝗣𝗔⁻ : ArithmeticTheory) ℕ
 
 /-- **Stage A's capstone: the four conditions are genuinely `𝗣𝗔⁻`'s own facts, not `True`s.** -/

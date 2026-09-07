@@ -324,7 +324,7 @@ theorem mem_orbit_lens_iff {α : Type*} [Finite α] (ℓ₀ ℓ : α → Fin m) 
     ℓ ∈ orbit (Perm α) ℓ₀ ↔
       ∀ i, Nat.card {x : α // ℓ x = i} = Nat.card {x : α // ℓ₀ x = i} := by
   classical
-  haveI : Fintype α := Fintype.ofFinite _
+  have : Fintype α := Fintype.ofFinite _
   constructor
   · rintro ⟨U, rfl⟩ i
     have hequiv : {x : α // ℓ₀ x = i} ≃ {x : α // (U • ℓ₀) x = i} :=
@@ -355,9 +355,9 @@ theorem card_orbit_mul_prod_fiber_card {α : Type*} [Finite α] (ℓ : α → Fi
     Nat.card ↥(orbit (Perm α) ℓ) * ∏ i : Fin m, (Nat.card {x : α // ℓ x = i})!
       = (Nat.card α)! := by
   classical
-  haveI : Fintype α := Fintype.ofFinite _
-  haveI : Fintype ↥(orbit (Perm α) ℓ) := Fintype.ofFinite _
-  haveI : Fintype ↥(stabilizer (Perm α) ℓ) := Fintype.ofFinite _
+  have : Fintype α := Fintype.ofFinite _
+  have : Fintype ↥(orbit (Perm α) ℓ) := Fintype.ofFinite _
+  have : Fintype ↥(stabilizer (Perm α) ℓ) := Fintype.ofFinite _
   have h := MulAction.card_orbit_mul_card_stabilizer_eq_card_group (Perm α) ℓ
   rw [← card_stabilizer_lens ℓ, Nat.card_eq_fintype_card, Nat.card_eq_fintype_card, h,
     Fintype.card_perm, Nat.card_eq_fintype_card]
@@ -400,11 +400,11 @@ theorem orbitCard_ge_choose (ℓ₀ : Fin n → Fin m) :
   · -- `n = 0`: the domain is empty, the sup over `f` is `0` regardless of `m`, and the orbit of the
     -- (unique) lens on `Fin 0` is a single point.
     subst hn0
-    haveI : Nonempty ↥(orbit (Perm (Fin 0)) ℓ₀) := ⟨⟨ℓ₀, MulAction.mem_orbit_self ℓ₀⟩⟩
+    have : Nonempty ↥(orbit (Perm (Fin 0)) ℓ₀) := ⟨⟨ℓ₀, MulAction.mem_orbit_self ℓ₀⟩⟩
     have h1 : 1 ≤ Nat.card ↥(orbit (Perm (Fin 0)) ℓ₀) := Nat.card_pos
     simpa using h1
   · -- `n > 0`: `Fin m` is nonempty (`ℓ₀`'s value at any point witnesses it), so sup is attained.
-    haveI : Nonempty (Fin m) := ⟨ℓ₀ ⟨0, hnpos⟩⟩
+    have : Nonempty (Fin m) := ⟨ℓ₀ ⟨0, hnpos⟩⟩
     obtain ⟨i₀, -, hi₀⟩ := Finset.exists_mem_eq_sup Finset.univ Finset.univ_nonempty f
     set maxFiber := Finset.univ.sup f with hmaxdef
     set m' := n - maxFiber with hm'def
@@ -473,7 +473,7 @@ theorem card_le_marks_succ {ℓ₀ : Fin n → Fin m} (hs : Function.Surjective 
   set f : Fin m → ℕ := fun i => Nat.card {x : Fin n // ℓ₀ x = i} with hf
   rcases Nat.eq_zero_or_pos m with hm0 | hmpos
   · omega
-  · haveI : Nonempty (Fin m) := ⟨⟨0, hmpos⟩⟩
+  · have : Nonempty (Fin m) := ⟨⟨0, hmpos⟩⟩
     obtain ⟨i₀, -, hi₀⟩ := Finset.exists_mem_eq_sup Finset.univ Finset.univ_nonempty f
     have hsum : ∑ i : Fin m, f i = n := sum_fiber_card_eq ℓ₀
     have hpos : ∀ i, 0 < f i := by
@@ -576,7 +576,7 @@ theorem collapse_count (ℓ₀ : Fin n → Fin m) (b : ℕ) :
     rcases Finset.eq_empty_or_nonempty (S.filter fun U => f U = v) with hemp | ⟨W, hW⟩
     · simp [hemp]
     · have hWv : f W = v := (Finset.mem_filter.mp hW).2
-      haveI : Fintype ↥(stabilizer (Perm (Fin n)) ℓ₀) := Fintype.ofFinite _
+      have : Fintype ↥(stabilizer (Perm (Fin n)) ℓ₀) := Fintype.ofFinite _
       have hmaps : ∀ U ∈ S.filter fun U => f U = v,
           W⁻¹ * U ∈ (stabilizer (Perm (Fin n)) ℓ₀ : Set (Perm (Fin n))).toFinset := by
         intro U hU
@@ -737,8 +737,8 @@ theorem collapse_union_frame (ℓ₀ : Fin n → Fin m) (d : ℕ) :
   set A := KE (lensCode ℓ₀) with hA
   set N := Nat.card ↥(orbit (Perm (Fin n)) ℓ₀) with hN
   have hNpos : 0 < N := by
-    haveI : Nonempty ↥(orbit (Perm (Fin n)) ℓ₀) := ⟨⟨ℓ₀, mem_orbit_self ℓ₀⟩⟩
-    haveI : Finite ↥(orbit (Perm (Fin n)) ℓ₀) := Set.Finite.to_subtype (Set.toFinite _)
+    have : Nonempty ↥(orbit (Perm (Fin n)) ℓ₀) := ⟨⟨ℓ₀, mem_orbit_self ℓ₀⟩⟩
+    have : Finite ↥(orbit (Perm (Fin n)) ℓ₀) := Set.Finite.to_subtype (Set.toFinite _)
     exact hN ▸ Nat.card_pos
   set Bad := {U : Perm (Fin n) | 2 ^ (A + KE (lensCode (U • ℓ₀)) + d + 2) < N} with hBad
   rcases Set.eq_empty_or_nonempty Bad with hemp | ⟨U₀, hU₀⟩
@@ -2371,7 +2371,7 @@ private theorem candList_length_le (hn : 0 < n) {U : Perm (Fin n)} {ℓ : ℕ �
   classical
   set t0 := lensCode (ℓ 0) with ht0
   set t1 := lensCode (ℓ 1) with ht1
-  haveI : Fintype ↥(stabilizer (Perm (Fin n)) (ℓ 0)) := Fintype.ofFinite _
+  have : Fintype ↥(stabilizer (Perm (Fin n)) (ℓ 0)) := Fintype.ofFinite _
   have hnodup : (candList n t0 t1).Nodup := List.nodup_range.filter _
   have hmem : ∀ w ∈ (candList n t0 t1).toFinset, w < n ^ n ∧ isValid n t0 t1 w := by
     intro w hw
@@ -2888,7 +2888,7 @@ private theorem candListItin_length_le (hn : 0 < n) {ℓ : ℕ → Fin n → Fin
       ≤ Nat.card ↥(ConsistentWith ℓ bs) := by
   classical
   set Ts := bs.map fun t => lensCode (ℓ t) with hTsdef
-  haveI : Fintype ↥(ConsistentWith ℓ bs) := Fintype.ofFinite _
+  have : Fintype ↥(ConsistentWith ℓ bs) := Fintype.ofFinite _
   have hnodup : (candListItin n Ts bs).Nodup := List.nodup_range.filter _
   have hmem : ∀ w ∈ (candListItin n Ts bs).toFinset, w < n ^ n ∧ isValidItin n Ts bs w := by
     intro w hw
@@ -3124,7 +3124,7 @@ theorem guard_consistentWith_step_load_bearing :
         t ≠ t' → ∀ x, ℓ t (V x) = ℓ t' x} := by
   refine ⟨fun t => if t = 2 then Equiv.swap 0 1 else ⇑(1 : Perm (Fin 2)), ?_, ?_⟩
   · ext V
-    simp only [ConsistentWith, Set.mem_setOf_eq, Set.mem_univ, iff_true]
+    simp only [ConsistentWith, Set.mem_ofPred_eq, Set.mem_univ, iff_true]
     intro t ht t' ht' hstep x
     fin_cases ht <;> fin_cases ht' <;> omega
   · intro h
@@ -3144,7 +3144,7 @@ theorem guard_isValidItin_candBijBool_load_bearing :
   constructor
   · have huniv : ConsistentWith (n := 4) (m := 1) (fun _ _ => (0 : Fin 1)) [0, 2] = Set.univ := by
       ext V
-      simp only [ConsistentWith, Set.mem_setOf_eq, Set.mem_univ, iff_true]
+      simp only [ConsistentWith, Set.mem_ofPred_eq, Set.mem_univ, iff_true]
       simp
     rw [huniv]
     have : Nat.card ↥(Set.univ : Set (Perm (Fin 4))) = Nat.card (Perm (Fin 4)) :=
@@ -3415,7 +3415,7 @@ private theorem candListDescent_length_le (hn : 0 < n) {z : ℕ} {κ : Fin n →
   classical
   set t0 := lensCode κ with ht0
   set t1 := lensCode W with ht1
-  haveI : Fintype ↥{V : Perm (Fin n) | ∀ x, κ (V x) = W (κ x)} := Fintype.ofFinite _
+  have : Fintype ↥{V : Perm (Fin n) | ∀ x, κ (V x) = W (κ x)} := Fintype.ofFinite _
   have hnodup : (candListDescent n t0 t1).Nodup := List.nodup_range.filter _
   have hmem : ∀ w ∈ (candListDescent n t0 t1).toFinset, w < n ^ n ∧ isValidDescent n t0 t1 w := by
     intro w hw
