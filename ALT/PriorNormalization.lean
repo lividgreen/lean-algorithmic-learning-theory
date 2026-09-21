@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.BinaryKraft
+module
+
+public import ALT.BinaryKraft
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -17,7 +19,8 @@ class `M`, with prior `w(R') ∝ 2^{−K(R')}`). For the proportionality `∝` t
 (sub-)probability — and hence the mixture to be well-defined — the unnormalized weights must have
 finite total mass `≤ 1`. That is the Kraft–McMillan inequality.
 
-Status: PROVED as pure code-length statements, on top of Mathlib's `kraft_mcmillan_inequality`.
+Status: PROVED as pure code-length statements, on top of Mathlib's
+`IsUniquelyDecodable.finsetSum_one_div_card_pow_length_le_one`.
 This is the *arithmetic core* of §1.1's well-definedness only.
 
 ## What this DOES establish
@@ -48,6 +51,9 @@ Kraft–McMillan, and its reindexing along an injective code — is generic, and
   distinct codewords (an injective enumeration of `M`); (d) `≤ 1`, not `= 1`.
 -/
 
+
+@[expose] public section
+
 namespace PriorNormalization
 
 open InformationTheory
@@ -62,7 +68,7 @@ the injective code, its codeword lengths are the `ℓ(R)`, and Kraft–McMillan 
 theorem prior_tsum_le_one
     (code : ℕ → List Bool)
     (hinj : Function.Injective code)
-    (hUD : UniquelyDecodable (Set.range code)) :
+    (hUD : IsUniquelyDecodable (Set.range code)) :
     ∑' n, (1 / 2 : ℝ) ^ (code n).length ≤ 1 :=
   BinaryKraft.indexed_tsum_le_one code hinj hUD
 

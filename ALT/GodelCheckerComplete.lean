@@ -3,10 +3,12 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Foundation.FirstOrder.Incompleteness.Examples
-import Foundation.FirstOrder.Bootstrapping.DerivabilityCondition.D1
-import Foundation.FirstOrder.Incompleteness.Speedup
-import ALT.GodelCore
+module
+
+public import Foundation.FirstOrder.Incompleteness.Examples
+public import Foundation.FirstOrder.Arithmetic.Bootstrapping.DerivabilityCondition.D1
+public import Foundation.FirstOrder.Incompleteness.Speedup
+public import ALT.GodelCore
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -31,7 +33,7 @@ This file takes the faithful route: it uses Foundation's **own arithmetized proo
 `Bootstrapping.Proof T d φ` ("`d` is the Gödel number of a `T`-derivation of `φ`"), which is by
 construction the *real* proof relation — hence **sound AND complete** for `T ⊢` (no metatheory to
 re-prove):
-* SOUND   — `Prf_sound`  : `Bootstrapping.Provable.sound` (`Coding.lean:336`), accept ⇒ `T ⊢ φ`;
+* SOUND   — `Prf_sound`  : `Bootstrapping.Provable.sound` (`Coding.lean:392`), accept ⇒ `T ⊢ φ`;
 * COMPLETE — `Prf_complete`: `internalize_provability` (`D1.lean:24`), `T ⊢ φ` ⇒ accept at some code.
 
 So the decision morphism `Decide T M φ = ⋀_{p ≤ M} ¬Prf(φ,p)` satisfies the GENUINE property
@@ -58,7 +60,7 @@ precise gaps:
 
 * **(a) reflection over the arithmetized predicate.** `Bootstrapping.Proof T p (⌜φ⌝)` unfolds to
   `DerivationOf`, a **`noncomputable` Δ₁ FIXPOINT** — `Derivation T := (construction T).Fixpoint ![]`
-  (`Bootstrapping/Syntax/Proof/Basic.lean:459`) — over coded one-sided-sequent (`𝐋𝐊¹`) derivations
+  (`Bootstrapping/Syntax/Proof/Basic.lean:465`) — over coded one-sided-sequent (`𝐋𝐊¹`) derivations
   (`fstIdx`, `^⋏`/`^⋎`/`^∀`/`^∃`, `free`, `setShift`, `substs1`, `IsTerm`, coded-set membership).
   Foundation exposes it ONLY as a `𝚫₁-Relation[V]` (a defining `𝚫₁.Semisentence`); it ships **no**
   `Decidable`/`Primrec`/`Computable`/`Bool` instance. Making `Decide` `#eval` would require a new
@@ -66,9 +68,9 @@ precise gaps:
   Foundation's whole coded-derivation checker to executable Lean.
 * **(b) complete computable Hilbert checker.** Extending FV-8's Hilbert (ax+MP) checker to a COMPLETE
   one has **no** Foundation completeness bridge: classical first-order `⊢` is the sequent calculus
-  `𝐋𝐊¹` (`FirstOrder/Basic/Calculus.lean`), and Foundation exposes **no** classical Hilbert-vs-`𝐋𝐊¹`
-  equivalence (its only first-order Hilbert object, `HilbertProofᵢ` in `Hauptsatz.lean`, is
-  *intuitionistic* and internal to cut-elimination). `𝗣𝗔⁻`'s finiteness makes non-logical axiom
+  `𝐋𝐊¹` (`FirstOrder/LK/Basic.lean`), and Foundation exposes **no** first-order Hilbert calculus
+  at all, hence no classical Hilbert-vs-`𝐋𝐊¹` equivalence (its only Hilbert system, in
+  `Propositional/Hilbert/Basic.lean`, is propositional). `𝗣𝗔⁻`'s finiteness makes non-logical axiom
   recognition trivially decidable, but leaves the *logical*-completeness bottleneck (a complete FO
   Hilbert calculus + the bridge to `𝐋𝐊¹`) untouched.
 
@@ -88,6 +90,9 @@ executable complete derivation checker, in Foundation; upstream-PR targets).
 no named axiom either. `𝗣𝗔⁻ ⊊ 𝗜𝚺₁`, so the `𝗣𝗔⁻` capstone is the weaker, more faithful (§5.3-class)
 statement, and the `𝗜𝚺₁` form is the parallel witness at Foundation's canonical Σ₁-induction theory.
 -/
+
+
+@[expose] public section
 
 namespace GodelCheckerComplete
 

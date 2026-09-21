@@ -3,10 +3,12 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.TapeHostFiber
-import ALT.TapeHostOverlap
-import ALT.RedundantFiber
-import ALT.SubstrateEmergence
+module
+
+public import ALT.TapeHostFiber
+public import ALT.TapeHostOverlap
+public import ALT.RedundantFiber
+public import ALT.SubstrateEmergence
 
 /-!
 # A member of both route-classes carries survival, by redundancy ([Inevitability] §5, §6)
@@ -95,6 +97,9 @@ cited black boxes.
 IN-28, IN-41, IN-42.
 -/
 
+
+@[expose] public section
+
 namespace TapeHostSurvival
 
 variable {N : ℕ} [NeZero N] (o : ZMod N → Bool) {P W : ℕ} [NeZero P]
@@ -114,7 +119,8 @@ abbrev CompIdx (N P W : ℕ) : Type := TapeHostWitness.HostIdx N ⊕ FiberIdx P 
 /-- **The composite memory**, in [Decoupling]'s own shape. -/
 abbrev CompMem (N P W : ℕ) : Type := Decoupling.Mem (CompIdx N P W) Bool
 
-private lemma fiberVal_lt {W : ℕ} (x : Fin (W + 1)) : (x : ℕ) < 2 ^ Nat.size W :=
+/-- A fiber index stays below `2 ^ Nat.size W`. -/
+lemma fiberVal_lt {W : ℕ} (x : Fin (W + 1)) : (x : ℕ) < 2 ^ Nat.size W :=
   lt_of_le_of_lt (Nat.lt_succ_iff.mp x.isLt) (Nat.lt_size_self _)
 
 /-- **Writing a population of weight vectors into the fiber's own cells.** -/

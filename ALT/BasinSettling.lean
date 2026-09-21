@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.FlooredMixture
+module
+
+public import ALT.FlooredMixture
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -90,6 +92,9 @@ of the base coordinate, and neither condition implies the other. And nothing abo
 discovery and damage, whose survival half is priced elsewhere from a damage model that is a
 hypothesis. The event and drift bounds are stated from the uniform start on a power-of-two budget
 and are not re-derived here. -/
+
+
+@[expose] public section
 
 namespace WeightedFiber
 
@@ -557,14 +562,14 @@ private theorem leaderVal_eq_pow_min (hW : 1 ≤ W) {M : ℕ → Fin C → Bool}
           calc 2 * 2 ^ t = 2 ^ (t + 1) := by rw [pow_succ]; ring
             _ ≤ 2 ^ Nat.log 2 W := Nat.pow_le_pow_right (by norm_num) (by omega)
             _ ≤ W := Nat.pow_log_le_self 2 (by omega)
-        rw [if_pos h2, hmin1, hmin2, pow_succ]; ring
+        rw [ite_eq_left h2, hmin1, hmin2, pow_succ]; ring
       · have hmin1 : min t (Nat.log 2 W) = Nat.log 2 W := min_eq_right hge
         have hmin2 : min (t + 1) (Nat.log 2 W) = Nat.log 2 W := min_eq_right (by omega)
         have hlog : W < 2 ^ Nat.log 2 W * 2 := by
           have h := Nat.lt_pow_succ_log_self (b := 2) (by norm_num) W
           simpa [pow_succ] using h
         have h2 : ¬ 2 * 2 ^ min t (Nat.log 2 W) ≤ W := by rw [hmin1]; omega
-        rw [if_neg h2, hmin1, hmin2]
+        rw [ite_eq_right h2, hmin1, hmin2]
 
 private theorem leaderVal_eq_pow_of_ge (hW : 1 ≤ W) {M : ℕ → Fin C → Bool} {iR : Fin C}
     (hR : ∀ t, M t iR = false) {t : ℕ} (ht : Nat.log 2 W ≤ t) :
@@ -615,9 +620,9 @@ theorem raw_wRunFrom_eventually_lock (hW : 1 ≤ W) {M : ℕ → Fin C → Bool}
   funext i
   by_cases hi : i = iR
   · subst hi
-    rw [if_pos rfl]
+    rw [ite_eq_left rfl]
     exact leaderVal_eq_pow_of_ge hW hR hTge
-  · rw [if_neg hi]
+  · rw [ite_eq_right hi]
     obtain ⟨t', ht', hmiss⟩ := hOther i hi T
     have heq1 : raw (wRunFrom W (missFit M) (pack W fun _ => 1) t') i
         = raw (wRunFrom W (missFit M) (pack W fun _ => 1) T) i := congrFun (hT t' ht') i
@@ -651,8 +656,8 @@ theorem raw_wRunFrom_eventually_settled {k : ℕ} {M : ℕ → Fin C → Bool} {
   funext i
   rw [settled]
   by_cases hi : i = iR
-  · rw [if_pos hi, if_pos hi, hWk, Nat.log_pow (by norm_num : 1 < 2)]
-  · rw [if_neg hi, if_neg hi]
+  · rw [ite_eq_left hi, ite_eq_left hi, hWk, Nat.log_pow (by norm_num : 1 < 2)]
+  · rw [ite_eq_right hi, ite_eq_right hi]
 
 end Basin
 
@@ -891,7 +896,7 @@ theorem argmax_wRunFrom_seededAlt {b t : ℕ} (hb : 1 ≤ b) (ht : t < 2 * b) :
   have hclosed := raw_wRunFrom_seededAlt b t (by omega)
   have hlt : (2 : ℕ) ^ (t / 2) < 2 ^ b := Nat.pow_lt_pow_right (by norm_num) (by omega)
   rcases (show t % 2 = 0 ∨ t % 2 = 1 by omega) with hr | hr
-  · rw [if_pos hr, hclosed, hr, Nat.sub_zero]
+  · rw [ite_eq_left hr, hclosed, hr, Nat.sub_zero]
     have hmax : wMax (![2 ^ (t / 2), 2 ^ b, 2 ^ b] : Fin 3 → ℕ) = 2 ^ b := by
       rw [wMax_three]
       change max (2 ^ (t / 2)) (max (2 ^ b) (2 ^ b)) = 2 ^ b
@@ -910,7 +915,7 @@ theorem argmax_wRunFrom_seededAlt {b t : ℕ} (hb : 1 ≤ b) (ht : t < 2 * b) :
       change (2 : ℕ) ^ (t / 2) = 2 ^ b at hattain
       omega
     · exact h
-  · rw [if_neg (by omega), hclosed, hr]
+  · rw [ite_eq_right (by omega), hclosed, hr]
     have hlt1 : (2 : ℕ) ^ (b - 1) < 2 ^ b := Nat.pow_lt_pow_right (by norm_num) (by omega)
     refine argmax_eq_of_strict fun i hi => ?_
     fin_cases i
@@ -945,11 +950,11 @@ theorem argmax_wRunFrom_seededAlt_card_changes_eq {b : ℕ} (hb : 1 ≤ b) :
   rcases (show t + 1 < 2 * b ∨ t + 1 = 2 * b by omega) with ht1 | ht1
   · rw [argmax_wRunFrom_seededAlt hb ht1]
     rcases (show t % 2 = 0 ∨ t % 2 = 1 by omega) with hr | hr
-    · rw [if_pos hr, if_neg (show ¬((t + 1) % 2 = 0) by omega)]
+    · rw [ite_eq_left hr, ite_eq_right (show ¬((t + 1) % 2 = 0) by omega)]
       decide
-    · rw [if_neg (show ¬(t % 2 = 0) by omega), if_pos (show (t + 1) % 2 = 0 by omega)]
+    · rw [ite_eq_right (show ¬(t % 2 = 0) by omega), ite_eq_left (show (t + 1) % 2 = 0 by omega)]
       decide
-  · rw [ht1, argmax_wRunFrom_seededAlt_end, if_neg (show ¬(t % 2 = 0) by omega)]
+  · rw [ht1, argmax_wRunFrom_seededAlt_end, ite_eq_right (show ¬(t % 2 = 0) by omega)]
     decide
 
 /-- **The reading moves back.** It reads candidate `1`, then `2`, then `1` again — so the uniform

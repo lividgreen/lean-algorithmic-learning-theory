@@ -3,13 +3,15 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.KolmogorovComplexity
-import ALT.KolmogorovTimeBounded
-import ALT.CapacityThreshold
-import ALT.MDLDominance
-import ALT.RegimeConsistency
-import ALT.RetentionOverhead
-import ALT.PolyTimeAccounting
+module
+
+public import ALT.KolmogorovComplexity
+public import ALT.KolmogorovTimeBounded
+public import ALT.CapacityThreshold
+public import ALT.MDLDominance
+public import ALT.RegimeConsistency
+public import ALT.RetentionOverhead
+public import ALT.PolyTimeAccounting
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -51,6 +53,9 @@ already-proved abstract theorem applied at `r := ↑(ruleComplexity R)`.
 * Added / modeling: `R` modelled as a `Nat.Partrec.Code`; `K(R)` as `K_bitlen (encode R)`; the
   `ℕ → ℝ` coercion at the boundary.
 -/
+
+
+@[expose] public section
 
 namespace KReconnection
 

@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.Computability.PartrecCode
+module
+
+public import Mathlib.Computability.PartrecCode
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -38,6 +40,9 @@ collector payoff (`tc_prec_le`) needs
 no value-agreement at all: it is pure step-law bookkeeping, and the per-call rule cost enters as a
 uniform bound `hcg`, which is exactly why the resulting linear bound is value-magnitude-independent.
 -/
+
+
+@[expose] public section
 
 namespace TimeCost
 

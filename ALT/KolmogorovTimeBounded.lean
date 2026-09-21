@@ -3,9 +3,11 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.KolmogorovComplexity
-import Mathlib.Data.ENat.Lattice
-import Mathlib.Data.Nat.Size
+module
+
+public import ALT.KolmogorovComplexity
+public import Mathlib.Data.ENat.Lattice
+public import Mathlib.Data.Nat.Size
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -62,6 +64,9 @@ faithfully renders the `|P|` part of `S_T` in the deterministic regime — not `
 * Added / modeling: `t` = `evaln` step-count as the budget; `ℕ∞`/`⊤` rendering; least-**index**
   still underlies `K` (bit-length is `Nat.size` of it).
 -/
+
+
+@[expose] public section
 
 namespace KolmogorovComplexity
 

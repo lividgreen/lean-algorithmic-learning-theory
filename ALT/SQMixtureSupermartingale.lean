@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.SQSearchPhaseMass
+module
+
+public import ALT.SQSearchPhaseMass
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters (long doc lines).
 set_option linter.style.header false
@@ -64,6 +66,9 @@ events depending only on coordinates `≤ i`. FOUND in Mathlib (not hand-rolled)
   the hypothesis `hkraft : ∑ w ≤ 1`.
 -/
 
+
+@[expose] public section
+
 namespace SQMixtureSupermartingale
 
 open MeasureTheory
@@ -105,7 +110,7 @@ theorem Z_le_one (t : ℕ) (ω : ℕ → X) : Z cands w g t ω ≤ 1 := by
   have hterm : ∀ i ∈ cands, w i * L g i t ω ≤ w i := by
     intro i hi
     have hL1 : L g i t ω ≤ 1 :=
-      Finset.prod_le_one (fun s _ => (hg01 i s ω).1) (fun s _ => (hg01 i s ω).2)
+      Finset.prod_le_one₀ (fun s _ => (hg01 i s ω).1) (fun s _ => (hg01 i s ω).2)
     calc w i * L g i t ω ≤ w i * 1 := mul_le_mul_of_nonneg_left hL1 (hw i hi)
       _ = w i := mul_one _
   calc Z cands w g t ω = ∑ i ∈ cands, w i * L g i t ω := rfl
@@ -230,8 +235,8 @@ theorem detFactor_stronglyMeasurable (pred : ι → (s : ℕ) → (Fin s → X) 
       (comap_measurable (Preorder.restrictLe (π := fun _ : ℕ => X) (s + 1)))
   have hf : Measurable[coordFil X (s + 1)] (fun ω : ℕ → X => pred i s (fun k => ω k)) := by
     have hrestr : Measurable[coordFil X (s + 1)] (fun ω : ℕ → X => (fun k : Fin s => ω k)) :=
-      @measurable_pi_lambda (ℕ → X) (Fin s) (fun _ => X) (coordFil X (s + 1)) _
-        (fun ω k => ω k) fun k => hcoord k (le_trans (le_of_lt k.2) (Nat.le_succ s))
+      @Measurable.of_eval (ℕ → X) (Fin s) (fun _ => X) (coordFil X (s + 1)) _ _
+        fun k => hcoord k (le_trans (le_of_lt k.2) (Nat.le_succ s))
     exact (measurable_of_countable (pred i s)).comp hrestr
   have hg : Measurable[coordFil X (s + 1)] (fun ω : ℕ → X => ω s) := hcoord s (Nat.le_succ s)
   have hSet : MeasurableSet[coordFil X (s + 1)] {ω : ℕ → X | pred i s (fun k => ω k) = ω s} :=

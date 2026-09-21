@@ -3,11 +3,13 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.RealizabilityCCC
-import ALT.RealizerLength
-import ALT.UniversalAt
-import ALT.PolyTime
-import ALT.CapacityLayer
+module
+
+public import ALT.RealizabilityCCC
+public import ALT.RealizerLength
+public import ALT.UniversalAt
+public import ALT.PolyTime
+public import ALT.CapacityLayer
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -68,6 +70,9 @@ Resource-graded exponential modalities are the bounded-linear-logic tradition (G
 is new here; what is new is the concrete instantiation on `Nat.Partrec.Code` together with a
 machine-checked affine price for applying it.
 -/
+
+
+@[expose] public section
 
 namespace GradedApplication
 

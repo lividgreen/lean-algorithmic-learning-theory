@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.AccretiveDecoupling
-import ALT.PersistenceCapacity
+module
+
+public import ALT.AccretiveDecoupling
+public import ALT.PersistenceCapacity
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -58,6 +60,9 @@ constant-family coherence theorem. No description-length pricing, no ownership, 
 guest here is *owned* in `[Guests]` §2's sense — this file is the factor-closure skeleton the
 priced notion sits on, not the priced notion itself.
 -/
+
+
+@[expose] public section
 
 namespace GrowingWorld
 
@@ -176,14 +181,14 @@ theorem advances_tapeStageB : Advances Decoupling.tapeWrite tapeStageB := by
   · simp [Decoupling.tapeWrite, h0]
   · intro a ha1 ha2
     simp only [Decoupling.tapeWrite]
-    rw [if_neg (by omega : a ≠ 0)]
+    rw [ite_eq_right (by omega : a ≠ 0)]
     by_cases hb : a = s 0 + 1
     · simp [hb]
-    · rw [if_neg hb]
+    · rw [ite_eq_right hb]
       exact hbin a ha1 (by omega)
   · intro a ha
     simp only [Decoupling.tapeWrite]
-    rw [if_neg (by omega : a ≠ 0), if_neg (by rw [h0]; omega : a ≠ s 0 + 1)]
+    rw [ite_eq_right (by omega : a ≠ 0), ite_eq_right (by rw [h0]; omega : a ≠ s 0 + 1)]
     exact hzero a (by omega)
 
 /-- On the binary sub-stages, `tapeRead` is the identity: a stage state already looks like its own
@@ -216,18 +221,19 @@ def encode (t : ℕ) (f : Fin t → Bool) : Decoupling.Mem ℕ ℕ :=
 theorem encode_mem (t : ℕ) (f : Fin t → Bool) : encode t f ∈ tapeStageB t := by
   refine ⟨by simp [encode], ?_, ?_⟩
   · intro a ha1 ha2
-    simp only [encode, if_neg (show a ≠ 0 by omega), dif_pos (⟨ha1, ha2⟩ : 1 ≤ a ∧ a ≤ t)]
+    simp only [encode, ite_eq_right (show a ≠ 0 by omega),
+      dite_eq_left (⟨ha1, ha2⟩ : 1 ≤ a ∧ a ≤ t)]
     cases f ⟨a - 1, by omega⟩ <;> simp [Bool.toNat]
   · intro a ha
-    simp only [encode, if_neg (show a ≠ 0 by omega),
-      dif_neg (show ¬ (1 ≤ a ∧ a ≤ t) by omega)]
+    simp only [encode, ite_eq_right (show a ≠ 0 by omega),
+      dite_eq_right (show ¬ (1 ≤ a ∧ a ≤ t) by omega)]
 
 private theorem encode_injective (t : ℕ) : Function.Injective (encode t) := by
   intro f₁ f₂ h
   funext i
   have hi := congrFun h (i.1 + 1)
-  simp only [encode, if_neg (show i.1 + 1 ≠ 0 by omega),
-    dif_pos (show 1 ≤ i.1 + 1 ∧ i.1 + 1 ≤ t by omega)] at hi
+  simp only [encode, ite_eq_right (show i.1 + 1 ≠ 0 by omega),
+    dite_eq_left (show 1 ≤ i.1 + 1 ∧ i.1 + 1 ≤ t by omega)] at hi
   have hfin : (⟨i.1 + 1 - 1, by omega⟩ : Fin t) = i := by
     ext; simp
   rw [hfin] at hi

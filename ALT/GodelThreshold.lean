@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.GodelCore
-import ALT.ParameterizedNNO
+module
+
+public import ALT.GodelCore
+public import ALT.ParameterizedNNO
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -49,6 +51,9 @@ threshold lemma; it is discharged from the Foundation port in `ALT/GodelComplete
 * Added / modeling: `Sentence`/`gnum`/`Derivable`/`True_` abstract; `reflective_of_depth` uses
   Def 6.1's strict `gTS < M`.
 -/
+
+
+@[expose] public section
 
 namespace GodelThreshold
 

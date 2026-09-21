@@ -3,13 +3,16 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.BlockPairProfile
-import ALT.NoisyWindowChain
-import ALT.TapeHostObservability
-import ALT.TapeHostOverlap
-import ALT.TapeHostSchedule
-import ALT.BlockPairHost
-import ALT.BlockPairCriterion
+module
+
+public import ALT.BlockPairProfile
+public import ALT.NoisyWindowChain
+public import ALT.TapeHostObservability
+public import ALT.TapeHostOverlap
+public import ALT.TapeHostSchedule
+public import ALT.BlockPairHost
+public import ALT.BlockPairCriterion
+public import ALT.ParityWalk
 
 /-!
 # The profile-class family instantiates the profile-class criterion, at every length
@@ -53,6 +56,9 @@ cross-class bounds keep the certified pair's own shape. Nothing about approximat
 or about survival; not the class-level bridge [Inevitability] §7 names. The paper home is
 [Inevitability] §5 Proposition 5.9, §6 Proposition 6.10, rows IN-41, IN-42, IN-43.
 -/
+
+
+@[expose] public section
 
 namespace BlockPairFamilyCriterion
 
@@ -223,7 +229,7 @@ theorem designObsF_profile (M r : ℕ) [NeZero (2 * (2 * M))] [NeZero r] (hr2 : 
       ring
     simp_rw [ea, e8]
     by_cases ha0 : (a : ℕ) = 0
-    · rw [if_pos ha0, if_pos ha0, ha0]
+    · rw [ite_eq_left ha0, ite_eq_left ha0, ha0]
       rw [chiProd_eq_cyclicCorrWindowF M r c (by omega : (0 : ℕ) ≤ 8) n]
       have hb := cyclicCorrWindow_blockSeq_family_spike M r hr2 (c.val + 0) n
       set X : ℤ := cyclicCorrWindow
@@ -255,7 +261,7 @@ theorem designObsF_profile (M r : ℕ) [NeZero (2 * (2 * M))] [NeZero r] (hr2 : 
         rw [abs_of_nonneg]; positivity
       rw [habs2r, div_le_iff₀ (by positivity : (0 : ℝ) < 2 * (8 * r : ℝ))]
       nlinarith [hbR]
-    · rw [if_neg ha0, if_neg ha0, mul_zero, sub_zero]
+    · rw [ite_eq_right ha0, ite_eq_right ha0, mul_zero, sub_zero]
       have ha7 : (a : ℕ) ≤ 8 := by omega
       rw [chiProd_eq_cyclicCorrWindowF M r c ha7 n, ← Int.cast_abs]
       have hz := cyclicCorrWindow_blockSeq_family_zone M r (by omega : 1 ≤ 8 - (a : ℕ))
@@ -344,7 +350,7 @@ theorem blockPairFamily_identifies (r M : ℕ) (hr3 : 3 ≤ r) [NeZero (2 * (2 *
   have hr2R : (2 : ℝ) ≤ (r : ℝ) := by exact_mod_cast hr2
   have hρ0 : (fun a : Fin 8 => if (a : ℕ) = 0 then -((8 * (r : ℝ) - 8) / (8 * r)) else (0 : ℝ))
       (0 : Fin 8) = 2 * (1 / (2 * r) : ℝ) - 1 := by
-    simp only [Fin.val_zero, if_true]
+    simp only [Fin.val_zero, ite_true]
     have hr0 : (8 * (r : ℝ)) ≠ 0 := by positivity
     field_simp
     ring
@@ -352,17 +358,17 @@ theorem blockPairFamily_identifies (r M : ℕ) (hr3 : 3 ≤ r) [NeZero (2 * (2 *
       else 2 * ((2 + 2 * 1) * (8 * r : ℝ))) a ≤ 2 * ((2 + 2 * 1) * (8 * r : ℝ)) := by
     intro a
     by_cases ha : (a : ℕ) = 0
-    · simp only [ha, if_true]
+    · simp only [ha, ite_true]
       have heq : 2 * ((2 + 2 * (1 : ℝ)) * (8 * (r : ℝ))) = 64 * r := by ring
       rw [heq]
       nlinarith [hr2R]
-    · simp only [ha, if_false, le_refl]
+    · simp only [ha, ite_false, le_refl]
   have hwin : (1 / (2 * (r : ℝ)) : ℝ) < (1 - 0) / 4 := by
     rw [show (1 : ℝ) - 0 = 1 by ring, div_lt_div_iff₀ (by positivity) (by norm_num)]
     have hr3' : (3 : ℝ) ≤ (r : ℝ) := by exact_mod_cast hr3
     nlinarith [hr3']
   exact TapeHostSchedule.identifies_of_lt_quarter (designObsF r M) (designObsF_profile M r hr2)
     (2 * ((2 + 2 * 1) * (8 * r : ℝ))) hW (by positivity) hρ0
-    (fun a ha => by simp only [ha, if_false]; norm_num) (le_refl 0) (by norm_num) hwin c
+    (fun a ha => by simp only [ha, ite_false]; norm_num) (le_refl 0) (by norm_num) hwin c
 
 end BlockPairFamilyCriterion

@@ -3,14 +3,16 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.Reflective
-import ALT.RegimeConsistency
-import ALT.GodelInternalization
-import ALT.CategoricalThreshold
-import ALT.Decoupling
-import ALT.SQObjects
-import ALT.ParityCounterexample
-import ALT.BirkhoffTool
+module
+
+public import ALT.Reflective
+public import ALT.RegimeConsistency
+public import ALT.GodelInternalization
+public import ALT.CategoricalThreshold
+public import ALT.Decoupling
+public import ALT.SQObjects
+public import ALT.ParityCounterexample
+public import ALT.BirkhoffTool
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -228,6 +230,9 @@ file gave [Inevitability]'s own Definitions 2.1–2.3 a Lean counterpart.
   `SQObjects.survivors_polyBounded_of_separated`'s own shape, existentially packaged so `Substrate`'s
   single-system parameters need not themselves index a family.
 -/
+
+
+@[expose] public section
 
 namespace SubstrateClass
 

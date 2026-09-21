@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.SubstitutionComposite
+module
+
+public import ALT.SubstitutionComposite
 
 /-!
 # The growing host's own membership: an append-only carrier is a member of `𝒮_L`
@@ -51,6 +53,9 @@ literal class), reused verbatim from `LearningWitness.witness_substrateL_of_e1`'
 about which memory carries the process.
 -/
 
+
+@[expose] public section
+
 namespace GrowingHostWitness
 
 open NoisyWindowChain SubstitutionSource SubstitutionComposite BirkhoffTool
@@ -78,7 +83,7 @@ private lemma toNat_beq_one (b : Bool) : (b.toNat == 1) = b := by cases b <;> de
 
 /-- The `(window, tape)` projection of a packed memory — the pair `GrowingComposite.compUpdate`
 itself acts on. -/
-private def hostProj (s : HostMem) : (Fin 8 → Bool) × Decoupling.Mem ℕ ℕ :=
+def hostProj (s : HostMem) : (Fin 8 → Bool) × Decoupling.Mem ℕ ℕ :=
   (fun i => s (Sum.inr (Sum.inl i)) == 1, fun n => s (Sum.inr (Sum.inr n)))
 
 /-! ## The update, its loading, and the observation -/

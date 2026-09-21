@@ -3,11 +3,13 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.Algebra.Order.Ring.Star
-import Mathlib.Data.Int.Star
-import Mathlib.Tactic.IntervalCases
-import ALT.Code.BitGates
-import ALT.DecisionListData
+module
+
+public import Mathlib.Algebra.Order.Ring.Star
+public import Mathlib.Data.Int.Star
+public import Mathlib.Tactic.IntervalCases
+public import ALT.Code.BitGates
+public import ALT.DecisionListData
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -32,6 +34,9 @@ The construction is labeled in three layers, cited in comments below:
 scan and the greedy outer loop `solve`; its outer loop is tagged `C2b-outer`); **C2c** — greedy
 correctness (`solve` decides 1-DL consistency).
 -/
+
+
+@[expose] public section
 
 namespace OneDL
 
@@ -69,9 +74,9 @@ private theorem bEq_le_one (a b : ℕ) : bEq a b ≤ 1 := by
 /-! ### Reads as `Code`s -/
 
 /-- `headL` as a `Code` (`comp left right`). -/
-private def cHead : Code := comp left right
+def cHead : Code := comp left right
 /-- `tailL` as a `Code` (`comp right right`). -/
-private def cTail : Code := comp right right
+def cTail : Code := comp right right
 
 private theorem val_cHead (L : ℕ) : val cHead L = headL L := by
   simp only [cHead, val_comp, val_left, val_right, headL]
@@ -101,15 +106,15 @@ is the `unpair` chain of its semantic twin spelled with `left`/`right`; the `val
 the identifications. -/
 
 /-- `instOf` as a `Code`. -/
-private def cInst : Code := left
+def cInst : Code := left
 /-- `maskOf` as a `Code`. -/
-private def cMask : Code := comp left right
+def cMask : Code := comp left right
 /-- `jOf` as a `Code`. -/
-private def cJ : Code := comp left (comp right right)
+def cJ : Code := comp left (comp right right)
 /-- `pOf` as a `Code`. -/
-private def cP : Code := comp right (comp right right)
+def cP : Code := comp right (comp right right)
 /-- `dataOf` as a `Code`: the example list, read out of the instance. -/
-private def cData : Code := comp (comp right right) left
+def cData : Code := comp (comp right right) left
 
 private theorem val_cInst (n : ℕ) : val cInst n = instOf n := by simp only [cInst, val_left, instOf]
 private theorem val_cMask (n : ℕ) : val cMask n = maskOf n := by
@@ -162,39 +167,39 @@ the two updated flags — and `cStep` reassembles the accumulator from the last 
 identifies the whole with `stepFn`. -/
 
 /-- The accumulator. -/
-private def cAcc : Code := comp right right
+def cAcc : Code := comp right right
 /-- The literal's feature index `j`, from the seed. -/
-private def cJa : Code := comp cJ left
+def cJa : Code := comp cJ left
 /-- The literal's polarity bit `p`, from the seed. -/
-private def cPa : Code := comp cP left
+def cPa : Code := comp cP left
 /-- The mask suffix. -/
-private def cMs : Code := comp left cAcc
+def cMs : Code := comp left cAcc
 /-- The example suffix. -/
-private def cEx : Code := comp left (comp right cAcc)
+def cEx : Code := comp left (comp right cAcc)
 /-- The `sawZero` flag. -/
-private def cZ0 : Code := comp left (comp right (comp right cAcc))
+def cZ0 : Code := comp left (comp right (comp right cAcc))
 /-- The `sawOne` flag. -/
-private def cZ1 : Code := comp right (comp right (comp right cAcc))
+def cZ1 : Code := comp right (comp right (comp right cAcc))
 /-- The current mask bit: is this example still in play? -/
-private def cB : Code := comp cHead cMs
+def cB : Code := comp cHead cMs
 /-- The current example. -/
-private def cE : Code := comp cHead cEx
+def cE : Code := comp cHead cEx
 /-- The current example's label. -/
-private def cLbl : Code := comp left cE
+def cLbl : Code := comp left cE
 /-- The current example's feature vector. -/
-private def cFv : Code := comp right cE
+def cFv : Code := comp right cE
 /-- Feature `j` of the current example: peel its feature vector `j` cells, read the head bit. -/
-private def cFeat : Code := comp cHead (comp cPeel (pair cFv cJa))
+def cFeat : Code := comp cHead (comp cPeel (pair cFv cJa))
 /-- Does the current example's feature `j` match the literal's polarity `p`? -/
-private def cEqFP : Code := comp cEqBit (pair cFeat cPa)
+def cEqFP : Code := comp cEqBit (pair cFeat cPa)
 /-- Coverage: the example is still remaining AND the literal matches it. -/
-private def cCov : Code := comp cAnd (pair cB cEqFP)
+def cCov : Code := comp cAnd (pair cB cEqFP)
 /-- The current example's label, negated. -/
-private def cNotLbl : Code := comp cNot cLbl
+def cNotLbl : Code := comp cNot cLbl
 /-- The updated `sawZero`: set it if this example is covered and labelled `0`. -/
-private def cZ0' : Code := comp cOr (pair cZ0 (comp cAnd (pair cCov cNotLbl)))
+def cZ0' : Code := comp cOr (pair cZ0 (comp cAnd (pair cCov cNotLbl)))
 /-- The updated `sawOne`: set it if this example is covered and labelled `1`. -/
-private def cZ1' : Code := comp cOr (pair cZ1 (comp cAnd (pair cCov cLbl)))
+def cZ1' : Code := comp cOr (pair cZ1 (comp cAnd (pair cCov cLbl)))
 /-- The step: peel both suffixes one cell and carry the two updated flags. -/
 def cStep : Code := pair (comp cTail cMs) (pair (comp cTail cEx) (pair cZ0' cZ1'))
 
@@ -347,18 +352,18 @@ so the greedy loop can reject vacuously-pure (0-covering) literals (`findLit` ga
 sawAny`). -/
 
 /-- The `sawZero` flag of the final accumulator. -/
-private def cZ0acc : Code := comp left (comp right right)
+def cZ0acc : Code := comp left (comp right right)
 /-- The `sawOne` flag of the final accumulator. -/
-private def cZ1acc : Code := comp right (comp right right)
+def cZ1acc : Code := comp right (comp right right)
 /-- `sawAny = sawZero ∨ sawOne`: the literal covered at least one remaining example. -/
-private def cSawAny : Code := comp cOr (pair cZ0acc cZ1acc)
+def cSawAny : Code := comp cOr (pair cZ0acc cZ1acc)
 /-- The read-out verdict triple `⟨isPure, ⟨commonLabel, sawAny⟩⟩`. Purity is `¬(sawZero ∧ sawOne)`
 — the covered examples did not disagree — and the common label is `sawOne`. -/
-private def cFinal : Code := pair (comp cNot (comp cAnd (pair cZ0acc cZ1acc))) (pair cZ1acc cSawAny)
+def cFinal : Code := pair (comp cNot (comp cAnd (pair cZ0acc cZ1acc))) (pair cZ1acc cSawAny)
 /-- Identity shaper (the loop seed is the whole packed input). -/
-private def cId : Code := pair left right
+def cId : Code := pair left right
 /-- The iteration count `readM (instOf n)` — the number of examples. -/
-private def cCount : Code := comp cReadM cInst
+def cCount : Code := comp cReadM cInst
 /-- **The purity primitive** `cPurity`: run the scan `readM inst` times, then read out the verdict. -/
 def cPurity : Code := comp cFinal (comp (prec cInit cStep) (pair cId cCount))
 
@@ -886,11 +891,11 @@ private def revStepFn (acc : ℕ) : ℕ :=
   Nat.pair (tailL acc.unpair.1) (Nat.pair 1 (Nat.pair (headL acc.unpair.1) acc.unpair.2))
 
 /-- `remaining` field of the reverse accumulator (`acc.1`), read off the step input `⟨a,⟨i,acc⟩⟩`. -/
-private def cRevRem : Code := comp left (comp right right)
+def cRevRem : Code := comp left (comp right right)
 /-- `prefix` field of the reverse accumulator (`acc.2`). -/
-private def cRevPref : Code := comp right (comp right right)
+def cRevPref : Code := comp right (comp right right)
 /-- The reverse step code: `⟨tailL remaining, cons (headL remaining) prefix⟩`. -/
-private def cRevStep : Code :=
+def cRevStep : Code :=
   pair (comp cTail cRevRem) (pair (constCode 1) (pair (comp cHead cRevRem) cRevPref))
 
 private theorem val_cRevStep (a i acc : ℕ) : val cRevStep (Nat.pair a (Nat.pair i acc)) = revStepFn acc := by
@@ -921,9 +926,9 @@ private theorem revStepFn_iterate (xs : List ℕ) : ∀ acc : List ℕ,
       rw [hstep, ih (x :: acc), List.reverse_cons, List.append_assoc, List.singleton_append]
 
 /-- Shaper: `⟨L, m⟩ ↦ ⟨L, 0⟩` — the initial reverse accumulator. -/
-private def cRevAstart : Code := pair left zero
+def cRevAstart : Code := pair left zero
 /-- Shaper: `⟨L, m⟩ ↦ m` — the loop count. -/
-private def cRevCount : Code := right
+def cRevCount : Code := right
 /-- **`cReverse`**: reverse the flag-cons list `L` given its length `m`, input packed as `⟨L, m⟩`. -/
 def cReverse : Code := comp right (comp (prec (pair left right) cRevStep) (pair cRevAstart cRevCount))
 
@@ -990,11 +995,11 @@ private def muStepFn (j p acc : ℕ) : ℕ :=
         (muBuilt acc))))
 
 /-- The new-bit gate `mask-head ∧ ¬(feature = p)` (reuses `cB`/`cEqFP` from the purity scan). -/
-private def cNewBit : Code := comp cAnd (pair cB (comp cNot cEqFP))
+def cNewBit : Code := comp cAnd (pair cB (comp cNot cEqFP))
 /-- The working-list field `acc.2.2`. -/
-private def cMuBuilt : Code := comp right (comp right cAcc)
+def cMuBuilt : Code := comp right (comp right cAcc)
 /-- The refine-scan step code. -/
-private def cMuStep : Code :=
+def cMuStep : Code :=
   pair (comp cTail cMs) (pair (comp cTail cEx) (pair (constCode 1) (pair cNewBit cMuBuilt)))
 
 private theorem rfindFree_cMuStep : RfindFree cMuStep := by
@@ -1044,9 +1049,9 @@ private theorem muStepFn_iterate (j p : ℕ) (exs : List ℕ) : ∀ (msks bacc :
             List.append_assoc, List.singleton_append]
 
 /-- Base code: `⟨maskOf n, ⟨dataOf n, 0⟩⟩` — full suffixes, empty working list. -/
-private def cMuInit : Code := pair cMask (pair cData zero)
+def cMuInit : Code := pair cMask (pair cData zero)
 /-- The refine scan run `readM inst` times. -/
-private def cMuScan : Code := comp (prec cMuInit cMuStep) (pair cId cCount)
+def cMuScan : Code := comp (prec cMuInit cMuStep) (pair cId cCount)
 /-- **`maskUpdate`'s code**: run the scan, extract the reversed working list, then `cReverse` it. -/
 def cMaskUpdate : Code := comp cReverse (pair (comp (comp right right) cMuScan) cCount)
 /-- Semantic `maskUpdate` on a packed input. -/
@@ -1356,7 +1361,7 @@ scan freezes after the first hit (never overwrites), so the recorded literal is 
 
 /-- `cMux ⟨⟨x,y⟩, c⟩ = if c = 0 then y else x` — a value selector recursing on the bit `c`, hence
 `O(1)`-`tc` on bits regardless of the value operands `x, y`. -/
-private def cMux : Code := prec right (comp left left)
+def cMux : Code := prec right (comp left left)
 
 private theorem rfindFree_cMux : RfindFree cMux := ⟨trivial, trivial, trivial⟩
 
@@ -1464,26 +1469,26 @@ private theorem flL_step (inst mask i acc : ℕ) : flL (flStepFn inst mask i acc
 /-- `cFold ⟨isPure, ⟨label, sawAny⟩⟩ = ⟨isPure ∧ sawAny, label⟩` — collapse a 3-field purity verdict
 into the 2-field `⟨coverLit, litLabel⟩` the greedy combine consumes. Doing the covering `∧` here (not in
 `cCombine`) keeps `cPurity` an honest purity primitive and leaves `cCombine` unchanged. -/
-private def cFold : Code := pair (comp cAnd (pair left (comp right right))) (comp left right)
+def cFold : Code := pair (comp cAnd (pair left (comp right right))) (comp left right)
 
 /-! `cExpand ⟨N,⟨i,acc⟩⟩ = ⟨i, ⟨acc, ⟨⟨cover0,label0⟩, ⟨cover1,label1⟩⟩⟩⟩` — compute both purity
 verdicts ONCE (exactly two `cPurity` evaluations), fold each to its covering-pick bit, so the per-step
 cost is `2·(purity) + O(1)`. -/
 
 /-- The instance, out of the seed. -/
-private def cInstN : Code := comp left left
+def cInstN : Code := comp left left
 /-- The mask, out of the seed. -/
-private def cMaskN : Code := comp right left
+def cMaskN : Code := comp right left
 /-- The round index `i` — the feature the two candidate literals test. -/
-private def cIX : Code := comp left right
+def cIX : Code := comp left right
 /-- The accumulator, carried through unchanged. -/
-private def cAccX : Code := comp right right
+def cAccX : Code := comp right right
 /-- The purity call for the negative literal `(i, 0)`. -/
-private def cPack0 : Code := pair cInstN (pair cMaskN (pair cIX zero))
+def cPack0 : Code := pair cInstN (pair cMaskN (pair cIX zero))
 /-- The purity call for the positive literal `(i, 1)`. -/
-private def cPack1 : Code := pair cInstN (pair cMaskN (pair cIX (constCode 1)))
+def cPack1 : Code := pair cInstN (pair cMaskN (pair cIX (constCode 1)))
 /-- Both verdicts computed and folded, alongside `i` and the untouched accumulator. -/
-private def cExpand : Code :=
+def cExpand : Code :=
   pair cIX (pair cAccX (pair (comp cFold (comp cPurity cPack0)) (comp cFold (comp cPurity cPack1))))
 
 private theorem val_cExpand (a i acc : ℕ) :
@@ -1504,55 +1509,55 @@ has already ANDed purity with the covering witness, so a verdict's first field i
 bit, not bare purity — the `IsP` in the names is historical. Primed names are the updated fields. -/
 
 /-- The accumulator. -/
-private def ccAcc : Code := comp left right
+def ccAcc : Code := comp left right
 /-- The verdict for the negative literal `(i, 0)`. -/
-private def ccV0 : Code := comp left (comp right right)
+def ccV0 : Code := comp left (comp right right)
 /-- The verdict for the positive literal `(i, 1)`. -/
-private def ccV1 : Code := comp right (comp right right)
+def ccV1 : Code := comp right (comp right right)
 /-- Has a literal been committed to yet? -/
-private def ccFound : Code := comp left ccAcc
+def ccFound : Code := comp left ccAcc
 /-- The committed feature index. -/
-private def ccJ : Code := comp left (comp right ccAcc)
+def ccJ : Code := comp left (comp right ccAcc)
 /-- The committed polarity bit. -/
-private def ccP : Code := comp left (comp right (comp right ccAcc))
+def ccP : Code := comp left (comp right (comp right ccAcc))
 /-- The committed common label. -/
-private def ccL : Code := comp right (comp right (comp right ccAcc))
+def ccL : Code := comp right (comp right (comp right ccAcc))
 /-- Covering-pick bit of the `(i, 0)` verdict: `coverLit` — `(i, 0)` is a pure literal covering
 ≥ 1 still-live row. This is the verdict's *first field*, which `cFold` has already ANDed purity with
 the covering witness into, so it reads the covering-pick bit, not bare purity. -/
-private def ccCover0 : Code := comp left ccV0
+def ccCover0 : Code := comp left ccV0
 /-- The common label `(i, 0)` would carry. -/
-private def ccLab0 : Code := comp right ccV0
+def ccLab0 : Code := comp right ccV0
 /-- Covering-pick bit of the `(i, 1)` verdict: `coverLit` — `(i, 1)` is a pure literal covering
 ≥ 1 still-live row. Its first field is the covering-pick bit (purity already ANDed with the covering
 witness by `cFold`), not bare purity. -/
-private def ccCover1 : Code := comp left ccV1
+def ccCover1 : Code := comp left ccV1
 /-- The common label `(i, 1)` would carry. -/
-private def ccLab1 : Code := comp right ccV1
+def ccLab1 : Code := comp right ccV1
 /-- Nothing committed yet. -/
-private def ccNF : Code := comp cNot ccFound
+def ccNF : Code := comp cNot ccFound
 /-- At least one of this round's two literals is a legal pick. -/
-private def ccAny : Code := comp cOr (pair ccCover0 ccCover1)
+def ccAny : Code := comp cOr (pair ccCover0 ccCover1)
 /-- This round commits: nothing found yet AND something is available. -/
-private def ccNew : Code := comp cAnd (pair ccNF ccAny)
+def ccNew : Code := comp cAnd (pair ccNF ccAny)
 /-- Commit to `(i, 0)`. -/
-private def ccC0 : Code := comp cAnd (pair ccNF ccCover0)
+def ccC0 : Code := comp cAnd (pair ccNF ccCover0)
 /-- Commit to `(i, 1)` — only when `(i, 0)` is unavailable, which is the "prefer `p = 0`" tie-break. -/
-private def ccC1 : Code := comp cAnd (pair (comp cAnd (pair ccNF ccCover1)) (comp cNot ccCover0))
+def ccC1 : Code := comp cAnd (pair (comp cAnd (pair ccNF ccCover1)) (comp cNot ccCover0))
 /-- Updated found flag. -/
-private def ccFound' : Code := comp cOr (pair ccFound ccAny)
+def ccFound' : Code := comp cOr (pair ccFound ccAny)
 /-- Updated feature index: this round's `i` if it commits, else the one already held. -/
-private def ccJ' : Code := comp cMux (pair (pair left ccJ) ccNew)
+def ccJ' : Code := comp cMux (pair (pair left ccJ) ccNew)
 /-- Polarity pinned to `0` when `(i, 0)` is the pick; otherwise the one already held. -/
-private def ccPin : Code := comp cMux (pair (pair zero ccP) ccC0)
+def ccPin : Code := comp cMux (pair (pair zero ccP) ccC0)
 /-- Updated polarity: `1` when `(i, 1)` is the pick, else `ccPin`. -/
-private def ccP' : Code := comp cMux (pair (pair (constCode 1) ccPin) ccC1)
+def ccP' : Code := comp cMux (pair (pair (constCode 1) ccPin) ccC1)
 /-- Whichever of the two candidate labels belongs to the literal being picked. -/
-private def ccChosen : Code := comp cMux (pair (pair ccLab1 ccLab0) ccC1)
+def ccChosen : Code := comp cMux (pair (pair ccLab1 ccLab0) ccC1)
 /-- Updated label: the chosen one if this round commits, else the one already held. -/
-private def ccL' : Code := comp cMux (pair (pair ccChosen ccL) ccNew)
+def ccL' : Code := comp cMux (pair (pair ccChosen ccL) ccNew)
 /-- The updated accumulator `⟨found, ⟨j, ⟨p, label⟩⟩⟩`. -/
-private def cCombine : Code := pair ccFound' (pair ccJ' (pair ccP' ccL'))
+def cCombine : Code := pair ccFound' (pair ccJ' (pair ccP' ccL'))
 
 private theorem val_cCombine (i acc v0 v1 : ℕ) :
     val cCombine (Nat.pair i (Nat.pair acc (Nat.pair v0 v1)))
@@ -1570,7 +1575,7 @@ private theorem val_cCombine (i acc v0 v1 : ℕ) :
   rfl
 
 /-- One greedy round: expand to both verdicts, then combine. -/
-private def cFlStep : Code := comp cCombine cExpand
+def cFlStep : Code := comp cCombine cExpand
 
 private theorem val_cFlStep (a i acc : ℕ) :
     val cFlStep (Nat.pair a (Nat.pair i acc)) = flStepFn (flInst a) (flMask a) i acc := by
@@ -1580,7 +1585,7 @@ private theorem val_cFlStep (a i acc : ℕ) :
   simp only [flVerdict_fst, flVerdict_snd]
 
 /-- Base code: the constant zero accumulator `⟨0, ⟨0, ⟨0, 0⟩⟩⟩`. -/
-private def cFlInit : Code := pair zero (pair zero (pair zero zero))
+def cFlInit : Code := pair zero (pair zero (pair zero zero))
 private theorem val_cFlInit (N : ℕ) : val cFlInit N = Nat.pair 0 (Nat.pair 0 (Nat.pair 0 0)) := by
   simp only [cFlInit, val_pair, val_zero]
 
@@ -1650,10 +1655,10 @@ private theorem flSound (N : ℕ) : ∀ t, flFound (flAcc N t) ≠ 0 →
               (bNot (coverLit inst mask k 0)) ≠ 0 := by
             rw [hbnot, hp0, bAnd_ne_zero, bAnd_ne_zero]
             exact ⟨⟨one_ne_zero, hp1⟩, by decide⟩
-          have hJ : flJ (flStepFn inst mask k acc) = k := by rw [flJ_step, if_neg hnew]
-          have hP : flP (flStepFn inst mask k acc) = 1 := by rw [flP_step, if_neg hc1]
+          have hJ : flJ (flStepFn inst mask k acc) = k := by rw [flJ_step, ite_eq_right hnew]
+          have hP : flP (flStepFn inst mask k acc) = 1 := by rw [flP_step, ite_eq_right hc1]
           have hL : flL (flStepFn inst mask k acc) = litLabel inst mask k 1 := by
-            rw [flL_step, if_neg hnew, if_neg hc1]
+            rw [flL_step, ite_eq_right hnew, ite_eq_right hc1]
           rw [hJ, hP, hL]
           exact ⟨Nat.lt_succ_self k, le_refl 1, hp1, rfl⟩
         · -- commit p = 0
@@ -1662,10 +1667,11 @@ private theorem flSound (N : ℕ) : ∀ t, flFound (flAcc N t) ≠ 0 →
           have hc1 : bAnd (bAnd (bNot (flFound acc)) (coverLit inst mask k 1))
               (bNot (coverLit inst mask k 0)) = 0 := by
             rw [bAnd_eq_zero]; exact Or.inr (bNot_pos_of_ne hp0)
-          have hJ : flJ (flStepFn inst mask k acc) = k := by rw [flJ_step, if_neg hnew]
-          have hP : flP (flStepFn inst mask k acc) = 0 := by rw [flP_step, if_pos hc1, if_neg hc0]
+          have hJ : flJ (flStepFn inst mask k acc) = k := by rw [flJ_step, ite_eq_right hnew]
+          have hP : flP (flStepFn inst mask k acc) = 0 := by
+            rw [flP_step, ite_eq_left hc1, ite_eq_right hc0]
           have hL : flL (flStepFn inst mask k acc) = litLabel inst mask k 0 := by
-            rw [flL_step, if_neg hnew, if_pos hc1]
+            rw [flL_step, ite_eq_right hnew, ite_eq_left hc1]
           rw [hJ, hP, hL]
           exact ⟨Nat.lt_succ_self k, Nat.zero_le 1, hp0, rfl⟩
       · -- already found: freeze and reuse ih
@@ -1678,10 +1684,10 @@ private theorem flSound (N : ℕ) : ∀ t, flFound (flAcc N t) ≠ 0 →
         have hc1 : bAnd (bAnd (bNot (flFound acc)) (coverLit inst mask k 1))
             (bNot (coverLit inst mask k 0)) = 0 := by
           rw [bAnd_eq_zero]; exact Or.inl (by rw [bAnd_eq_zero]; exact Or.inl hbnot0)
-        have hJ : flJ (flStepFn inst mask k acc) = flJ acc := by rw [flJ_step, if_pos hnew0]
+        have hJ : flJ (flStepFn inst mask k acc) = flJ acc := by rw [flJ_step, ite_eq_left hnew0]
         have hP : flP (flStepFn inst mask k acc) = flP acc := by
-          rw [flP_step, if_pos hc1, if_pos hc0]
-        have hL : flL (flStepFn inst mask k acc) = flL acc := by rw [flL_step, if_pos hnew0]
+          rw [flP_step, ite_eq_left hc1, ite_eq_left hc0]
+        have hL : flL (flStepFn inst mask k acc) = flL acc := by rw [flL_step, ite_eq_left hnew0]
         rw [hJ, hP, hL]
         obtain ⟨h1, h2, h3, h4⟩ := ih hf
         exact ⟨Nat.lt_succ_of_lt h1, h2, h3, h4⟩
@@ -1689,7 +1695,7 @@ private theorem flSound (N : ℕ) : ∀ t, flFound (flAcc N t) ≠ 0 →
 /-! ### The assembled `findLit` and its top-level correctness -/
 
 /-- The literal count `readK (flInst N)`. -/
-private def cFlCount : Code := comp left left
+def cFlCount : Code := comp left left
 private theorem val_cFlCount (N : ℕ) : val cFlCount N = readK (flInst N) := by
   simp only [cFlCount, val_comp, val_left, readK, flInst]
 /-- **`findLit`'s code**: run the greedy scan `readK inst` rounds. -/
@@ -2047,50 +2053,50 @@ private def svStepFn (inst _i acc : ℕ) : ℕ :=
 the round pays for the literal scan once. -/
 
 /-- The instance. -/
-private def cSinst : Code := comp left left
+def cSinst : Code := comp left left
 /-- The accumulator. -/
-private def cSacc : Code := comp right right
+def cSacc : Code := comp right right
 /-- The working mask, out of the accumulator. -/
-private def cSmask : Code := comp left cSacc
+def cSmask : Code := comp left cSacc
 /-- Stage A assembled: the instance, the accumulator, and this round's literal. -/
-private def cSvA : Code := pair cSinst (pair cSacc (comp cFindLit (pair cSinst cSmask)))
+def cSvA : Code := pair cSinst (pair cSacc (comp cFindLit (pair cSinst cSmask)))
 
 /-! Stage B: from `⟨inst, ⟨acc, lit⟩⟩` build the new accumulator — one `maskUpdate`, then a single
 mux over the whole accumulator on whether a literal was found. The `cB*` names project the three
 components and their fields; `cBupd` is the found-branch accumulator. -/
 
 /-- The instance. -/
-private def cBi : Code := left
+def cBi : Code := left
 /-- The accumulator. -/
-private def cBa : Code := comp left right
+def cBa : Code := comp left right
 /-- This round's literal. -/
-private def cBl : Code := comp right right
+def cBl : Code := comp right right
 /-- The working mask. -/
-private def cBm : Code := comp left cBa
+def cBm : Code := comp left cBa
 /-- Was a covering literal found this round? -/
-private def cBf : Code := comp left cBl
+def cBf : Code := comp left cBl
 /-- The literal's feature index. -/
-private def cBj : Code := comp left (comp right cBl)
+def cBj : Code := comp left (comp right cBl)
 /-- The literal's polarity bit. -/
-private def cBp : Code := comp left (comp right (comp right cBl))
+def cBp : Code := comp left (comp right (comp right cBl))
 /-- The literal's common label. -/
-private def cBlbl : Code := comp right (comp right (comp right cBl))
+def cBlbl : Code := comp right (comp right (comp right cBl))
 /-- The rule count. -/
-private def cBcnt : Code := comp left (comp right cBa)
+def cBcnt : Code := comp left (comp right cBa)
 /-- The output list so far. -/
-private def cBdl : Code := comp right (comp right cBa)
+def cBdl : Code := comp right (comp right cBa)
 /-- The mask refined by the found literal — the examples it covers drop out. -/
-private def cBmu : Code := comp cMaskUpdate (pair cBi (pair cBm (pair cBj cBp)))
+def cBmu : Code := comp cMaskUpdate (pair cBi (pair cBm (pair cBj cBp)))
 /-- The emitted rule `⟨j, ⟨p, label⟩⟩`. -/
-private def cBtriple : Code := pair cBj (pair cBp cBlbl)
+def cBtriple : Code := pair cBj (pair cBp cBlbl)
 /-- The rule prepended to the output list, as a flag-cons cell. -/
-private def cBcons : Code := pair (constCode 1) (pair cBtriple cBdl)
+def cBcons : Code := pair (constCode 1) (pair cBtriple cBdl)
 /-- The bumped rule count. -/
-private def cBcntsucc : Code := comp succ cBcnt
+def cBcntsucc : Code := comp succ cBcnt
 /-- The found-branch accumulator: refined mask, bumped count, extended list. -/
-private def cBupd : Code := pair cBmu (pair cBcntsucc cBcons)
+def cBupd : Code := pair cBmu (pair cBcntsucc cBcons)
 /-- Stage B assembled: take `cBupd` if a literal was found, else freeze the accumulator. -/
-private def cSvB : Code := comp cMux (pair (pair cBupd cBa) cBf)
+def cSvB : Code := comp cMux (pair (pair cBupd cBa) cBf)
 /-- One greedy round: stage A then stage B. -/
 def cSvStep : Code := comp cSvB cSvA
 
@@ -2132,17 +2138,17 @@ private theorem svAcc_succ (n t : ℕ) : svAcc n (t + 1) = svStepFn (svInst n) t
   unfold svAcc; rw [val_prec_succ, val_cSvStep]
 
 /-- The round budget `readM inst` — one round per example. -/
-private def cSvCount : Code := comp cReadM left
+def cSvCount : Code := comp cReadM left
 private theorem val_cSvCount (n : ℕ) : val cSvCount n = readM (svInst n) := by
   simp only [cSvCount, val_comp, val_cReadM, val_left, svInst]
 /-- The greedy loop: `readM inst` rounds of `cSvStep` from `cSvInit`. -/
-private def cSvLoop : Code := comp (prec cSvInit cSvStep) (pair cId cSvCount)
+def cSvLoop : Code := comp (prec cSvInit cSvStep) (pair cId cSvCount)
 private theorem val_cSvLoop (n : ℕ) : val cSvLoop n = svAcc n (readM (svInst n)) := by
   rw [cSvLoop, val_comp, val_pair, val_cId, val_cSvCount]; rfl
 
 /-- The final `cReverse` (length `cnt`) turns the prepend-order list forward and repackages
 `⟨finalMask, forwardDL⟩`. -/
-private def cAssemble : Code := pair left (comp cReverse (pair (comp right right) (comp left right)))
+def cAssemble : Code := pair left (comp cReverse (pair (comp right right) (comp left right)))
 private theorem val_cAssemble (acc : ℕ) :
     val cAssemble acc = Nat.pair (svMask acc) (val cReverse (Nat.pair (svDL acc) (svCnt acc))) := by
   simp only [cAssemble, val_pair, val_comp, val_left, val_right, svMask, svDL, svCnt]
@@ -2746,7 +2752,7 @@ private theorem evalDLn_not_fires (D : List ℕ) (d e : ℕ)
   induction D with
   | nil => rfl
   | cons r rs ih =>
-      rw [evalDLn, if_pos (h r (List.mem_cons_self ..))]
+      rw [evalDLn, ite_eq_left (h r (List.mem_cons_self ..))]
       exact ih (fun r' hr' => h r' (List.mem_cons_of_mem _ hr'))
 
 /-- A firing rule makes evaluation default-independent. -/
@@ -2899,7 +2905,7 @@ theorem progress (inst mask : ℕ) (hk : 0 < readK inst)
       have hev := hcons be hbe hact
       rw [hsplit, evalDLn_append,
         evalDLn_not_fires pre _ be.2 (hpre0 be hbe hact),
-        evalDLn, if_neg hfire] at hev
+        evalDLn, ite_eq_right hfire] at hev
       exact hev.symm
   · -- Case A: no rule fires on any remaining example ⇒ monochromatic (= default)
     obtain ⟨be0, hbe0, hbe0act⟩ := hne
@@ -3004,7 +3010,7 @@ private theorem corrInvD_fire (inst : ℕ) (hw : WFBits inst) (M : ℕ) (hm : Ma
       · rw [evalDLn_append, evalDLn_not_fires D _ exi (fun r hr => by
           by_contra hz
           exact hkeep ⟨r, hr, hz⟩)]
-        rw [evalDLn, htrfire, if_neg hf, hrl, hexi_ex, hlbleq, hl]
+        rw [evalDLn, htrfire, ite_eq_right hf, hrl, hexi_ex, hlbleq, hl]
 
 /-- **The round-invariant, assembled.** After `t` rounds the emitted forward DL `D` (valid indices) and
 the working mask `svMask (svAcc n t)` satisfy `CorrInvD` — provided the loop STARTED from the all-ones
@@ -3308,7 +3314,7 @@ theorem activeCount_bound (n : ℕ) (hw : WFBits (svInst n)) (hk : 0 < readK (sv
       intro hemp i hi
       have hnf := not_fire_of_allZero n k hw hm0 hemp
       have hfix : svMask (svAcc n (k + 1)) = svMask (svAcc n k) := by
-        rw [svAcc_succ]; unfold svStepFn; rw [if_pos hnf]
+        rw [svAcc_succ]; unfold svStepFn; rw [ite_eq_left hnf]
       rw [hfix]; exact hemp i hi
     rcases ih with hL | hR
     · by_cases hemp : ∀ i, i < readM (svInst n) → headL (peel (svMask (svAcc n k)) i) = 0

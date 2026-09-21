@@ -3,11 +3,13 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.TimeCost
-import Mathlib.Data.Nat.Size
-import Mathlib.Tactic.NormNum
-import Mathlib.Tactic.Positivity
-import Mathlib.Tactic.Ring
+module
+
+public import ALT.TimeCost
+public import Mathlib.Data.Nat.Size
+public import Mathlib.Tactic.NormNum
+public import Mathlib.Tactic.Positivity
+public import Mathlib.Tactic.Ring
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -128,6 +130,9 @@ One auxiliary fact about `Nat.Partrec.Code.eval` is proved on the way and is of 
 offset — into the one-probe recurrence the machine actually implements.
 -/
 
+
+@[expose] public section
+
 namespace BoundedInterp
 
 open Nat.Partrec (Code)
@@ -160,12 +165,12 @@ def trailOnes : ℕ → ℕ
 private theorem trailOnes_even {n : ℕ} (h : n % 2 = 0) : trailOnes n = 0 := by
   cases n with
   | zero => simp [trailOnes]
-  | succ m => rw [trailOnes, if_neg (by omega)]
+  | succ m => rw [trailOnes, ite_eq_right (by omega)]
 
 private theorem trailOnes_odd {n : ℕ} (h : n % 2 = 1) : trailOnes n = trailOnes (n / 2) + 1 := by
   cases n with
   | zero => omega
-  | succ m => rw [trailOnes, if_pos h]
+  | succ m => rw [trailOnes, ite_eq_left h]
 
 /-- **The header reads back its own length.** A numeral whose bottom is `L` ones followed by a zero
 bit reports header length `L`, whatever sits above. -/
@@ -619,7 +624,7 @@ private theorem stackDenote_cons (f k v : ℕ) :
                          ((frPay f).unpair.2.unpair.2 + 1))).bind (stackDenote k)
         | _ => Part.none) := by
   rw [stackDenote]
-  simp only [stkIsCons_cons, stkHead_cons, stkTail_cons, dif_pos]
+  simp only [stkIsCons_cons, stkHead_cons, stkTail_cons, dite_eq_left]
 
 /-- **The denotation of a configuration**: what the whole remaining computation will produce. -/
 private def denote (s : ℕ) : Part ℕ :=
@@ -684,7 +689,7 @@ theorem eval_rfind'_unfold (cf : Code) (a m : ℕ) :
     | succ n' =>
         obtain ⟨w, hw, hwne⟩ := probe_false.1 (hmin (Nat.succ_pos n'))
         refine ⟨w, by simpa using hw, ?_⟩
-        rw [if_neg hwne, hev (m + 1), Part.mem_map_iff]
+        rw [ite_eq_right hwne, hev (m + 1), Part.mem_map_iff]
         refine ⟨n', ?_, by omega⟩
         apply Nat.mem_rfind.mpr
         refine ⟨probe_true.2 ?_, ?_⟩
@@ -697,14 +702,14 @@ theorem eval_rfind'_unfold (cf : Code) (a m : ℕ) :
   · rintro ⟨v, hv, hx⟩
     by_cases hv0 : v = 0
     · subst hv0
-      rw [if_pos rfl, Part.mem_some_iff] at hx
+      rw [ite_eq_left rfl, Part.mem_some_iff] at hx
       subst hx
       refine ⟨0, ?_, by omega⟩
       apply Nat.mem_rfind.mpr
       refine ⟨probe_true.2 (by simpa using hv), ?_⟩
       intro i hi
       exact absurd hi (Nat.not_lt_zero i)
-    · rw [if_neg hv0, hev (m + 1), Part.mem_map_iff] at hx
+    · rw [ite_eq_right hv0, hev (m + 1), Part.mem_map_iff] at hx
       obtain ⟨n', hn', rfl⟩ := hx
       obtain ⟨hspec, hmin⟩ := Nat.mem_rfind.mp hn'
       refine ⟨n' + 1, ?_, by omega⟩
@@ -843,14 +848,14 @@ private theorem denote_stepReturn (v f k : ℕ) :
     cases rr with
     | zero => simp [stepReturn, ht, hp]
     | succ r =>
-        simp only [stepReturn, ht, hp, Nat.unpair_pair, Nat.succ_ne_zero, if_false,
+        simp only [stepReturn, ht, hp, Nat.unpair_pair, Nat.succ_ne_zero, ite_false,
           Nat.succ_sub_one, denote_descend, precLoop_succ, Part.bind_assoc]
         refine bind_congr_right fun w => ?_
         rw [stackDenote_cons]
         simp only [frTag_frame, frPay_frame, Nat.unpair_pair]
   · by_cases hv : v = 0
     · simp [stepReturn, ht, hv]
-    · simp only [stepReturn, ht, if_neg hv, denote_descend]
+    · simp only [stepReturn, ht, ite_eq_right hv, denote_descend]
       rw [rfind_frame_bind (frPay f).unpair.1 (frPay f).unpair.2.unpair.1
         ((frPay f).unpair.2.unpair.2 + 1) k]
   · simp only [stepReturn, ht, denote_ret, stackDenote_cons]
@@ -863,12 +868,12 @@ private theorem step_denote (s : ℕ) : denote (stepUFn s) = denote s := by
   · by_cases hm : cfMode s = 0
     · have hstep : stepUFn s = stepDescend (cfCur s).unpair.1 (cfCur s).unpair.2 (cfStk s) := by
         simp [stepUFn, hh, hm]
-      rw [hstep, denote_stepDescend, denote, if_pos hm]
+      rw [hstep, denote_stepDescend, denote, ite_eq_left hm]
     · by_cases hc : stkIsCons (cfStk s) = true
       · have hstep : stepUFn s =
             stepReturn (cfCur s) (stkHead (cfStk s)) (stkTail (cfStk s)) := by
           simp [stepUFn, hh, hm, hc]
-        rw [hstep, denote_stepReturn, stkCons_head_tail hc, denote, if_neg hm]
+        rw [hstep, denote_stepReturn, stkCons_head_tail hc, denote, ite_eq_right hm]
       · have hstep : stepUFn s = s := by
           simp [stepUFn, hh, hm, hc]
         rw [hstep]
@@ -894,7 +899,7 @@ theorem machine_sound (p x : ℕ) {tau : ℕ} (h : isHalt (stepUFn^[tau] (initCo
   set s := stepUFn^[tau] (initConfig p x) with hs
   obtain ⟨hmode1, hstk0⟩ : cfMode s = 1 ∧ cfStk s = 0 := by simpa [isHalt] using h
   have hden : denote s = Part.some (haltVal s) := by
-    rw [denote, if_neg (by omega : ¬ cfMode s = 0), hstk0, stackDenote_zero, haltVal]
+    rw [denote, ite_eq_right (by omega : ¬ cfMode s = 0), hstk0, stackDenote_zero, haltVal]
   have hinit : denote (initConfig p x) = eval (Denumerable.ofNat Code p) x := by
     apply Part.ext
     intro y
@@ -1281,14 +1286,14 @@ private theorem configOK_stepReturn {v f k D : ℕ}
     rw [framePend_tag3 (by simpa using ht), hp, Nat.unpair_pair] at hf
     cases rr with
     | zero =>
-        exact ⟨by simp only [stepReturn, ht, hp, Nat.unpair_pair, if_true, cfStk_ret,
+        exact ⟨by simp only [stepReturn, ht, hp, Nat.unpair_pair, ite_true, cfStk_ret,
                     pendingDepth_ret]
                   omega,
-          by simpa only [stepReturn, ht, hp, Nat.unpair_pair, eq_self_iff_true, if_true,
+          by simpa only [stepReturn, ht, hp, Nat.unpair_pair, eq_self_iff_true, ite_true,
                 cfStk_ret] using hs⟩
     | succ r =>
         refine ⟨?_, ?_⟩ <;>
-          simp only [stepReturn, ht, hp, Nat.unpair_pair, Nat.succ_ne_zero, if_false,
+          simp only [stepReturn, ht, hp, Nat.unpair_pair, Nat.succ_ne_zero, ite_false,
             Nat.succ_sub_one, cfStk_descend, pendingDepth_descend, stkDepth_cons, stackOK_cons,
             framePend, frTag_frame, frPay_frame]
         · omega
@@ -1299,13 +1304,13 @@ private theorem configOK_stepReturn {v f k D : ℕ}
         simp [Nat.pair_unpair]⟩
     rw [framePend_tag4 (by simpa using ht), hp, Nat.unpair_pair] at hf
     by_cases hv : v = 0
-    · exact ⟨by simp only [stepReturn, ht, hp, hv, Nat.unpair_pair, if_true, cfStk_ret,
+    · exact ⟨by simp only [stepReturn, ht, hp, hv, Nat.unpair_pair, ite_true, cfStk_ret,
                   pendingDepth_ret]
                 omega,
-        by simpa only [stepReturn, ht, hp, hv, Nat.unpair_pair, eq_self_iff_true, if_true,
+        by simpa only [stepReturn, ht, hp, hv, Nat.unpair_pair, eq_self_iff_true, ite_true,
               cfStk_ret] using hs⟩
     · refine ⟨?_, ?_⟩ <;>
-        simp only [stepReturn, ht, hp, hv, if_false, Nat.unpair_pair, cfStk_descend,
+        simp only [stepReturn, ht, hp, hv, ite_false, Nat.unpair_pair, cfStk_descend,
           pendingDepth_descend, stkDepth_cons, stackOK_cons, framePend, frTag_frame, frPay_frame]
       · omega
       · exact ⟨by omega, hs⟩
@@ -1329,7 +1334,7 @@ private theorem configOK_step {s D : ℕ} (h : ConfigOK s D) : ConfigOK (stepUFn
             stepReturn (cfCur s) (stkHead (cfStk s)) (stkTail (cfStk s)) := by
           simp [stepUFn, hh, hm, hc]
         have hok := h.2
-        rw [StackOK, dif_pos hc] at hok
+        rw [StackOK, dite_eq_left hc] at hok
         rw [hstep]
         exact configOK_stepReturn hok.1 hok.2
       · have hstep : stepUFn s = s := by simp [stepUFn, hh, hm, hc]
@@ -1654,7 +1659,7 @@ private theorem evaln_reaches : ∀ (K : ℕ) (c : Code) (n x : ℕ), x ∈ eval
             simp at hx
             subst hx
             exact Reaches.head (step_ret_search_found _ _ _ _) (Reaches.refl _)
-          · rw [if_neg hu0] at hx
+          · rw [ite_eq_right hu0] at hx
             refine Reaches.head (step_ret_search_again hu0 _ _ _ _) ?_
             have hrun := ih (Code.rfind' cf) (Nat.pair a (m + 1)) x hx stk
             exact Reaches.tail (step_rfind' cf a (m + 1) stk) (descend_ne_ret _ _ _ _ _) hrun

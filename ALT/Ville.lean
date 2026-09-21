@@ -3,11 +3,16 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.Probability.Martingale.OptionalStopping
+module
+
+public import Mathlib.Probability.Martingale.OptionalStopping
 
 -- Ville's inequality for non-negative supermartingales (FV-G hardening; a genuine Mathlib gap).
 -- Complete proofs, no `sorry`; wired into ALT.lean and axiom-guarded in AxiomAuditMathlib.lean.
 set_option linter.style.header false
+
+
+@[expose] public section
 
 open MeasureTheory Filter Topology
 open scoped ProbabilityTheory
@@ -32,7 +37,8 @@ theorem ville_inequality [IsFiniteMeasure μ]
     -- STEP 1 (optional stopping): 𝔼[stoppedValue Z τ_N] ≤ 𝔼[Z 0].
     have h1 : μ[stoppedValue Z τN] ≤ μ[Z 0] := by
       have key := (hsuper.neg).expected_stoppedValue_mono (isStoppingTime_const ℱ 0) hπN
-        (fun _ => zero_le) (fun ω => by simp only [hτN]; exact_mod_cast hittingBtwn_le (u := Z) ω)
+        (fun _ => zero_le) (fun ω => by
+          simp only [hτN]; exact Nat.cast_le.mpr (hittingBtwn_le (u := Z) ω))
       have e2 : stoppedValue (-Z) τN = -stoppedValue Z τN := by
         funext ω; simp [stoppedValue, Pi.neg_apply]
       simp only [stoppedValue_const, e2, Pi.neg_apply, integral_neg] at key

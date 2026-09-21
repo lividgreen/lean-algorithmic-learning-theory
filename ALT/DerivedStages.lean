@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.MemoryWidth
+module
+
+public import ALT.MemoryWidth
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -39,6 +41,9 @@ The bound is a profile fact: it consumes no antichain structure, so it says noth
 the cap is attained or how far below it the true width sits at a particular update — `[grade B]`
 (`ExtremeTapWidth.lean`) is where a concrete update's width is computed exactly.
 -/
+
+
+@[expose] public section
 
 namespace DerivedStages
 

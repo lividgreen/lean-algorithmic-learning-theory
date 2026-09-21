@@ -3,183 +3,198 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.AccretingExcess
-import ALT.AccretingWitness
-import ALT.AccretiveDecoupling
-import ALT.AdditiveComplexity
-import ALT.AlgorithmicProbability
-import ALT.AxiomAuditFoundation
-import ALT.AxiomAuditMathlib
-import ALT.BasinSettling
-import ALT.BayesRedundancy
-import ALT.BinaryConstant
-import ALT.BinaryKraft
-import ALT.Birkhoff.AxiomAudit
-import ALT.Birkhoff.PointwiseBirkhoff
-import ALT.BirkhoffTool
-import ALT.BitStringPrimrec
-import ALT.BlockPairCriterion
-import ALT.BlockPairFamilyCriterion
-import ALT.BlockPairHost
-import ALT.BlockPairObservability
-import ALT.BlockPairOverlap
-import ALT.BlockPairPrice
-import ALT.BlockPairProfile
-import ALT.BlockPairTower
-import ALT.BlockPairWitness
-import ALT.BoundedInterp
-import ALT.CanonicalFormLens
-import ALT.CapacityBoundedEval
-import ALT.CapacityLayer
-import ALT.CapacityThreshold
-import ALT.CartesianClosed
-import ALT.CategoricalThreshold
-import ALT.ChainDependencyAudit
-import ALT.ChaitinIncompleteness
-import ALT.ChaitinLadder
-import ALT.CheckerWorkspace
-import ALT.ChengCCC
-import ALT.Code.BitGates
-import ALT.Code.EvalLaws
-import ALT.Code.SizeArith
-import ALT.CodeArith
-import ALT.CodeDataRate
-import ALT.CodePacking
-import ALT.CodingTheorem
-import ALT.CodingTheoremBitwise
-import ALT.CodingTheoremDecoder
-import ALT.CodingTheoremWeak
-import ALT.Collector
-import ALT.CommitmentSeam
-import ALT.ConjunctionPredictor
-import ALT.ConjunctionSolver
-import ALT.CountableDiscovery
-import ALT.CounterLearner
-import ALT.DamageGate
-import ALT.DecisionListData
-import ALT.DecisionListPredictor
-import ALT.DecisionListSolver
-import ALT.DecoupledSimulation
-import ALT.Decoupling
-import ALT.DeepLadder
-import ALT.DerivedStages
-import ALT.DeterministicDiscovery
-import ALT.EpsilonZeroBound
-import ALT.EvoAbsorption
-import ALT.ExcessOrder
-import ALT.ExcessOrderComplete
-import ALT.ExpensiveLens
-import ALT.ExtensionalDiscovery
-import ALT.ExtremeTapWidth
-import ALT.FiniteHorizonDiscovery
-import ALT.FiniteInfoTheory
-import ALT.FiniteWorldWidth
-import ALT.FixedLensCriterion
-import ALT.FlooredMixture
-import ALT.FrameItinerary
-import ALT.GodelChecker
-import ALT.GodelCheckerAutomaton
-import ALT.GodelCheckerComplete
-import ALT.GodelComplete
-import ALT.GodelCore
-import ALT.GodelInternalization
-import ALT.GodelThreshold
-import ALT.GradeTransport
-import ALT.GradedApplication
-import ALT.GradedConjugation
-import ALT.GradedSimulation
-import ALT.GrowingComposite
-import ALT.GrowingCore
-import ALT.GrowingCoreCrossing
-import ALT.GrowingHostWitness
-import ALT.GrowingPrice
-import ALT.GrowingSeamWitness
-import ALT.GrowingWorld
-import ALT.GrunwaldMehtaDiscovery
-import ALT.HellingerBridge
-import ALT.KReconnection
-import ALT.KolmogorovBitlen
-import ALT.KolmogorovComplexity
-import ALT.KolmogorovTimeBounded
-import ALT.KraftChaitin
-import ALT.LearningWitness
-import ALT.LearningWitnessComplete
-import ALT.LogMassEvent
-import ALT.MDLCoding
-import ALT.MDLDominance
-import ALT.MarkovHoeffding
-import ALT.MemoryWidth
-import ALT.MinimalityWitness
-import ALT.NoisyWindowChain
-import ALT.ParameterizedNNO
-import ALT.ParityCounterexample
-import ALT.ParityWalk
-import ALT.PeriodicObservability
-import ALT.Persistence.Core
-import ALT.Persistence.Counting
-import ALT.Persistence.MovingLens
-import ALT.Persistence.Robustness
-import ALT.PersistenceCapacity
-import ALT.PersistentWalk
-import ALT.PolyTime
-import ALT.PolyTimeAccounting
-import ALT.PrefixComplexity
-import ALT.PrefixInvariance
-import ALT.PrefixMachine
-import ALT.PriorNormalization
-import ALT.QuantizationRate
-import ALT.ReadingWord
-import ALT.Realizability
-import ALT.RealizabilityCCC
-import ALT.RealizabilityCoproduct
-import ALT.RealizabilityRecursor
-import ALT.RealizabilitySubobject
-import ALT.RealizerLength
-import ALT.RecursorAlgebra
-import ALT.RedundantFiber
-import ALT.Reflective
-import ALT.ReflectiveAutomaton
-import ALT.RegimeConsistency
-import ALT.RepFintype
-import ALT.RetentionOverhead
-import ALT.RetentionUpperBound
-import ALT.SQAlgorithm
-import ALT.SQEnvelope
-import ALT.SQMixtureSupermartingale
-import ALT.SQObjects
-import ALT.SQOracle
-import ALT.SQPredictiveTransfer
-import ALT.SQPrunedMass
-import ALT.SQSearchPhaseMass
-import ALT.SQVersionSpace
-import ALT.SampleComplexity
-import ALT.SearchCost
-import ALT.SearchSpace
-import ALT.ShiftedSpikeCriterion
-import ALT.ShiftedSpikeHost
-import ALT.ShiftedSpikeTower
-import ALT.SkewFiber
-import ALT.StructureFunction
-import ALT.SubstitutionClass
-import ALT.SubstitutionComposite
-import ALT.SubstitutionSchedule
-import ALT.SubstitutionSource
-import ALT.SubstrateClass
-import ALT.SubstrateEmergence
-import ALT.SurpriseBudget
-import ALT.TapeHost
-import ALT.TapeHostFiber
-import ALT.TapeHostObservability
-import ALT.TapeHostOverlap
-import ALT.TapeHostSchedule
-import ALT.TapeHostSurvival
-import ALT.TapeHostWitness
-import ALT.TimeCost
-import ALT.UniversalAt
-import ALT.Ville
-import ALT.WeightedFiber
-import ALT.WindowDeterminism
-import ALT.WitnessMixture
+module
+
+public import ALT.AccretingExcess
+public import ALT.AccretingWitness
+public import ALT.AccretiveDecoupling
+public import ALT.AdditiveComplexity
+public import ALT.AlgorithmicProbability
+public import ALT.AxiomAuditFoundation
+public import ALT.AxiomAuditMathlib
+public import ALT.BasinSettling
+public import ALT.BayesRedundancy
+public import ALT.BinaryConstant
+public import ALT.BinaryKraft
+public import ALT.Birkhoff.AxiomAudit
+public import ALT.Birkhoff.PointwiseBirkhoff
+public import ALT.BirkhoffTool
+public import ALT.BitStringPrimrec
+public import ALT.BlockPairCriterion
+public import ALT.BlockPairFamilyCriterion
+public import ALT.BlockPairHost
+public import ALT.BlockPairObservability
+public import ALT.BlockPairOverlap
+public import ALT.BlockPairPrice
+public import ALT.BlockPairProfile
+public import ALT.BlockPairTower
+public import ALT.BlockPairWitness
+public import ALT.BoundedInterp
+public import ALT.CanonicalFormLens
+public import ALT.CapacityBoundedEval
+public import ALT.CapacityLayer
+public import ALT.CapacityThreshold
+public import ALT.CartesianClosed
+public import ALT.CategoricalThreshold
+public import ALT.ChainDependencyAudit
+public import ALT.ChaitinIncompleteness
+public import ALT.ChaitinLadder
+public import ALT.ChaitinPrefix
+public import ALT.ChaitinPrefixLadder
+public import ALT.CheckerWorkspace
+public import ALT.ChengCCC
+public import ALT.Code.BitGates
+public import ALT.Code.EvalLaws
+public import ALT.Code.SizeArith
+public import ALT.CodeArith
+public import ALT.CodeDataRate
+public import ALT.CodePacking
+public import ALT.CodingTheorem
+public import ALT.CodingTheoremBitwise
+public import ALT.CodingTheoremDecoder
+public import ALT.CodingTheoremWeak
+public import ALT.Collector
+public import ALT.CommitmentSeam
+public import ALT.ConjunctionPredictor
+public import ALT.ConjunctionSolver
+public import ALT.CountableDiscovery
+public import ALT.CounterLearner
+public import ALT.DamageGate
+public import ALT.DecisionListData
+public import ALT.DecisionListPredictor
+public import ALT.DecisionListSolver
+public import ALT.DecoupledSimulation
+public import ALT.Decoupling
+public import ALT.DeepLadder
+public import ALT.DerivedStages
+public import ALT.DeterministicDiscovery
+public import ALT.EpsilonZeroBound
+public import ALT.EvoAbsorption
+public import ALT.ExcessOrder
+public import ALT.ExcessOrderComplete
+public import ALT.ExpensiveLens
+public import ALT.ExtensionalDiscovery
+public import ALT.ExtremeTapWidth
+public import ALT.FiniteHorizonDiscovery
+public import ALT.FiniteInfoTheory
+public import ALT.FiniteWorldWidth
+public import ALT.FixedLensCriterion
+public import ALT.FlooredMixture
+public import ALT.FrameItinerary
+public import ALT.GodelChecker
+public import ALT.GodelCheckerAutomaton
+public import ALT.GodelCheckerComplete
+public import ALT.GodelComplete
+public import ALT.GodelCore
+public import ALT.GodelInternalization
+public import ALT.GodelThreshold
+public import ALT.GradeTransport
+public import ALT.GradedApplication
+public import ALT.GradedConjugation
+public import ALT.GradedSimulation
+public import ALT.GrowingComposite
+public import ALT.GrowingCore
+public import ALT.GrowingCoreCrossing
+public import ALT.GrowingHostWitness
+public import ALT.GrowingPrice
+public import ALT.GrowingSeamWitness
+public import ALT.GrowingWidth
+public import ALT.GrowingWorld
+public import ALT.GrunwaldMehtaDiscovery
+public import ALT.HellingerBridge
+public import ALT.IndexCost
+public import ALT.KBEnumerable
+public import ALT.KReconnection
+public import ALT.KolmogorovBitlen
+public import ALT.KolmogorovComplexity
+public import ALT.KolmogorovTimeBounded
+public import ALT.KraftChaitin
+public import ALT.KraftMinimality
+public import ALT.LearningWitness
+public import ALT.LearningWitnessComplete
+public import ALT.LightConeWidth
+public import ALT.LogMassEvent
+public import ALT.MDLCoding
+public import ALT.MDLDominance
+public import ALT.MarkovHoeffding
+public import ALT.MemoryWidth
+public import ALT.MinimalityWitness
+public import ALT.NoisyWindowChain
+public import ALT.ParameterizedNNO
+public import ALT.ParityCounterexample
+public import ALT.ParityWalk
+public import ALT.PeriodicObservability
+public import ALT.Persistence.Core
+public import ALT.Persistence.Counting
+public import ALT.Persistence.MovingLens
+public import ALT.Persistence.Robustness
+public import ALT.PersistenceCapacity
+public import ALT.PersistentWalk
+public import ALT.PolyTime
+public import ALT.PolyTimeAccounting
+public import ALT.PrefixComplexity
+public import ALT.PrefixCounting
+public import ALT.PrefixEliasKB
+public import ALT.PrefixInvariance
+public import ALT.PrefixInvarianceKB
+public import ALT.PrefixMachine
+public import ALT.PrefixModelCost
+public import ALT.PrefixPairKB
+public import ALT.PriorNormalization
+public import ALT.QuantizationRate
+public import ALT.ReadingWord
+public import ALT.Realizability
+public import ALT.RealizabilityCCC
+public import ALT.RealizabilityCoproduct
+public import ALT.RealizabilityRecursor
+public import ALT.RealizabilitySubobject
+public import ALT.RealizerLength
+public import ALT.RecursorAlgebra
+public import ALT.RedundantFiber
+public import ALT.Reflective
+public import ALT.ReflectiveAutomaton
+public import ALT.RegimeConsistency
+public import ALT.RepFintype
+public import ALT.RetentionOverhead
+public import ALT.RetentionUpperBound
+public import ALT.SQAlgorithm
+public import ALT.SQEnvelope
+public import ALT.SQMixtureSupermartingale
+public import ALT.SQObjects
+public import ALT.SQOracle
+public import ALT.SQPredictiveTransfer
+public import ALT.SQPrunedMass
+public import ALT.SQSearchPhaseMass
+public import ALT.SQVersionSpace
+public import ALT.SampleComplexity
+public import ALT.SearchCost
+public import ALT.SearchSpace
+public import ALT.SerializationParse
+public import ALT.ShiftedSpikeCriterion
+public import ALT.ShiftedSpikeHost
+public import ALT.ShiftedSpikeTower
+public import ALT.SkewFiber
+public import ALT.StructureFunction
+public import ALT.SubstitutionClass
+public import ALT.SubstitutionComposite
+public import ALT.SubstitutionSchedule
+public import ALT.SubstitutionSource
+public import ALT.SubstrateClass
+public import ALT.SubstrateEmergence
+public import ALT.SurpriseBudget
+public import ALT.TapeHost
+public import ALT.TapeHostFiber
+public import ALT.TapeHostObservability
+public import ALT.TapeHostOverlap
+public import ALT.TapeHostSchedule
+public import ALT.TapeHostSurvival
+public import ALT.TapeHostWitness
+public import ALT.TimeCost
+public import ALT.UniversalAt
+public import ALT.Ville
+public import ALT.WeightedFiber
+public import ALT.WindowDeterminism
+public import ALT.WitnessMixture
 
 /-!
 # ALT — Algorithmic Learning Theory in Lean 4
@@ -236,5 +251,8 @@ is the whole development, every such witness must resolve here.
 
 -- Silent when every `assert_not_exists` witness in the closure exists; warns, naming the module,
 -- for any witness that does not — i.e. for a boundary assertion that is silently vacuous.
+
+@[expose] public section
+
 set_option linter.hashCommand false in
 #check_assertions!

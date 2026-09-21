@@ -3,10 +3,12 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.AlgebraicTopology.SimplexCategory.Basic
-import Mathlib.CategoryTheory.Endofunctor.Algebra
-import Mathlib.Combinatorics.Quiver.ReflQuiver
-import Mathlib.Data.Fintype.Sum
+module
+
+public import Mathlib.AlgebraicTopology.SimplexCategory.Basic
+public import Mathlib.CategoryTheory.Endofunctor.Algebra
+public import Mathlib.Combinatorics.Quiver.ReflQuiver
+public import Mathlib.Data.Fintype.Sum
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -42,6 +44,9 @@ successor saturates (it does not wrap, unlike the `ZMod` `cyclicParamNNO`) and t
 restricted, but within that class initiality is discriminating and the uniqueness is a genuine
 induction.
 -/
+
+
+@[expose] public section
 
 namespace RecursorAlgebra
 

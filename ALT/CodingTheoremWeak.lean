@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.AlgorithmicProbability
+module
+
+public import ALT.AlgorithmicProbability
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -35,6 +37,9 @@ The coding theorem itself (`coding_theorem_weak`) and `QB_lsc` — the boundarie
 flagged, over the bit-string computability layer of `ALT/BitStringPrimrec.lean` — are established
 in `ALT/CodingTheoremBitwise.lean` and `ALT/CodingTheoremDecoder.lean`.
 -/
+
+
+@[expose] public section
 
 namespace PrefixMachine
 

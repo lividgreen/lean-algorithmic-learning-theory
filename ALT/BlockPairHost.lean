@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.BlockPairProfile
-import ALT.NoisyWindowChain
+module
+
+public import ALT.BlockPairProfile
+public import ALT.NoisyWindowChain
 
 /-!
 # The finite autonomous host carrying the certified block-pair design
@@ -48,6 +50,9 @@ No claim about the design's own statistical or correlation content is repeated h
 it is read as a tape: it reproduces it, and every state of the machine is periodic.
 -/
 
+
+@[expose] public section
+
 namespace BlockPairHost
 
 open BlockPairProfile
@@ -75,12 +80,12 @@ private lemma rot8_iterate_val (t : ℕ) (v : Fin 8 → Bool) (i : Fin 8) :
   | succ t ih =>
     rw [Function.iterate_succ_apply', rot8]
     by_cases h : (i : ℕ) + 1 < 8
-    · rw [dif_pos h, ih]
+    · rw [dite_eq_left h, ih]
       congr 1
       apply Fin.ext
       change (i.val + 1 + t) % 8 = (i.val + (t + 1)) % 8
       omega
-    · rw [dif_neg h, ih]
+    · rw [dite_eq_right h, ih]
       have hi := i.isLt
       have hi7 : i.val = 7 := by omega
       congr 1
@@ -116,11 +121,11 @@ theorem windowXor_noisyStep (w1 w2 : Fin 8 → Bool) (b : Bool) :
   change xor (NoisyWindowChain.noisyStep 8 w1 b i) (NoisyWindowChain.noisyStep 8 w2 b i) = _
   rw [NoisyWindowChain.noisyStep, NoisyWindowChain.noisyStep, rot8]
   by_cases h : (i : ℕ) + 1 < 8
-  · rw [if_pos h, if_pos h, dif_pos h, NoisyWindowChain.windowMap, NoisyWindowChain.windowMap,
-      dif_pos h, dif_pos h]
+  · rw [ite_eq_left h, ite_eq_left h, dite_eq_left h, NoisyWindowChain.windowMap,
+      NoisyWindowChain.windowMap, dite_eq_left h, dite_eq_left h]
     rfl
-  · rw [if_neg h, if_neg h, dif_neg h, NoisyWindowChain.windowMap, NoisyWindowChain.windowMap,
-      dif_neg h, dif_neg h]
+  · rw [ite_eq_right h, ite_eq_right h, dite_eq_right h, NoisyWindowChain.windowMap,
+      NoisyWindowChain.windowMap, dite_eq_right h, dite_eq_right h]
     change xor (xor (!(w1 0)) b) (xor (!(w2 0)) b) = xor (w1 0) (w2 0)
     cases w1 0 <;> cases w2 0 <;> cases b <;> decide
 
@@ -164,13 +169,13 @@ private theorem hostUpdate_designWindow (c : ZMod (2 * (2 * M) * 24)) :
     = designObs M (c + 1 - 7 + ((i : ℕ) : ZMod (2 * (2 * M) * 24)))
   rw [NoisyWindowChain.noisyStep, NoisyWindowChain.windowMap]
   by_cases h : (i : ℕ) + 1 < 8
-  · rw [if_pos h, dif_pos h]
+  · rw [ite_eq_left h, dite_eq_left h]
     change designObs M (c - 7 + (((⟨(i : ℕ) + 1, h⟩ : Fin 8) : ℕ) : ZMod (2 * (2 * M) * 24)))
       = designObs M (c + 1 - 7 + ((i : ℕ) : ZMod (2 * (2 * M) * 24)))
     congr 1
     push_cast
     ring
-  · rw [if_neg h, dif_neg h]
+  · rw [ite_eq_right h, dite_eq_right h]
     have hi7 : (i : ℕ) = 7 := by have := i.isLt; omega
     change xor (!(designWindow M c 0)) (hostTape M (c + 1))
       = designObs M (c + 1 - 7 + ((i : ℕ) : ZMod (2 * (2 * M) * 24)))

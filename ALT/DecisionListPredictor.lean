@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.DecisionListSolver
+module
+
+public import ALT.DecisionListSolver
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -29,6 +31,9 @@ forced-symbol verdict (`forcedVal`) and proves it classifies the version space e
 empty, forced at a bit, or split (`forced_iff`, `empty_iff`, `split_iff`) — with an explicit
 native-cost bound (`tc_forced_raw`) and a `PolyTimeOn` closure (`polyTime_forced`).
 -/
+
+
+@[expose] public section
 
 namespace OneDL
 
@@ -64,9 +69,9 @@ private def azStepFn (acc : ℕ) : ℕ :=
 private def azInitAcc (mask : ℕ) : ℕ := Nat.pair mask 1
 
 /-- `headL` as a `Code` (mirrors `OneDL.DecisionListSolver`'s private `cHead`). -/
-private def cHd : Code := comp left right
+def cHd : Code := comp left right
 /-- `tailL` as a `Code` (mirrors `OneDL.DecisionListSolver`'s private `cTail`). -/
-private def cTl : Code := comp right right
+def cTl : Code := comp right right
 
 private theorem val_cHd (L : ℕ) : val cHd L = headL L := by
   simp only [cHd, val_comp, val_left, val_right, headL]
@@ -76,27 +81,27 @@ private theorem tc_cHd (L : ℕ) : tc cHd L = 3 := by simp only [cHd, tc_comp, t
 private theorem tc_cTl (L : ℕ) : tc cTl L = 3 := by simp only [cTl, tc_comp, tc_right]
 
 /-- The whole loop parameter, unchanged through every round (unused by the step itself). -/
-private def cIdN : Code := pair left right
+def cIdN : Code := pair left right
 /-- The accumulator, out of the step input `⟨a, ⟨i, acc⟩⟩`. -/
-private def cAzAcc : Code := comp right right
+def cAzAcc : Code := comp right right
 /-- The mask-suffix field of the accumulator. -/
-private def cAzMs : Code := comp left cAzAcc
+def cAzMs : Code := comp left cAzAcc
 /-- The flag field of the accumulator. -/
-private def cAzFlag : Code := comp right cAzAcc
+def cAzFlag : Code := comp right cAzAcc
 /-- The visited head bit. -/
-private def cAzHead : Code := comp cHd cAzMs
+def cAzHead : Code := comp cHd cAzMs
 /-- The peeled mask suffix. -/
-private def cAzTail : Code := comp cTl cAzMs
+def cAzTail : Code := comp cTl cAzMs
 /-- The updated flag: `AND` with the negated head bit. -/
-private def cAzFlag' : Code := comp cAnd (pair cAzFlag (comp cNot cAzHead))
+def cAzFlag' : Code := comp cAnd (pair cAzFlag (comp cNot cAzHead))
 /-- The scan's step code. -/
-private def cAzStep : Code := pair cAzTail cAzFlag'
+def cAzStep : Code := pair cAzTail cAzFlag'
 /-- The scan's base code: from `mask`, build `azInitAcc mask`. -/
-private def cAzInit : Code := pair right (constCode 1)
+def cAzInit : Code := pair right (constCode 1)
 /-- The round budget: the first component `m` of the packed input `⟨m, mask⟩`. -/
-private def cCountM : Code := left
+def cCountM : Code := left
 /-- The raw scan loop, over the packed input `N = ⟨m, mask⟩`. -/
-private def cAzLoop : Code := comp (prec cAzInit cAzStep) (pair cIdN cCountM)
+def cAzLoop : Code := comp (prec cAzInit cAzStep) (pair cIdN cCountM)
 /-- **The emptiness-scan primitive.** Reads out the flag: `1` iff every one of the first `m` mask
 cells is `0`. -/
 def cAllZero : Code := comp right cAzLoop
@@ -553,7 +558,7 @@ private theorem evalDLn_not_fires (D : List ℕ) (d e : ℕ)
   induction D with
   | nil => rfl
   | cons r rs ih =>
-      rw [evalDLn, if_pos (h r (List.mem_cons_self ..))]
+      rw [evalDLn, ite_eq_left (h r (List.mem_cons_self ..))]
       exact ih (fun r' hr' => h r' (List.mem_cons_of_mem _ hr'))
 
 private def firesN' (D : List ℕ) (e : ℕ) : Prop := ∃ r ∈ D, bEq (featOf e (ruleJ r)) (ruleP r) ≠ 0
@@ -612,7 +617,7 @@ theorem exists_relabel (K x : ℕ) (exs : List ℕ) (hlbl : ∀ e ∈ exs, lblOf
       rw [hsplit]; exact List.mem_append_right _ (List.mem_cons_self ..)
     have hval0 : ruleJ r0 < K := hval r0 hr0mem
     have hval_x : evalDLn rules d x = ruleL r0 := by
-      rw [hsplit, evalDLn_append, evalDLn_not_fires pre _ x hprefirst', evalDLn, if_neg hPr0]
+      rw [hsplit, evalDLn_append, evalDLn_not_fires pre _ x hprefirst', evalDLn, ite_eq_right hPr0]
     have hL01 : ruleL r0 ≠ 0 ∧ ruleL r0 ≠ 1 := by rw [← hval_x]; exact hbad
     set r0' : ℕ := Nat.pair (ruleJ r0) (Nat.pair (ruleP r0) b) with hr0'def
     have hJr0' : ruleJ r0' = ruleJ r0 := by simp [hr0'def, ruleJ, Nat.unpair_pair]
@@ -627,7 +632,7 @@ theorem exists_relabel (K x : ℕ) (exs : List ℕ) (hlbl : ∀ e ∈ exs, lblOf
         · exact hval r (by
             rw [hsplit]; exact List.mem_append_right _ (List.mem_cons_of_mem _ hrs))
     · rw [evalDLn_append, evalDLn_not_fires pre _ x hprefirst']
-      rw [evalDLn, hJr0', hPr0', if_neg hPr0, hLr0']
+      rw [evalDLn, hJr0', hPr0', ite_eq_right hPr0, hLr0']
     · intro e he
       rw [evalDLn_append]
       by_cases hpre_fire : firesN' pre e
@@ -646,13 +651,13 @@ theorem exists_relabel (K x : ℕ) (exs : List ℕ) (hlbl : ∀ e ∈ exs, lblOf
         rw [hsplit, evalDLn_append, evalDLn_not_fires pre _ e hpre_fire] at horig
         by_cases hr0fire : bEq (featOf e (ruleJ r0)) (ruleP r0) ≠ 0
         · exfalso
-          rw [evalDLn, if_neg hr0fire] at horig
+          rw [evalDLn, ite_eq_right hr0fire] at horig
           have hle1 : ruleL r0 ≤ 1 := by rw [horig]; exact hlbl e he
           omega
         · push Not at hr0fire
-          rw [evalDLn, if_pos hr0fire] at horig
+          rw [evalDLn, ite_eq_left hr0fire] at horig
           change evalDLn (r0' :: suf) d e = lblOf e
-          rw [evalDLn, hJr0', hPr0', if_pos hr0fire]
+          rw [evalDLn, hJr0', hPr0', ite_eq_left hr0fire]
           exact horig
   · -- no rule fires on `x`: every example of `exs` must already be decided by a firing rule
     push Not at hcase
@@ -681,29 +686,29 @@ consistent `1`-DL in agreement is the prediction." -/
 /-! ### `cForced`'s wiring — the two extended-instance codes, computed once each -/
 
 /-- The whole packed input `⟨n, x⟩`, first component. -/
-private def cN : Code := left
+def cN : Code := left
 /-- The whole packed input `⟨n, x⟩`, second component (the query point). -/
-private def cX : Code := right
+def cX : Code := right
 /-- `svInst n`, from `⟨n, x⟩`. -/
-private def cSvInstP : Code := comp left cN
+def cSvInstP : Code := comp left cN
 /-- `svMask0 n`, from `⟨n, x⟩`. -/
-private def cSvMask0P : Code := comp right cN
+def cSvMask0P : Code := comp right cN
 /-- `readK (svInst n)`, from `⟨n, x⟩`. -/
-private def cReadKP : Code := comp cReadK cSvInstP
+def cReadKP : Code := comp cReadK cSvInstP
 /-- `readM (svInst n)`, from `⟨n, x⟩`. -/
-private def cReadMP : Code := comp cReadM cSvInstP
+def cReadMP : Code := comp cReadM cSvInstP
 /-- `readData` as a `Code` (mirrors `OneDL.DecisionListSolver`'s private `cData`-style reads). -/
-private def cReadDataC : Code := comp right right
+def cReadDataC : Code := comp right right
 /-- `readData (svInst n)`, from `⟨n, x⟩`. -/
-private def cReadDataP : Code := comp cReadDataC cSvInstP
+def cReadDataP : Code := comp cReadDataC cSvInstP
 
 /-- `mkEx b x`, from `⟨n, x⟩`, for a literal bit `b`. -/
-private def cMkExB (b : ℕ) : Code := pair (constCode b) cX
+def cMkExB (b : ℕ) : Code := pair (constCode b) cX
 /-- `extInst (svInst n) (mkEx b x)`, from `⟨n, x⟩`. -/
-private def cExtInstB (b : ℕ) : Code :=
+def cExtInstB (b : ℕ) : Code :=
   pair cReadKP (pair (comp succ cReadMP) (pair (constCode 1) (pair (cMkExB b) cReadDataP)))
 /-- `extPacked n (mkEx b x)`, from `⟨n, x⟩`. -/
-private def cExtPackedB (b : ℕ) : Code :=
+def cExtPackedB (b : ℕ) : Code :=
   pair (cExtInstB b) (pair (constCode 1) (pair (constCode 1) cSvMask0P))
 
 private theorem val_cReadDataC (inst : ℕ) : val cReadDataC inst = readData inst := by
@@ -716,7 +721,7 @@ private theorem val_cExtPackedB (b n x : ℕ) :
     val_cReadM, val_cReadDataC, Nat.unpair_pair, extPacked, extInst, mkEx, svInst, svMask0]
 
 /-- Both extended decisions, computed once each. -/
-private def cD01 : Code := pair (comp cDecide (cExtPackedB 0)) (comp cDecide (cExtPackedB 1))
+def cD01 : Code := pair (comp cDecide (cExtPackedB 0)) (comp cDecide (cExtPackedB 1))
 
 private theorem val_cD01 (n x : ℕ) :
     val cD01 (Nat.pair n x)
@@ -726,16 +731,19 @@ private theorem val_cD01 (n x : ℕ) :
 
 /-! ### The forced-symbol read-off — pure `O(1)` bit logic on the two decisions -/
 
-private def cD0core : Code := left
-private def cD1core : Code := right
+/-- The first extended decision, `left` of `cD01`. -/
+def cD0core : Code := left
+/-- The second extended decision, `right` of `cD01`. -/
+def cD1core : Code := right
 /-- `d0 XOR d1`: exactly one of the two extended decisions succeeded. -/
-private def cFlagCore : Code :=
+def cFlagCore : Code :=
   comp cOr (pair (comp cAnd (pair cD0core (comp cNot cD1core)))
                  (comp cAnd (pair cD1core (comp cNot cD0core))))
 /-- The forced label, valid only when `cFlagCore ≠ 0`: `d1` itself (`d1 = 0` reads bit `0`, `d1 = 1`
 reads bit `1`), masked to `0` when the calls are not forced. -/
-private def cLabelCore : Code := comp cAnd (pair cFlagCore cD1core)
-private def cForcedCore : Code := pair cFlagCore cLabelCore
+def cLabelCore : Code := comp cAnd (pair cFlagCore cD1core)
+/-- The forced flag paired with the forced label, as a `Code`. -/
+def cForcedCore : Code := pair cFlagCore cLabelCore
 
 /-- **`cForced`**: the two-consistency-call forced-symbol predictor, on the packed input `⟨n, x⟩`. -/
 def cForced : Code := comp cForcedCore cD01
@@ -756,11 +764,14 @@ private theorem val_cForcedCore (d0 d1 : ℕ) :
     val_left, val_right, val_cAnd'', val_cOr'', val_cNot'', Nat.unpair_pair]
 
 /-- The two extended decisions, named for readability. -/
-private def d0V (n x : ℕ) : ℕ := decideVal (extPacked n (mkEx 0 x))
-private def d1V (n x : ℕ) : ℕ := decideVal (extPacked n (mkEx 1 x))
-private def forcedFlagV (n x : ℕ) : ℕ := bOr (bAnd (d0V n x) (bNot (d1V n x)))
+def d0V (n x : ℕ) : ℕ := decideVal (extPacked n (mkEx 0 x))
+/-- The extended decision on literal `1`, at the packed input `⟨n, x⟩`. -/
+def d1V (n x : ℕ) : ℕ := decideVal (extPacked n (mkEx 1 x))
+/-- `1` iff exactly one of `d0V`, `d1V` succeeds. -/
+def forcedFlagV (n x : ℕ) : ℕ := bOr (bAnd (d0V n x) (bNot (d1V n x)))
   (bAnd (d1V n x) (bNot (d0V n x)))
-private def forcedLabelV (n x : ℕ) : ℕ := bAnd (forcedFlagV n x) (d1V n x)
+/-- The forced label, valid only when `forcedFlagV ≠ 0`. -/
+def forcedLabelV (n x : ℕ) : ℕ := bAnd (forcedFlagV n x) (d1V n x)
 
 theorem val_cForced (n x : ℕ) :
     forcedVal n x = Nat.pair (forcedFlagV n x) (forcedLabelV n x) := by

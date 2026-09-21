@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.GradedConjugation
-import ALT.DecoupledSimulation
+module
+
+public import ALT.GradedConjugation
+public import ALT.DecoupledSimulation
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter, and of the
 -- long-line linter, whose limit the hypothesis-carrying dependent types below cannot meet.
@@ -56,6 +58,9 @@ composite grade law is asserted. Neither `pullbackAsm` nor `inducedMap` is claim
 map is a function on carriers, not a morphism of any category. No tightness is claimed for the
 constant `4 · max g b + 9`.
 -/
+
+
+@[expose] public section
 
 namespace GradedSimulation
 

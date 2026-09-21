@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.SQVersionSpace
-import Mathlib.Algebra.Field.ZMod
+module
+
+public import ALT.SQVersionSpace
+public import Mathlib.Algebra.Field.ZMod
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -58,6 +60,9 @@ orthogonality), bridging FV-A3's previously-MODELED exponential premise (`parity
   (`sq_oracle_concentration`) — de-scoped; the oracle predicate `IsSQOracle` is supplied, but the
   finite-query union bound is left as residue.
 -/
+
+
+@[expose] public section
 
 namespace SQObjects
 
@@ -240,10 +245,10 @@ theorem versionSpace_net_envelope (M : Finset ι) (τ : ℝ) (ans : Q → ι →
       (sqDim_antitone_tol M ans (by linarith))
   refine ⟨N, fun v => if hv : v ∈ V then (hcov v hv).choose else v, hNV, hcard, ?_, ?_⟩
   · intro v hv
-    simp only [dif_pos hv]
+    simp only [dite_eq_left hv]
     exact (hcov v hv).choose_spec.1
   · intro v hv φ
-    simp only [dif_pos hv]
+    simp only [dite_eq_left hv]
     exact (hcov v hv).choose_spec.2 φ
 
 /-- The SQ oracle of §3.1 as an object: `answer` estimates the truth's query values within `τ`. -/
@@ -289,12 +294,12 @@ lemma chi_add_single (S : Finset (Fin n)) (i : Fin n) (x : Fin n → ZMod 2) :
   unfold χ
   simp only [Pi.add_apply, Finset.sum_add_distrib, Pi.single_apply, Finset.sum_ite_eq']
   by_cases hiS : i ∈ S
-  · simp only [if_pos hiS]
+  · simp only [ite_eq_left hiS]
     have hdich : ∀ a : ZMod 2, a = 0 ∨ a = 1 := by decide
     rcases hdich (∑ j ∈ S, x j) with ha | ha
-    · rw [ha, if_neg (by decide), if_pos (by decide)]
-    · rw [ha, if_pos (by decide), if_neg (by decide)]; norm_num
-  · simp only [if_neg hiS, add_zero]
+    · rw [ha, ite_eq_right (by decide), ite_eq_left (by decide)]
+    · rw [ha, ite_eq_left (by decide), ite_eq_right (by decide)]; norm_num
+  · simp only [ite_eq_right hiS, add_zero]
 
 /-- `∑_x χ_S(x) = 0` for `S ≠ ∅`: pick `i ∈ S`; the coordinate-`i` translation negates `χ_S` but
 preserves the sum over the whole cube, so `∑ = −∑`. -/
@@ -302,7 +307,7 @@ lemma sum_chi_eq_zero (S : Finset (Fin n)) (hS : S ≠ ∅) :
     ∑ x : Fin n → ZMod 2, χ S x = 0 := by
   obtain ⟨i, hi⟩ := Finset.nonempty_iff_ne_empty.mpr hS
   have key : ∀ x, χ S (x + Pi.single i 1) = -χ S x := by
-    intro x; rw [chi_add_single, if_pos hi]
+    intro x; rw [chi_add_single, ite_eq_left hi]
   set T := ∑ x : Fin n → ZMod 2, χ S x with hT
   have hself : T = -T := by
     calc T = ∑ x : Fin n → ZMod 2, χ S (x + Pi.single i 1) :=
@@ -329,8 +334,8 @@ lemma sum_chi_mul_eq_zero (φ S : Finset (Fin n)) (h : φ ≠ S) :
     intro x
     rw [chi_add_single, chi_add_single]
     rcases hi with ⟨hiφ, hiS⟩ | ⟨hiS, hiφ⟩
-    · rw [if_pos hiφ, if_neg hiS]; ring
-    · rw [if_neg hiφ, if_pos hiS]; ring
+    · rw [ite_eq_left hiφ, ite_eq_right hiS]; ring
+    · rw [ite_eq_right hiφ, ite_eq_left hiS]; ring
   set T := ∑ x : Fin n → ZMod 2, χ φ x * χ S x with hT
   have hself : T = -T := by
     have hshift : T = ∑ x : Fin n → ZMod 2,
@@ -349,14 +354,14 @@ lemma sum_chi_mul_eq_zero (φ S : Finset (Fin n)) (h : φ ≠ S) :
 theorem ansPar_eq (φ S : Finset (Fin n)) : ansPar φ S = if S = φ then 1 else 0 := by
   unfold ansPar
   rcases eq_or_ne S φ with h | h
-  · rw [h, if_pos rfl]
+  · rw [h, ite_eq_left rfl]
     have hsum : ∑ x : Fin n → ZMod 2, χ φ x * χ φ x = (2 : ℝ) ^ n := by
       simp_rw [chi_sq]
       rw [Finset.sum_const, Finset.card_univ, Fintype.card_fun, ZMod.card, Fintype.card_fin,
           nsmul_eq_mul, mul_one]
       push_cast; ring
     rw [hsum, inv_mul_cancel₀ (by positivity)]
-  · rw [if_neg h, sum_chi_mul_eq_zero φ S (Ne.symm h), mul_zero]
+  · rw [ite_eq_right h, sum_chi_mul_eq_zero φ S (Ne.symm h), mul_zero]
 
 /-- **Headline (§5)**: parity's statistical dimension is `≥ 2^n` for any `τ < 1` — the whole
 `2^n`-element class `Finset.univ` is `τ`-separated (query `φ = S` gives `|ansPar S S − ansPar S T| =
@@ -366,7 +371,7 @@ theorem sqDim_parity_ge {τ : ℝ} (hτ : τ < 1) :
   have hsep : SepFam (Finset.univ : Finset (Finset (Fin n))) τ ansPar Finset.univ := by
     refine ⟨Finset.subset_univ _, fun S _ T _ hST => ⟨S, ?_⟩⟩
     unfold Separates
-    rw [ansPar_eq, ansPar_eq, if_pos rfl, if_neg (Ne.symm hST)]
+    rw [ansPar_eq, ansPar_eq, ite_eq_left rfl, ite_eq_right (Ne.symm hST)]
     simpa using hτ
   have hle := sepFam_card_le_sqDim (Finset.univ : Finset (Finset (Fin n))) τ ansPar hsep
   rwa [Finset.card_univ, Fintype.card_finset, Fintype.card_fin] at hle

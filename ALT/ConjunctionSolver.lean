@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.Code.BitGates
-import ALT.DecisionListData
+module
+
+public import ALT.Code.BitGates
+public import ALT.DecisionListData
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -46,6 +48,9 @@ example). No literal list is ever built or reversed — every stage folds to a N
 pair), which is what keeps the construction to three nested numeric folds instead of the 1-DL
 solver's greedy round/list-splice machinery.
 -/
+
+
+@[expose] public section
 
 namespace Conj
 
@@ -89,10 +94,10 @@ theorem evalConj_eq_one_iff (lits : List ℕ) (e : ℕ) :
   | cons r rs ih =>
       unfold evalConj
       by_cases h : (featOf e (litJ r) = 0 ↔ litP r = 0)
-      · rw [if_pos h]
+      · rw [ite_eq_left h]
         simp only [List.mem_cons, forall_eq_or_imp]
         exact ⟨fun he => ⟨h, ih.mp he⟩, fun hp => ih.mpr hp.2⟩
-      · rw [if_neg h]
+      · rw [ite_eq_right h]
         simp only [List.mem_cons, forall_eq_or_imp]
         constructor
         · intro h0; exact absurd h0 (by decide)
@@ -148,24 +153,24 @@ theorem bitOr_le_one (a b : ℕ) : bitOr a b ≤ 1 := by unfold bitOr; split <;>
 literal `⟨j,0⟩` / `⟨j,1⟩`. Packed input `N = ⟨inst, j⟩`; accumulator `⟨exSuf, ⟨a0, a1⟩⟩`. -/
 
 /-- The instance, from the packed input `⟨inst, j⟩`. -/
-private def instA (N : ℕ) : ℕ := N.unpair.1
+def instA (N : ℕ) : ℕ := N.unpair.1
 /-- The feature index, from the packed input `⟨inst, j⟩`. -/
-private def jA (N : ℕ) : ℕ := N.unpair.2
+def jA (N : ℕ) : ℕ := N.unpair.2
 
 /-- The unscanned example suffix. -/
-private def exSufA (acc : ℕ) : ℕ := acc.unpair.1
+def exSufA (acc : ℕ) : ℕ := acc.unpair.1
 /-- The running survival bit for literal `⟨j,0⟩`. -/
-private def a0A (acc : ℕ) : ℕ := acc.unpair.2.unpair.1
+def a0A (acc : ℕ) : ℕ := acc.unpair.2.unpair.1
 /-- The running survival bit for literal `⟨j,1⟩`. -/
-private def a1A (acc : ℕ) : ℕ := acc.unpair.2.unpair.2
+def a1A (acc : ℕ) : ℕ := acc.unpair.2.unpair.2
 
 /-- The initial accumulator: the full example list, both literals vacuously alive. -/
-private def aliveInitAcc (data : ℕ) : ℕ := Nat.pair data (Nat.pair 1 1)
+def aliveInitAcc (data : ℕ) : ℕ := Nat.pair data (Nat.pair 1 1)
 
 /-- The semantic step: read the current example off the carried suffix, AND each survival bit with
 "this example does not violate the literal" (vacuously true when the example is labelled `0`), and
 peel the suffix one cell. -/
-private def aliveStepFn (j acc : ℕ) : ℕ :=
+def aliveStepFn (j acc : ℕ) : ℕ :=
   Nat.pair (tailL (exSufA acc))
     (Nat.pair
       (bitAnd (a0A acc)
@@ -278,7 +283,7 @@ private theorem val_cAliveLoop_raw (N t : ℕ) :
   | succ k ih => rw [val_prec_succ, val_cAliveStep, ih, Function.iterate_succ_apply']
 
 /-- The accumulator after the full `m`-round scan. -/
-private def aliveAcc (N : ℕ) : ℕ := (aliveStepFn (jA N))^[readM (instA N)] (aliveInitAcc (readData (instA N)))
+def aliveAcc (N : ℕ) : ℕ := (aliveStepFn (jA N))^[readM (instA N)] (aliveInitAcc (readData (instA N)))
 
 /-- `aliveVal0 inst j`: `1` iff no labelled-`1` example of `inst` violates literal `⟨j,0⟩`. -/
 def aliveVal0 (inst j : ℕ) : ℕ := a0A (aliveAcc (Nat.pair inst j))
@@ -1327,14 +1332,14 @@ private theorem mem_survivorsAt_iff (inst j r : ℕ) :
     rw [List.mem_append] at hr
     rcases hr with hr | hr
     · by_cases h0 : aliveVal0 inst j ≠ 0
-      · rw [if_pos h0, List.mem_singleton] at hr; exact Or.inl ⟨hr, h0⟩
-      · rw [if_neg h0] at hr; simp at hr
+      · rw [ite_eq_left h0, List.mem_singleton] at hr; exact Or.inl ⟨hr, h0⟩
+      · rw [ite_eq_right h0] at hr; simp at hr
     · by_cases h1 : aliveVal1 inst j ≠ 0
-      · rw [if_pos h1, List.mem_singleton] at hr; exact Or.inr ⟨hr, h1⟩
-      · rw [if_neg h1] at hr; simp at hr
+      · rw [ite_eq_left h1, List.mem_singleton] at hr; exact Or.inr ⟨hr, h1⟩
+      · rw [ite_eq_right h1] at hr; simp at hr
   · rintro (⟨rfl, h0⟩ | ⟨rfl, h1⟩)
-    · rw [List.mem_append, if_pos h0]; left; exact List.mem_singleton.mpr rfl
-    · rw [List.mem_append, if_pos h1]; right; exact List.mem_singleton.mpr rfl
+    · rw [List.mem_append, ite_eq_left h0]; left; exact List.mem_singleton.mpr rfl
+    · rw [List.mem_append, ite_eq_left h1]; right; exact List.mem_singleton.mpr rfl
 
 private theorem mem_survivors_iff (inst r : ℕ) :
     r ∈ survivors inst ↔

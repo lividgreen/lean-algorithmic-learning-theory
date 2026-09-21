@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.ChaitinIncompleteness
-import ALT.DeepLadder
+module
+
+public import ALT.ChaitinIncompleteness
+public import ALT.DeepLadder
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -29,6 +31,9 @@ principle, in the shape of the module's `hiddenSelector` — chosen via `Classic
 * `DeepLadder.accreting_ladder` / `DeepLadder.ladderTheory_lt_succ` at `chaitinSelector` — the deep
   ladder's crossing recurrence and strict ascent, restated at this selector.
 -/
+
+
+@[expose] public section
 
 namespace DeepLadder
 

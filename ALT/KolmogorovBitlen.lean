@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.KolmogorovComplexity
-import ALT.KolmogorovTimeBounded
+module
+
+public import ALT.KolmogorovComplexity
+public import ALT.KolmogorovTimeBounded
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -51,6 +53,9 @@ Status: PROVED.
 * Added / modeling: `Computable Nat.size` via `rfind`; the Berry argument reuses Slice-1's
   `fixed_point₂` (recursion theorem), dodging the `encodeCode` quadratic-pairing blowup.
 -/
+
+
+@[expose] public section
 
 namespace KolmogorovComplexity
 

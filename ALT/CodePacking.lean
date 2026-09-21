@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.CodeArith
-import ALT.BoundedInterp
+module
+
+public import ALT.CodeArith
+public import ALT.BoundedInterp
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -26,6 +28,9 @@ remainder. That half is built on the arithmetic layer and is not here; this file
 arithmetic-free side of that boundary.
 -/
 
+
+@[expose] public section
+
 namespace CodePacking
 
 open Nat.Partrec (Code)
@@ -37,17 +42,17 @@ open CodeSizeArith
 /-! ## Reading a configuration -/
 
 /-- The configuration's mode. -/
-private def cCfMode : Code := left
+def cCfMode : Code := left
 
 @[simp] private theorem val_cCfMode (s : ℕ) : val cCfMode s = BoundedInterp.cfMode s := rfl
 
 /-- The configuration's current object. -/
-private def cCfCur : Code := comp left right
+def cCfCur : Code := comp left right
 
 @[simp] private theorem val_cCfCur (s : ℕ) : val cCfCur s = BoundedInterp.cfCur s := rfl
 
 /-- The configuration's stack. -/
-private def cCfStk : Code := comp right right
+def cCfStk : Code := comp right right
 
 @[simp] private theorem val_cCfStk (s : ℕ) : val cCfStk s = BoundedInterp.cfStk s := rfl
 
@@ -81,7 +86,7 @@ private def cFrame : Code := cId
   rw [cFrame, val_cId, BoundedInterp.frame]
 
 /-- A returning configuration, from `⟨v, k⟩`. -/
-private def cRet : Code := pair (constCode 1) cId
+def cRet : Code := pair (constCode 1) cId
 
 @[simp] private theorem val_cRet (v k : ℕ) : val cRet (Nat.pair v k) = BoundedInterp.ret v k := by
   rw [cRet, val_pair, val_constCode, val_cId, BoundedInterp.ret, BoundedInterp.config]
@@ -89,7 +94,7 @@ private def cRet : Code := pair (constCode 1) cId
 private theorem rfindFree_cRet : RfindFree cRet := ⟨rfindFree_constCode 1, rfindFree_cId⟩
 
 /-- A descending configuration, from `⟨c, ⟨n, k⟩⟩`. -/
-private def cDescend : Code :=
+def cDescend : Code :=
   pair zero (pair (pair left (comp left right)) (comp right right))
 
 @[simp] private theorem val_cDescend (c n k : ℕ) :
@@ -120,7 +125,7 @@ remainder to undo them. Every code below is a composition of the arithmetic laye
 projections above, and every value law is the corresponding `BoundedInterp` definition. -/
 
 /-- The width a frame occupies in a cell. -/
-private def cFrameBits : Code := cSize
+def cFrameBits : Code := cSize
 
 @[simp] private theorem val_cFrameBits (f : ℕ) : val cFrameBits f = BoundedInterp.frameBits f := by
   rw [cFrameBits, val_cSize, BoundedInterp.frameBits]
@@ -128,16 +133,16 @@ private def cFrameBits : Code := cSize
 private theorem rfindFree_cFrameBits : RfindFree cFrameBits := rfindFree_cSize
 
 /-- `2 ^ (frameBits f)`, from `⟨f, k⟩`. -/
-private def cP0 : Code := comp cPow2 (comp cFrameBits left)
+def cP0 : Code := comp cPow2 (comp cFrameBits left)
 
 /-- `2 ^ (frameBits f + 1)`, from `⟨f, k⟩`. -/
-private def cP1 : Code := comp cPow2 (comp succ (comp cFrameBits left))
+def cP1 : Code := comp cPow2 (comp succ (comp cFrameBits left))
 
 /-- `2 ^ (2 * frameBits f + 1)`, from `⟨f, k⟩`. -/
-private def cP2 : Code := comp cPow2 (comp succ (comp cDbl (comp cFrameBits left)))
+def cP2 : Code := comp cPow2 (comp succ (comp cDbl (comp cFrameBits left)))
 
 /-- A stack cell, from `⟨f, k⟩`. -/
-private def cStkCons : Code :=
+def cStkCons : Code :=
   comp succ (comp cDbl
     (comp cAdd (pair
       (comp cAdd (pair
@@ -168,7 +173,7 @@ private theorem rfindFree_cStkCons : RfindFree cStkCons :=
     rfindFree_cMul, trivial, rfindFree_cP2⟩
 
 /-- A cell with its flag bit removed. -/
-private def cStkBody : Code := comp cDiv (pair cId (constCode 2))
+def cStkBody : Code := comp cDiv (pair cId (constCode 2))
 
 @[simp] private theorem val_cStkBody (s : ℕ) : val cStkBody s = BoundedInterp.stkBody s := by
   rw [cStkBody, val_comp, val_pair, val_cId, val_constCode, val_cDiv, BoundedInterp.stkBody]
@@ -183,10 +188,10 @@ The fold raises its accumulator while the bottom `acc + 1` bits are all ones, wh
 `min (trailOnes n) m`, exactly as the bit-length fold does. -/
 
 /-- `2 ^ (acc + 1)` inside the header fold. -/
-private def cHdrPow : Code := comp cPow2 (comp succ cAcc)
+def cHdrPow : Code := comp cPow2 (comp succ cAcc)
 
 /-- The header fold's step: raise the accumulator while the bottom bits are all ones. -/
-private def trailStep : Code :=
+def trailStep : Code :=
   comp cIte (pair
     (comp cEq (pair (comp cMod (pair left cHdrPow)) (comp cSub (pair cHdrPow (constCode 1)))))
     (pair (comp succ cAcc) cAcc))
@@ -199,7 +204,7 @@ private theorem val_trailStep (a y m : ℕ) :
   by_cases h : a % 2 ^ (m + 1) = 2 ^ (m + 1) - 1 <;> simp [h]
 
 /-- The header fold, run `m` times from zero. -/
-private def trailCore : Code := prec zero trailStep
+def trailCore : Code := prec zero trailStep
 
 private theorem val_trailCore (n : ℕ) : ∀ m,
     val trailCore (Nat.pair n m) = min (BoundedInterp.trailOnes n) m := by
@@ -216,13 +221,13 @@ private theorem val_trailCore (n : ℕ) : ∀ m,
       rw [val_trailStep, ih]
       by_cases h : BoundedInterp.trailOnes n ≤ j
       · have hmin : min (BoundedInterp.trailOnes n) j = BoundedInterp.trailOnes n := by omega
-        rw [hmin, if_neg ?_]
+        rw [hmin, ite_eq_right ?_]
         · omega
         · intro hc
           have := (BoundedInterp.trailOnes_lt_iff n (BoundedInterp.trailOnes n)).2 hc
           omega
       · have hmin : min (BoundedInterp.trailOnes n) j = j := by omega
-        rw [hmin, if_pos ((BoundedInterp.trailOnes_lt_iff n j).1 (by omega))]
+        rw [hmin, ite_eq_left ((BoundedInterp.trailOnes_lt_iff n j).1 (by omega))]
         omega
 
 /-- The header's length never exceeds the numeral it reads. -/
@@ -237,7 +242,7 @@ private theorem trailOnes_le (n : ℕ) : BoundedInterp.trailOnes n ≤ n := by
     omega
 
 /-- The header's length as a one-argument code. -/
-private def cTrailOnes : Code := comp trailCore (pair cId cId)
+def cTrailOnes : Code := comp trailCore (pair cId cId)
 
 @[simp] private theorem val_cTrailOnes (n : ℕ) : val cTrailOnes n = BoundedInterp.trailOnes n := by
   rw [cTrailOnes, val_comp, val_pair, val_cId, val_trailCore]
@@ -260,7 +265,7 @@ private theorem rfindFree_cTrailOnes : RfindFree cTrailOnes :=
 /-! ### Reading a cell -/
 
 /-- The frame width a cell declares. -/
-private def cStkLen : Code := comp cTrailOnes cStkBody
+def cStkLen : Code := comp cTrailOnes cStkBody
 
 @[simp] private theorem val_cStkLen (s : ℕ) : val cStkLen s = BoundedInterp.stkLen s := by
   rw [cStkLen, val_comp, val_cStkBody, val_cTrailOnes, BoundedInterp.stkLen]
@@ -268,7 +273,7 @@ private def cStkLen : Code := comp cTrailOnes cStkBody
 private theorem rfindFree_cStkLen : RfindFree cStkLen := ⟨rfindFree_cTrailOnes, rfindFree_cStkBody⟩
 
 /-- The tail of a stack cell. -/
-private def cStkTail : Code :=
+def cStkTail : Code :=
   comp cDiv (pair cStkBody (comp cPow2 (comp succ (comp cDbl cStkLen))))
 
 @[simp] private theorem val_cStkTail (s : ℕ) : val cStkTail s = BoundedInterp.stkTail s := by
@@ -280,7 +285,7 @@ private theorem rfindFree_cStkTail : RfindFree cStkTail :=
     rfindFree_cStkLen⟩
 
 /-- The frame of a stack cell. -/
-private def cStkHead : Code :=
+def cStkHead : Code :=
   comp cMod (pair (comp cDiv (pair cStkBody (comp cPow2 (comp succ cStkLen))))
     (comp cPow2 cStkLen))
 
@@ -295,15 +300,15 @@ private theorem rfindFree_cStkHead : RfindFree cStkHead :=
     rfindFree_cPow2, rfindFree_cStkLen⟩
 
 /-- The cell test: does this numeral re-pack to itself? -/
-private def cStkIsCons : Code := comp cEq (pair (comp cStkCons (pair cStkHead cStkTail)) cId)
+def cStkIsCons : Code := comp cEq (pair (comp cStkCons (pair cStkHead cStkTail)) cId)
 
 @[simp] private theorem val_cStkIsCons (s : ℕ) :
     val cStkIsCons s = if BoundedInterp.stkIsCons s then 1 else 0 := by
   rw [cStkIsCons, val_comp, val_pair, val_comp, val_pair, val_cStkHead, val_cStkTail,
     val_cStkCons, val_cId, val_cEq, BoundedInterp.stkIsCons]
   by_cases h : BoundedInterp.stkCons (BoundedInterp.stkHead s) (BoundedInterp.stkTail s) = s
-  · rw [if_pos h]; simp [h]
-  · rw [if_neg h]; simp [h]
+  · rw [ite_eq_left h]; simp [h]
+  · rw [ite_eq_right h]; simp [h]
 
 private theorem rfindFree_cStkIsCons : RfindFree cStkIsCons :=
   ⟨rfindFree_cEq, ⟨rfindFree_cStkCons, rfindFree_cStkHead, rfindFree_cStkTail⟩, rfindFree_cId⟩
@@ -311,7 +316,7 @@ private theorem rfindFree_cStkIsCons : RfindFree cStkIsCons :=
 /-! ### The halt test -/
 
 /-- Has the machine finished? -/
-private def cIsHalt : Code :=
+def cIsHalt : Code :=
   comp OneDL.cAnd (pair (comp cEq (pair cCfMode (constCode 1)))
     (comp cEq (pair cCfStk (constCode 0))))
 
@@ -368,19 +373,19 @@ private theorem ofNat_dispatch (n : ℕ) :
   cases hb0 : n.bodd <;> cases hb1 : n.div2.bodd
   · have e0 : n % 2 = 0 := by rw [Nat.mod_two_of_bodd, hb0]; rfl
     have e1 : n / 2 % 2 = 0 := by rw [← Nat.div2_val, Nat.mod_two_of_bodd, hb1]; rfl
-    rw [if_pos (by omega)]
+    rw [ite_eq_left (by omega)]
     rfl
   · have e0 : n % 2 = 0 := by rw [Nat.mod_two_of_bodd, hb0]; rfl
     have e1 : n / 2 % 2 = 1 := by rw [← Nat.div2_val, Nat.mod_two_of_bodd, hb1]; rfl
-    rw [if_neg (by omega), if_neg (by omega), if_pos (by omega)]
+    rw [ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_left (by omega)]
     rfl
   · have e0 : n % 2 = 1 := by rw [Nat.mod_two_of_bodd, hb0]; rfl
     have e1 : n / 2 % 2 = 0 := by rw [← Nat.div2_val, Nat.mod_two_of_bodd, hb1]; rfl
-    rw [if_neg (by omega), if_pos (by omega)]
+    rw [ite_eq_right (by omega), ite_eq_left (by omega)]
     rfl
   · have e0 : n % 2 = 1 := by rw [Nat.mod_two_of_bodd, hb0]; rfl
     have e1 : n / 2 % 2 = 1 := by rw [← Nat.div2_val, Nat.mod_two_of_bodd, hb1]; rfl
-    rw [if_neg (by omega), if_neg (by omega), if_neg (by omega)]
+    rw [ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_right (by omega)]
     rfl
 
 /-! ### The dispatch table's leaves
@@ -445,26 +450,26 @@ private theorem stepDescendArith_eq (c n k : ℕ) :
   | (m + 4) =>
       have hsub : m + 4 - 4 = m := by omega
       have hd := ofNat_dispatch m
-      simp only [stepDescendArith, hsub, if_neg (by omega : m + 4 ≠ 0),
-        if_neg (by omega : m + 4 ≠ 1), if_neg (by omega : m + 4 ≠ 2),
-        if_neg (by omega : m + 4 ≠ 3)]
+      simp only [stepDescendArith, hsub, ite_eq_right (by omega : m + 4 ≠ 0),
+        ite_eq_right (by omega : m + 4 ≠ 1), ite_eq_right (by omega : m + 4 ≠ 2),
+        ite_eq_right (by omega : m + 4 ≠ 3)]
       by_cases h0 : m % 4 = 0
-      · rw [if_pos h0]
-        rw [if_pos h0] at hd
+      · rw [ite_eq_left h0]
+        rw [ite_eq_left h0] at hd
         rw [BoundedInterp.stepDescend, hd]
         simp
       · by_cases h1 : m % 4 = 1
-        · rw [if_neg h0, if_pos h1]
-          rw [if_neg h0, if_pos h1] at hd
+        · rw [ite_eq_right h0, ite_eq_left h1]
+          rw [ite_eq_right h0, ite_eq_left h1] at hd
           rw [BoundedInterp.stepDescend, hd]
           simp
         · by_cases h2 : m % 4 = 2
-          · rw [if_neg h0, if_neg h1, if_pos h2]
-            rw [if_neg h0, if_neg h1, if_pos h2] at hd
+          · rw [ite_eq_right h0, ite_eq_right h1, ite_eq_left h2]
+            rw [ite_eq_right h0, ite_eq_right h1, ite_eq_left h2] at hd
             rw [BoundedInterp.stepDescend, hd]
             simp
-          · rw [if_neg h0, if_neg h1, if_neg h2]
-            rw [if_neg h0, if_neg h1, if_neg h2] at hd
+          · rw [ite_eq_right h0, ite_eq_right h1, ite_eq_right h2]
+            rw [ite_eq_right h0, ite_eq_right h1, ite_eq_right h2] at hd
             rw [BoundedInterp.stepDescend, hd]
             simp
 
@@ -475,7 +480,7 @@ turned the constructor dispatch into numeral arithmetic, so what is left is eigh
 equality tests on the numeral and on its tag. -/
 
 /-- Selection: run `x` when the guard is nonzero, `y` when it is zero. -/
-private def cSel (b x y : Code) : Code := comp cIte (pair b (pair x y))
+def cSel (b x y : Code) : Code := comp cIte (pair b (pair x y))
 
 @[simp] private theorem val_cSel (b x y : Code) (v : ℕ) :
     val (cSel b x y) v = if val b v = 0 then val y v else val x v := by
@@ -486,7 +491,7 @@ private theorem rfindFree_cSel {b x y : Code}
     RfindFree (cSel b x y) := ⟨rfindFree_cIte, hb, hx, hy⟩
 
 /-- The guard "this code's value is the constant `j`". -/
-private def cEqK (j : ℕ) (x : Code) : Code := comp cEq (pair x (constCode j))
+def cEqK (j : ℕ) (x : Code) : Code := comp cEq (pair x (constCode j))
 
 @[simp] private theorem val_cEqK (j : ℕ) (x : Code) (v : ℕ) :
     val (cEqK j x) v = if val x v = j then 1 else 0 := by
@@ -497,19 +502,19 @@ private theorem rfindFree_cEqK (j : ℕ) {x : Code} (hx : RfindFree x) : RfindFr
 
 /-! ### The descending step's slots, read from `⟨c, ⟨n, k⟩⟩` -/
 
-/-- The code numeral. -/ private def dC : Code := left
-/-- The input. -/ private def dN : Code := comp left right
-/-- The stack. -/ private def dK : Code := comp right right
+/-- The code numeral. -/ def dC : Code := left
+/-- The input. -/ def dN : Code := comp left right
+/-- The stack. -/ def dK : Code := comp right right
 /-- The numeral above the four leaves. -/
-private def dM : Code := comp cSub (pair dC (constCode 4))
+def dM : Code := comp cSub (pair dC (constCode 4))
 /-- The children's packed numeral. -/
-private def dP : Code := comp cDiv (pair dM (constCode 4))
+def dP : Code := comp cDiv (pair dM (constCode 4))
 /-- The constructor tag. -/
-private def dT : Code := comp cMod (pair dM (constCode 4))
-/-- The first child's numeral. -/ private def dP1 : Code := comp left dP
-/-- The second child's numeral. -/ private def dP2 : Code := comp right dP
-/-- The input's first component. -/ private def dN1 : Code := comp left dN
-/-- The input's second component. -/ private def dN2 : Code := comp right dN
+def dT : Code := comp cMod (pair dM (constCode 4))
+/-- The first child's numeral. -/ def dP1 : Code := comp left dP
+/-- The second child's numeral. -/ def dP2 : Code := comp right dP
+/-- The input's first component. -/ def dN1 : Code := comp left dN
+/-- The input's second component. -/ def dN2 : Code := comp right dN
 
 @[simp] private theorem val_dC (c n k : ℕ) : val dC (Nat.pair c (Nat.pair n k)) = c := by
   rw [dC, val_left', Nat.unpair_pair]
@@ -545,28 +550,28 @@ private def dT : Code := comp cMod (pair dM (constCode 4))
 
 /-! ### The eight branches -/
 
-/-- `zero`'s branch. -/ private def dB0 : Code := comp cRet (pair (constCode 0) dK)
-/-- `succ`'s branch. -/ private def dB1 : Code := comp cRet (pair (comp succ dN) dK)
-/-- `left`'s branch. -/ private def dB2 : Code := comp cRet (pair dN1 dK)
-/-- `right`'s branch. -/ private def dB3 : Code := comp cRet (pair dN2 dK)
+/-- `zero`'s branch. -/ def dB0 : Code := comp cRet (pair (constCode 0) dK)
+/-- `succ`'s branch. -/ def dB1 : Code := comp cRet (pair (comp succ dN) dK)
+/-- `left`'s branch. -/ def dB2 : Code := comp cRet (pair dN1 dK)
+/-- `right`'s branch. -/ def dB3 : Code := comp cRet (pair dN2 dK)
 
 /-- `pair`'s branch. -/
-private def dBpair : Code :=
+def dBpair : Code :=
   comp cDescend (pair dP1 (pair dN
     (comp cStkCons (pair (pair (constCode 0) (pair dP2 dN)) dK))))
 
 /-- `prec`'s branch. -/
-private def dBprec : Code :=
+def dBprec : Code :=
   comp cDescend (pair dP1 (pair dN1
     (comp cStkCons (pair (pair (constCode 3)
       (pair dP2 (pair dN1 (pair (constCode 0) dN2)))) dK))))
 
 /-- `comp`'s branch. -/
-private def dBcomp : Code :=
+def dBcomp : Code :=
   comp cDescend (pair dP2 (pair dN (comp cStkCons (pair (pair (constCode 2) dP1) dK))))
 
 /-- `rfind'`'s branch. -/
-private def dBrfind : Code :=
+def dBrfind : Code :=
   comp cDescend (pair dP (pair dN (comp cStkCons (pair (pair (constCode 4) (pair dP dN)) dK))))
 
 /-! ### Each branch's value, computed once
@@ -659,7 +664,7 @@ private theorem rfindFree_dBrfind : RfindFree dBrfind :=
 attribute [local irreducible] dB0 dB1 dB2 dB3 dBpair dBprec dBcomp dBrfind
 
 /-- **The descending step as a code.** -/
-private def stepDescendU : Code :=
+def stepDescendU : Code :=
   cSel (cEqK 0 dC) dB0
     (cSel (cEqK 1 dC) dB1
       (cSel (cEqK 2 dC) dB2
@@ -749,7 +754,7 @@ private theorem stepReturnArith_eq (v f k : ℕ) :
   rw [BoundedInterp.stepReturn, BoundedInterp.frTag]
   rcases ht : f.unpair.1 with _ | _ | _ | _ | _ | tg <;>
     simp only [Nat.reduceEqDiff, reduceIte, Nat.add_eq_zero_iff, and_false, reduceCtorEq,
-      Nat.reduceAdd, if_false]
+      Nat.reduceAdd, ite_false]
 
 /-! ## The returning step, realized
 
@@ -758,22 +763,22 @@ their own selections. Same recipe as the descending step: per-branch `@[simp]` v
 explicit `rw`, the wide branch codes made `local irreducible` so the tree's proof never descends
 into them. The input is `⟨v, ⟨f, k⟩⟩`. -/
 
-/-- The returned value. -/ private def rV : Code := left
-/-- The top frame. -/ private def rF : Code := comp left right
-/-- The stack tail. -/ private def rK : Code := comp right right
-/-- The frame's tag. -/ private def rTag : Code := comp left rF
-/-- The frame's payload. -/ private def rPay : Code := comp right rF
+/-- The returned value. -/ def rV : Code := left
+/-- The top frame. -/ def rF : Code := comp left right
+/-- The stack tail. -/ def rK : Code := comp right right
+/-- The frame's tag. -/ def rTag : Code := comp left rF
+/-- The frame's payload. -/ def rPay : Code := comp right rF
 /-! Payload slots. The digits after `rPay` spell the projection path into the frame's payload, read
 left to right: `1` takes a pair's first component, `2` its second. So `rPay221` is "second, second,
 first". Each is built from the slot one digit shorter, and its value on `⟨v, ⟨f, k⟩⟩` is the
 matching `unpair` chain on `f.unpair.2` (`val_rPay1` and below). -/
 
-/-- The payload's first component. -/ private def rPay1 : Code := comp left rPay
-/-- The payload's second component. -/ private def rPay2 : Code := comp right rPay
-/-- First component of `rPay2`. -/ private def rPay21 : Code := comp left rPay2
-/-- Second component of `rPay2`. -/ private def rPay22 : Code := comp right rPay2
-/-- First component of `rPay22`. -/ private def rPay221 : Code := comp left rPay22
-/-- Second component of `rPay22`. -/ private def rPay222 : Code := comp right rPay22
+/-- The payload's first component. -/ def rPay1 : Code := comp left rPay
+/-- The payload's second component. -/ def rPay2 : Code := comp right rPay
+/-- First component of `rPay2`. -/ def rPay21 : Code := comp left rPay2
+/-- Second component of `rPay2`. -/ def rPay22 : Code := comp right rPay2
+/-- First component of `rPay22`. -/ def rPay221 : Code := comp left rPay22
+/-- Second component of `rPay22`. -/ def rPay222 : Code := comp right rPay22
 
 @[simp] private theorem val_rV (v f k : ℕ) : val rV (Nat.pair v (Nat.pair f k)) = v := by
   rw [rV, val_left', Nat.unpair_pair]
@@ -831,31 +836,31 @@ private theorem rfindFree_rPay222 : RfindFree rPay222 := ⟨trivial, rfindFree_r
 /-! ### The frames' branches -/
 
 /-- Tag 0 — a pair's left value. -/
-private def rB0 : Code :=
+def rB0 : Code :=
   comp cDescend (pair rPay1 (pair rPay2
     (comp cStkCons (pair (pair (constCode 1) rV) rK))))
 
 /-- Tag 1 — a pair's right value. -/
-private def rB1 : Code := comp cRet (pair (pair rPay rV) rK)
+def rB1 : Code := comp cRet (pair (pair rPay rV) rK)
 
 /-- Tag 2 — a composition's inner value. -/
-private def rB2 : Code := comp cDescend (pair rPay (pair rV rK))
+def rB2 : Code := comp cDescend (pair rPay (pair rV rK))
 
 /-- Tag 3's else — the loop takes another turn. -/
-private def rB3loop : Code :=
+def rB3loop : Code :=
   comp cDescend (pair rPay1 (pair (pair rPay21 (pair rPay221 rV))
     (comp cStkCons (pair (pair (constCode 3)
       (pair rPay1 (pair rPay21
         (pair (comp succ rPay221) (comp cPred rPay222))))) rK))))
 
 /-- Tag 4's else — the search probes again. -/
-private def rB4search : Code :=
+def rB4search : Code :=
   comp cDescend (pair rPay1 (pair (pair rPay21 (comp succ rPay22))
     (comp cStkCons (pair (pair (constCode 4)
       (pair rPay1 (pair rPay21 (comp succ rPay22)))) rK))))
 
 /-- The default — a stuck frame. -/
-private def rBdef : Code := comp cRet (pair rV (comp cStkCons (pair rF rK)))
+def rBdef : Code := comp cRet (pair rV (comp cStkCons (pair rF rK)))
 
 /-! ### Each frame branch's value -/
 
@@ -934,7 +939,7 @@ attribute [local irreducible] rB0 rB1 rB2 rB3loop rB4search rBdef
 /-! ### The two inner selections, then the tag tree -/
 
 /-- Tag 3's branch: the loop, done or turning. -/
-private def rB3 : Code := cSel (cEqK 0 rPay222) (comp cRet (pair rV rK)) rB3loop
+def rB3 : Code := cSel (cEqK 0 rPay222) (comp cRet (pair rV rK)) rB3loop
 
 @[simp] private theorem val_rB3 (v f k : ℕ) :
     val rB3 (Nat.pair v (Nat.pair f k)) =
@@ -942,10 +947,10 @@ private def rB3 : Code := cSel (cEqK 0 rPay222) (comp cRet (pair rV rK)) rB3loop
        else val rB3loop (Nat.pair v (Nat.pair f k))) := by
   rw [rB3, val_cSel, val_cEqK, val_rPay222, val_comp, val_pair, val_rV, val_rK, val_cRet]
   by_cases h : f.unpair.2.unpair.2.unpair.2.unpair.2 = 0 <;>
-    simp only [h, reduceCtorEq, if_true, if_false]
+    simp only [h, reduceCtorEq, ite_true, ite_false]
 
 /-- Tag 4's branch: the search, found or probing. -/
-private def rB4 : Code := cSel (cEqK 0 rV) (comp cRet (pair rPay22 rK)) rB4search
+def rB4 : Code := cSel (cEqK 0 rV) (comp cRet (pair rPay22 rK)) rB4search
 
 @[simp] private theorem val_rB4 (v f k : ℕ) :
     val rB4 (Nat.pair v (Nat.pair f k)) =
@@ -953,7 +958,7 @@ private def rB4 : Code := cSel (cEqK 0 rV) (comp cRet (pair rPay22 rK)) rB4searc
        else val rB4search (Nat.pair v (Nat.pair f k))) := by
   rw [rB4, val_cSel, val_cEqK, val_rV, val_comp, val_pair, val_rPay22, val_rK, val_cRet]
   by_cases h : v = 0 <;>
-    simp only [h, reduceCtorEq, if_true, if_false]
+    simp only [h, reduceCtorEq, ite_true, ite_false]
 
 private theorem rfindFree_rB3 : RfindFree rB3 :=
   rfindFree_cSel (rfindFree_cEqK 0 rfindFree_rPay222)
@@ -966,7 +971,7 @@ private theorem rfindFree_rB4 : RfindFree rB4 :=
 attribute [local irreducible] rB3 rB4
 
 /-- **The returning step as a code.** -/
-private def stepReturnU : Code :=
+def stepReturnU : Code :=
   cSel (cEqK 0 rTag) rB0
     (cSel (cEqK 1 rTag) rB1
       (cSel (cEqK 2 rTag) rB2
@@ -1007,10 +1012,10 @@ Three outer tests and two group codes. The capstone's proof is a five-way compos
 cell test, and the two group laws — rather than a walk over sixteen leaves; that reduction is what
 splitting the step into `stepDescendU` and `stepReturnU` bought. -/
 
-/-- The current object's first component. -/ private def uCur1 : Code := comp left cCfCur
-/-- The current object's second component. -/ private def uCur2 : Code := comp right cCfCur
-/-- The stack's top frame. -/ private def uHead : Code := comp cStkHead cCfStk
-/-- The stack's tail. -/ private def uTail : Code := comp cStkTail cCfStk
+/-- The current object's first component. -/ def uCur1 : Code := comp left cCfCur
+/-- The current object's second component. -/ def uCur2 : Code := comp right cCfCur
+/-- The stack's top frame. -/ def uHead : Code := comp cStkHead cCfStk
+/-- The stack's tail. -/ def uTail : Code := comp cStkTail cCfStk
 
 @[simp] private theorem val_uCur1 (s : ℕ) : val uCur1 s = (BoundedInterp.cfCur s).unpair.1 := by
   rw [uCur1, val_comp, val_left', val_cCfCur]
@@ -1027,10 +1032,10 @@ splitting the step into `stepDescendU` and `stepReturnU` bought. -/
   rw [uTail, val_comp, val_cCfStk, val_cStkTail]
 
 /-- The descending arm, fed the step's three slots. -/
-private def uDescend : Code := comp stepDescendU (pair uCur1 (pair uCur2 cCfStk))
+def uDescend : Code := comp stepDescendU (pair uCur1 (pair uCur2 cCfStk))
 
 /-- The returning arm, fed the value, the top frame and the tail. -/
-private def uReturn : Code := comp stepReturnU (pair cCfCur (pair uHead uTail))
+def uReturn : Code := comp stepReturnU (pair cCfCur (pair uHead uTail))
 
 @[simp] private theorem val_uDescend (s : ℕ) :
     val uDescend s = BoundedInterp.stepDescend (BoundedInterp.cfCur s).unpair.1
@@ -1189,7 +1194,7 @@ theorem not_spaceIO_cDbl : ∀ K, ¬ SpaceIO cDbl K := by
   have hlow := size_pair_le_spaceCost_cDbl (2 ^ (K + 3))
   -- and that pair is at least the square
   have hsq : (2 : ℕ) ^ (2 * K + 6) ≤ Nat.pair (2 ^ (K + 3)) (2 ^ (K + 3)) := by
-    rw [Nat.pair, if_neg (by omega)]
+    rw [Nat.pair, ite_eq_right (by omega)]
     have : (2 : ℕ) ^ (2 * K + 6) = 2 ^ (K + 3) * 2 ^ (K + 3) := by
       rw [← pow_add]; ring_nf
     omega
@@ -3453,7 +3458,7 @@ node touches. What *is* absent, and is the point, is any dependence of the leadi
 the run has gone. -/
 
 /-- The initial configuration, from `⟨p, x⟩`. -/
-private def cInit : Code := pair zero (pair cId (constCode 0))
+def cInit : Code := pair zero (pair cId (constCode 0))
 
 @[simp] private theorem val_cInit (p x : ℕ) :
     val cInit (Nat.pair p x) = BoundedInterp.initConfig p x := by

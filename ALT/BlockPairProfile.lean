@@ -3,12 +3,14 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.Data.ZMod.Basic
-import Mathlib.Data.Nat.Digits.Lemmas
-import Mathlib.Algebra.BigOperators.Ring.Finset
-import Mathlib.Data.Fin.VecNotation
-import Mathlib.Algebra.Group.Units.Equiv
-import Mathlib.Tactic.LinearCombination
+module
+
+public import Mathlib.Data.ZMod.Basic
+public import Mathlib.Data.Nat.Digits.Lemmas
+public import Mathlib.Algebra.BigOperators.Ring.Finset
+public import Mathlib.Data.Fin.VecNotation
+public import Mathlib.Algebra.Group.Units.Equiv
+public import Mathlib.Tactic.LinearCombination
 
 /-!
 # Block-pair correlation profile
@@ -39,6 +41,9 @@ import Mathlib.Tactic.LinearCombination
   consume.
 -/
 
+
+@[expose] public section
+
 namespace BlockPairProfile
 
 def cyclicCorr {N : ℕ} [NeZero N] (x : ZMod N → ℤ) (d : ℕ) : ℤ :=
@@ -52,10 +57,12 @@ def crossTail {L : ℕ} (w w' : Fin L → ℤ) (d : ℕ) : ℤ :=
 
 def tmSign (i : ℕ) : ℤ := if (Nat.digits 2 i).count 1 % 2 = 0 then 1 else -1
 
-private def blockIdx {m L : ℕ} [NeZero m] [NeZero L] (t : ZMod (m * L)) : Fin m :=
+/-- The length-`L` block index of `t`, as an element of `Fin m`. -/
+def blockIdx {m L : ℕ} [NeZero m] [NeZero L] (t : ZMod (m * L)) : Fin m :=
   ⟨t.val / L, (Nat.div_lt_iff_lt_mul (NeZero.pos L)).mpr (ZMod.val_lt t)⟩
 
-private def blockOff {m L : ℕ} [NeZero m] [NeZero L] (t : ZMod (m * L)) : Fin L :=
+/-- The offset of `t` within its length-`L` block. -/
+def blockOff {m L : ℕ} [NeZero m] [NeZero L] (t : ZMod (m * L)) : Fin L :=
   ⟨t.val % L, Nat.mod_lt _ (NeZero.pos L)⟩
 
 private def combine {m L : ℕ} (j : Fin m) (p : Fin L) : ZMod (m * L) :=
@@ -113,7 +120,7 @@ private lemma sum_combine {m L : ℕ} [NeZero m] [NeZero L] (F : ZMod (m * L) �
   · intro t _; simp [combine_blockIdx_blockOff]
 
 /-- The cyclic successor block index, `(j.val + 1) % m`. -/
-private def nextBlock {m : ℕ} [NeZero m] (j : Fin m) : Fin m :=
+def nextBlock {m : ℕ} [NeZero m] (j : Fin m) : Fin m :=
   ⟨(j.val + 1) % m, Nat.mod_lt _ (NeZero.pos m)⟩
 
 private lemma nextBlock_eq_add_one {m : ℕ} [NeZero m] (j : Fin m) : nextBlock j = j + 1 := by
@@ -152,16 +159,16 @@ private def rotBwd {L : ℕ} (d : ℕ) (hd : d ≤ L) (y : Fin L) : Fin L :=
   if h : L ≤ y.val + d then ⟨y.val + d - L, by omega⟩ else ⟨y.val + d, by omega⟩
 
 private lemma rotFwd_val_lt {L : ℕ} (d : ℕ) (x : Fin L) (h : x.val < d) :
-    (rotFwd d x).val = L - d + x.val := by rw [rotFwd, dif_pos h]
+    (rotFwd d x).val = L - d + x.val := by rw [rotFwd, dite_eq_left h]
 
 private lemma rotFwd_val_ge {L : ℕ} (d : ℕ) (x : Fin L) (h : ¬ x.val < d) :
-    (rotFwd d x).val = x.val - d := by rw [rotFwd, dif_neg h]
+    (rotFwd d x).val = x.val - d := by rw [rotFwd, dite_eq_right h]
 
 private lemma rotBwd_val_lt {L : ℕ} (d : ℕ) (hd : d ≤ L) (y : Fin L) (h : L ≤ y.val + d) :
-    (rotBwd d hd y).val = y.val + d - L := by rw [rotBwd, dif_pos h]
+    (rotBwd d hd y).val = y.val + d - L := by rw [rotBwd, dite_eq_left h]
 
 private lemma rotBwd_val_ge {L : ℕ} (d : ℕ) (hd : d ≤ L) (y : Fin L) (h : ¬ L ≤ y.val + d) :
-    (rotBwd d hd y).val = y.val + d := by rw [rotBwd, dif_neg h]
+    (rotBwd d hd y).val = y.val + d := by rw [rotBwd, dite_eq_right h]
 
 private lemma rotBwd_rotFwd {L : ℕ} (d : ℕ) (hd : d ≤ L) (x : Fin L) :
     rotBwd d hd (rotFwd d x) = x := by
@@ -204,7 +211,7 @@ private lemma crossTail_eq_sum_p {L : ℕ} (w w' : Fin L → ℤ) (d : ℕ) (hd 
     by_cases h : x.val < d
     · have e1 : (rotFwd d x).val = L - d + x.val := rotFwd_val_lt d x h
       have e2 : L ≤ (rotFwd d x).val + d := by omega
-      rw [dif_pos h, dif_pos e2]
+      rw [dite_eq_left h, dite_eq_left e2]
       have hfx : (⟨L - d + x.val, by omega⟩ : Fin L) = rotFwd d x := Fin.ext e1.symm
       have hidx : (⟨(rotFwd d x).val + d - L, by omega⟩ : Fin L) = x := by
         apply Fin.ext
@@ -213,7 +220,7 @@ private lemma crossTail_eq_sum_p {L : ℕ} (w w' : Fin L → ℤ) (d : ℕ) (hd 
       rw [hfx, hidx]
     · have e1 : (rotFwd d x).val = x.val - d := rotFwd_val_ge d x h
       have e2 : ¬ L ≤ (rotFwd d x).val + d := by omega
-      rw [dif_neg h, dif_neg e2]
+      rw [dite_eq_right h, dite_eq_right e2]
 
 /-- The word carried by block `j`: `u` on even blocks, `v` on odd blocks. -/
 private def wordAt {m L : ℕ} (u v : Fin L → ℤ) (j : Fin m) : Fin L → ℤ :=
@@ -241,13 +248,13 @@ private lemma inner_sum_eq {m L : ℕ} [NeZero m] [NeZero L] (u v : Fin L → �
     intro p
     rw [blockSeq_combine]
     by_cases h : p.val + d < L
-    · rw [shift_inBlock j p d h, blockSeq_combine, dif_pos h,
-        dif_neg (show ¬ (L ≤ p.val + d) by omega)]
+    · rw [shift_inBlock j p d h, blockSeq_combine, dite_eq_left h,
+        dite_eq_right (show ¬ (L ≤ p.val + d) by omega)]
       have hring : ε j * wordAt u v j p * (ε j * wordAt u v j ⟨p.val + d, h⟩) =
           ε j * ε j * (wordAt u v j p * wordAt u v j ⟨p.val + d, h⟩) := by ring
       rw [hring, hε j, one_mul, add_zero]
-    · rw [shift_crossBlock j p d hd (by omega), blockSeq_combine, dif_neg h,
-        dif_pos (show L ≤ p.val + d by omega)]
+    · rw [shift_crossBlock j p d hd (by omega), blockSeq_combine, dite_eq_right h,
+        dite_eq_left (show L ≤ p.val + d by omega)]
       rw [zero_add]
       ring
   simp_rw [hpt]
@@ -292,12 +299,12 @@ private lemma nextBlock_oddIdx {M' : ℕ} [NeZero M'] [NeZero (2 * M')] (i : Fin
 private lemma wordAt_evenIdx {M' L : ℕ} (u v : Fin L → ℤ) (i : Fin M') :
     wordAt u v (evenIdx i) = u := by
   unfold wordAt
-  rw [if_pos (evenIdx_even i)]
+  rw [ite_eq_left (evenIdx_even i)]
 
 private lemma wordAt_oddIdx {M' L : ℕ} (u v : Fin L → ℤ) (i : Fin M') :
     wordAt u v (oddIdx i) = v := by
   unfold wordAt
-  rw [if_neg (Nat.not_even_iff_odd.mpr (oddIdx_odd i))]
+  rw [ite_eq_right (Nat.not_even_iff_odd.mpr (oddIdx_odd i))]
 
 private lemma sum_filter_even {M' : ℕ} [NeZero (2 * M')] (G : Fin (2 * M') → ℤ) :
     ∑ j ∈ Finset.univ.filter (fun j : Fin (2 * M') => Even j.val), G j =
@@ -404,7 +411,7 @@ theorem cyclicCorr_blockSeq {L : ℕ} [NeZero L] {m M' : ℕ} [NeZero m] (hm : m
         = aperiodicCorr v d + ε (oddIdx i) * ε (nextBlock (oddIdx i)) * crossTail v u d := by
     intro i
     have hev : Even (nextBlock (oddIdx i)).val := by rw [nextBlock_oddIdx]; exact evenIdx_even _
-    rw [wordAt_oddIdx, wordAt, if_pos hev]
+    rw [wordAt_oddIdx, wordAt, ite_eq_left hev]
   simp_rw [hwe, hwo]
   rw [Finset.sum_add_distrib, Finset.sum_add_distrib, ← Finset.sum_mul, ← Finset.sum_mul,
     Finset.sum_const, Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul,
@@ -572,10 +579,10 @@ private theorem singlePrefix_eq_full_sum {N : ℕ} [NeZero N] (x : ZMod N → �
 
 /-- The word carried by ℕ-indexed block `j`, depending only on its parity: `u` on even blocks, `v`
 on odd blocks. -/
-private def wordAtNat {L : ℕ} (u v : Fin L → ℤ) (j : ℕ) : Fin L → ℤ := if Even j then u else v
+def wordAtNat {L : ℕ} (u v : Fin L → ℤ) (j : ℕ) : Fin L → ℤ := if Even j then u else v
 
 /-- The sign carried by ℕ-indexed block `j`, read through the cyclic supply by reduction mod `m`. -/
-private def signAtNat {m : ℕ} [NeZero m] (ε : Fin m → ℤ) (j : ℕ) : ℤ :=
+def signAtNat {m : ℕ} [NeZero m] (ε : Fin m → ℤ) (j : ℕ) : ℤ :=
   ε ⟨j % m, Nat.mod_lt _ (NeZero.pos m)⟩
 
 private lemma wordAt_eq_wordAtNat {m L : ℕ} (u v : Fin L → ℤ) (j : Fin m) :
@@ -668,11 +675,11 @@ private lemma cyclicCorrPrefix_blockSeq_blocks {L : ℕ} [NeZero L] {m : ℕ} [N
     · have hmod : n % 2 = 0 := Nat.even_iff.mp hen
       have hcnt1 : (n + 1 + 1) / 2 = (n + 1) / 2 + 1 := by omega
       have hcnt2 : (n + 1) / 2 = n / 2 := by omega
-      rw [Finset.sum_range_succ, Finset.sum_range_succ, if_pos hen,
-        if_neg (by rw [Nat.odd_iff]; omega : ¬ Odd n)]
-      have hwe : wordAtNat u v n = u := if_pos hen
+      rw [Finset.sum_range_succ, Finset.sum_range_succ, ite_eq_left hen,
+        ite_eq_right (by rw [Nat.odd_iff]; omega : ¬ Odd n)]
+      have hwe : wordAtNat u v n = u := ite_eq_left hen
       have hwo : wordAtNat u v (n + 1) = v := by
-        unfold wordAtNat; rw [if_neg (by rw [Nat.even_iff]; omega : ¬ Even (n + 1))]
+        unfold wordAtNat; rw [ite_eq_right (by rw [Nat.even_iff]; omega : ¬ Even (n + 1))]
       rw [hwe, hwo, hcnt1, hcnt2]
       push_cast
       ring
@@ -680,11 +687,11 @@ private lemma cyclicCorrPrefix_blockSeq_blocks {L : ℕ} [NeZero L] {m : ℕ} [N
       have hcnt1 : (n + 1 + 1) / 2 = (n + 1) / 2 := by omega
       have hcnt2 : (n + 1) / 2 = n / 2 + 1 := by omega
       rw [Finset.sum_range_succ, Finset.sum_range_succ,
-        if_neg (by rw [Nat.even_iff]; omega : ¬ Even n), if_pos hon]
+        ite_eq_right (by rw [Nat.even_iff]; omega : ¬ Even n), ite_eq_left hon]
       have hwo : wordAtNat u v n = v := by
-        unfold wordAtNat; rw [if_neg (by rw [Nat.even_iff]; omega : ¬ Even n)]
+        unfold wordAtNat; rw [ite_eq_right (by rw [Nat.even_iff]; omega : ¬ Even n)]
       have hwe : wordAtNat u v (n + 1) = u := by
-        unfold wordAtNat; rw [if_pos (by rw [Nat.even_iff]; omega : Even (n + 1))]
+        unfold wordAtNat; rw [ite_eq_left (by rw [Nat.even_iff]; omega : Even (n + 1))]
       rw [hwo, hwe, hcnt1, hcnt2]
       push_cast
       ring
@@ -699,19 +706,19 @@ private lemma blockSeq_shift_eq {m L : ℕ} [NeZero m] [NeZero L] (u v : Fin L �
           else 0) := by
   rw [blockSeq_combine]
   by_cases h : p.val + d < L
-  · rw [shift_inBlock j p d h, blockSeq_combine, dif_pos h,
-      dif_neg (show ¬ (L ≤ p.val + d) by omega)]
+  · rw [shift_inBlock j p d h, blockSeq_combine, dite_eq_left h,
+      dite_eq_right (show ¬ (L ≤ p.val + d) by omega)]
     have hring : ε j * wordAt u v j p * (ε j * wordAt u v j ⟨p.val + d, h⟩) =
         ε j * ε j * (wordAt u v j p * wordAt u v j ⟨p.val + d, h⟩) := by ring
     rw [hring, hε j, one_mul, add_zero]
-  · rw [shift_crossBlock j p d hd (by omega), blockSeq_combine, dif_neg h,
-      dif_pos (show L ≤ p.val + d by omega)]
+  · rw [shift_crossBlock j p d hd (by omega), blockSeq_combine, dite_eq_right h,
+      dite_eq_left (show L ≤ p.val + d by omega)]
     rw [zero_add]
     ring
 
 /-- The block-local raw remainder over the first `r` positions of a single block: the same
 per-position query the full block decomposition sums, truncated short of the block boundary. -/
-private def blockRemainder {L : ℕ} [NeZero L] (w w' : Fin L → ℤ) (η : ℤ) (d r : ℕ) : ℤ :=
+def blockRemainder {L : ℕ} [NeZero L] (w w' : Fin L → ℤ) (η : ℤ) (d r : ℕ) : ℤ :=
   ∑ i ∈ Finset.range r, if h : i < L then
       (if h2 : i + d < L then w ⟨i, h⟩ * w ⟨i + d, h2⟩
        else η * (w ⟨i, h⟩ * w' ⟨(i + d - L) % L, Nat.mod_lt _ (NeZero.pos L)⟩))
@@ -729,15 +736,15 @@ private lemma blockRemainder_eq {m L : ℕ} [NeZero m] [NeZero L] (hm2 : Even m)
   intro i hi
   rw [Finset.mem_range] at hi
   have hiL : i < L := by omega
-  rw [dif_pos hiL]
+  rw [dite_eq_left hiL]
   have hce : ((J * L + i : ℕ) : ZMod (m * L)) = combine (⟨J, hJ⟩ : Fin m) ⟨i, hiL⟩ := by
     unfold combine; congr 1; ring
   rw [hce, blockSeq_shift_eq u v ε hε ⟨J, hJ⟩ ⟨i, hiL⟩ d hd]
   by_cases h2 : i + d < L
-  · rw [dif_pos h2, dif_pos h2, dif_neg (show ¬ (L ≤ i + d) by omega), add_zero,
+  · rw [dite_eq_left h2, dite_eq_left h2, dite_eq_right (show ¬ (L ≤ i + d) by omega), add_zero,
       wordAt_eq_wordAtNat]
   · have hmodeq : (i + d - L) % L = i + d - L := Nat.mod_eq_of_lt (by omega)
-    rw [dif_neg h2, dif_neg h2, dif_pos (show L ≤ i + d by omega), zero_add,
+    rw [dite_eq_right h2, dite_eq_right h2, dite_eq_left (show L ≤ i + d by omega), zero_add,
       wordAt_eq_wordAtNat, wordAt_nextBlock_eq_wordAtNat_succ hm2,
       sign_nextBlock_eq_signAtNat_succ ε, ← signAtNat_val_eq ε (⟨J, hJ⟩ : Fin m)]
     simp only [hmodeq]
@@ -804,11 +811,11 @@ private lemma sum_range_ite_lt (L d : ℕ) (hd : d ≤ L) :
     apply Finset.sum_congr rfl
     intro i hi
     rw [Finset.mem_range] at hi
-    rw [if_pos hi]
+    rw [ite_eq_left hi]
   have h2 : (∑ i ∈ Finset.range (L - d), if d + i < d then (1 : ℤ) else 0) = 0 := by
     apply Finset.sum_eq_zero
     intro i _
-    rw [if_neg (by omega)]
+    rw [ite_eq_right (by omega)]
   rw [h1, h2, add_zero]
   simp
 
@@ -1042,16 +1049,16 @@ theorem cyclicCorrPrefix_blockSeq_spike {L : ℕ} [NeZero L] {m M' : ℕ} [NeZer
           _ = 1 := by rw [e1, e2]; ring
       rcases Nat.even_or_odd J with hJe | hJo
       · have hmod : J % 2 = 0 := Nat.even_iff.mp hJe
-        have hwe : wordAtNat u v J = u := if_pos hJe
+        have hwe : wordAtNat u v J = u := ite_eq_left hJe
         have hwo : wordAtNat u v (J + 1) = v := by
-          unfold wordAtNat; rw [if_neg (by rw [Nat.even_iff]; omega : ¬ Even (J + 1))]
+          unfold wordAtNat; rw [ite_eq_right (by rw [Nat.even_iff]; omega : ¬ Even (J + 1))]
         rw [hwe, hwo]
         exact hRemU _ hη2 r hrL.le
       · have hmod : J % 2 = 1 := Nat.odd_iff.mp hJo
         have hwo : wordAtNat u v J = v := by
-          unfold wordAtNat; rw [if_neg (by rw [Nat.even_iff]; omega : ¬ Even J)]
+          unfold wordAtNat; rw [ite_eq_right (by rw [Nat.even_iff]; omega : ¬ Even J)]
         have hwe : wordAtNat u v (J + 1) = u := by
-          unfold wordAtNat; rw [if_pos (by rw [Nat.even_iff]; omega : Even (J + 1))]
+          unfold wordAtNat; rw [ite_eq_left (by rw [Nat.even_iff]; omega : Even (J + 1))]
         rw [hwo, hwe]
         exact hRemV _ hη2 r hrL.le
   have hrem : cyclicCorrPrefix (blockSeq u v ε) k T =
@@ -1512,7 +1519,7 @@ private lemma tauPartialEven_two_mul (t : ℕ) :
     have he : Even (2 * n) := ⟨n, two_mul n⟩
     have ho : ¬ Even (2 * n + 1) := by simp
     have h1 : tau (2 * n) = tmSign n := by unfold tau; congr 1; omega
-    rw [if_pos he, if_neg ho, h1]
+    rw [ite_eq_left he, ite_eq_right ho, h1]
     ring
 
 private lemma tauPartialEven_two_mul_add_one (t : ℕ) :
@@ -1521,7 +1528,7 @@ private lemma tauPartialEven_two_mul_add_one (t : ℕ) :
   rw [Finset.sum_range_succ, tauPartialEven_two_mul]
   have he : Even (2 * t) := ⟨t, two_mul t⟩
   have h1 : tau (2 * t) = tmSign t := by unfold tau; congr 1; omega
-  rw [if_pos he, h1, Finset.sum_range_succ]
+  rw [ite_eq_left he, h1, Finset.sum_range_succ]
 
 private lemma tauPartialOdd_two_mul (t : ℕ) :
     (∑ j ∈ Finset.range (2 * t), if Odd j then tau j else 0) =
@@ -1534,7 +1541,7 @@ private lemma tauPartialOdd_two_mul (t : ℕ) :
     have hno : ¬ Odd (2 * n) := by rintro ⟨k, hk⟩; omega
     have ho : Odd (2 * n + 1) := ⟨n, rfl⟩
     have h1 : tau (2 * n + 1) = tmSign n := by unfold tau; congr 1; omega
-    rw [if_neg hno, if_pos ho, h1]
+    rw [ite_eq_right hno, ite_eq_left ho, h1]
     ring
 
 private lemma tauPartialOdd_two_mul_add_one (t : ℕ) :
@@ -1542,7 +1549,7 @@ private lemma tauPartialOdd_two_mul_add_one (t : ℕ) :
       ∑ i ∈ Finset.range t, tmSign i := by
   rw [Finset.sum_range_succ, tauPartialOdd_two_mul]
   have hno : ¬ Odd (2 * t) := by rintro ⟨k, hk⟩; omega
-  rw [if_neg hno, add_zero]
+  rw [ite_eq_right hno, add_zero]
 
 /-- **The even-class partial transition sum is bounded by `1`**: the class reads `tmSign` at the
 half-index, so this is `tmSign_partial_abs_le_one` transported along `tauPartialEven_two_mul`/
@@ -1864,13 +1871,13 @@ private lemma wordV_sum : (∑ p : Fin 24, wordV p) = 4 := by decide
 private lemma wordSumAtNat_wordU_wordV_even (t : ℕ) :
     (∑ p : Fin 24, wordAtNat wordU wordV (2 * t) p) = 0 := by
   have heq : wordAtNat wordU wordV (2 * t) = wordU := by
-    unfold wordAtNat; rw [if_pos ⟨t, two_mul t⟩]
+    unfold wordAtNat; rw [ite_eq_left ⟨t, two_mul t⟩]
   rw [heq, wordU_sum]
 
 private lemma wordSumAtNat_wordU_wordV_odd (t : ℕ) :
     (∑ p : Fin 24, wordAtNat wordU wordV (2 * t + 1) p) = 4 := by
   have heq : wordAtNat wordU wordV (2 * t + 1) = wordV := by
-    unfold wordAtNat; rw [if_neg (by rw [Nat.even_iff]; omega : ¬ Even (2 * t + 1))]
+    unfold wordAtNat; rw [ite_eq_right (by rw [Nat.even_iff]; omega : ¬ Even (2 * t + 1))]
   rw [heq, wordV_sum]
 
 /-- The running signed word-sum, at an even-length prefix: it reads off `4` times a Thue–Morse
@@ -2288,7 +2295,7 @@ theorem aperiodicCorr_antiExt_spike (s : Fin 8 → ℤ) (hs : ∀ i, s i * s i =
     rw [antiExt_one]
     unfold aperiodicCorr
     have h0 : ∀ p : Fin 8, (if h : p.val + 8 < 8 then s p * s ⟨p.val + 8, h⟩ else 0) = 0 := by
-      intro p; rw [dif_neg]; omega
+      intro p; rw [dite_eq_right]; omega
     simp_rw [h0]
     simp
   | succ n hn ih =>
@@ -2351,7 +2358,7 @@ private lemma abs_alt_sum_le_one (r : ℕ) : |∑ j ∈ Finset.range r, (-1 : �
 private lemma antiExt_wordSumAtNat_even (r t : ℕ) :
     (∑ p : Fin (8 * r), wordAtNat (antiExt seedU r) (antiExt seedV r) (2 * t) p) = 0 := by
   have heq : wordAtNat (antiExt seedU r) (antiExt seedV r) (2 * t) = antiExt seedU r := by
-    unfold wordAtNat; rw [if_pos ⟨t, two_mul t⟩]
+    unfold wordAtNat; rw [ite_eq_left ⟨t, two_mul t⟩]
   rw [heq, antiExt_sum]
   have hsum0 : (∑ i : Fin 8, seedU i) = 0 := by decide
   rw [hsum0, mul_zero]
@@ -2360,7 +2367,7 @@ private lemma antiExt_wordSumAtNat_odd (r t : ℕ) :
     (∑ p : Fin (8 * r), wordAtNat (antiExt seedU r) (antiExt seedV r) (2 * t + 1) p) =
       (∑ j ∈ Finset.range r, (-1 : ℤ) ^ j) * 4 := by
   have heq : wordAtNat (antiExt seedU r) (antiExt seedV r) (2 * t + 1) = antiExt seedV r := by
-    unfold wordAtNat; rw [if_neg (by rw [Nat.even_iff]; omega : ¬ Even (2 * t + 1))]
+    unfold wordAtNat; rw [ite_eq_right (by rw [Nat.even_iff]; omega : ¬ Even (2 * t + 1))]
   rw [heq, antiExt_sum]
   have hsum4 : (∑ i : Fin 8, seedV i) = 4 := by decide
   rw [hsum4]
@@ -2453,7 +2460,7 @@ private lemma blockRemainder_antiExt_eq (s1 s2 : Fin 8 → ℤ) (r : ℕ) [NeZer
   intro i hi
   rw [Finset.mem_range] at hi
   have hiL : i < 8 * r := by omega
-  rw [dif_pos hiL]
+  rw [dite_eq_left hiL]
   split_ifs with h2
   · change antiExtNat s1 i * antiExtNat s1 (i + 8) = antiExtNat s1 i * antiExtNat s1 (i + 8)
     rfl
@@ -2501,11 +2508,11 @@ private theorem blockRemainder_antiExt_bound (s1 s2 : Fin 8 → ℤ) (hs1 : ∀ 
     · apply Finset.sum_congr rfl
       intro i hi
       rw [Finset.mem_range] at hi
-      rw [if_pos (by omega : i + 8 < L)]
+      rw [ite_eq_left (by omega : i + 8 < L)]
     · apply Finset.sum_congr rfl
       intro i hi
       rw [Finset.mem_range] at hi
-      rw [if_neg (by omega : ¬ inLen + i + 8 < L)]
+      rw [ite_eq_right (by omega : ¬ inLen + i + 8 < L)]
   have hinExact : ∑ i ∈ Finset.range inLen, antiExtNat s1 i * antiExtNat s1 (i + 8) =
       -(inLen : ℤ) := by
     have hterm : ∀ i ∈ Finset.range inLen,
@@ -2766,13 +2773,13 @@ private lemma wordV2_sum : (∑ p : Fin 22, wordV2 p) = -2 := by decide
 private lemma wordSumAtNat_wordU2_wordV2_even (t : ℕ) :
     (∑ p : Fin 22, wordAtNat wordU2 wordV2 (2 * t) p) = 0 := by
   have heq : wordAtNat wordU2 wordV2 (2 * t) = wordU2 := by
-    unfold wordAtNat; rw [if_pos ⟨t, two_mul t⟩]
+    unfold wordAtNat; rw [ite_eq_left ⟨t, two_mul t⟩]
   rw [heq, wordU2_sum]
 
 private lemma wordSumAtNat_wordU2_wordV2_odd (t : ℕ) :
     (∑ p : Fin 22, wordAtNat wordU2 wordV2 (2 * t + 1) p) = -2 := by
   have heq : wordAtNat wordU2 wordV2 (2 * t + 1) = wordV2 := by
-    unfold wordAtNat; rw [if_neg (by rw [Nat.even_iff]; omega : ¬ Even (2 * t + 1))]
+    unfold wordAtNat; rw [ite_eq_right (by rw [Nat.even_iff]; omega : ¬ Even (2 * t + 1))]
   rw [heq, wordV2_sum]
 
 /-- The running signed word-sum, at an even-length prefix: `wordU2`'s zero balance kills every

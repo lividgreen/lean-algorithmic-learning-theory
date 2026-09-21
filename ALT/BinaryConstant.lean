@@ -3,9 +3,11 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.Data.Nat.Size
-import ALT.AdditiveComplexity
-import ALT.Code.EvalLaws
+module
+
+public import Mathlib.Data.Nat.Size
+public import ALT.AdditiveComplexity
+public import ALT.Code.EvalLaws
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -37,6 +39,9 @@ doubling code `dbl` (`x ↦ 2x`, via universality) plus one `succ`/`id` per bit,
 * `size_succ_div_two`: the binary-length recursion the length bound runs on. The `comp` eval law
   it is used with, `eval_comp_some`, comes from `ALT.Code.EvalLaws`.
 -/
+
+
+@[expose] public section
 
 namespace AdditiveComplexity
 

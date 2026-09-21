@@ -3,112 +3,115 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.Decoupling
-import ALT.PersistenceCapacity
-import ALT.DecoupledSimulation
-import ALT.ParameterizedNNO
-import ALT.GodelInternalization
-import ALT.RepFintype
-import ALT.RecursorAlgebra
-import ALT.Realizability
-import ALT.RealizabilityCCC
-import ALT.RealizabilityRecursor
-import ALT.RealizabilityCoproduct
-import ALT.RealizabilitySubobject
-import ALT.CapacityLayer
-import ALT.RealizerLength
-import ALT.CategoricalThreshold
-import ALT.ReflectiveAutomaton
-import ALT.ChengCCC
-import ALT.FiniteInfoTheory
-import ALT.Reflective
-import ALT.CounterLearner
-import ALT.MDLCoding
-import ALT.GrunwaldMehtaDiscovery
-import ALT.RetentionUpperBound
-import ALT.BayesRedundancy
-import ALT.DeterministicDiscovery
-import ALT.CountableDiscovery
-import ALT.ExtensionalDiscovery
-import ALT.HellingerBridge
-import ALT.KolmogorovTimeBounded
-import ALT.PolyTimeAccounting
-import ALT.ParityCounterexample
-import ALT.SQVersionSpace
-import ALT.SampleComplexity
-import ALT.SQAlgorithm
-import ALT.CommitmentSeam
-import ALT.SQEnvelope
-import ALT.SQOracle
-import ALT.SQPredictiveTransfer
-import ALT.SQPrunedMass
-import ALT.SQMixtureSupermartingale
-import ALT.SQObjects
-import ALT.SQSearchPhaseMass
-import ALT.Ville
-import ALT.PrefixComplexity
-import ALT.AdditiveComplexity
-import ALT.BinaryConstant
-import ALT.PrefixInvariance
-import ALT.CodeDataRate
-import ALT.PrefixMachine
-import ALT.BitStringPrimrec
-import ALT.AlgorithmicProbability
-import ALT.CodingTheoremDecoder
-import ALT.KraftChaitin
-import ALT.CodingTheorem
-import ALT.StructureFunction
-import ALT.SearchCost
-import ALT.SearchSpace
-import ALT.TimeCost
-import ALT.PolyTime
-import ALT.CheckerWorkspace
-import ALT.CapacityBoundedEval
-import ALT.BoundedInterp
-import ALT.CodePacking
-import ALT.UniversalAt
-import ALT.GradeTransport
-import ALT.GradedApplication
-import ALT.GradedConjugation
-import ALT.GradedSimulation
-import ALT.Collector
-import ALT.DecisionListData
-import ALT.DecisionListSolver
+module
+
+public import ALT.Decoupling
+public import ALT.PersistenceCapacity
+public import ALT.DecoupledSimulation
+public import ALT.ParameterizedNNO
+public import ALT.GodelInternalization
+public import ALT.RepFintype
+public import ALT.RecursorAlgebra
+public import ALT.Realizability
+public import ALT.RealizabilityCCC
+public import ALT.RealizabilityRecursor
+public import ALT.RealizabilityCoproduct
+public import ALT.RealizabilitySubobject
+public import ALT.CapacityLayer
+public import ALT.RealizerLength
+public import ALT.CategoricalThreshold
+public import ALT.ReflectiveAutomaton
+public import ALT.ChengCCC
+public import ALT.FiniteInfoTheory
+public import ALT.Reflective
+public import ALT.CounterLearner
+public import ALT.MDLCoding
+public import ALT.GrunwaldMehtaDiscovery
+public import ALT.RetentionUpperBound
+public import ALT.BayesRedundancy
+public import ALT.DeterministicDiscovery
+public import ALT.CountableDiscovery
+public import ALT.ExtensionalDiscovery
+public import ALT.HellingerBridge
+public import ALT.KolmogorovTimeBounded
+public import ALT.PolyTimeAccounting
+public import ALT.ParityCounterexample
+public import ALT.SQVersionSpace
+public import ALT.SampleComplexity
+public import ALT.SQAlgorithm
+public import ALT.CommitmentSeam
+public import ALT.SQEnvelope
+public import ALT.SQOracle
+public import ALT.SQPredictiveTransfer
+public import ALT.SQPrunedMass
+public import ALT.SQMixtureSupermartingale
+public import ALT.SQObjects
+public import ALT.SQSearchPhaseMass
+public import ALT.Ville
+public import ALT.PrefixComplexity
+public import ALT.AdditiveComplexity
+public import ALT.BinaryConstant
+public import ALT.PrefixInvariance
+public import ALT.CodeDataRate
+public import ALT.PrefixMachine
+public import ALT.BitStringPrimrec
+public import ALT.AlgorithmicProbability
+public import ALT.CodingTheoremDecoder
+public import ALT.KraftChaitin
+public import ALT.CodingTheorem
+public import ALT.KraftMinimality
+public import ALT.StructureFunction
+public import ALT.SearchCost
+public import ALT.SearchSpace
+public import ALT.TimeCost
+public import ALT.PolyTime
+public import ALT.CheckerWorkspace
+public import ALT.CapacityBoundedEval
+public import ALT.BoundedInterp
+public import ALT.CodePacking
+public import ALT.UniversalAt
+public import ALT.GradeTransport
+public import ALT.GradedApplication
+public import ALT.GradedConjugation
+public import ALT.GradedSimulation
+public import ALT.Collector
+public import ALT.DecisionListData
+public import ALT.DecisionListSolver
 -- Guard-gap closure: pre-`#guard_msgs` modules (capstones guarded in the appended section below).
-import ALT.CartesianClosed
-import ALT.GodelThreshold
-import ALT.RegimeConsistency
-import ALT.CapacityThreshold
-import ALT.MDLDominance
-import ALT.RetentionOverhead
-import ALT.PriorNormalization
-import ALT.EpsilonZeroBound
-import ALT.KReconnection
-import ALT.KolmogorovComplexity
-import ALT.KolmogorovBitlen
-import ALT.ChainDependencyAudit
-import ALT.ExcessOrder
-import ALT.SkewFiber
-import ALT.AccretingWitness
-import ALT.AccretiveDecoupling
-import ALT.GrowingWorld
-import ALT.GrowingCore
-import ALT.SurpriseBudget
-import ALT.WeightedFiber
-import ALT.QuantizationRate
-import ALT.FlooredMixture
-import ALT.SubstrateClass
-import ALT.SubstrateEmergence
-import ALT.BlockPairProfile
-import ALT.BlockPairHost
-import ALT.BlockPairPrice
-import ALT.TapeHost
-import ALT.TapeHostFiber
-import ALT.TapeHostObservability
-import ALT.TapeHostWitness
-import ALT.BlockPairCriterion
-import ALT.BlockPairFamilyCriterion
-import ALT.TapeHostSurvival
+public import ALT.CartesianClosed
+public import ALT.GodelThreshold
+public import ALT.RegimeConsistency
+public import ALT.CapacityThreshold
+public import ALT.MDLDominance
+public import ALT.RetentionOverhead
+public import ALT.PriorNormalization
+public import ALT.EpsilonZeroBound
+public import ALT.KReconnection
+public import ALT.KolmogorovComplexity
+public import ALT.KolmogorovBitlen
+public import ALT.ChainDependencyAudit
+public import ALT.ExcessOrder
+public import ALT.SkewFiber
+public import ALT.AccretingWitness
+public import ALT.AccretiveDecoupling
+public import ALT.GrowingWorld
+public import ALT.GrowingCore
+public import ALT.SurpriseBudget
+public import ALT.WeightedFiber
+public import ALT.QuantizationRate
+public import ALT.FlooredMixture
+public import ALT.SubstrateClass
+public import ALT.SubstrateEmergence
+public import ALT.BlockPairProfile
+public import ALT.BlockPairHost
+public import ALT.BlockPairPrice
+public import ALT.TapeHost
+public import ALT.TapeHostFiber
+public import ALT.TapeHostObservability
+public import ALT.TapeHostWitness
+public import ALT.BlockPairCriterion
+public import ALT.BlockPairFamilyCriterion
+public import ALT.TapeHostSurvival
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -131,6 +134,9 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 -/
 
 -- §3 Decoupling Lemma (FV-7) — constructive core
+
+@[expose] public section
+
 /-- info: 'Decoupling.decoupling_iff_persists_all' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms Decoupling.decoupling_iff_persists_all
@@ -775,6 +781,12 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms AdditiveComplexity.card_KE_le
 
+-- The same count at `2 ^ L`, by Kraft's inequality for `KE` (`kraft_KE`) instead of by counting
+-- bit-strings: each value weighs at least `2 ^ (-L)` in a series bounded by one.
+/-- info: 'AdditiveComplexity.card_KE_le_two_pow' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms AdditiveComplexity.card_KE_le_two_pow
+
 -- The serialization's codes grow at `1 + 4√3 ≈ 7.928` per node, below the `8` its three bits
 -- could carry: a node-counted refinement of `card_KE_le`, via a truncated-Cauchy-square bound on
 -- the counting generating function's singularity.
@@ -788,6 +800,12 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 /-- info: 'CodeDataRate.KE_data_rate' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms CodeDataRate.KE_data_rate
+
+-- The local prefix-freeness predicate on bit-strings is Mathlib's `IsPrefixFree` at the binary
+-- alphabet: the bridge through which the two Kraft-layer theorems are Mathlib's.
+/-- info: 'PrefixMachine.prefixFree_iff_isPrefixFree' does not depend on any axioms -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.prefixFree_iff_isPrefixFree
 
 -- The prefix-free-ification `pfy`'s domain, read as bit-strings, contains no member a proper
 -- prefix of another: the standard greedy-by-stage construction of a prefix machine.
@@ -4305,3 +4323,57 @@ strict subset the guard pins verbatim. -/
 /-- info: 'PrefixMachine.QB_le_two_pow_mul' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms PrefixMachine.QB_le_two_pow_mul
+
+-- The coding theorem in multiplicative form, at a general lower-semicomputable semimeasure.
+/-- info: 'PrefixMachine.coding_theorem_mul' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.coding_theorem_mul
+
+-- `QB`'s universality: it dominates every lower-semicomputable semimeasure up to a constant
+-- factor — a universal (maximal) lower-semicomputable semimeasure, never "the" one.
+/-- info: 'PrefixMachine.QB_universal' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.QB_universal
+
+-- The joint-satisfiability witness for `QB_universal`'s hypotheses: the point mass at `0`.
+/-- info: 'PrefixMachine.QB_universal_nonvacuous' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.QB_universal_nonvacuous
+
+-- Prefix complexity's minimality: an upper-semicomputable `f` with `KB ≤ f + c` for some `c` iff
+-- its Kraft weight is summable.
+/-- info: 'PrefixMachine.KB_le_add_of_upperSemicomputable_summable' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.KB_le_add_of_upperSemicomputable_summable
+
+-- The joint-satisfiability witness for the minimality lemma's two hypotheses, at twice the
+-- bit-length.
+/-- info: 'PrefixMachine.KB_le_add_of_upperSemicomputable_summable_nonvacuous' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.KB_le_add_of_upperSemicomputable_summable_nonvacuous
+
+-- The converse half: `KB ≤ f + c` for some `c` forces `f`'s Kraft weight to be summable.
+/-- info: 'PrefixMachine.summable_of_KB_le_add' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.summable_of_KB_le_add
+
+-- Both halves of the minimality lemma, as one `iff`, at an upper-semicomputable `f`.
+/-- info: 'PrefixMachine.KB_le_add_iff_summable' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.KB_le_add_iff_summable
+
+-- The plain bit-length `K_bitlen` is upper-semicomputable, by a staged least-index search.
+/-- info: 'PrefixMachine.upperSemicomputable_K_bitlen' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.upperSemicomputable_K_bitlen
+
+-- The first additive form between `KB` and `K_bitlen` is exactly the plain Kraft weight's
+-- summability — not decided here in either direction.
+/-- info: 'PrefixMachine.KB_le_K_bitlen_add_iff_summable' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.KB_le_K_bitlen_add_iff_summable
+
+-- A second proof of `PrefixEliasKB.KB_le_two_mul_size`, through the coding theorem's minimality.
+/-- info: 'PrefixMachine.KB_le_two_mul_size'' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.KB_le_two_mul_size'

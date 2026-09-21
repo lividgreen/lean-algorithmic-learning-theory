@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.RedundantFiber
-import ALT.WitnessMixture
+module
+
+public import ALT.RedundantFiber
+public import ALT.WitnessMixture
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -97,6 +99,9 @@ statement over an *arbitrary* eventually-quiet stream and an *arbitrary* gated s
 that composition, and the instantiation of `quietStream`/`sourceStep` at this construction's own
 substrate, stay paper-level, exactly the sense in which (v″) names its own remaining seam.
 -/
+
+
+@[expose] public section
 
 namespace DamageGate
 

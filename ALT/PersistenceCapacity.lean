@@ -3,10 +3,12 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.Persistence.Core
-import ALT.Persistence.MovingLens
-import ALT.Persistence.Counting
-import ALT.Persistence.Robustness
+module
+
+public import ALT.Persistence.Core
+public import ALT.Persistence.MovingLens
+public import ALT.Persistence.Counting
+public import ALT.Persistence.Robustness
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -213,3 +215,6 @@ tabulate) was the development's last named hypothesis; it is now discharged as a
 (`KE_markingLens_le`), so the marking floor holds outright (`CbH_ge_marking'`). The hypothesis form
 `CbH_ge_marking` is kept: it is the general statement, taking any price bound whatever.
 -/
+
+
+@[expose] public section

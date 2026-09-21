@@ -145,6 +145,35 @@ an ergodic-theory hypothesis), never a modeling condition.  The walk does not
 look inside a binder's own type: a conjunction bundling two conditions
 (`Corrects U B c ∧ NonExpansive U c`) reads as one anonymous hypothesis, not
 two rows — the design record's rule is stated at the binder, not recursively.
+
+## The instance section
+
+A trailing `instance <module> <theorem> <class>` row names, for a PUBLIC
+theorem only, one CLASS an `instImplicit` binder of the theorem carries —
+`Fintype`, `DecidableEq`, `MeasurableSpace`, and so on.  This is the
+mechanical half of a per-binder classification a citing paper's FV row makes
+by hand: whether a binder carries the paper's own mathematics, or is a Lean
+encoding the paper has no counterpart for — a class instance, a decidability,
+finiteness or measurability witness, a carrier's encoding.  This section only
+lists WHICH classes a theorem's instance binders carry, so that
+classification can be read off the manifest rather than re-derived by
+re-opening the declaration; it classifies nothing itself — an instance
+binder recorded here can still be genuinely load-bearing mathematics, not
+merely an encoding artifact — and its coverage carries the same caution as
+the hypothesis section above: a theorem absent here is not a theorem free of
+instance binders, and a class recorded here is not thereby judged a mere
+adapter.
+
+The rule, mechanically.  Every `instImplicit` binder of a public theorem's
+Pi-type is read off, in the same walk `theoremConditions` uses for the
+hypothesis section but unfiltered by Prop-sortedness or package membership:
+the corpus authors no typeclass of its own (see the hypothesis section
+above), so every instance-implicit binder here names an upstream class, and
+its head constant — read off `Expr.getAppFn`, exactly as a named condition's
+head is — is what this section records.  Unlike a named condition, a
+binder's arity is not checked: an instance-implicit binder's type is the
+class fully applied by construction, never a partial application used as
+data.
 -/
 
 open Lean
@@ -304,16 +333,34 @@ def theoremConditions (env : Environment) : Expr → Array Name
         | none => rest
   | _ => #[]
 
+/-- Every CLASS carried by an `instImplicit` binder among the binders of a
+declaration's Pi-type `ty` (a theorem's `ConstantInfo.type`) — see the module
+docstring's "the instance section" for the full rule.  Unlike
+`theoremConditions`, this is not scoped to the package: an instance binder's
+class is Mathlib's or Foundation's by construction (the corpus authors no
+typeclass of its own). -/
+def theoremInstances : Expr → Array Name
+  | .forallE _ d body bi =>
+      let rest := theoremInstances body
+      if bi == .instImplicit then
+        match d.getAppFn.constName? with
+        | some n => rest.push n
+        | none => rest
+      else rest
+  | _ => #[]
+
 /-- Every `(module, declaration)` pair of the package recorded in `env`, split
 into the public pairs and the `private` pairs (see the module docstring's
 "private section"); every `(module, field)` pair (citable, not counted — see
 "the field section"); the package modules `env` knows about (a module
 that declares nothing still counts as a module, and is emitted with a count
-of 0); and every `(module, theorem, condition)` triple a PUBLIC theorem's
-binders carry (see "the hypothesis section"). -/
+of 0); every `(module, theorem, condition)` triple a PUBLIC theorem's
+binders carry (see "the hypothesis section"); and every `(module, theorem,
+class)` triple a PUBLIC theorem's instance binders carry (see "the instance
+section"). -/
 def packagePairs (env : Environment) :
     Array (Name × Name) × Array (Name × Name) × Array (Name × Name) × Array Name ×
-      Array (Name × Name × Name) := Id.run do
+      Array (Name × Name × Name) × Array (Name × Name × Name) := Id.run do
   let mods := env.header.moduleNames
   let data := env.header.moduleData
   let mut pubPairs := #[]
@@ -321,6 +368,7 @@ def packagePairs (env : Environment) :
   let mut fields := #[]
   let mut seen := #[]
   let mut hyps := #[]
+  let mut insts := #[]
   for i in [0 : mods.size] do
     let m := mods[i]!
     if isPackageModule m then
@@ -335,9 +383,11 @@ def packagePairs (env : Environment) :
               if let .thmInfo _ := ci then
                 for cond in theoremConditions env ci.type do
                   hyps := hyps.push (m, userName n, cond)
+                for cls in theoremInstances ci.type do
+                  insts := insts.push (m, userName n, cls)
           else if isField env n then
             fields := fields.push (m, userName n)
-  return (pubPairs, privPairs, fields, seen, hyps)
+  return (pubPairs, privPairs, fields, seen, hyps, insts)
 
 /-- Sort the lines and drop adjacent duplicates. -/
 def sortedNub (xs : Array String) : Array String := Id.run do
@@ -356,7 +406,7 @@ environment imported without them answers `false` to all three — the filter
 would silently stop filtering rather than fail. -/
 unsafe def scanRoots (roots : Array Name) :
     IO (Array (Name × Name) × Array (Name × Name) × Array (Name × Name) × Array Name ×
-      Array (Name × Name × Name)) := do
+      Array (Name × Name × Name) × Array (Name × Name × Name)) := do
   enableInitializersExecution
   let env ← importModules (roots.map ({ module := · })) {} (loadExts := true)
   return packagePairs env
@@ -373,20 +423,22 @@ unsafe def main (args : List String) : IO Unit := do
       throw <| IO.userError s!"output directory does not exist: {dir}\n\
         pass an output path: lake env lean --run DeclManifest.lean OUT"
 
-  let (pubPairs, privPairs, fields, mods, hyps) ← scanRoots #[packageRoot]
+  let (pubPairs, privPairs, fields, mods, hyps, insts) ← scanRoots #[packageRoot]
 
   let pubDeclLines := sortedNub <| pubPairs.map fun (m, n) => s!"{m} {n}"
   let privDeclLines := sortedNub <| privPairs.map fun (m, n) => s!"{m} {n}"
   let fieldLines := sortedNub <| fields.map fun (m, n) => s!"{m} {n}"
   let modules := sortedNub <| mods.map toString
   let hypLines := sortedNub <| hyps.map fun (m, thm, cond) => s!"{m} {thm} {cond}"
+  let instLines := sortedNub <| insts.map fun (m, thm, cls) => s!"{m} {thm} {cls}"
 
   -- The combined public+private set, kept purely for counting: module counts
   -- and the header total must not move when a declaration is privatized,
   -- only its section does (see the module docstring's "private section").
-  -- Hypothesis rows are NOT part of this count either — they are a citable
-  -- fact about an already-counted theorem, not a fifth kind of declaration,
-  -- and the header below is left untouched by them for the same reason.
+  -- Hypothesis and instance rows are NOT part of this count either — they
+  -- are a citable fact about an already-counted theorem, not a fifth or
+  -- sixth kind of declaration, and the header below is left untouched by
+  -- them for the same reason.
   let declLines := sortedNub <| pubDeclLines ++ privDeclLines
   let counted : Array (String × Nat) := modules.map fun m =>
     (m, declLines.foldl (init := 0) fun acc l =>
@@ -400,10 +452,12 @@ unsafe def main (args : List String) : IO Unit := do
   let fieldSection := fieldLines.map fun l => s!"field {l}"
   let privSection := privDeclLines.map fun l => s!"private {l}"
   let hypSection := hypLines.map fun l => s!"hypothesis {l}"
+  let instSection := instLines.map fun l => s!"instance {l}"
   IO.FS.writeFile out <|
     String.intercalate "\n"
       (header :: (moduleLines ++ pubDeclLines ++ fieldSection ++ privSection
-                    ++ hypSection).toList) ++ "\n"
+                    ++ hypSection ++ instSection).toList) ++ "\n"
 
   IO.eprintln s!"wrote {out}: {modules.size} modules, {declLines.size} declarations \
-    ({privDeclLines.size} private), {fieldLines.size} fields, {hypLines.size} hypothesis rows"
+    ({privDeclLines.size} private), {fieldLines.size} fields, {hypLines.size} hypothesis rows, \
+    {instLines.size} instance rows"

@@ -3,9 +3,11 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.Decoupling
-import Mathlib.Algebra.BigOperators.Group.Finset.Basic
-import Mathlib.Data.Real.Basic
+module
+
+public import ALT.Decoupling
+public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
+public import Mathlib.Basic.Real.Basic
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -41,6 +43,9 @@ real code), exactly as in Decoupling.
 The point of §4.4: retention's upper bound (zero forgetting) is purchased by the **architecture**
 (`Fixes`), independently of the context-capacity lower bound; Cheng's `Fgt̄ ≥ …` is silent here.
 -/
+
+
+@[expose] public section
 
 namespace RetentionUpperBound
 
@@ -82,6 +87,6 @@ theorem expected_forgetting_zero [DecidableEq M] {U : Mem ι V → Mem ι V} {R 
     {Ω : Type*} [Fintype Ω] (μ : Ω → ℝ) (step : Ω → ℕ) (init : Ω → Mem ι V) :
     (∑ ω, μ ω * (if decode (U^[step ω] (init ω)) = decode (init ω) then 0 else 1)) = 0 := by
   refine Finset.sum_eq_zero (fun ω _ => ?_)
-  rw [if_pos (retention_persists hU hf (step ω) (init ω)), mul_zero]
+  rw [ite_eq_left (retention_persists hU hf (step ω) (init ω)), mul_zero]
 
 end RetentionUpperBound

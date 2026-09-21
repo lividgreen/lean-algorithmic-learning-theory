@@ -3,11 +3,13 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.Data.ZMod.QuotientGroup
-import Mathlib.Dynamics.PeriodicPts.Lemmas
-import Mathlib.GroupTheory.Coset.Card
-import Mathlib.GroupTheory.Perm.Cycle.Basic
-import ALT.PersistenceCapacity
+module
+
+public import Mathlib.Data.ZMod.QuotientGroup
+public import Mathlib.Dynamics.PeriodicPts.Lemmas
+public import Mathlib.GroupTheory.Coset.Card
+public import Mathlib.GroupTheory.Perm.Cycle.Basic
+public import ALT.PersistenceCapacity
 
 /-!
 # The fixed-lens factor criterion ([Guests] §2 Proposition 2.5)
@@ -34,6 +36,9 @@ scale `τ`, the permutation that matters is `U^τ`; `zmod_translate_minimalPerio
 `ZMod (2^k)` under `+1`, the time scale `τ = 2^j` produces exactly `2^j` cycles of length
 `2^(k-j)` each, one per code block.
 -/
+
+
+@[expose] public section
 
 namespace PersistenceCapacity
 
@@ -509,7 +514,7 @@ theorem exists_blockCyclic_fixedLens {N c w : ℕ} [NeZero N] (hw : w ∣ N) (hc
       rw [ZMod.val_natCast_of_lt (lt_of_lt_of_le a.isLt hcle)]
       exact a.isLt
     rw [hπa, hred_def]
-    simp only [dif_pos hlt]
+    simp only [dite_eq_left hlt]
     ext
     change ((a : ℕ) : ZMod (N / w)).val = a
     rw [ZMod.val_natCast_of_lt (lt_of_lt_of_le a.isLt hcle)]

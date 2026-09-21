@@ -3,9 +3,11 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.EpsilonZeroBound
-import Mathlib.Analysis.InnerProductSpace.Basic
-import Mathlib.MeasureTheory.Integral.Bochner.Basic
+module
+
+public import ALT.EpsilonZeroBound
+public import Mathlib.Analysis.InnerProductSpace.Basic
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -59,6 +61,9 @@ This file machine-checks the paper's own two contributions feeding Theorem 3.1:
 `Z : ℕ → ℝ` models `E[D_H²(P̄ₙ, P_R)]`; `ε₀` is the squared-Hellinger separation of
 `EpsilonZeroBound.eps0`; `B = c·(r·log 2 + log(1/δ))` is the `EpsilonZeroBound.Tdiscover` numerator.
 -/
+
+
+@[expose] public section
 
 namespace GrunwaldMehtaDiscovery
 

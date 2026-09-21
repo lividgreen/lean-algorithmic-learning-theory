@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.GodelInternalization
-import ALT.GodelChecker
+module
+
+public import ALT.GodelInternalization
+public import ALT.GodelChecker
 
 /-!
 # Minimality witness: the internalization needs no exponential ([Decoupling] §4.6, Prop 4.5)
@@ -39,6 +41,9 @@ exponential-free import closure (`#print axioms` → standard axioms only; guard
 
 -- "the exponential object `expAsm` … [is] absent from this module's import closure": the strict
 -- §4.3 exponential — the closed (function-space) structure of `Rep(S)` Proposition 4.5 excises.
+
+@[expose] public section
+
 assert_not_exists RealizabilityCCC.expAsm
 -- "and the graded exponential modality of §4.5 [is] absent from this module's import closure": the
 -- capacity-graded exponential of the §4.5 general-functor conjecture. It is defined over `expAsm`,

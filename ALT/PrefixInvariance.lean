@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.BinaryConstant
-import ALT.PrefixComplexity
+module
+
+public import ALT.BinaryConstant
+public import ALT.PrefixComplexity
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -68,6 +70,9 @@ quadratic pairing (above) — the reason this item is carried by `KE`. `kraft_KP
 object-indexed `kraft_KE` are both shipped; the `KP_E ↔ KP` comparison is not (not a clean
 transfer; see the carrier verdict).
 -/
+
+
+@[expose] public section
 
 namespace PrefixInvariance
 

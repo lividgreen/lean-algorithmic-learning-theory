@@ -3,9 +3,11 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.BirkhoffTool
-import ALT.ParityWalk
-import ALT.PersistentWalk
+module
+
+public import ALT.BirkhoffTool
+public import ALT.ParityWalk
+public import ALT.PersistentWalk
 
 /-!
 # The noisy window chain: an explicit source whose mixing constant is derived
@@ -127,6 +129,9 @@ No `SubstrateL` inhabitation is claimed: this module supplies one clause (E1, at
 ensemble and constant) and says nothing about window sufficiency or Assumption A.
 -/
 
+
+@[expose] public section
+
 namespace NoisyWindowChain
 
 open MeasureTheory ProbabilityTheory ParityWalk
@@ -241,7 +246,7 @@ theorem obs_derivedNoise {k : ℕ} (hk : 0 < k) (o : ℕ → Bool) :
       rw [hrec, ih t (by omega)]
       have hn : derivedNoise k o (t + k) = !(xor (o t) (o (t + k))) := by
         simp only [derivedNoise]
-        rw [if_neg (by omega : ¬ t + k < k), show t + k - k = t from by omega]
+        rw [ite_eq_right (by omega : ¬ t + k < k), show t + k - k = t from by omega]
       rw [hn]
       cases o t <;> cases o (t + k) <;> simp
 
@@ -279,12 +284,12 @@ private theorem windowMap_iterate (w : Fin k → Bool) (s : ℕ) (i : Fin k) :
   | succ s ih =>
     rw [Function.iterate_succ_apply', windowMap]
     by_cases h : (i : ℕ) + 1 < k
-    · rw [dif_pos h, ih ⟨(i : ℕ) + 1, h⟩]
+    · rw [dite_eq_left h, ih ⟨(i : ℕ) + 1, h⟩]
       congr 1
       change s + ((i : ℕ) + 1) = s + 1 + (i : ℕ)
       omega
     · have hik : (i : ℕ) + 1 = k := by have := i.isLt; omega
-      rw [dif_neg h, ih 0]
+      rw [dite_eq_right h, ih 0]
       have hz : ((0 : Fin k) : ℕ) = 0 := by
         simp
       rw [hz, Nat.add_zero]
@@ -389,12 +394,12 @@ theorem windowAt_succ {k : ℕ} [NeZero k] (ξ : ℕ → Bool) (t : ℕ) :
   funext i
   rw [noisyStep, windowMap, windowAt, windowAt]
   by_cases h : (i : ℕ) + 1 < k
-  · rw [if_pos h, dif_pos h]
+  · rw [ite_eq_left h, dite_eq_left h]
     congr 1
     change t + 1 + (i : ℕ) = t + ((i : ℕ) + 1)
     omega
   · have hik : (i : ℕ) + 1 = k := by have := i.isLt; omega
-    rw [if_neg h, dif_neg h]
+    rw [ite_eq_right h, dite_eq_right h]
     have hz : ((0 : Fin k) : ℕ) = 0 := by simp
     rw [hz, Nat.add_zero, show t + 1 + (i : ℕ) = t + k by omega,
       obs_add (Nat.pos_of_ne_zero (NeZero.ne k))]
@@ -462,7 +467,7 @@ private lemma measurable_obs (hk : 1 ≤ k) (u : ℕ) :
 /-- The chain's trajectory map is measurable: each observation reads finitely many noise bits. -/
 lemma measurable_traj (hk : 1 ≤ k) (hmeas : ∀ i, Measurable (ξ i)) :
     Measurable (traj k ξ) := by
-  refine measurable_pi_lambda _ fun u => ?_
+  refine Measurable.of_eval fun u => ?_
   exact (measurable_obs hk u).mono (ParityWalk.pastAlg_le hmeas (u + k)) le_rfl
 
 omit [MeasurableSpace Ω] in
@@ -500,7 +505,7 @@ theorem indepFun_residueClass (hk : 1 ≤ k) (hmeas : ∀ i, Measurable (ξ i))
   classical
   set t : Set ℕ := {i : ℕ | i % k = r} with ht
   have hclass : Measurable[ParityWalk.noiseAlg ξ t] (classProc k r ξ) := by
-    refine @measurable_pi_lambda _ _ _ (ParityWalk.noiseAlg ξ t) _ _ fun j => ?_
+    refine @Measurable.of_eval _ _ _ (ParityWalk.noiseAlg ξ t) _ _ fun j => ?_
     have hre : (fun ω => classProc k r ξ ω j)
         = fun ω => ParityWalk.walk (ξ r ω) (fun i => ξ (r + k * (i + 1)) ω) j := by
       funext ω; rw [classProc_eq_walk hk hr ω]
@@ -509,7 +514,7 @@ theorem indepFun_residueClass (hk : 1 ≤ k) (hmeas : ∀ i, Measurable (ξ i))
     · simpa [ht] using mem_class hr 0
     · exact ParityWalk.measurable_noiseAlg_xi (mem_class hr (i + 1))
   have hrest : Measurable[ParityWalk.noiseAlg ξ tᶜ] (restClasses k r ξ) := by
-    refine @measurable_pi_lambda _ _ _ (ParityWalk.noiseAlg ξ tᶜ) _ _ fun i => ?_
+    refine @Measurable.of_eval _ _ _ (ParityWalk.noiseAlg ξ tᶜ) _ _ fun i => ?_
     by_cases h : i % k = r
     · simp [restClasses, h]
     · simpa [restClasses, h] using
@@ -525,7 +530,7 @@ theorem indepFun_residueClass_pair (hk : 1 ≤ k) (hmeas : ∀ i, Measurable (ξ
   classical
   have hgm : Measurable (fun (v : ℕ → Bool) (j : ℕ) =>
       ParityWalk.walk (v r') (fun i => v (r' + k * (i + 1))) j) := by
-    refine measurable_pi_lambda _ fun j => ?_
+    refine Measurable.of_eval fun j => ?_
     exact ParityWalk.measurable_walk (measurable_pi_apply r') _
       fun i _ => measurable_pi_apply (r' + k * (i + 1))
   have hcomp : (fun (v : ℕ → Bool) (j : ℕ) =>
@@ -535,7 +540,7 @@ theorem indepFun_residueClass_pair (hk : 1 ≤ k) (hmeas : ∀ i, Measurable (ξ
     have hval : ∀ s : ℕ, restClasses k r ξ ω (r' + k * s) = ξ (r' + k * s) ω := by
       intro s
       have hne2 : (r' + k * s) % k ≠ r := by rw [mem_class hr' s]; exact hne
-      simp only [restClasses, if_neg hne2]
+      simp only [restClasses, ite_eq_right hne2]
     have h0 : restClasses k r ξ ω r' = ξ r' ω := by
       have h := hval 0
       rwa [Nat.mul_zero, Nat.add_zero] at h
@@ -704,7 +709,7 @@ theorem not_mixingHoeffding_noisyWindowChain_pinned
         (fun (_ : ℕ) (_ : ℕ → Bool) => (1 : ℝ)) 0 (4 * k : ℝ) := by
   have htraj : Measurable (traj k ξ) := measurable_traj hk hmeas
   have : IsProbabilityMeasure (Measure.map (traj k ξ) P) :=
-    Measure.isProbabilityMeasure_map htraj.aemeasurable
+    (Measure.isProbabilityMeasure_map_iff htraj.aemeasurable).mpr inferInstance
   refine BirkhoffTool.not_mixingHoeffding_pinned _ ?_
   have : (1 : ℝ) ≤ (k : ℝ) := by exact_mod_cast hk
   linarith
@@ -819,7 +824,7 @@ theorem not_mixingHoeffding_pinned_pair {Ω : Type*} [MeasurableSpace Ω] (P : M
   have hFmeas : Measurable (traj k (fun i (_ : Ω) => w i)) :=
     measurable_traj hk fun _ => measurable_const
   have : IsProbabilityMeasure (Measure.map (traj k (fun i (_ : Ω) => w i)) P) :=
-    Measure.isProbabilityMeasure_map hFmeas.aemeasurable
+    (Measure.isProbabilityMeasure_map_iff hFmeas.aemeasurable).mpr inferInstance
   refine BirkhoffTool.not_mixingHoeffding_pinned
     (Measure.map (traj k (fun i (_ : Ω) => w i)) P) hc ?_
   intro n τ hn hτ
@@ -878,7 +883,7 @@ theorem not_mixingHoeffdingTo_pinned_pair {Ω : Type*} [MeasurableSpace Ω] (P :
   have hFmeas : Measurable (traj k (fun i (_ : Ω) => w i)) :=
     measurable_traj hk fun _ => measurable_const
   have : IsProbabilityMeasure (Measure.map (traj k (fun i (_ : Ω) => w i)) P) :=
-    Measure.isProbabilityMeasure_map hFmeas.aemeasurable
+    (Measure.isProbabilityMeasure_map_iff hFmeas.aemeasurable).mpr inferInstance
   refine BirkhoffTool.not_mixingHoeffdingTo_pinned
     (Measure.map (traj k (fun i (_ : Ω) => w i)) P) hc hN ?_
   intro n τ hn hnN hτ
@@ -2286,7 +2291,7 @@ private lemma measurable_phaseChar {a d r q w : ℕ} :
 private lemma abs_phaseChar_le_one (a d r q w : ℕ) (ξ : ℕ → Bool) :
     |phaseChar k a d r q w ξ| ≤ 1 := by
   rw [phaseChar, Finset.abs_prod]
-  refine Finset.prod_le_one (fun j _ => abs_nonneg _) fun j _ => ?_
+  refine Finset.prod_le_one₀ (fun j _ => abs_nonneg _) fun j _ => ?_
   cases ξ (phaseTime k d r q w + a + k * (j + 1)) <;> norm_num [ParityWalk.zeta]
 
 private lemma integral_phaseChar (hk : 1 ≤ k) (hmeas : ∀ i, Measurable (ξ i))

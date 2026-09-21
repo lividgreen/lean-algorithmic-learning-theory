@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.SQObjects
-import ALT.SQVersionSpace
+module
+
+public import ALT.SQObjects
+public import ALT.SQVersionSpace
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters (long lines/defs).
 set_option linter.style.header false
@@ -94,6 +96,9 @@ not a sidestep of a harder-but-available direct `|V|` bound — no such bound ex
   data), nor the single-trajectory → SQ-oracle reduction (FV-E/ergodicity), which supply `hident`
   and the τ-good oracle downstream.
 -/
+
+
+@[expose] public section
 
 namespace SQEnvelope
 
@@ -199,12 +204,12 @@ theorem subset_card_le_sqDim_of_ident (M : Finset ι) (τ : ℝ) (hτ : 0 ≤ τ
   have hfmem : ∀ i ∈ V, f i ∈ S := by
     intro i hi
     have hspec := Classical.choose_spec (hcover i (hVM hi))
-    simp only [hfdef, dif_pos hi]
+    simp only [hfdef, dite_eq_left hi]
     exact hspec.1
   have hfclose : ∀ i ∈ V, ∀ φ, |ans φ i - ans φ (f i)| ≤ τ := by
     intro i hi φ
     have hspec := Classical.choose_spec (hcover i (hVM hi))
-    simp only [hfdef, dif_pos hi]
+    simp only [hfdef, dite_eq_left hi]
     exact hspec.2 φ
   have hmaps : Set.MapsTo f ↑V ↑S := by
     intro i hi

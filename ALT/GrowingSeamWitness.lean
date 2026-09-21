@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.AccretingExcess
-import ALT.SubstitutionComposite
+module
+
+public import ALT.AccretingExcess
+public import ALT.SubstitutionComposite
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -96,6 +98,9 @@ the offer still rides *Guests* Theorem 7.5's own two paper-level steps — the w
 affordability, and the identification of the guest's stage budget with its bit count — which this
 theorem retires neither of.
 -/
+
+
+@[expose] public section
 
 namespace GrowingSeamWitness
 
@@ -344,7 +349,7 @@ theorem seamHostProj_seamHostUpdate (k : ℕ) (o : ℕ → Bool) (s : SeamHostMe
     have h := i.isLt
     change decide ((if h : i.val < p.1.length then ((p.1[i.val]'h) j).toNat else 0) = 1)
       = p.1[i.val] j
-    rw [dif_pos h]
+    rw [dite_eq_left h]
     exact decide_toNat_eq_one _
   rw [hfun]
   exact List.ofFn_getElem
@@ -369,7 +374,7 @@ private theorem seamHostProj_loadHost (k : ℕ) (o : ℕ → Bool) :
   funext j
   change decide ((if (0 : ℕ) = 0 then (encRec k (o 0) j).toNat else 0) = 1)
     = encRec k (o 0) j
-  rw [if_pos rfl]
+  rw [ite_eq_left rfl]
   exact decide_toNat_eq_one _
 
 /-- **The projection commutes with iteration.** -/

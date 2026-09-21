@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.CodePacking
+module
+
+public import ALT.CodePacking
 
 /-!
 # Bounded universality, priced
@@ -37,6 +39,9 @@ The iteration count enters only through `Nat.size τ`: the recursor carries its 
 workspace measure charges the width of every value a node touches. No leading term depends on how
 far the run has gone.
 -/
+
+
+@[expose] public section
 
 namespace BoundedUniversal
 

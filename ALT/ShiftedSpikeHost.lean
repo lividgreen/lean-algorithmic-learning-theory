@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.ShiftedSpikeCriterion
-import ALT.Decoupling
+module
+
+public import ALT.ShiftedSpikeCriterion
+public import ALT.Decoupling
 
 /-!
 # The lag-`6` host and witness substrate for the second certified design
@@ -53,6 +55,9 @@ certified host: the parallel-cycle theorem (`windowXor`/`rot8`/`hostUpdate_itera
 analogues) — the rung witness needs only the designed orbit.
 -/
 
+
+@[expose] public section
+
 namespace ShiftedSpikeHost
 
 open ShiftedSpikeCriterion BlockPairProfile
@@ -99,13 +104,13 @@ private theorem hostUpdate2_designWindow2 (c : ZMod (2 * (2 * M) * 22)) :
     = designObs2 M (c + 1 - 7 + ((i : ℕ) : ZMod (2 * (2 * M) * 22)))
   rw [noisyStep2, windowMap2]
   by_cases h : (i : ℕ) + 1 < 8
-  · rw [if_pos h, dif_pos h]
+  · rw [ite_eq_left h, dite_eq_left h]
     change designObs2 M (c - 7 + (((⟨(i : ℕ) + 1, h⟩ : Fin 8) : ℕ) : ZMod (2 * (2 * M) * 22)))
       = designObs2 M (c + 1 - 7 + ((i : ℕ) : ZMod (2 * (2 * M) * 22)))
     congr 1
     push_cast
     ring
-  · rw [if_neg h, dif_neg h]
+  · rw [ite_eq_right h, dite_eq_right h]
     have hi7 : (i : ℕ) = 7 := by have := i.isLt; omega
     change xor (!(designWindow2 M c 2)) (hostTape2 M (c + 1))
       = designObs2 M (c + 1 - 7 + ((i : ℕ) : ZMod (2 * (2 * M) * 22)))
@@ -166,12 +171,13 @@ omit [NeZero (2 * (2 * M))] in
 private theorem hostDecodeRule2_oneHot (s : HostMem2 M) (i : Fin 8)
     (h : ∀ j : Fin 8, s (Sum.inl j) = true ↔ j = i) : hostDecodeRule2 M s = i := by
   have hex : ∃ j : Fin 8, s (Sum.inl j) = true := ⟨i, (h i).mpr rfl⟩
-  rw [hostDecodeRule2, dif_pos hex]
+  rw [hostDecodeRule2, dite_eq_left hex]
   refine le_antisymm (Fin.find_le_of_pos hex ((h i).mpr rfl)) ((Fin.le_find_iff hex i).mpr ?_)
   intro m hm hp
   exact absurd ((h m).mp hp) (ne_of_lt hm)
 
-private lemma counter_val_lt2 (c : ZMod (2 * (2 * M) * 22)) :
+/-- The counter register's value stays below `2 ^ Nat.size` of its modulus. -/
+lemma counter_val_lt2 (c : ZMod (2 * (2 * M) * 22)) :
     c.val < 2 ^ Nat.size (2 * (2 * M) * 22) :=
   lt_trans (ZMod.val_lt c) (Nat.lt_size_self _)
 

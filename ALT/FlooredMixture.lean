@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.QuantizationRate
+module
+
+public import ALT.QuantizationRate
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -192,6 +194,9 @@ synchronization, stored structure, or program-running-time depth, none of which 
 characterizes, contrasts with, or bears on.
 -/
 
+
+@[expose] public section
+
 namespace WeightedFiber
 
 section Normal
@@ -212,8 +217,8 @@ private theorem missCount_succ (M : ℕ → Fin C → Bool) (i : Fin C) (t : ℕ
     missCount M i (t + 1) = missCount M i t + (if M t i then 1 else 0) := by
   rw [missCount, missCount, Finset.range_add_one, Finset.filter_insert]
   by_cases h : M t i
-  · rw [if_pos h, Finset.card_insert_of_notMem (by simp), if_pos h]
-  · rw [if_neg h, if_neg h, Nat.add_zero]
+  · rw [ite_eq_left h, Finset.card_insert_of_notMem (by simp), ite_eq_left h]
+  · rw [ite_eq_right h, ite_eq_right h, Nat.add_zero]
 
 private theorem missCount_le (M : ℕ → Fin C → Bool) (i : Fin C) (t : ℕ) : missCount M i t ≤ t := by
   rw [missCount]
@@ -223,7 +228,7 @@ theorem missCount_eq_zero (M : ℕ → Fin C → Bool) {i : Fin C} (h : ∀ t, M
     missCount M i t = 0 := by
   induction t with
   | zero => exact missCount_zero M i
-  | succ t ih => rw [missCount_succ, ih, if_neg (by simp [h t])]
+  | succ t ih => rw [missCount_succ, ih, ite_eq_right (by simp [h t])]
 
 /-- The converse, read at one step: a zero miss count over a horizon means no miss inside it. -/
 theorem eq_false_of_missCount_eq_zero {M : ℕ → Fin C → Bool} {i : Fin C} {t s : ℕ}
@@ -265,12 +270,12 @@ theorem expRun_le (M : ℕ → Fin C → Bool) (b t : ℕ) (i : Fin C) : expRun 
       rw [expStep]
       have hi := ih i
       by_cases hδ : ∃ j, expRun M b t j = b ∧ M t j = false
-      · rw [if_pos hδ]
+      · rw [ite_eq_left hδ]
         split <;> omega
-      · rw [if_neg hδ]
+      · rw [ite_eq_right hδ]
         by_cases hm : M t i
-        · rw [if_pos hm]; omega
-        · rw [if_neg hm]
+        · rw [ite_eq_left hm]; omega
+        · rw [ite_eq_right hm]
           have : expRun M b t i ≠ b := fun hb => hδ ⟨i, hb, by simpa using hm⟩
           omega
 
@@ -304,14 +309,14 @@ theorem wRun_eq_pow_expRun (M : ℕ → Fin C → Bool) (b t : ℕ) (i : Fin C) 
         intro j
         rw [hu, bayesStep, ih j, missFit]
         by_cases h : M t j
-        · rw [if_pos h, if_pos h, Nat.mul_one, Nat.add_zero]
-        · rw [if_neg h, if_neg h, pow_succ]
+        · rw [ite_eq_left h, ite_eq_left h, Nat.mul_one, Nat.add_zero]
+        · rw [ite_eq_right h, ite_eq_right h, pow_succ]
       rw [hstep]
       change project (2 ^ b) u i = 2 ^ expStep b (M t) (expRun M b t) i
       rw [expStep, project]
       by_cases hδ : ∃ j, expRun M b t j = b ∧ M t j = false
       · -- a candidate at the ceiling hits: the post-step maximum is `2 ^ (b+1)`, the divisor is `2`
-        rw [if_pos hδ]
+        rw [ite_eq_left hδ]
         obtain ⟨j₀, hj₀e, hj₀m⟩ := hδ
         have hmax : wMax u = 2 ^ (b + 1) := by
           refine le_antisymm (Finset.sup_le fun j _ => ?_) ?_
@@ -320,7 +325,7 @@ theorem wRun_eq_pow_expRun (M : ℕ → Fin C → Bool) (b t : ℕ) (i : Fin C) 
             have := expRun_le M b t j
             split <;> omega
           · have hj : u j₀ = 2 ^ (b + 1) := by
-              rw [hui j₀, hj₀e, if_neg (by simp [hj₀m])]
+              rw [hui j₀, hj₀e, ite_eq_right (by simp [hj₀m])]
             exact hj ▸ le_wMax u j₀
         have hd2 : scaleDiv (2 ^ b) u = 2 := by
           rw [scaleDiv, hmax, pow_succ]
@@ -335,15 +340,15 @@ theorem wRun_eq_pow_expRun (M : ℕ → Fin C → Bool) (b t : ℕ) (i : Fin C) 
           rw [hk, pow_succ, Nat.mul_div_cancel _ (by norm_num), Nat.succ_sub_one]
           exact max_eq_right Nat.one_le_two_pow
       · -- no ceiling candidate hits: the maximum stays inside the budget and the divisor is `1`
-        rw [if_neg hδ]
+        rw [ite_eq_right hδ]
         have hle : wMax u ≤ 2 ^ b := by
           refine Finset.sup_le fun j _ => ?_
           rw [hui j]
           refine Nat.pow_le_pow_right (by norm_num) ?_
           have h1 := expRun_le M b t j
           by_cases hm : M t j
-          · rw [if_pos hm]; omega
-          · rw [if_neg hm]
+          · rw [ite_eq_left hm]; omega
+          · rw [ite_eq_right hm]
             have : expRun M b t j ≠ b := fun hb => hδ ⟨j, hb, by simpa using hm⟩
             omega
         have hd1 : scaleDiv (2 ^ b) u = 1 := by
@@ -376,14 +381,14 @@ theorem sup_le_sup_expStep (b : ℕ) (m : Fin C → Bool) (e : Fin C → ℕ) (h
     have hδ' : ∃ j, e j = b ∧ m j = false := ⟨j, hje, hjm⟩
     have hj : expStep b m e j = b := by
       change (e j + (if m j then 0 else 1)) - (if ∃ j, e j = b ∧ m j = false then 1 else 0) = b
-      rw [if_neg (by simp [hjm] : ¬ (m j = true)), if_pos hδ', hje]
+      rw [ite_eq_right (by simp [hjm] : ¬ (m j = true)), ite_eq_left hδ', hje]
       omega
     calc Finset.univ.sup e ≤ b := Finset.sup_le fun i _ => he i
       _ = expStep b m e j := hj.symm
       _ ≤ Finset.univ.sup (expStep b m e) := Finset.le_sup (Finset.mem_univ j)
   · refine Finset.sup_mono_fun fun i _ => ?_
     change e i ≤ (e i + (if m i then 0 else 1)) - (if ∃ j, e j = b ∧ m j = false then 1 else 0)
-    rw [if_neg hδ]
+    rw [ite_eq_right hδ]
     omega
 
 /-- **The leader never falls back.** The largest exponent in play is non-decreasing in time — no
@@ -441,17 +446,17 @@ theorem expRun_eq_deficit (M : ℕ → Fin C → Bool) {iR : Fin C} (hR : ∀ t,
       rw [expStep, ih i, missCount_succ]
       have hm := missCount_le M i t
       by_cases hbt : b ≤ t
-      · rw [if_pos (hδ.mpr hbt), min_eq_right hbt, min_eq_right (by omega : b ≤ t + 1)]
+      · rw [ite_eq_left (hδ.mpr hbt), min_eq_right hbt, min_eq_right (by omega : b ≤ t + 1)]
         clear hδ hiR ih
         by_cases h : M t i
-        · rw [if_pos h, if_pos h]; omega
-        · rw [if_neg h, if_neg h]; omega
-      · rw [if_neg fun hh => hbt (hδ.mp hh), min_eq_left (by omega : t ≤ b),
+        · rw [ite_eq_left h, ite_eq_left h]; omega
+        · rw [ite_eq_right h, ite_eq_right h]; omega
+      · rw [ite_eq_right fun hh => hbt (hδ.mp hh), min_eq_left (by omega : t ≤ b),
           min_eq_left (by omega : t + 1 ≤ b)]
         clear hδ hiR ih
         by_cases h : M t i
-        · rw [if_pos h, if_pos h]; omega
-        · rw [if_neg h, if_neg h]; omega
+        · rw [ite_eq_left h, ite_eq_left h]; omega
+        · rw [ite_eq_right h, ite_eq_right h]; omega
 
 /-- **The saturation normal form** — the floored run, in closed form.
 
@@ -486,10 +491,10 @@ theorem bayesRun_missFit (M : ℕ → Fin C → Bool) (t : ℕ) (i : Fin C) :
       change bayesStep (missFit M t) (bayesRun (missFit M) t) i = _
       rw [bayesStep, ih, missFit, missCount_succ]
       by_cases h : M t i
-      · rw [if_pos h, if_pos h, Nat.mul_one]
+      · rw [ite_eq_left h, ite_eq_left h, Nat.mul_one]
         congr 1
         omega
-      · rw [if_neg h, if_neg h, Nat.add_zero, ← pow_succ]
+      · rw [ite_eq_right h, ite_eq_right h, Nat.add_zero, ← pow_succ]
         congr 1
         omega
 
@@ -524,11 +529,11 @@ theorem expRun_eq_sub_missCount_of_le (M : ℕ → Fin C → Bool) (b : ℕ) :
         have := hall j
         omega
       change expStep b (M t) (expRun M b t) i = _
-      rw [expStep, if_neg hnodelta, ih ht' i, missCount_succ]
+      rw [expStep, ite_eq_right hnodelta, ih ht' i, missCount_succ]
       have hmc := missCount_le M i t
       by_cases h : M t i
-      · rw [if_pos h, if_pos h]; omega
-      · rw [if_neg h, if_neg h]; omega
+      · rw [ite_eq_left h, ite_eq_left h]; omega
+      · rw [ite_eq_right h, ite_eq_right h]; omega
 
 private theorem missCount_mono (M : ℕ → Fin C → Bool) (i : Fin C) {t t' : ℕ} (h : t ≤ t') :
     missCount M i t ≤ missCount M i t' := by
@@ -563,7 +568,7 @@ private theorem missCount_eq_of_no_miss (M : ℕ → Fin C → Bool) (i : Fin C)
       intro h
       rw [show s + (d + 1) = (s + d) + 1 from rfl, missCount_succ,
         ih (fun u hu hlt => h u hu (by omega)),
-        if_neg (by simp [h (s + d) (by omega) (by omega)])]
+        ite_eq_right (by simp [h (s + d) (by omega) (by omega)])]
       omega
 
 /-- How often candidate `i` has **hit** over the window `[s, t)`: the window's length, less the
@@ -587,8 +592,8 @@ private theorem hitCount_succ (M : ℕ → Fin C → Bool) (i : Fin C) {s t : �
     rwa [show s + (t - s) = t from by omega] at this
   rw [hitCount, hitCount, missCount_succ]
   by_cases hM : M t i
-  · rw [if_pos hM, if_pos hM]; omega
-  · rw [if_neg hM, if_neg hM]; omega
+  · rw [ite_eq_left hM, ite_eq_left hM]; omega
+  · rw [ite_eq_right hM, ite_eq_right hM]; omega
 
 /-- A candidate that never misses inside the window hits at every one of its steps. -/
 private theorem hitCount_of_no_miss (M : ℕ → Fin C → Bool) (i : Fin C) {s t : ℕ} (hst : s ≤ t)
@@ -621,16 +626,16 @@ theorem coleader_persists (M : ℕ → Fin C → Bool) (b : ℕ) {iL : Fin C} {s
       change expStep b (M (s + d)) (expRun M b (s + d)) j
         ≤ expStep b (M (s + d)) (expRun M b (s + d)) iL
       simp only [expStep]
-      rw [if_neg (by simp [hms] : ¬ (M (s + d) iL = true))]
+      rw [ite_eq_right (by simp [hms] : ¬ (M (s + d) iL = true))]
       by_cases hδ : ∃ k, expRun M b (s + d) k = b ∧ M (s + d) k = false
-      · rw [if_pos hδ]
+      · rw [ite_eq_left hδ]
         by_cases hjm : M (s + d) j
-        · rw [if_pos hjm]; omega
-        · rw [if_neg hjm]; omega
-      · rw [if_neg hδ]
+        · rw [ite_eq_left hjm]; omega
+        · rw [ite_eq_right hjm]; omega
+      · rw [ite_eq_right hδ]
         by_cases hjm : M (s + d) j
-        · rw [if_pos hjm]; omega
-        · rw [if_neg hjm]; omega
+        · rw [ite_eq_left hjm]; omega
+        · rw [ite_eq_right hjm]; omega
 
 /-- **The window is again one automaton.** Under a co-leader that never misses, the exponent at
 `s + d` is the state at `s` plus the window's hit count, less the window's rescale count — and that
@@ -676,14 +681,14 @@ private theorem expRun_restart (M : ℕ → Fin C → Bool) (b : ℕ) {iL : Fin 
         rw [expStep]
         congr 1
         by_cases h : b ≤ expRun M b s iL + d
-        · rw [if_pos h, if_pos (hδ.mpr h)]
-        · rw [if_neg h, if_neg (fun hh => h (hδ.mp hh))]
+        · rw [ite_eq_left h, ite_eq_left (hδ.mpr h)]
+        · rw [ite_eq_right h, ite_eq_right (fun hh => h (hδ.mp hh))]
       have hhc : ∀ i, hitCount M i s (s + (d + 1))
           = hitCount M i s (s + d) + (if M (s + d) i then 0 else 1) :=
         fun i => hitCount_succ M i (by omega : s ≤ s + d)
       clear hδ hcol ih hiL hlead
       refine ⟨?_, ?_⟩
-      · rw [hstep iL, if_neg (by simp [hms] : ¬ (M (s + d) iL = true)), ihL]
+      · rw [hstep iL, ite_eq_right (by simp [hms] : ¬ (M (s + d) iL = true)), ihL]
         clear hstep ihi ihL hms
         split <;> omega
       · intro i
@@ -691,8 +696,8 @@ private theorem expRun_restart (M : ℕ → Fin C → Bool) (b : ℕ) {iL : Fin 
         clear hstep ihi ihL hms hhc
         have hh : (if M (s + d) i then (0 : ℕ) else 1) ≤ 1 := by split <;> omega
         by_cases hbc : b ≤ expRun M b s iL + d
-        · rw [if_pos hbc]; omega
-        · rw [if_neg hbc]; omega
+        · rw [ite_eq_left hbc]; omega
+        · rw [ite_eq_right hbc]; omega
 
 /-- The restarted normal form, read at the window's far end. -/
 theorem expRun_eq_hitCount_sub (M : ℕ → Fin C → Bool) (b : ℕ) {iL : Fin C} {s t : ℕ}
@@ -805,14 +810,14 @@ private theorem wrongMass_le_charges (M : ℕ → Fin C → Bool) (b t : ℕ) :
   refine Finset.sum_le_sum fun i _ => ?_
   rw [satCharge, unsatCharge]
   by_cases hM : M t i
-  · rw [if_pos hM]
+  · rw [ite_eq_left hM]
     rcases Nat.lt_or_ge (expDef M b t i) b with hlt | hge
-    · rw [if_neg (by omega : ¬(M t i ∧ b ≤ expDef M b t i)), if_pos ⟨hM, hlt⟩, zero_add]
+    · rw [ite_eq_right (by omega : ¬(M t i ∧ b ≤ expDef M b t i)), ite_eq_left ⟨hM, hlt⟩, zero_add]
       exact toDist_wRun_le_expDef M b t i
-    · rw [if_pos ⟨hM, hge⟩, if_neg (by omega : ¬(M t i ∧ expDef M b t i < b)), add_zero]
+    · rw [ite_eq_left ⟨hM, hge⟩, ite_eq_right (by omega : ¬(M t i ∧ expDef M b t i < b)), add_zero]
       have h := toDist_wRun_le_expDef M b t i
       rwa [le_antisymm (expDef_le M b t i) hge] at h
-  · rw [if_neg hM, if_neg (by tauto), if_neg (by tauto), add_zero]
+  · rw [ite_eq_right hM, ite_eq_right (by tauto), ite_eq_right (by tauto), add_zero]
 
 /-- The floor's own noise: at a step where the reference candidate hits, the saturated candidates
 together carry at most `(C−1)/2^b`. The reference is what the erasure needs — a candidate that hits
@@ -820,7 +825,7 @@ is charged nothing, so realizability is not what makes this count work, only *so
 private theorem sum_satCharge_le (M : ℕ → Fin C → Bool) (b t : ℕ) {i₀ : Fin C}
     (h₀ : M t i₀ = false) : (∑ i, satCharge M b t i) ≤ ((C : ℚ) - 1) * (1 / 2 : ℚ) ^ b := by
   have hC1 : 1 ≤ C := i₀.pos
-  have h0 : satCharge M b t i₀ = 0 := by rw [satCharge, if_neg (by simp [h₀])]
+  have h0 : satCharge M b t i₀ = 0 := by rw [satCharge, ite_eq_right (by simp [h₀])]
   rw [← Finset.sum_erase Finset.univ h0]
   calc ∑ i ∈ Finset.univ.erase i₀, satCharge M b t i
       ≤ ∑ _i ∈ Finset.univ.erase i₀, (1 / 2 : ℚ) ^ b := by
@@ -1031,7 +1036,7 @@ private theorem leadPot_nonneg (M : ℕ → Fin C → Bool) (b : ℕ) (i₀ i : 
 
 private theorem leadPot_step_le_of_hit (M : ℕ → Fin C → Bool) (b : ℕ) (i₀ i : Fin C) (t : ℕ)
     (h₀ : M t i₀ = false) : leadPot M b i₀ i (t + 1) ≤ leadPot M b i₀ i t := by
-  have hp1 : (if M t i₀ then (0 : ℕ) else 1) = 1 := if_neg (by simp [h₀])
+  have hp1 : (if M t i₀ then (0 : ℕ) else 1) = 1 := ite_eq_right (by simp [h₀])
   simp only [leadPot]
   change leadGap (expStep b (M t) (expRun M b t) i₀) (expStep b (M t) (expRun M b t) i) ≤ _
   rw [expStep, hp1]
@@ -1053,7 +1058,7 @@ private theorem unsatCharge_le_leadPot_sub (M : ℕ → Fin C → Bool) (b t : �
     unsatCharge M b t i ≤ leadPot M b i₀ i t - leadPot M b i₀ i (t + 1) := by
   rw [unsatCharge]
   by_cases hc : M t i ∧ expDef M b t i < b
-  · rw [if_pos hc]
+  · rw [ite_eq_left hc]
     obtain ⟨hi, hlt⟩ := hc
     have hdle : (if ∃ j, expRun M b t j = b ∧ M t j = false then 1 else 0)
         ≤ expRun M b t i := by
@@ -1065,8 +1070,8 @@ private theorem unsatCharge_le_leadPot_sub (M : ℕ → Fin C → Bool) (b t : �
         rw [expDef, hmax] at hlt
         omega
       · omega
-    have hp1 : (if M t i₀ then (0 : ℕ) else 1) = 1 := if_neg (by simp [h₀])
-    have hq0 : (if M t i then (0 : ℕ) else 1) = 0 := if_pos hi
+    have hp1 : (if M t i₀ then (0 : ℕ) else 1) = 1 := ite_eq_right (by simp [h₀])
+    have hq0 : (if M t i then (0 : ℕ) else 1) = 0 := ite_eq_left hi
     have hstep : leadPot M b i₀ i (t + 1)
         + (1 / 2 : ℚ) ^ (expRun M b t i₀ - expRun M b t i) = leadPot M b i₀ i t := by
       simp only [leadPot]
@@ -1080,7 +1085,7 @@ private theorem unsatCharge_le_leadPot_sub (M : ℕ → Fin C → Bool) (b t : �
       rw [expDef]
       exact Nat.sub_le_sub_right (Finset.le_sup (Finset.mem_univ i₀)) _
     linarith
-  · rw [if_neg hc]
+  · rw [ite_eq_right hc]
     have := leadPot_step_le_of_hit M b i₀ i t h₀
     linarith
 
@@ -1096,17 +1101,17 @@ private theorem sum_unsatCharge_le (M : ℕ → Fin C → Bool) (b : ℕ) (i₀ 
       + (if M t i₀ then (1 : ℚ) else 0) := by
     intro t
     by_cases h : M t i₀
-    · rw [if_pos h]
+    · rw [ite_eq_left h]
       have := leadPot_step_le M b i₀ i t
       linarith
-    · rw [if_neg h]
+    · rw [ite_eq_right h]
       have := leadPot_step_le_of_hit M b i₀ i t (by simpa using h)
       linarith
   have hle : ∀ t ∈ s, unsatCharge M b t i ≤ leadPot M b i₀ i t - leadPot M b i₀ i (t + 1)
       + (if M t i₀ then (1 : ℚ) else 0) := by
     intro t ht
     have hh := h₀ t ht
-    rw [if_neg (by simp [hh]), add_zero]
+    rw [ite_eq_right (by simp [hh]), add_zero]
     exact unsatCharge_le_leadPot_sub M b t i₀ i hh
   have hsplit : ∑ t ∈ Finset.range n, (leadPot M b i₀ i t - leadPot M b i₀ i (t + 1)
       + (if M t i₀ then (1 : ℚ) else 0))
@@ -1136,15 +1141,15 @@ private theorem missCount_allMiss {iR i : Fin C} (h : i ≠ iR) (t : ℕ) :
     missCount (allMiss iR) i t = t := by
   induction t with
   | zero => exact missCount_zero _ _
-  | succ t ih => rw [missCount_succ, ih, if_pos (by simp [allMiss, h] : allMiss iR t i = true)]
+  | succ t ih => rw [missCount_succ, ih, ite_eq_left (by simp [allMiss, h] : allMiss iR t i = true)]
 
 /-- Under the all-miss family every competitor sits at the floor and the truth at the ceiling. -/
 private theorem raw_wRun_allMiss (iR : Fin C) (b t : ℕ) (i : Fin C) :
     raw (wRun (2 ^ b) (missFit (allMiss iR)) t) i = if i = iR then 2 ^ min t b else 1 := by
   rw [wRun_eq_pow_deficit (allMiss iR) (allMiss_truth iR) b t i]
   by_cases h : i = iR
-  · rw [if_pos h, h, missCount_eq_zero _ (allMiss_truth iR), Nat.sub_zero]
-  · rw [if_neg h, missCount_allMiss h t,
+  · rw [ite_eq_left h, h, missCount_eq_zero _ (allMiss_truth iR), Nat.sub_zero]
+  · rw [ite_eq_right h, missCount_allMiss h t,
       show min t b - t = 0 from Nat.sub_eq_zero_of_le (min_le_left t b), pow_zero]
 
 /-- The wrong mass under the all-miss family, exactly: the competitors hold one quantum each
@@ -1163,8 +1168,8 @@ private theorem wrongMass_allMiss (iR : Fin C) (b t : ℕ) :
   have hZ : ∑ j, ((raw (wRun (2 ^ b) (missFit (allMiss iR)) t) j : ℕ) : ℚ)
       = (2 : ℚ) ^ min t b + ((C : ℚ) - 1) := by
     simp only [hwj]
-    rw [← Finset.sum_erase_add _ _ (Finset.mem_univ iR), if_pos rfl,
-      Finset.sum_congr rfl (fun j hj => if_neg (Finset.ne_of_mem_erase hj)),
+    rw [← Finset.sum_erase_add _ _ (Finset.mem_univ iR), ite_eq_left rfl,
+      Finset.sum_congr rfl (fun j hj => ite_eq_right (Finset.ne_of_mem_erase hj)),
       Finset.sum_const, nsmul_eq_mul, mul_one, hcard]
     ring
   have hterm : ∀ j, (if allMiss iR t j then
@@ -1172,17 +1177,17 @@ private theorem wrongMass_allMiss (iR : Fin C) (b t : ℕ) :
       = if j = iR then 0 else 1 / ((2 : ℚ) ^ min t b + ((C : ℚ) - 1)) := by
     intro j
     by_cases h : j = iR
-    · rw [h, if_pos rfl]
+    · rw [h, ite_eq_left rfl]
       simp [allMiss_truth iR]
-    · rw [if_neg h, if_pos (by simp [allMiss, h] : allMiss iR t j = true),
+    · rw [ite_eq_right h, ite_eq_left (by simp [allMiss, h] : allMiss iR t j = true),
         show toDist (raw (wRun (2 ^ b) (missFit (allMiss iR)) t)) j
           = ((raw (wRun (2 ^ b) (missFit (allMiss iR)) t) j : ℕ) : ℚ)
             / ∑ k, ((raw (wRun (2 ^ b) (missFit (allMiss iR)) t) k : ℕ) : ℚ) from rfl,
-        hZ, hwj j, if_neg h]
+        hZ, hwj j, ite_eq_right h]
   rw [wrongMass]
   simp only [hterm]
-  rw [← Finset.sum_erase_add _ _ (Finset.mem_univ iR), if_pos rfl, add_zero,
-    Finset.sum_congr rfl (fun j hj => if_neg (Finset.ne_of_mem_erase hj)),
+  rw [← Finset.sum_erase_add _ _ (Finset.mem_univ iR), ite_eq_left rfl, add_zero,
+    Finset.sum_congr rfl (fun j hj => ite_eq_right (Finset.ne_of_mem_erase hj)),
     Finset.sum_const, nsmul_eq_mul, hcard, mul_one_div]
 
 /-- **The guard.** Below the budget threshold the `n`-free bound is *false*: on the all-miss family
@@ -1266,7 +1271,7 @@ theorem expRun_everyMiss (C b t : ℕ) (i : Fin C) : expRun (everyMiss C) b t i 
   | zero => rfl
   | succ t ih =>
       change expStep b (everyMiss C t) (expRun (everyMiss C) b t) i = 0
-      rw [expStep, if_pos (show everyMiss C t i = true from rfl), ih]
+      rw [expStep, ite_eq_left (show everyMiss C t i = true from rfl), ih]
       simp
 
 theorem raw_wRun_everyMiss (C b t : ℕ) (i : Fin C) :
@@ -1290,7 +1295,7 @@ theorem wrongMass_everyMiss {C : ℕ} [NeZero C] (b t : ℕ) : wrongMass (everyM
       (if everyMiss C t j then toDist (raw (wRun (2 ^ b) (missFit (everyMiss C)) t)) j else 0)
         = 1 / (C : ℚ) := by
     intro j
-    rw [if_pos (show everyMiss C t j = true from rfl)]
+    rw [ite_eq_left (show everyMiss C t j = true from rfl)]
     change ((raw (wRun (2 ^ b) (missFit (everyMiss C)) t) j : ℕ) : ℚ)
       / ∑ k, ((raw (wRun (2 ^ b) (missFit (everyMiss C)) t) k : ℕ) : ℚ) = _
     rw [hw j, hZ]
@@ -1365,15 +1370,15 @@ theorem expRun_altMiss (b t : ℕ) :
           rw [expStep]
           congr 1
           by_cases h : b ≤ t / 2
-          · rw [if_pos h, if_pos (hδ.mpr h)]
-          · rw [if_neg h, if_neg (fun hh => h (hδ.mp hh))]
+          · rw [ite_eq_left h, ite_eq_left (hδ.mpr h)]
+          · rw [ite_eq_right h, ite_eq_right (fun hh => h (hδ.mp hh))]
         clear hδ
         refine ⟨?_, ?_⟩
         · change expStep b (altMiss t) (expRun altMiss b t) 0 = _
-          rw [hstep 0, if_pos hm0, ih0]
+          rw [hstep 0, ite_eq_left hm0, ih0]
           split <;> omega
         · change expStep b (altMiss t) (expRun altMiss b t) 1 = _
-          rw [hstep 1, if_neg (by simp [hm1]), ih1]
+          rw [hstep 1, ite_eq_right (by simp [hm1]), ih1]
           split <;> omega
       · -- an odd step: candidate `1` misses, candidate `0` hits, and it is below the ceiling
         have hm0 : altMiss t 0 = false := by simp [altMiss, hr]
@@ -1390,15 +1395,15 @@ theorem expRun_altMiss (b t : ℕ) :
           rw [expStep]
           congr 1
           by_cases h : b = 0
-          · rw [if_pos h, if_pos (hδ.mpr h)]
-          · rw [if_neg h, if_neg (fun hh => h (hδ.mp hh))]
+          · rw [ite_eq_left h, ite_eq_left (hδ.mpr h)]
+          · rw [ite_eq_right h, ite_eq_right (fun hh => h (hδ.mp hh))]
         clear hδ
         refine ⟨?_, ?_⟩
         · change expStep b (altMiss t) (expRun altMiss b t) 0 = _
-          rw [hstep 0, if_neg (by simp [hm0]), ih0]
+          rw [hstep 0, ite_eq_right (by simp [hm0]), ih0]
           split <;> omega
         · change expStep b (altMiss t) (expRun altMiss b t) 1 = _
-          rw [hstep 1, if_pos hm1, ih1]
+          rw [hstep 1, ite_eq_left hm1, ih1]
           split <;> omega
 
 /-- **The wrong mass never drops below `1/2`**, at any budget and any time. At even steps the two
@@ -1411,7 +1416,7 @@ theorem wrongMass_altMiss_ge (b t : ℕ) : (1 / 2 : ℚ) ≤ wrongMass altMiss b
   · have hm0 : altMiss t 0 = true := by simp [altMiss, hr]
     have hm1 : altMiss t 1 = false := by simp [altMiss, hr]
     have heq : expRun altMiss b t 0 = expRun altMiss b t 1 := by rw [h0, h1]; omega
-    rw [if_pos hm0, if_neg (by simp [hm1]), heq, le_div_iff₀ (by positivity)]
+    rw [ite_eq_left hm0, ite_eq_right (by simp [hm1]), heq, le_div_iff₀ (by positivity)]
     have : (0 : ℚ) < (2 : ℚ) ^ expRun altMiss b t 1 := by positivity
     linarith
   · have hm0 : altMiss t 0 = false := by simp [altMiss, hr]
@@ -1419,7 +1424,7 @@ theorem wrongMass_altMiss_ge (b t : ℕ) : (1 / 2 : ℚ) ≤ wrongMass altMiss b
     have hle : expRun altMiss b t 0 ≤ expRun altMiss b t 1 := by rw [h0, h1]; omega
     have hpow : (2 : ℚ) ^ expRun altMiss b t 0 ≤ (2 : ℚ) ^ expRun altMiss b t 1 :=
       pow_le_pow_right₀ (by norm_num) hle
-    rw [if_neg (by simp [hm0]), if_pos hm1, le_div_iff₀ (by positivity)]
+    rw [ite_eq_right (by simp [hm0]), ite_eq_left hm1, le_div_iff₀ (by positivity)]
     linarith
 
 /-- **The refutation without the degeneracy.** Each candidate hits half the time, so the family is
@@ -1470,7 +1475,7 @@ private theorem card_mul_le_of_hitting_surprises (M : ℕ → Fin C → Bool) (b
     have h3 := hsurp t ht
     linarith
   have h0 : ∑ t ∈ s, unsatCharge M b t i₀ = 0 :=
-    Finset.sum_eq_zero fun t ht => by rw [unsatCharge, if_neg (by simp [hhit t ht])]
+    Finset.sum_eq_zero fun t ht => by rw [unsatCharge, ite_eq_right (by simp [hhit t ht])]
   have hunsat : ∑ i, ∑ t ∈ s, unsatCharge M b t i
       ≤ ((C : ℚ) - 1) * (2 + (missCount M i₀ n : ℚ)) := by
     rw [← Finset.sum_erase (f := fun i => ∑ t ∈ s, unsatCharge M b t i) Finset.univ h0]
@@ -1605,7 +1610,7 @@ tracking form of *that* is attempted here. -/
 theorem missCount_everyMiss (C : ℕ) (i : Fin C) (n : ℕ) : missCount (everyMiss C) i n = n := by
   induction n with
   | zero => exact missCount_zero _ _
-  | succ n ih => rw [missCount_succ, ih, if_pos (show everyMiss C n i = true from rfl)]
+  | succ n ih => rw [missCount_succ, ih, ite_eq_left (show everyMiss C n i = true from rfl)]
 
 /-- **Sharpness on `everyMiss`: the miss-count term is necessary, and its coefficient cannot go
 below `θ`.** Every candidate misses at every step, so the surprise count *is* the horizon and *is*
@@ -1634,9 +1639,9 @@ theorem missCount_altMiss_zero (n : ℕ) : missCount altMiss 0 n = (n + 1) / 2 :
   | succ n ih =>
       rw [missCount_succ, ih]
       by_cases h : n % 2 = 0
-      · rw [if_pos (show altMiss n 0 = true by simp [altMiss, h])]
+      · rw [ite_eq_left (show altMiss n 0 = true by simp [altMiss, h])]
         omega
-      · rw [if_neg (show ¬ (altMiss n 0 = true) by simp [altMiss]; omega)]
+      · rw [ite_eq_right (show ¬ (altMiss n 0 = true) by simp [altMiss]; omega)]
         omega
 
 /-- **Sharpness on `altMiss`: the coefficient cannot fall below `2θ`.** Two candidates missing
@@ -1678,7 +1683,7 @@ theorem wrongMass_lt_one_of_hit (M : ℕ → Fin C → Bool) (b t : ℕ) {i₀ :
   have hZ : (0 : ℚ) < ∑ j, ((raw (wRun (2 ^ b) (missFit M) t) j : ℕ) : ℚ) :=
     Finset.sum_pos (fun j _ => hwpos j) ⟨i₀, Finset.mem_univ i₀⟩
   have h0 : (if M t i₀ then toDist (raw (wRun (2 ^ b) (missFit M) t)) i₀ else 0) = 0 :=
-    if_neg (by simp [h₀])
+    ite_eq_right (by simp [h₀])
   have hsplit := Finset.sum_erase_add Finset.univ
     (fun i => ((raw (wRun (2 ^ b) (missFit M) t) i : ℕ) : ℚ)) (Finset.mem_univ i₀)
   calc wrongMass M b t
@@ -1855,7 +1860,7 @@ theorem toDist_wRun_sub_bayesFrom_le (M : ℕ → Fin C → Bool) (b : ℕ) {iL 
           calc ((bayesFrom M b s t i : ℕ) : ℚ) ≤ ((2 ^ R : ℕ) : ℚ) := by exact_mod_cast hble
             _ = (2 : ℚ) ^ R := by push_cast; ring
         have hbnn : (0 : ℚ) ≤ ((bayesFrom M b s t i : ℕ) : ℚ) := by positivity
-        rw [if_neg hne, huQ, abs_of_nonneg (by linarith)]
+        rw [ite_eq_right hne, huQ, abs_of_nonneg (by linarith)]
         linarith
     have hsum : ∑ i, |((u i : ℕ) : ℚ) - ((bayesFrom M b s t i : ℕ) : ℚ)|
         ≤ ((C : ℚ) - 1) * (2 : ℚ) ^ R := by
@@ -1863,8 +1868,8 @@ theorem toDist_wRun_sub_bayesFrom_le (M : ℕ → Fin C → Bool) (b : ℕ) {iL 
           ≤ ∑ i, if i = iL then 0 else (2 : ℚ) ^ R := Finset.sum_le_sum fun i _ => hdiff i
         _ = ((C : ℚ) - 1) * (2 : ℚ) ^ R := by
             rw [← Finset.sum_erase (f := fun i => if i = iL then (0 : ℚ) else (2 : ℚ) ^ R)
-                Finset.univ (if_pos rfl),
-              Finset.sum_congr rfl (fun j hj => if_neg (Finset.ne_of_mem_erase hj)),
+                Finset.univ (ite_eq_left rfl),
+              Finset.sum_congr rfl (fun j hj => ite_eq_right (Finset.ne_of_mem_erase hj)),
               Finset.sum_const, nsmul_eq_mul, Finset.card_erase_of_mem (Finset.mem_univ iL),
               Finset.card_univ, Fintype.card_fin, Nat.cast_sub hC1, Nat.cast_one]
     have hbL : ((bayesFrom M b s t iL : ℕ) : ℚ) = (2 : ℚ) ^ R * 2 ^ b := by
@@ -1982,15 +1987,15 @@ private theorem expRun_mirrorMiss_phase1 (b : ℕ) : ∀ t, t ≤ b + 3 →
         rw [expStep]
         congr 1
         by_cases h : b ≤ t
-        · rw [if_pos h, if_pos (hδ.mpr h)]
-        · rw [if_neg h, if_neg (fun hh => h (hδ.mp hh))]
+        · rw [ite_eq_left h, ite_eq_left (hδ.mpr h)]
+        · rw [ite_eq_right h, ite_eq_right (fun hh => h (hδ.mp hh))]
       clear hδ
       refine ⟨?_, ?_⟩
       · change expStep b (mirrorMiss b t) (expRun (mirrorMiss b) b t) 0 = _
-        rw [hstep 0, if_neg (by simp [hm0]), h0]
+        rw [hstep 0, ite_eq_right (by simp [hm0]), h0]
         split <;> omega
       · change expStep b (mirrorMiss b t) (expRun (mirrorMiss b) b t) 1 = _
-        rw [hstep 1, if_pos hm1, h1]
+        rw [hstep 1, ite_eq_left hm1, h1]
         split <;> omega
 
 /-- The second phase: candidate `1` climbs while candidate `0`, already at the ceiling, is charged
@@ -2021,17 +2026,17 @@ private theorem expRun_mirrorMiss_phase2 (b : ℕ) : ∀ s, s ≤ b + 3 →
         rw [expStep]
         congr 1
         by_cases h : b ≤ s
-        · rw [if_pos h, if_pos (hδ.mpr h)]
-        · rw [if_neg h, if_neg (fun hh => h (hδ.mp hh))]
+        · rw [ite_eq_left h, ite_eq_left (hδ.mpr h)]
+        · rw [ite_eq_right h, ite_eq_right (fun hh => h (hδ.mp hh))]
       clear hδ
       have hidx : b + 3 + (s + 1) = (b + 3 + s) + 1 := by omega
       rw [hidx]
       refine ⟨?_, ?_⟩
       · change expStep b (mirrorMiss b (b + 3 + s)) (expRun (mirrorMiss b) b (b + 3 + s)) 0 = _
-        rw [hstep 0, if_pos hm0, h0]
+        rw [hstep 0, ite_eq_left hm0, h0]
         split <;> omega
       · change expStep b (mirrorMiss b (b + 3 + s)) (expRun (mirrorMiss b) b (b + 3 + s)) 1 = _
-        rw [hstep 1, if_neg (by simp [hm1]), h1]
+        rw [hstep 1, ite_eq_right (by simp [hm1]), h1]
         split <;> omega
 
 private theorem missCount_mirrorMiss_zero (b n : ℕ) :
@@ -2041,9 +2046,9 @@ private theorem missCount_mirrorMiss_zero (b n : ℕ) :
   | succ n ih =>
       rw [missCount_succ, ih]
       by_cases h : b + 3 ≤ n
-      · rw [if_pos (show mirrorMiss b n 0 = true by simp [mirrorMiss]; omega)]
+      · rw [ite_eq_left (show mirrorMiss b n 0 = true by simp [mirrorMiss]; omega)]
         omega
-      · rw [if_neg (show ¬ (mirrorMiss b n 0 = true) by simp [mirrorMiss]; omega)]
+      · rw [ite_eq_right (show ¬ (mirrorMiss b n 0 = true) by simp [mirrorMiss]; omega)]
         omega
 
 private theorem missCount_mirrorMiss_one (b n : ℕ) :
@@ -2053,9 +2058,9 @@ private theorem missCount_mirrorMiss_one (b n : ℕ) :
   | succ n ih =>
       rw [missCount_succ, ih]
       by_cases h : n < b + 3
-      · rw [if_pos (show mirrorMiss b n 1 = true by simp [mirrorMiss]; omega)]
+      · rw [ite_eq_left (show mirrorMiss b n 1 = true by simp [mirrorMiss]; omega)]
         omega
-      · rw [if_neg (show ¬ (mirrorMiss b n 1 = true) by simp [mirrorMiss]; omega)]
+      · rw [ite_eq_right (show ¬ (mirrorMiss b n 1 = true) by simp [mirrorMiss]; omega)]
         omega
 
 /-- **The discrepancy on the mirror family, exactly: `7/9`, at every budget `b ≥ 3`.** The exact run
@@ -2251,20 +2256,20 @@ private theorem expRun_preAbsorption_early (b : ℕ) : ∀ n, n ≤ b + 8 →
         rw [expStep]
         congr 1
         by_cases h : b ≤ n
-        · rw [if_pos h, if_pos (hδ.mpr h)]
-        · rw [if_neg h, if_neg (fun hh => h (hδ.mp hh))]
+        · rw [ite_eq_left h, ite_eq_left (hδ.mpr h)]
+        · rw [ite_eq_right h, ite_eq_right (fun hh => h (hδ.mp hh))]
       clear hδ
       refine ⟨?_, ?_, ?_⟩
-      · rw [hstep 0, if_neg (by simp [hm0]), h0]
+      · rw [hstep 0, ite_eq_right (by simp [hm0]), h0]
         split <;> omega
       · rw [hstep 1, h1]
         by_cases hnb : n < b
-        · rw [if_pos (show preAbsorption b n 1 = true by simp [preAbsorption]; omega),
-            if_neg (by omega : ¬ b ≤ n)]
-        · rw [if_neg (show ¬ (preAbsorption b n 1 = true) by simp [preAbsorption]; omega),
-            if_pos (by omega : b ≤ n)]
+        · rw [ite_eq_left (show preAbsorption b n 1 = true by simp [preAbsorption]; omega),
+            ite_eq_right (by omega : ¬ b ≤ n)]
+        · rw [ite_eq_right (show ¬ (preAbsorption b n 1 = true) by simp [preAbsorption]; omega),
+            ite_eq_left (by omega : b ≤ n)]
       · rw [hstep 2, h2,
-          if_pos (show preAbsorption b n 2 = true by simp [preAbsorption]; omega)]
+          ite_eq_left (show preAbsorption b n 2 = true by simp [preAbsorption]; omega)]
         split <;> omega
 
 /-- The last phase: candidate `0` quits and is charged one exponent per rescale, while `1` and `2`
@@ -2307,16 +2312,17 @@ private theorem expRun_preAbsorption_late (b : ℕ) : ∀ k, k ≤ b + 2 →
         rw [expStep]
         congr 1
         by_cases h : b ≤ k
-        · rw [if_pos h, if_pos (hδ.mpr h)]
-        · rw [if_neg h, if_neg (fun hh => h (hδ.mp hh))]
+        · rw [ite_eq_left h, ite_eq_left (hδ.mpr h)]
+        · rw [ite_eq_right h, ite_eq_right (fun hh => h (hδ.mp hh))]
       clear hδ
       refine ⟨?_, ?_, ?_⟩
-      · rw [hstep 0, if_pos hm0, h0]
+      · rw [hstep 0, ite_eq_left hm0, h0]
         split <;> omega
-      · rw [hstep 1, if_neg (by simp [hm1]), h1]
+      · rw [hstep 1, ite_eq_right (by simp [hm1]), h1]
         split <;> omega
       · rw [hstep 2, h2,
-          if_neg (show ¬ (preAbsorption b (b + 8 + k) 2 = true) by simp [preAbsorption]; omega)]
+          ite_eq_right
+            (show ¬ (preAbsorption b (b + 8 + k) 2 = true) by simp [preAbsorption]; omega)]
         split <;> omega
 
 private theorem missCount_preAbsorption_zero (b n : ℕ) :
@@ -2326,9 +2332,9 @@ private theorem missCount_preAbsorption_zero (b n : ℕ) :
   | succ n ih =>
       rw [missCount_succ, ih]
       by_cases h : b + 8 ≤ n
-      · rw [if_pos (show preAbsorption b n 0 = true by simp [preAbsorption]; omega)]
+      · rw [ite_eq_left (show preAbsorption b n 0 = true by simp [preAbsorption]; omega)]
         omega
-      · rw [if_neg (show ¬ (preAbsorption b n 0 = true) by simp [preAbsorption]; omega)]
+      · rw [ite_eq_right (show ¬ (preAbsorption b n 0 = true) by simp [preAbsorption]; omega)]
         omega
 
 private theorem missCount_preAbsorption_one (b n : ℕ) :
@@ -2338,9 +2344,9 @@ private theorem missCount_preAbsorption_one (b n : ℕ) :
   | succ n ih =>
       rw [missCount_succ, ih]
       by_cases h : n < b
-      · rw [if_pos (show preAbsorption b n 1 = true by simp [preAbsorption]; omega)]
+      · rw [ite_eq_left (show preAbsorption b n 1 = true by simp [preAbsorption]; omega)]
         omega
-      · rw [if_neg (show ¬ (preAbsorption b n 1 = true) by simp [preAbsorption]; omega)]
+      · rw [ite_eq_right (show ¬ (preAbsorption b n 1 = true) by simp [preAbsorption]; omega)]
         omega
 
 private theorem missCount_preAbsorption_two (b n : ℕ) :
@@ -2350,9 +2356,9 @@ private theorem missCount_preAbsorption_two (b n : ℕ) :
   | succ n ih =>
       rw [missCount_succ, ih]
       by_cases h : n < b + 8
-      · rw [if_pos (show preAbsorption b n 2 = true by simp [preAbsorption]; omega)]
+      · rw [ite_eq_left (show preAbsorption b n 2 = true by simp [preAbsorption]; omega)]
         omega
-      · rw [if_neg (show ¬ (preAbsorption b n 2 = true) by simp [preAbsorption]; omega)]
+      · rw [ite_eq_right (show ¬ (preAbsorption b n 2 = true) by simp [preAbsorption]; omega)]
         omega
 
 /-- **Co-leadership fails at the restart point**, and it fails by the whole budget: at `s = b` the
@@ -2507,13 +2513,13 @@ private theorem expRun_sinkRecover_early (b : ℕ) : ∀ n, n ≤ b + 6 →
         rw [expStep]
         congr 1
         by_cases h : b ≤ n
-        · rw [if_pos h, if_pos (hδ.mpr h)]
-        · rw [if_neg h, if_neg (fun hh => h (hδ.mp hh))]
+        · rw [ite_eq_left h, ite_eq_left (hδ.mpr h)]
+        · rw [ite_eq_right h, ite_eq_right (fun hh => h (hδ.mp hh))]
       clear hδ
       refine ⟨?_, ?_⟩
-      · rw [hstep 0, if_neg (by simp [hm0]), h0]
+      · rw [hstep 0, ite_eq_right (by simp [hm0]), h0]
         split <;> omega
-      · rw [hstep 1, if_pos hm1, h1]
+      · rw [hstep 1, ite_eq_left hm1, h1]
         split <;> omega
 
 /-- The second phase: candidate `1` climbs back to the ceiling out of the floor, while `0` holds
@@ -2545,13 +2551,13 @@ private theorem expRun_sinkRecover_late (b : ℕ) : ∀ j, j ≤ b →
         rw [expStep]
         congr 1
         by_cases h : b ≤ j
-        · rw [if_pos h, if_pos (hδ.mpr h)]
-        · rw [if_neg h, if_neg (fun hh => h (hδ.mp hh))]
+        · rw [ite_eq_left h, ite_eq_left (hδ.mpr h)]
+        · rw [ite_eq_right h, ite_eq_right (fun hh => h (hδ.mp hh))]
       clear hδ
       refine ⟨?_, ?_⟩
-      · rw [hstep 0, if_pos hm0, h0]
+      · rw [hstep 0, ite_eq_left hm0, h0]
         split <;> omega
-      · rw [hstep 1, if_neg (by simp [hm1]), h1]
+      · rw [hstep 1, ite_eq_right (by simp [hm1]), h1]
         split <;> omega
 
 private theorem missCount_sinkRecover_zero (b n : ℕ) :
@@ -2561,9 +2567,9 @@ private theorem missCount_sinkRecover_zero (b n : ℕ) :
   | succ n ih =>
       rw [missCount_succ, ih]
       by_cases h : b + 6 ≤ n
-      · rw [if_pos (show sinkRecover b n 0 = true by simp [sinkRecover]; omega)]
+      · rw [ite_eq_left (show sinkRecover b n 0 = true by simp [sinkRecover]; omega)]
         omega
-      · rw [if_neg (show ¬ (sinkRecover b n 0 = true) by simp [sinkRecover]; omega)]
+      · rw [ite_eq_right (show ¬ (sinkRecover b n 0 = true) by simp [sinkRecover]; omega)]
         omega
 
 private theorem missCount_sinkRecover_one (b n : ℕ) :
@@ -2573,9 +2579,9 @@ private theorem missCount_sinkRecover_one (b n : ℕ) :
   | succ n ih =>
       rw [missCount_succ, ih]
       by_cases h : n < b + 6
-      · rw [if_pos (show sinkRecover b n 1 = true by simp [sinkRecover]; omega)]
+      · rw [ite_eq_left (show sinkRecover b n 1 = true by simp [sinkRecover]; omega)]
         omega
-      · rw [if_neg (show ¬ (sinkRecover b n 1 = true) by simp [sinkRecover]; omega)]
+      · rw [ite_eq_right (show ¬ (sinkRecover b n 1 = true) by simp [sinkRecover]; omega)]
         omega
 
 /-- **Co-leadership does hold at the restart point** here: candidate `0` is at the ceiling at
@@ -2824,7 +2830,7 @@ theorem argmax_wRun_card_changes_le [NeZero C] (M : ℕ → Fin C → Bool) {iR 
         by_cases hne : argmax (raw (wRun (2 ^ b) (missFit M) (t + 1)))
             = argmax (raw (wRun (2 ^ b) (missFit M) t))
         · simp [hne]
-        · rw [if_pos hne]
+        · rw [ite_eq_left hne]
           have : ((argmax (raw (wRun (2 ^ b) (missFit M) (t + 1))) : Fin C) : ℕ)
               ≠ ((argmax (raw (wRun (2 ^ b) (missFit M) t)) : Fin C) : ℕ) :=
             fun hv => hne (Fin.val_injective hv)
@@ -2947,7 +2953,7 @@ theorem wMax_wRun_rotMiss (b : ℕ) {t : ℕ} (ht : t ≤ b) :
     exact Nat.pow_le_pow_right (by norm_num) (by omega)
   · have h := le_wMax (raw (wRun (2 ^ b) (missFit (rotMiss C)) t))
       (⟨t % C, Nat.mod_lt t hCpos⟩ : Fin C)
-    rwa [wRun_eq_pow_expRun, expRun_rotMiss_of_le b ht, if_neg (lt_irrefl _)] at h
+    rwa [wRun_eq_pow_expRun, expRun_rotMiss_of_le b ht, ite_eq_right (lt_irrefl _)] at h
 
 private theorem raw_wRun_rotMiss_eq_wMax_iff (b : ℕ) {t : ℕ} (ht : t ≤ b) (i : Fin C) :
     raw (wRun (2 ^ b) (missFit (rotMiss C)) t) i
@@ -2959,10 +2965,10 @@ private theorem raw_wRun_rotMiss_eq_wMax_iff (b : ℕ) {t : ℕ} (ht : t ≤ b) 
   · intro h
     have := Nat.pow_right_injective (le_refl 2) h
     by_contra hlt
-    rw [if_pos hlt] at this hmc
+    rw [ite_eq_left hlt] at this hmc
     omega
   · intro h
-    rw [if_neg h, Nat.add_zero]
+    rw [ite_eq_right h, Nat.add_zero]
 
 /-- **The reading is the candidate about to miss.** Among the tied ceiling-holders `argmax`'s own
 tie-break keeps the least index, and that index is exactly `t % C` — the maximum weight sits on
@@ -3031,11 +3037,11 @@ theorem sum_raw_wRun_rotMiss (b : ℕ) {t : ℕ} (ht : t ≤ b) :
   have hleft : ∑ j ∈ Finset.range (t % C), (2 : ℕ) ^ (t - t / C - (if j < t % C then 1 else 0))
       = (t % C) * 2 ^ (t - t / C - 1) := by
     rw [Finset.sum_congr rfl (fun j hj => by
-      rw [if_pos (Finset.mem_range.mp hj)]), Finset.sum_const, Finset.card_range, smul_eq_mul]
+      rw [ite_eq_left (Finset.mem_range.mp hj)]), Finset.sum_const, Finset.card_range, smul_eq_mul]
   have hright : ∑ j ∈ Finset.Ico (t % C) C, (2 : ℕ) ^ (t - t / C - (if j < t % C then 1 else 0))
       = (C - t % C) * 2 ^ (t - t / C) := by
     rw [Finset.sum_congr rfl (fun j hj => by
-      rw [if_neg (not_lt.mpr (Finset.mem_Ico.mp hj).1), Nat.sub_zero]), Finset.sum_const,
+      rw [ite_eq_right (not_lt.mpr (Finset.mem_Ico.mp hj).1), Nat.sub_zero]), Finset.sum_const,
       Nat.card_Ico, smul_eq_mul]
   rw [hleft, hright]
 
@@ -3050,9 +3056,9 @@ theorem wrongMass_rotMiss (b : ℕ) {t : ℕ} (ht : t ≤ b) :
   have hsingle : wrongMass (rotMiss C) b t
       = toDist (raw (wRun (2 ^ b) (missFit (rotMiss C)) t)) (⟨t % C, hrC⟩ : Fin C) := by
     rw [wrongMass, Finset.sum_eq_single (⟨t % C, hrC⟩ : Fin C)]
-    · rw [if_pos hcond]
+    · rw [ite_eq_left hcond]
     · intro i _ hi
-      rw [if_neg]
+      rw [ite_eq_right]
       simp only [rotMiss, decide_eq_true_eq]
       intro hcontra
       exact hi (Fin.ext hcontra)
@@ -3061,7 +3067,8 @@ theorem wrongMass_rotMiss (b : ℕ) {t : ℕ} (ht : t ≤ b) :
   rw [hsingle]
   have hnum : raw (wRun (2 ^ b) (missFit (rotMiss C)) t) (⟨t % C, hrC⟩ : Fin C)
       = 2 ^ (t - t / C) := by
-    rw [wRun_eq_pow_expRun, expRun_rotMiss_of_le b ht, if_neg (lt_irrefl (t % C)), Nat.add_zero]
+    rw [wRun_eq_pow_expRun, expRun_rotMiss_of_le b ht, ite_eq_right (lt_irrefl (t % C)),
+      Nat.add_zero]
   have hden : ∑ i, raw (wRun (2 ^ b) (missFit (rotMiss C)) t) i
       = (t % C) * 2 ^ (t - t / C - 1) + (C - t % C) * 2 ^ (t - t / C) := sum_raw_wRun_rotMiss b ht
   rcases Nat.eq_zero_or_pos (t % C) with hr0 | hrpos

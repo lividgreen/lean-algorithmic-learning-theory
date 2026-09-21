@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.Decoupling
+module
+
+public import ALT.Decoupling
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -73,6 +75,9 @@ file; accretion is assumed here, not derived. The reflection ladder that [Inevit
 on a growing host needs, beyond this, the recurrence of the threshold crossing at each enlarged
 stage, which is untouched here.
 -/
+
+
+@[expose] public section
 
 namespace Decoupling
 
@@ -246,7 +251,7 @@ theorem accretes_tapeWrite : Accretes tapeWrite tapeRegion tapeStage := by
   rw [mem_tapeStage] at hs
   rw [mem_tapeRegion] at ha
   simp only [tapeWrite]
-  rw [if_neg (by omega), if_neg (by omega)]
+  rw [ite_eq_right (by omega), ite_eq_right (by omega)]
 
 /-- Each stage's reading is faithful on that stage's region: it separates exactly the written
 cells. -/
@@ -254,13 +259,13 @@ theorem faithful_tapeDecode (t : ℕ) : Faithful (tapeDecode t) (tapeRegion t) :
   refine fun s s' => ⟨fun h a ha => ?_, fun h => ?_⟩
   · rw [mem_tapeRegion] at ha
     have hc := congrFun h a
-    simpa only [tapeDecode, if_pos ha] using hc
+    simpa only [tapeDecode, ite_eq_left ha] using hc
   · funext a
     simp only [tapeDecode]
     by_cases ha : 1 ≤ a ∧ a ≤ t
-    · rw [if_pos ha, if_pos ha]
+    · rw [ite_eq_left ha, ite_eq_left ha]
       exact h a (mem_tapeRegion.mpr ha)
-    · rw [if_neg ha, if_neg ha]
+    · rw [ite_eq_right ha, ite_eq_right ha]
 
 /-- The limit region is exactly the union of the stages' regions. -/
 theorem tapeLimit_eq_iUnion : tapeLimit = {a | ∃ t, a ∈ tapeRegion t} := by
@@ -338,7 +343,7 @@ theorem accretes_seqWrite : Accretes (seqWrite c) tapeRegion tapeStage := by
   rw [mem_tapeStage] at hs
   rw [mem_tapeRegion] at ha
   simp only [seqWrite]
-  rw [if_neg (by omega), if_neg (by omega)]
+  rw [ite_eq_right (by omega), ite_eq_right (by omega)]
 
 /-- The canonical run from the blank state: after `t` commitments the counter reads `t`, and cell
 `a` holds the `(a - 1)`-th entry of `c` for every written cell `1 ≤ a ≤ t`, `0` elsewhere. -/

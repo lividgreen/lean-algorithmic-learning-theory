@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.Analysis.SpecialFunctions.Log.Basic
+module
+
+public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -51,6 +53,9 @@ description length in nats-vs-bits is absorbed into `K`) and the algebra stays i
 * Not the union with `ALT/SQOracle.lean`'s `1−δ` truth-survival into a single `1−δ` soundness
   statement: that final assembly stays in prose (it is the Bayes-mixture argument of [Discovery]).
 -/
+
+
+@[expose] public section
 
 namespace SQPrunedMass
 

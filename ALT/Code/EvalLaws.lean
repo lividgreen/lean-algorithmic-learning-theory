@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.Computability.PartrecCode
+module
+
+public import Mathlib.Computability.PartrecCode
 
 /-!
 # Structural evaluation laws for `Nat.Partrec.Code`
@@ -24,6 +26,9 @@ step-counting cost model built on top of them.
 -/
 
 -- "deliberately a leaf: … nothing about the step-counting cost model"
+
+@[expose] public section
+
 assert_not_exists TimeCost.tc
 
 namespace CodeEvalLaws

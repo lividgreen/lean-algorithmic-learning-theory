@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.ParameterizedNNO
-import Mathlib.CategoryTheory.Limits.Shapes.IsTerminal
+module
+
+public import ALT.ParameterizedNNO
+public import Mathlib.CategoryTheory.Limits.Shapes.IsTerminal
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -48,6 +50,9 @@ hom `(ihom X).obj Y` does not reduce to the function type `X → Y` definitional
 `Quiver.Hom`/`ihom` defeq obstruction), so the concrete bijections are the faithful, transparent
 certification of the same content.
 -/
+
+
+@[expose] public section
 
 namespace RepFintype
 

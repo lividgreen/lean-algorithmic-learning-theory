@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.BirkhoffTool
-import ALT.SQAlgorithm
+module
+
+public import ALT.BirkhoffTool
+public import ALT.SQAlgorithm
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -78,6 +80,9 @@ third module rather than an addition to either parent.
 * **The `μ`-a.e. consumer form** — see above; it is a one-line corollary of the conditioned form, not
   given because nothing here consumes it.
 -/
+
+
+@[expose] public section
 
 namespace FiniteHorizonDiscovery
 

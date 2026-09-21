@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.SubstitutionSchedule
+module
+
+public import ALT.SubstitutionSchedule
 
 /-!
 # The strict-spectral substitution class: a `√n` envelope hypothesis and its consumers
@@ -55,6 +57,9 @@ substitution, a Perron vector, or decides membership from a spectral condition. 
 citation (Adamczewski, *Symbolic discrepancy and self-similar dynamics*, Ann. Inst. Fourier 54
 (2004) 2201–2234), not machine-checked content.
 -/
+
+
+@[expose] public section
 
 namespace SubstitutionClass
 
@@ -311,7 +316,7 @@ theorem schedSurvivors_eq_singleton_envelope {o : ℕ → Bool} {S : ℝ} {ρ W 
         exact ha0 (by ext; simpa using hcontra)
       have hlit : LearningWitness.singleLiteralAns a (0 : Fin 8) = 0 := by
         unfold LearningWitness.singleLiteralAns
-        rw [if_neg ha0]
+        rw [ite_eq_right ha0]
       rw [hlit, abs_le]
       obtain ⟨hεl, hεu⟩ := abs_le.mp (hε a)
       obtain ⟨hρl, hρu⟩ := abs_le.mp (hρ a hane)

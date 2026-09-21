@@ -3,9 +3,11 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.TimeCost
-import ALT.SearchSpace
-import ALT.CheckerWorkspace
+module
+
+public import ALT.TimeCost
+public import ALT.SearchSpace
+public import ALT.CheckerWorkspace
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -67,6 +69,9 @@ the existence theorem reveals. Bounding the application combinator itself theref
 *structurally presented* universal evaluator carrying its own workspace account — a separate
 construction, not a corollary of this family.
 -/
+
+
+@[expose] public section
 
 namespace TimeCost
 

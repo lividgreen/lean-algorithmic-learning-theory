@@ -3,10 +3,12 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.GroupTheory.Perm.Cycle.Basic
-import Mathlib.GroupTheory.Perm.Fin
-import ALT.AdditiveComplexity
-import ALT.PersistenceCapacity
+module
+
+public import Mathlib.GroupTheory.Perm.Cycle.Basic
+public import Mathlib.GroupTheory.Perm.Fin
+public import ALT.AdditiveComplexity
+public import ALT.PersistenceCapacity
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -50,6 +52,9 @@ factoring, and the world floor into one `∃`-statement, with a concrete instanc
 of Proposition 8.35 stay on §8's standing transport boundary and are not restated here. Cite
 `[Persistence] §8` at Propositions 8.35(iii) and 8.36 with Remark 8.37.
 -/
+
+
+@[expose] public section
 
 namespace CanonicalFormLens
 

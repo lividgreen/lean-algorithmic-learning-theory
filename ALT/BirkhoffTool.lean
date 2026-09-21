@@ -40,13 +40,18 @@ and connects it to the FV-E oracle interface.
   (`SQOracle.sq_oracle_sample_complexity` / `SQOracle.empirical_isSQOracle`) consumes.  Each is now
   a one-liner off its own finite-horizon `MixingHoeffdingTo` twin, below.
 -/
-import Mathlib.Dynamics.BirkhoffSum.Average
-import Mathlib.Dynamics.Ergodic.Ergodic
-import ALT.Birkhoff.PointwiseBirkhoff
-import ALT.SQOracle
+module
+
+public import Mathlib.Dynamics.BirkhoffSum.Average
+public import Mathlib.Dynamics.Ergodic.Ergodic
+public import ALT.Birkhoff.PointwiseBirkhoff
+public import ALT.SQOracle
 
 set_option linter.style.header false
 set_option linter.style.longLine false
+
+
+@[expose] public section
 
 open MeasureTheory Filter Topology MeasurableSpace SQOracle
 

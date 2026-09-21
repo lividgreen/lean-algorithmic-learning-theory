@@ -3,9 +3,11 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.TimeCost
-import ALT.PolyTime
-import ALT.GodelInternalization
+module
+
+public import ALT.TimeCost
+public import ALT.PolyTime
+public import ALT.GodelInternalization
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -54,6 +56,9 @@ is consumed by the **time** half alone — `tc ≤ tc cf a + (B + 1)·g² + 1`, 
 polynomial in the *value* `g` hence exponential in its bit-length — while the **space** half needs
 no budget hypothesis at all and returns a bound in which `M_chk` does not occur.
 -/
+
+
+@[expose] public section
 
 namespace CheckerWorkspace
 
@@ -185,19 +190,19 @@ theorem checkerLoop_val (C : GodelInternalization.BoundedChecker) (φ : C.Formul
           intro h
           rw [h m (Nat.lt_succ_self m)] at hk
           exact Bool.false_ne_true hk
-        rw [if_neg hno, if_pos hk, Nat.mul_zero]
+        rw [ite_eq_right hno, ite_eq_left hk, Nat.mul_zero]
       · have hkf : C.Prf φ m = false := by simpa using hk
-        rw [if_neg hk, Nat.mul_one]
+        rw [ite_eq_right hk, Nat.mul_one]
         by_cases hm : ∀ p < m, C.Prf φ p = false
         · have hall : ∀ p < m + 1, C.Prf φ p = false := by
             intro p hp
             rcases Nat.lt_succ_iff_lt_or_eq.1 hp with hp' | rfl
             · exact hm p hp'
             · exact hkf
-          rw [if_pos hm, if_pos hall]
+          rw [ite_eq_left hm, ite_eq_left hall]
         · have hno : ¬ ∀ p < m + 1, C.Prf φ p = false :=
             fun h => hm fun p hp => h p (Nat.lt_succ_of_lt hp)
-          rw [if_neg hm, if_neg hno]
+          rw [ite_eq_right hm, ite_eq_right hno]
 
 /-- **The enumeration decides bounded non-provability ([Decoupling] §6.3, L2b).** The loop of
 `checkerLoop_val`, run to counter `M_chk + 1`, returns `1` exactly when the decision morphism
@@ -214,9 +219,9 @@ theorem checkerLoop_val_decides (C : GodelInternalization.BoundedChecker) (φ : 
   have hiff : (∀ p < C.Mchk + 1, C.Prf φ p = false) ↔ ∀ p ≤ C.Mchk, C.Prf φ p = false :=
     ⟨fun h p hp => h p (by omega), fun h p hp => h p (by omega)⟩
   by_cases h : ∀ p < C.Mchk + 1, C.Prf φ p = false
-  · rw [if_pos h]
+  · rw [ite_eq_left h]
     exact ⟨fun _ => hiff.1 h, fun _ => rfl⟩
-  · rw [if_neg h]
+  · rw [ite_eq_right h]
     exact ⟨fun hc => absurd hc (by omega), fun hc => absurd (hiff.2 hc) h⟩
 
 end CheckerWorkspace

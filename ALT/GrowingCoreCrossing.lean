@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.AccretingExcess
+module
+
+public import ALT.AccretingExcess
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -32,6 +34,9 @@ Capacity arithmetic only, exactly as `AccretingExcess.lean`'s own package: ident
 stage budget with its bit count (so `κ` is genuinely a bit count, not merely a number) is the
 interpretive step owed at paper level for any instance this is applied to.
 -/
+
+
+@[expose] public section
 
 namespace AccretingWitness
 

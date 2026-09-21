@@ -3,11 +3,14 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.Data.Fintype.Pigeonhole
-import Mathlib.Data.Set.Card.Arithmetic
-import Mathlib.Data.ZMod.Basic
-import Mathlib.Tactic.FinCases
-import ALT.Decoupling
+module
+
+public import Mathlib.Data.Fintype.Pigeonhole
+public import Mathlib.Data.Set.Card.Arithmetic
+public import Mathlib.Data.ZMod.Basic
+public import Mathlib.Tactic.FinCases
+public import Mathlib.Tactic.Ring
+public import ALT.Decoupling
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -50,6 +53,8 @@ time-dependent decoder, however powerful.
   `ℓ ∘ U = ℓ` is exactly a function constant on the components of the transition graph, and
   read-only cells ≤ components ≤ recurrent core.
 -/
+
+@[expose] public section
 
 namespace PersistenceCapacity
 
@@ -399,7 +404,7 @@ theorem static_le_moving [Finite ι] [Fintype V] (U : Mem ι V → Mem ι V) :
       refine ⟨⟨U^[N] t, by rw [hcore]; exact ⟨t, Set.mem_univ _, rfl⟩⟩, ?_⟩
       funext a
       have h1 : (U^[N] t) (a : ι) = t (a : ι) := fixes_iterate (fixes_fix U) N t (a : ι) a.2
-      have h2 : t (a : ι) = v a := by simp only [ht, dif_pos a.2, Subtype.coe_eta]
+      have h2 : t (a : ι) = v a := by simp only [ht, dite_eq_left a.2, Subtype.coe_eta]
       change (U^[N] t) (a : ι) = v a
       rw [h1, h2]
     have hle : Nat.card (↥(Fix U) → V) ≤ Nat.card ↥(core U) :=
@@ -600,7 +605,7 @@ theorem descent_iff {U : Mem ι V → Mem ι V} {decode : Mem ι V → M} :
   · intro hA
     refine ⟨fun m => if h : ∃ s, decode s = m then decode (U h.choose) else m, fun s => ?_⟩
     have hex : ∃ t, decode t = decode s := ⟨s, rfl⟩
-    simp only [dif_pos hex]
+    simp only [dite_eq_left hex]
     exact (hA _ _ hex.choose_spec).symm
 
 /-- The decoded model **eventually follows the law `F`** along the orbit of `s`: past a transient,

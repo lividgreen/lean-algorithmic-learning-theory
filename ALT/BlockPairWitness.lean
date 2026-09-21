@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.BlockPairObservability
-import ALT.LearningWitness
+module
+
+public import ALT.BlockPairObservability
+public import ALT.LearningWitness
 
 /-!
 # The certified block-pair host is a member of `𝒮_L`
@@ -43,6 +45,9 @@ Deliberately out of scope, as `BlockPairObservability.lean`'s: `𝒮_E` and the 
 IN-37, which registers this membership at the boundary stated there.
 -/
 
+
+@[expose] public section
+
 namespace BlockPairWitness
 
 open BlockPairProfile BlockPairHost NoisyWindowChain MeasureTheory BirkhoffTool
@@ -78,14 +83,15 @@ omit [NeZero (2 * (2 * M))] in
 private theorem hostDecodeRule_oneHot (s : HostMem M) (i : Fin 8)
     (h : ∀ j : Fin 8, s (Sum.inl j) = true ↔ j = i) : hostDecodeRule M s = i := by
   have hex : ∃ j : Fin 8, s (Sum.inl j) = true := ⟨i, (h i).mpr rfl⟩
-  rw [hostDecodeRule, dif_pos hex]
+  rw [hostDecodeRule, dite_eq_left hex]
   refine le_antisymm (Fin.find_le_of_pos hex ((h i).mpr rfl)) ((Fin.le_find_iff hex i).mpr ?_)
   intro m hm hp
   exact absurd ((h m).mp hp) (ne_of_lt hm)
 
 /-! ## The finite binary counter register, and its round trip -/
 
-private lemma counter_val_lt (c : ZMod (2 * (2 * M) * 24)) :
+/-- The counter register's value stays below `2 ^ Nat.size` of its modulus. -/
+lemma counter_val_lt (c : ZMod (2 * (2 * M) * 24)) :
     c.val < 2 ^ Nat.size (2 * (2 * M) * 24) :=
   lt_trans (ZMod.val_lt c) (Nat.lt_size_self _)
 

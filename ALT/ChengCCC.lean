@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.FiniteInfoTheory
+module
+
+public import ALT.FiniteInfoTheory
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -33,6 +35,9 @@ The rigorous information-theoretic core (data-processing inequality + Fano ⟹ a
 lower bound) is developed in `ALT/FiniteInfoTheory.lean`; the informal `misID ⟹ forgetting` step
 of Cheng's proof appears here only as a named hypothesis.
 -/
+
+
+@[expose] public section
 
 namespace ChengCCC
 

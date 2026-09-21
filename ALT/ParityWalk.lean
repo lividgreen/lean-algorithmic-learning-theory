@@ -61,6 +61,7 @@ constant that comes out carries **no dependence on the noise rate**.
   alone and never in its own offset.
 -/
 
+
 @[expose] public section
 
 namespace ParityWalk
@@ -77,8 +78,8 @@ The sign is what distinguishes the parity walk from a lazy random walk — the d
 complement `¬` contributes the `−`, and makes consecutive states anti-correlated. -/
 def zeta (b : Bool) : ℝ := if b then 1 else -1
 
-@[simp] private lemma chi_false : chi false = 1 := rfl
-@[simp] private lemma chi_true : chi true = -1 := rfl
+@[simp] lemma chi_false : chi false = 1 := rfl
+@[simp] lemma chi_true : chi true = -1 := rfl
 @[simp] private lemma zeta_false : zeta false = -1 := rfl
 @[simp] private lemma zeta_true : zeta true = 1 := rfl
 

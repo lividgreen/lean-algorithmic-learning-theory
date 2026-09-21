@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.BlockPairCriterion
+module
+
+public import ALT.BlockPairCriterion
 
 /-!
 # The finite rung witness: the certified block-pair host as a tower's own rung
@@ -60,6 +62,9 @@ one, or about survival ([Inevitability] §6) — [Guests] Law 4's recurrent-core
 as unavailable to this rung as it is to the host directly (`BlockPairOverlap.lean`'s own Scope
 paragraph).
 -/
+
+
+@[expose] public section
 
 namespace BlockPairTower
 

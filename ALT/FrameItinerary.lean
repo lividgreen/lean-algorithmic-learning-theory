@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.PersistenceCapacity
+module
+
+public import ALT.PersistenceCapacity
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -37,6 +39,9 @@ not merely the count's own witness — `consistent_unique_of_injective`, with
 `consistent_unique_of_injective_bminus` its instance at `S = Bminus B`, the set Proposition 8.38's
 own argument reads.
 -/
+
+
+@[expose] public section
 
 namespace FrameItinerary
 
@@ -450,7 +455,7 @@ theorem consistent_card_ge_factorial_compl {U : Perm (Fin n)} {ℓ : ℕ → Fin
   rw [consistent_card hcar hS]
   rcases Finset.eq_empty_or_nonempty (Bᶜ : Finset (Fin n)) with hEmpty | ⟨x0, hx0⟩
   · simp only [hEmpty, Finset.card_empty, Nat.factorial_zero]
-    exact Finset.one_le_prod' fun z _ => Nat.one_le_iff_ne_zero.mpr (Nat.factorial_ne_zero _)
+    exact Finset.one_le_prod fun z _ => Nat.one_le_iff_ne_zero.mpr (Nat.factorial_ne_zero _)
   · have hx0' : x0 ∉ B := Finset.mem_compl.mp hx0
     have hBcInv : ∀ i ∈ (Bᶜ : Finset (Fin n)), U⁻¹ i ∈ (Bᶜ : Finset (Fin n)) := by
       intro i hi
@@ -488,7 +493,7 @@ theorem consistent_card_ge_factorial_compl {U : Perm (Fin n)} {ℓ : ℕ → Fin
     calc (Bᶜ.card)! ≤ (Nat.card {z : Fin n // itinerary ℓ S z = itinerary ℓ S x0})! :=
           Nat.factorial_le hle
       _ ≤ ∏ z : (↥S → Fin m), (Nat.card {x : Fin n // itinerary ℓ S x = z})! :=
-          Finset.single_le_prod' (f := fun z => (Nat.card {x : Fin n // itinerary ℓ S x = z})!)
+          Finset.single_le_prod (f := fun z => (Nat.card {x : Fin n // itinerary ℓ S x = z})!)
             (fun z _ => Nat.one_le_iff_ne_zero.mpr (Nat.factorial_ne_zero _))
             (Finset.mem_univ (itinerary ℓ S x0))
 

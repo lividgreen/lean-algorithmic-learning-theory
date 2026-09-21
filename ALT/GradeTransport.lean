@@ -3,10 +3,12 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.CapacityBoundedEval
-import ALT.AdditiveComplexity
-import ALT.Realizability
-import ALT.RealizerLength
+module
+
+public import ALT.CapacityBoundedEval
+public import ALT.AdditiveComplexity
+public import ALT.Realizability
+public import ALT.RealizerLength
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -67,6 +69,9 @@ workspaces max, and dilations multiply somewhere else entirely — at the level 
 of the per-application realizer cost. A reader who expects `τ` in the bound should read this
 paragraph rather than look for a dropped variable.
 -/
+
+
+@[expose] public section
 
 namespace GradeTransport
 

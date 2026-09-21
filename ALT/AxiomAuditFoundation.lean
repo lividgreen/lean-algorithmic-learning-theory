@@ -3,23 +3,34 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.GodelChecker
-import ALT.GodelCheckerAutomaton
-import ALT.GodelCheckerComplete
-import ALT.GodelComplete
-import ALT.ExcessOrderComplete
-import ALT.AccretingExcess
-import ALT.DeepLadder
-import ALT.GrowingCoreCrossing
-import ALT.SubstrateEmergence
-import ALT.BlockPairOverlap
-import ALT.TapeHostOverlap
-import ALT.BlockPairCriterion
-import ALT.BlockPairFamilyCriterion
-import ALT.MinimalityWitness
-import ALT.TapeHostSurvival
-import ALT.ChaitinIncompleteness
-import ALT.ChaitinLadder
+module
+
+public import ALT.GodelChecker
+public import ALT.GodelCheckerAutomaton
+public import ALT.GodelCheckerComplete
+public import ALT.GodelComplete
+public import ALT.ExcessOrderComplete
+public import ALT.AccretingExcess
+public import ALT.DeepLadder
+public import ALT.GrowingCoreCrossing
+public import ALT.SubstrateEmergence
+public import ALT.BlockPairOverlap
+public import ALT.TapeHostOverlap
+public import ALT.BlockPairCriterion
+public import ALT.BlockPairFamilyCriterion
+public import ALT.MinimalityWitness
+public import ALT.TapeHostSurvival
+public import ALT.ChaitinIncompleteness
+public import ALT.ChaitinLadder
+public import ALT.ChaitinPrefix
+public import ALT.ChaitinPrefixLadder
+public import ALT.KBEnumerable
+public import ALT.PrefixInvarianceKB
+public import ALT.PrefixEliasKB
+public import ALT.PrefixModelCost
+public import ALT.PrefixPairKB
+public import ALT.PrefixCounting
+public import ALT.IndexCost
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -44,6 +55,9 @@ of the axiom list.
 -/
 
 -- FV-8 (sound concrete checker) — fully axiom-clean for the finite witness 𝗣𝗔⁻
+
+@[expose] public section
+
 /-- info: 'GodelChecker.paMinus_decides_bounded_nonprovability' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms GodelChecker.paMinus_decides_bounded_nonprovability
@@ -308,6 +322,70 @@ synthesized. -/
 #guard_msgs (whitespace := lax) in
 #print axioms KolmogorovComplexity.chaitin_true_unprovable_of_RE
 
+/-! ## Chaitin's incompleteness theorem, additive form on `KB` (`ALT/ChaitinPrefix.lean`)
+
+The two leaf propositions `EParserSpec` and `REPred kleB` are explicit hypotheses of each
+theorem below, so these guards pin the proofs FROM those hypotheses; the axioms of the leaves'
+own proofs are audited where they are proved. -/
+
+/-- info: 'KolmogorovComplexity.chaitin_bound_KB_of' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms KolmogorovComplexity.chaitin_bound_KB_of
+
+/-- info: 'KolmogorovComplexity.chaitin_bound_KB_of_min' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms KolmogorovComplexity.chaitin_bound_KB_of_min
+
+/-- info: 'KolmogorovComplexity.chaitin_theoremB_of' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms KolmogorovComplexity.chaitin_theoremB_of
+
+-- The transport to recursively enumerable theories, via Craig's trick — same reason.
+/-- info: 'KolmogorovComplexity.chaitin_theoremB_of_RE' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms KolmogorovComplexity.chaitin_theoremB_of_RE
+
+/-! ## The assembly, both leaves proved (`ALT/KBEnumerable.lean`)
+
+`EParserSpec` and `REPred kleB` are proved, not hypotheses, from here on: the guards below pin
+the UNCONDITIONAL forms of the bounds above, applied to those proofs. -/
+
+/-- info: 'KolmogorovComplexity.chaitin_bound_KB' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms KolmogorovComplexity.chaitin_bound_KB
+
+/-- info: 'KolmogorovComplexity.chaitin_bound_KB_min' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms KolmogorovComplexity.chaitin_bound_KB_min
+
+/-- info: 'KolmogorovComplexity.chaitin_theoremB' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms KolmogorovComplexity.chaitin_theoremB
+
+/-- info: 'KolmogorovComplexity.chaitin_theoremB_RE' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms KolmogorovComplexity.chaitin_theoremB_RE
+
+-- The enumerator is exhibited, not merely asserted to exist — `rePred_provable_chaitinB` unpacked
+-- through `REPred.iff'` and `Nat.Partrec.Code.exists_code`.
+/-- info: 'KolmogorovComplexity.exists_enumerator_chaitinB' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms KolmogorovComplexity.exists_enumerator_chaitinB
+
+-- Non-vacuity: `𝗣𝗔⁻` meets every instance binder `chaitin_theoremB` asks for, at once.
+/-- info: 'KolmogorovComplexity.chaitin_theoremB_nonvacuous' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms KolmogorovComplexity.chaitin_theoremB_nonvacuous
+
+-- `KB`'s counting bound and its true-and-unprovable family, at the additive constant.
+/-- info: 'KolmogorovComplexity.setOf_KB_le_finite' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms KolmogorovComplexity.setOf_KB_le_finite
+
+/-- info: 'KolmogorovComplexity.chaitin_true_unprovableB' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms KolmogorovComplexity.chaitin_true_unprovableB
+
 /-! ## Chaitin's incompleteness theorem as a deep-ladder rung selector (`ALT/ChaitinLadder.lean`)
 
 `chaitinSelector` instantiates `DeepLadder.RungSelector` at base `𝗥₀` from `chaitin_theorem`; the
@@ -316,3 +394,166 @@ capstone recurrence restated at it is axiom-clean too. -/
 /-- info: 'DeepLadder.chaitin_accreting_ladder' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms DeepLadder.chaitin_accreting_ladder
+
+/-! ## The prefix-Chaitin ladder's rate (`ALT/ChaitinPrefixLadder.lean`)
+
+`prefixChaitinSelector` places the Chaitin sentence on `KB` at each theory's own additive
+threshold; the strict-increase theorems and the no-uniform-naming corollary are axiom-clean. -/
+
+/-- info: 'DeepLadder.KB_enumerator_succ_gt' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms DeepLadder.KB_enumerator_succ_gt
+
+/-- info: 'DeepLadder.KB_enumeratorB_lt_succ' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms DeepLadder.KB_enumeratorB_lt_succ
+
+/-- info: 'DeepLadder.KB_enumeratorB_ge' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms DeepLadder.KB_enumeratorB_ge
+
+/-- info: 'DeepLadder.KB_enumeratorB_lt_succ_nonvacuous' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms DeepLadder.KB_enumeratorB_lt_succ_nonvacuous
+
+/-- info: 'DeepLadder.prefixChaitinLadder_not_uniform_of' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms DeepLadder.prefixChaitinLadder_not_uniform_of
+
+/-! ## `KB`'s invariance under computable maps (`ALT/PrefixInvarianceKB.lean`)
+
+The universal prefix machine `univPrefix`, its own halting domain prefix-free, and the invariance
+bound `KB_map_le` it carries — one of `prefixChaitinLadder_not_uniform_of`'s two leaf hypotheses —
+now a corollary of the partial-map generalization `KB_partial_map_le`. -/
+
+/-- info: 'PrefixMachine.prefixFree_univPrefix_dom' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.prefixFree_univPrefix_dom
+
+/-- info: 'PrefixMachine.KB_partial_map_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.KB_partial_map_le
+
+/-- info: 'PrefixMachine.KB_map_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.KB_map_le
+
+/-- info: 'PrefixMachine.KB_pair_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.KB_pair_le
+
+/-! ## `KB`'s Elias bound and the ladder's assembly (`ALT/PrefixEliasKB.lean`)
+
+The Elias decoder `eliasDecoder`, its own halting domain prefix-free, the unabsorbed Elias bound
+`KB_le_size_add_two_mul_size_size`, its corollary `KB_le_two_mul_size` — the other of
+`prefixChaitinLadder_not_uniform_of`'s two hypotheses — and the ladder's non-uniformity theorem
+put together from both, with its non-vacuity witness. -/
+
+/-- info: 'PrefixMachine.prefixFree_eliasDecoder_dom' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.prefixFree_eliasDecoder_dom
+
+/-- info: 'PrefixMachine.KB_le_size_add_two_mul_size_size' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.KB_le_size_add_two_mul_size_size
+
+/-- info: 'PrefixMachine.KB_le_two_mul_size' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.KB_le_two_mul_size
+
+/-- info: 'DeepLadder.prefixChaitinLadder_not_uniform' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms DeepLadder.prefixChaitinLadder_not_uniform
+
+/-- info: 'DeepLadder.prefixChaitinLadder_not_uniform_nonvacuous' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms DeepLadder.prefixChaitinLadder_not_uniform_nonvacuous
+
+/-! ## The model cost on the prefix machine (`ALT/PrefixModelCost.lean`)
+
+`KB` related to `K_bitlen`, `KP`, and `ruleComplexity`, each over a partial-map invariance and/or
+an unabsorbed Elias bound for `KB` taken as hypotheses, and each with an unconditional corollary
+discharging every one of those hypotheses at a landed statement. -/
+
+/-- info: 'PrefixMachine.KB_le_K_bitlen_add_two_mul_size_of' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.KB_le_K_bitlen_add_two_mul_size_of
+
+/-- info: 'PrefixMachine.KB_le_K_bitlen_add_two_mul_size' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.KB_le_K_bitlen_add_two_mul_size
+
+/-- info: 'PrefixMachine.KB_le_KP_of' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.KB_le_KP_of
+
+/-- info: 'PrefixMachine.KB_le_KP' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.KB_le_KP
+
+/-- info: 'PrefixMachine.KB_le_ruleComplexity_add_two_mul_size_of' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.KB_le_ruleComplexity_add_two_mul_size_of
+
+/-- info: 'PrefixMachine.KB_le_ruleComplexity_add_two_mul_size' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.KB_le_ruleComplexity_add_two_mul_size
+
+/-! ## Counting bounds on `KB` and `K_bitlen`, and `KB`'s non-computability
+(`ALT/PrefixCounting.lean`)
+
+The counting bound `kraft_KB` buys on `KB`, the same constant on `K_bitlen` by injectivity instead,
+and `KB`'s non-computability via the already-landed partial-map invariance, no fixed point needed. -/
+
+/-- info: 'PrefixMachine.finset_card_KB_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.finset_card_KB_le
+
+/-- info: 'PrefixMachine.card_KB_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.card_KB_le
+
+/-- info: 'PrefixMachine.finset_card_K_bitlen_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.finset_card_K_bitlen_le
+
+/-- info: 'PrefixMachine.card_K_bitlen_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.card_K_bitlen_le
+
+/-- info: 'PrefixMachine.KB_not_computable' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms PrefixMachine.KB_not_computable
+
+/-! ## The index cost of a description (`ALT/IndexCost.lean`)
+
+`SizeLaw` (`codelen'`'s growth law at `pair`/`comp`), `Code.const`'s own growth law proved from it,
+`NestSpec` and `DecoderSpec` (the nest's own facts and a decoder reading it back through
+`univPrefix`, both proved outright), the conditional theorem assembling all three into
+`K_bitlen x ≤ 32 * KB x + c`, and that bound unconditional — guarded here rather than in
+`ALT/AxiomAuditMathlib.lean` because `ALT.IndexCost`'s import closure reaches Foundation through
+`ALT.PrefixInvarianceKB`. -/
+
+/-- info: 'IndexCost.sizeLaw' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms IndexCost.sizeLaw
+
+/-- info: 'IndexCost.codelen'_const_add_three_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms IndexCost.codelen'_const_add_three_le
+
+/-- info: 'IndexCost.nestSpec' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms IndexCost.nestSpec
+
+/-- info: 'IndexCost.K_bitlen_le_32_mul_KB_of' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms IndexCost.K_bitlen_le_32_mul_KB_of
+
+/-- info: 'IndexCost.decoderSpec' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms IndexCost.decoderSpec
+
+/-- info: 'IndexCost.K_bitlen_le_32_mul_KB' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms IndexCost.K_bitlen_le_32_mul_KB

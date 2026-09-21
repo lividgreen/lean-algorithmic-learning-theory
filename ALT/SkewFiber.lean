@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.Algebra.BigOperators.Fin
-import ALT.PersistenceCapacity
+module
+
+public import Mathlib.Algebra.BigOperators.Fin
+public import ALT.PersistenceCapacity
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -96,6 +98,9 @@ stated price. The clause's other half, the decode (a bounded search over the cop
 construction addressed elsewhere, and is not touched by this file. Every other result here remains
 combinatorial skeleton only, with no numbered result claimed machine-checked.
 -/
+
+
+@[expose] public section
 
 namespace SkewFiber
 
@@ -206,7 +211,7 @@ theorem lensTable_skewWorldFin (S : Fin n₁ → Fin n₁) (F : Fin n₁ → Fin
   have hqlt : q < n₁ * n₂ := List.mem_range.mp hq
   have hn₂ : 0 < n₂ := Nat.pos_of_ne_zero fun h => by simp [h] at hqlt
   have hdiv : q / n₂ < n₁ := Nat.div_lt_of_lt_mul (by rwa [Nat.mul_comm] at hqlt)
-  rw [dif_pos hqlt, lensTable_getD _ hqlt, lensTable_getD _ hdiv]
+  rw [dite_eq_left hqlt, lensTable_getD _ hqlt, lensTable_getD _ hdiv]
   have hidx : (⟨q, hqlt⟩ : Fin (n₁ * n₂))
       = finProdFinEquiv (⟨q / n₂, hdiv⟩, ⟨q % n₂, Nat.mod_lt _ hn₂⟩) := by
     have hmd : q % n₂ + n₂ * (q / n₂) = q := Nat.mod_add_div q n₂
@@ -514,7 +519,7 @@ theorem lensTable_powFiber (F : Fin n₁ → Fin n₂ → Fin n₂) (P : ℕ) :
         Nat.mod_mod_of_dvd q ⟨n₂ ^ P, by ring⟩
       have hilt' : q / n₂ ^ (P + 1) < n₁ := Nat.div_lt_of_lt_mul (by rwa [Nat.mul_comm] at hqlt)
       have hrlt' : q % n₂ ^ (P + 1) < n₂ ^ (P + 1) := Nat.mod_lt _ (pow_pos hn2pos (P + 1))
-      rw [dif_pos hqlt]
+      rw [dite_eq_left hqlt]
       have hidx' : (⟨q, hqlt⟩ : Fin (n₁ * n₂ ^ (P + 1)))
           = finProdFinEquiv (⟨q / n₂ ^ (P + 1), hilt'⟩, ⟨q % n₂ ^ (P + 1), hrlt'⟩) := by
         apply Fin.ext
@@ -606,7 +611,7 @@ private theorem primrec_powFibTable :
 
 /-- **The `P`-fold fiber builder, from `⟨fiber table code, ⟨n₁, P⟩⟩`** — ONE fixed function, with
 no size parameters loaded except the two raw numerals `n₁` and `P`. -/
-private def powFibTableFn (p : ℕ) : ℕ :=
+def powFibTableFn (p : ℕ) : ℕ :=
   Encodable.encode
     (powFibTable p.unpair.2.unpair.1
       ((Encodable.decode (α := List ℕ) p.unpair.1).getD []) p.unpair.2.unpair.2)
@@ -621,7 +626,8 @@ private theorem primrec_powFibTableFn : Primrec powFibTableFn := by
     Primrec.snd.comp (Primrec.unpair.comp (Primrec.snd.comp Primrec.unpair))
   exact Primrec.encode.comp (primrec_powFibTable.comp (Primrec.pair hn1 hdecT) hP)
 
-private theorem partrec_powFibTableFn : Nat.Partrec (fun p : ℕ => (powFibTableFn p : ℕ)) :=
+/-- `powFibTableFn` is partial recursive. -/
+theorem partrec_powFibTableFn : Nat.Partrec (fun p : ℕ => (powFibTableFn p : ℕ)) :=
   _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_powFibTableFn).partrec
 
 /-- **The fixed `P`-fold builder code.** One program, independent of the fiber, of `n₁`, and
@@ -750,13 +756,13 @@ private theorem foldl_fittest_ge (fit : Fin C → ℕ) (p : Pop P C) (l : List (
   | cons i l ih =>
       simp only [List.foldl_cons, List.mem_cons]
       by_cases hcond : fit c < fit (p i)
-      · rw [if_pos hcond]
+      · rw [ite_eq_left hcond]
         obtain ⟨hge, hall⟩ := ih (p i)
         refine ⟨hcond.le.trans hge, fun j hj => ?_⟩
         rcases hj with rfl | hj
         · exact hge
         · exact hall j hj
-      · rw [if_neg hcond]
+      · rw [ite_eq_right hcond]
         obtain ⟨hge, hall⟩ := ih c
         refine ⟨hge, fun j hj => ?_⟩
         rcases hj with rfl | hj

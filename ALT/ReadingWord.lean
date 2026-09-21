@@ -3,11 +3,13 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.Data.ZMod.Basic
-import Mathlib.Algebra.BigOperators.Group.Finset.Basic
-import Mathlib.Algebra.BigOperators.Ring.Finset
-import Mathlib.Algebra.Order.Group.Finset
-import Mathlib.Tactic.Ring
+module
+
+public import Mathlib.Data.ZMod.Basic
+public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
+public import Mathlib.Algebra.BigOperators.Ring.Finset
+public import Mathlib.Algebra.Order.Group.Finset
+public import Mathlib.Tactic.Ring
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -56,6 +58,9 @@ over a prime cycle, `rMin` of a `d`-decimation is at most the original word's ow
 priced against, since a further decimation can collapse it back down
 (`guard_arc_pattern_not_rMin`, a concrete decimated interval at `n = 11`).
 -/
+
+
+@[expose] public section
 
 namespace ReadingWord
 
@@ -222,7 +227,8 @@ theorem decimation_runs_eq_mismatch_of_prime [Fact (Nat.Prime n)] (w : ZMod n �
     (hd : d ≠ 0) : (mismatch w d).card = runs (decimate w d) :=
   decimation_runs_eq_mismatch w (isUnit_of_ne_zero_of_prime hd)
 
-private def guardWord : ZMod 4 → Bool := fun i => if i = 0 then true else false
+/-- The `n = 4` guard word: `true` at `0`, `false` elsewhere. -/
+def guardWord : ZMod 4 → Bool := fun i => if i = 0 then true else false
 
 /-- **The unit hypothesis is load-bearing** ([Persistence] §8, Proposition 8.25(i)'s hypothesis):
 at `n = 4`, `d = 2` — not a unit, since `2 * 2 = 0` in `ZMod 4` — `w = ![true, false, false, false]`
@@ -346,13 +352,15 @@ theorem sum_arcs_decimateFrom (w : ZMod n → Bool) (d : ZMod n) :
 /-! ### The statistic identity `m_min = 2 · r(w)`, at every `n > 1`, and `mMin_eq_two_mul_rMin` as
 its prime corollary -/
 
-private def univNeZero (n : ℕ) [NeZero n] : Finset (ZMod n) := univ.filter (fun d => d ≠ 0)
+/-- The nonzero elements of `ZMod n`, as a `Finset`. -/
+def univNeZero (n : ℕ) [NeZero n] : Finset (ZMod n) := univ.filter (fun d => d ≠ 0)
 
 omit [NeZero n] in
 private theorem exists_ne_zero [Fact (1 < n)] : ∃ d : ZMod n, d ≠ 0 :=
   ⟨1, one_ne_zero⟩
 
-private theorem univNeZero_nonempty [Fact (1 < n)] : (univNeZero n).Nonempty := by
+/-- `univNeZero n` is nonempty when `1 < n`. -/
+theorem univNeZero_nonempty [Fact (1 < n)] : (univNeZero n).Nonempty := by
   obtain ⟨d, hd⟩ := exists_ne_zero (n := n)
   exact ⟨d, by simp [univNeZero, hd]⟩
 

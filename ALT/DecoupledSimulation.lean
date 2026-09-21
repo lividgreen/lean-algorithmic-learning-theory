@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.PersistenceCapacity
+module
+
+public import ALT.PersistenceCapacity
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -59,6 +61,9 @@ code translations simply chain).
 read by reduction mod `n`, at dilation `1`. So the category is not discrete, and the definition is
 not vacuously satisfied only by identities.
 -/
+
+
+@[expose] public section
 
 namespace DecoupledSimulation
 

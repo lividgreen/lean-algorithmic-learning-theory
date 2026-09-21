@@ -3,11 +3,13 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.Data.Finite.Sum
-import ALT.RealizabilityCCC
-import ALT.RealizabilityRecursor
-import ALT.RealizabilityCoproduct
-import ALT.RealizabilitySubobject
+module
+
+public import Mathlib.Basic.Finite.Sum
+public import ALT.RealizabilityCCC
+public import ALT.RealizabilityRecursor
+public import ALT.RealizabilityCoproduct
+public import ALT.RealizabilitySubobject
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -40,6 +42,9 @@ which does not exist (the paper records this as an open *method*; cf. `Kolmogoro
 the non-categorical counting infrastructure). So FV-14 earns the element-count non-closure, not the
 realizer-length non-closure.
 -/
+
+
+@[expose] public section
 
 namespace CapacityLayer
 

@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Foundation.FirstOrder.Incompleteness.Examples
-import ALT.GodelCore
+module
+
+public import Foundation.FirstOrder.Incompleteness.Examples
+public import ALT.GodelCore
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -67,6 +69,9 @@ most faithful axiom-clean non-vacuity *witness* is `𝗣𝗔⁻` (finite, Δ₁ 
 * The NNO/CCC side keeps its stand-in caveats (combinatorial `ParamNNO` on finite `W`; CCC on
   `Type`) — not a unified `Rep(S)`; not a claim about a physical `Rep(S)`.
 -/
+
+
+@[expose] public section
 
 namespace GodelComplete
 

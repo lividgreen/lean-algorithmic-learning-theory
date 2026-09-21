@@ -3,9 +3,11 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.Decoupling
-import ALT.GodelInternalization
-import ALT.ParameterizedNNO
+module
+
+public import ALT.Decoupling
+public import ALT.GodelInternalization
+public import ALT.ParameterizedNNO
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -45,6 +47,9 @@ work cell holds `Sum.inr (k, b)` — a step counter `k` and the running verdict 
 hypothesis; the checker `C : GodelInternalization.BoundedChecker` is the abstract §6.3 interface,
 discharged concretely on the Foundation side.
 -/
+
+
+@[expose] public section
 
 namespace ReflectiveAutomaton
 
@@ -173,7 +178,7 @@ theorem step_run_invariant (φ : C.Formula) :
       = Sum.inr (j + 1, decide (∀ p, p < j + 1 → C.Prf φ p = false))
     rw [hcode, hwork]
     dsimp only [workNext]
-    rw [if_pos hjm, decide_and_not (C.Prf φ) j]
+    rw [ite_eq_left hjm, decide_and_not (C.Prf φ) j]
 
 /-- **§6.5, Proposition 6.5 (the run).** After `M_chk + 1` steps the read-out Boolean is exactly the
 §6.3 bounded-non-provability decision `GodelInternalization.Decide C φ`. -/

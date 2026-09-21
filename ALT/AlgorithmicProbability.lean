@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.PrefixMachine
+module
+
+public import ALT.PrefixMachine
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -29,6 +31,9 @@ Extends `ALT/PrefixMachine.lean` (`pfy`, `KB`, `kbWeight`, `kraft_KB`).
 `ALT/CodingTheoremBitwise.lean`, over the bit-string computability layer of
 `ALT/BitStringPrimrec.lean`.
 -/
+
+
+@[expose] public section
 
 namespace PrefixMachine
 
@@ -67,10 +72,10 @@ theorem two_pow_neg_KB_le_QB (x : ℕ) : (1 / 2 : ℝ) ^ KB x ≤ QB x := by
     ⟨bitsToNat (minDescArg x), Part.dom_iff_mem.mpr ⟨x, hspec.1⟩, natToBits_bitsToNat _⟩
   have hterm :
       (if x ∈ pfy cp₀.1 (bitsToNat cp₀.2) then kbWeight cp₀ else 0) = (1 / 2 : ℝ) ^ KB x := by
-    rw [if_pos hspec.1]
+    rw [ite_eq_left hspec.1]
     unfold kbWeight
     simp only [hcp₀]
-    rw [if_pos hmemS, hspec.2]
+    rw [ite_eq_left hmemS, hspec.2]
   calc (1 / 2 : ℝ) ^ KB x
       = (if x ∈ pfy cp₀.1 (bitsToNat cp₀.2) then kbWeight cp₀ else 0) := hterm.symm
     _ ≤ QB x := (summable_QB_term x).le_tsum cp₀ (fun cp' _ => by
@@ -100,7 +105,7 @@ theorem sum_QB_le_one (F : Finset ℕ) : ∑ x ∈ F, QB x ≤ 1 := by
       · exact fun hx₀F' => absurd hx₀F hx₀F'
     · push Not at hex
       have hzero : ∑ x ∈ F, (if x ∈ pfy cp.1 (bitsToNat cp.2) then kbWeight cp else 0) = 0 :=
-        Finset.sum_eq_zero (fun x hx => if_neg (hex x hx))
+        Finset.sum_eq_zero (fun x hx => ite_eq_right (hex x hx))
       rw [hzero]
       exact kbWeight_nonneg cp
   have hsummableCol : Summable fun cp : Code × List Bool =>

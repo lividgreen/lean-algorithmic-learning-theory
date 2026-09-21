@@ -3,9 +3,11 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.TapeHostWitness
-import ALT.WitnessMixture
-import ALT.DamageGate
+module
+
+public import ALT.TapeHostWitness
+public import ALT.WitnessMixture
+public import ALT.DamageGate
 
 /-!
 # Theorem 6.6's noisy-branch machinery, read on the profile-class base ([Inevitability] §6)
@@ -67,6 +69,9 @@ result.
 [Inevitability] §6 Theorem 6.6 (clauses (iii), (v′)); §5 Proposition 5.9; rows IN-16, IN-28, IN-41.
 -/
 
+
+@[expose] public section
+
 namespace TapeHostFiber
 
 variable {N : ℕ} [NeZero N] (o : ZMod N → Bool)
@@ -83,7 +88,7 @@ omit [NeZero N] in
 private theorem tapeStream_add8 (c : ZMod N) (t : ℕ) :
     tapeStream o c (t + 8) = TapeHost.tape o (c + ((t + 8 : ℕ) : ZMod N)) := by
   unfold tapeStream
-  rw [if_neg (by omega : ¬ t + 8 < 8)]
+  rw [ite_eq_right (by omega : ¬ t + 8 < 8)]
 
 omit [NeZero N] in
 /-- **The host's own process is the noisy window chain's `obs 8` on `tapeStream`.**
@@ -99,7 +104,7 @@ theorem hostTraj_eq_obs (c : ZMod N) :
     by_cases ht : t < 8
     · rw [NoisyWindowChain.obs_of_lt (tapeStream o c) ht]
       unfold tapeStream
-      rw [if_pos ht]
+      rw [ite_eq_left ht]
     · obtain ⟨s, hs⟩ : ∃ s, t = s + 8 := ⟨t - 8, by omega⟩
       have hih := ih s (by omega)
       rw [hs, NoisyWindowChain.obs_add (by norm_num : (0 : ℕ) < 8) (tapeStream o c) s,

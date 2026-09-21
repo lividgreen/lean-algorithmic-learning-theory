@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.SkewFiber
+module
+
+public import ALT.SkewFiber
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -105,6 +107,9 @@ settles from every initial vector is `BasinSettling`'s, and it identifies no set
 rounding residual is exhibited but not bounded — a quantitative bound, and the tracking form of a
 redundancy argument for a *floored* process, are not developed here.
 -/
+
+
+@[expose] public section
 
 namespace WeightedFiber
 
@@ -318,7 +323,7 @@ private theorem foldl_argmaxStep {w : Fin C → ℕ} :
       have hax : a ≤ x := hle x List.mem_cons_self
       rw [List.foldl_cons]
       by_cases hlt : w a < w x
-      · rw [show argmaxStep w a x = x from if_pos hlt]
+      · rw [show argmaxStep w a x = x from ite_eq_left hlt]
         obtain ⟨ih1, ih2, ih3, ih4⟩ := ih x hxl hpl
         refine ⟨le_trans hlt.le ih1, ?_, fun heq => absurd heq (by omega), ?_⟩
         · intro i hi
@@ -329,7 +334,7 @@ private theorem foldl_argmaxStep {w : Fin C → ℕ} :
           rcases List.mem_cons.mp hi with rfl | hi
           · exact le_of_eq (ih3 heq)
           · exact ih4 i hi heq
-      · rw [show argmaxStep w a x = a from if_neg hlt]
+      · rw [show argmaxStep w a x = a from ite_eq_right hlt]
         obtain ⟨ih1, ih2, ih3, ih4⟩ := ih a (fun i hi => hle i (List.mem_cons_of_mem _ hi)) hpl
         refine ⟨ih1, ?_, ih3, ?_⟩
         · intro i hi
@@ -423,7 +428,7 @@ theorem settled_le (hW : 1 ≤ W) (c i : Fin C) : settled W c i ≤ W := by
 theorem wMax_settled (hW : 1 ≤ W) (c : Fin C) : wMax (settled W c) = W := by
   refine le_antisymm (Finset.sup_le fun i _ => settled_le hW c i) ?_
   have := le_wMax (settled W c) c
-  rwa [settled, if_pos rfl] at this
+  rwa [settled, ite_eq_left rfl] at this
 
 theorem raw_pack_settled (hW : 1 ≤ W) (c : Fin C) :
     raw (pack W (settled W c) : WVec C W) = settled W c := by
@@ -476,7 +481,7 @@ theorem argmaxFrame_settled [NeZero C] (hW : 2 ≤ W) (x : Fin n₁) (c : Fin C)
   simp only [Equiv.symm_apply_apply]
   rw [raw_pack_settled (by omega)]
   refine argmax_eq_of_strict fun i hi => ?_
-  rw [settled, settled, if_neg hi, if_pos rfl]
+  rw [settled, settled, ite_eq_right hi, ite_eq_left rfl]
   omega
 
 /-- **The imported coverage hypothesis is satisfiable.** Every candidate is read off its own settled
@@ -530,7 +535,7 @@ pinned at one quantum and the fold returns candidate `0` whatever the fitness sa
 theorem wGen_settled_of_faithful (hW : 1 ≤ W) (S : Fin n₁ → Fin n₁)
     (dec : Fin C → Fin n₁ → Fin n₁) (x : Fin n₁) {c₀ : Fin C} (hc₀ : dec c₀ x = S x) :
     wGen W (predFitPos S dec x) (pack W (settled W c₀)) = (pack W (settled W c₀) : WVec C W) := by
-  have hfc₀ : predFitPos S dec x c₀ = 2 := by rw [predFitPos, if_pos hc₀]
+  have hfc₀ : predFitPos S dec x c₀ = 2 := by rw [predFitPos, ite_eq_left hc₀]
   have hfle : ∀ i, predFitPos S dec x i ≤ 2 := by intro i; rw [predFitPos]; split <;> omega
   have hf1 : ∀ i, 1 ≤ predFitPos S dec x i := fun i => predFitPos_pos S dec x i
   have hstep : bayesStep (predFitPos S dec x) (raw (pack W (settled W c₀) : WVec C W))
@@ -538,10 +543,10 @@ theorem wGen_settled_of_faithful (hW : 1 ≤ W) (S : Fin n₁ → Fin n₁)
     funext i
     rw [bayesStep, raw_pack_settled hW]
   have hvc₀ : settled W c₀ c₀ * predFitPos S dec x c₀ = 2 * W := by
-    rw [settled, if_pos rfl, hfc₀, Nat.mul_comm]
+    rw [settled, ite_eq_left rfl, hfc₀, Nat.mul_comm]
   have hvi : ∀ i, i ≠ c₀ → settled W c₀ i * predFitPos S dec x i = predFitPos S dec x i := by
     intro i hi
-    rw [settled, if_neg hi, Nat.one_mul]
+    rw [settled, ite_eq_right hi, Nat.one_mul]
   have hmax : wMax (fun i => settled W c₀ i * predFitPos S dec x i) = 2 * W := by
     refine le_antisymm (Finset.sup_le fun i _ => ?_) ?_
     · by_cases hi : i = c₀
@@ -560,10 +565,10 @@ theorem wGen_settled_of_faithful (hW : 1 ≤ W) (S : Fin n₁ → Fin n₁)
     rw [project, hd]
     by_cases hi : i = c₀
     · subst hi
-      rw [hvc₀, Nat.mul_div_cancel_left W Nat.zero_lt_two, settled, if_pos rfl]
+      rw [hvc₀, Nat.mul_div_cancel_left W Nat.zero_lt_two, settled, ite_eq_left rfl]
       omega
     · have h2 := hfle i
-      rw [hvi i hi, settled, if_neg hi]
+      rw [hvi i hi, settled, ite_eq_right hi]
       omega
   rw [wGen, hstep, hproj]
 

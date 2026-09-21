@@ -3,10 +3,12 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.DeterministicDiscovery
-import ALT.SQMixtureSupermartingale
-import ALT.SQPredictiveTransfer
-import ALT.SQVersionSpace
+module
+
+public import ALT.DeterministicDiscovery
+public import ALT.SQMixtureSupermartingale
+public import ALT.SQPredictiveTransfer
+public import ALT.SQVersionSpace
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters (long defs/lines).
 set_option linter.style.header false
@@ -77,6 +79,9 @@ queries scheduled by `t`) of the time-`t` Bayes-consistent set.
 * Not the countable candidate class (`cands` is a `Finset`; `algorithm_discovery` instantiates
   `cands = Finset.univ`, matching `deterministic_discovery`'s full-`Fintype ι` normalizer).
 -/
+
+
+@[expose] public section
 
 namespace SQAlgorithm
 
@@ -215,7 +220,7 @@ theorem posterior_concentration_transfer [Fintype X] [Fintype ι] [DecidableEq �
     (fun i s x => by split_ifs <;> norm_num)
     (fun i s => by simp [Finset.sum_ite_eq])
     hw k hwR hsumw
-    (fun s => if_pos (hreal s))
+    (fun s => ite_eq_left (hreal s))
     δ ε₀ hδ hε n hsep hT
 
 /-- **Posterior monotonicity under restriction** (the part-(i) composition principle): for weights
@@ -266,7 +271,7 @@ theorem algorithm_discovery [Fintype X] [Fintype ι] [DecidableEq ι]
     simp only [L]
     exact Finset.prod_nonneg fun s _ => (detFactor_mem_Icc pred i s ω).1
   have hLiR : L (detFactor pred) iR n ω = 1 := by
-    rw [L_det_eq_indicator, if_pos fun s _ => hreal s]
+    rw [L_det_eq_indicator, ite_eq_left fun s _ => hreal s]
   have hwiR : 0 < w iR := by rw [hwR]; positivity
   have hviR : 0 < w iR * L (detFactor pred) iR n ω := by rw [hLiR, mul_one]; exact hwiR
   -- truth survives ⇒ `iR ∈ alive n ⊆ univ`

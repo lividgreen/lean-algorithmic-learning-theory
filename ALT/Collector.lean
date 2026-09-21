@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.BinaryConstant
-import ALT.TimeCost
+module
+
+public import ALT.BinaryConstant
+public import ALT.TimeCost
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -58,6 +60,9 @@ assembled length is still `elen cR + O(log n) = r + O(log n)`.
   (per-step log-loss `= 0`) is `0 = 0` — no content; the `log|O|` initial residual needs the
   probabilistic layer. Declared a boundary, consistent with `S_T` itself being imported.
 -/
+
+
+@[expose] public section
 
 namespace AdditiveComplexity
 

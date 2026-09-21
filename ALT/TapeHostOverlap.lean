@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.TapeHostWitness
-import ALT.SubstrateEmergence
+module
+
+public import ALT.TapeHostWitness
+public import ALT.SubstrateEmergence
 
 /-!
 # The finite autonomous host's class-level overlap, over an arbitrary window-deviation profile
@@ -49,6 +51,9 @@ survival ([Inevitability] §6) either.
 Anchors: [Inevitability] §2 Definition 2.3, §5 Theorem 5.1(a), §5 Theorem 5.8, [Guests] §6
 Theorem 6.1, rows IN-5, IN-14, IN-38.
 -/
+
+
+@[expose] public section
 
 namespace TapeHostOverlap
 

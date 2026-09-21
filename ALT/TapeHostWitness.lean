@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.TapeHostObservability
-import ALT.LearningWitness
+module
+
+public import ALT.TapeHostObservability
+public import ALT.LearningWitness
 
 /-!
 # The finite autonomous host is a member of `𝒮_L`, over an arbitrary window-deviation profile
@@ -49,6 +51,9 @@ IN-37, which registers the certified instance's membership at the boundary state
 module's own criterion is IN-24's coupled standard, not that registered boundary.
 -/
 
+
+@[expose] public section
+
 namespace TapeHostWitness
 
 open TapeHost TapeHostObservability NoisyWindowChain MeasureTheory BirkhoffTool
@@ -80,14 +85,15 @@ def hostDecodeRule (N : ℕ) (s : HostMem N) : Fin 8 :=
 private theorem hostDecodeRule_oneHot (N : ℕ) (s : HostMem N) (i : Fin 8)
     (h : ∀ j : Fin 8, s (Sum.inl j) = true ↔ j = i) : hostDecodeRule N s = i := by
   have hex : ∃ j : Fin 8, s (Sum.inl j) = true := ⟨i, (h i).mpr rfl⟩
-  rw [hostDecodeRule, dif_pos hex]
+  rw [hostDecodeRule, dite_eq_left hex]
   refine le_antisymm (Fin.find_le_of_pos hex ((h i).mpr rfl)) ((Fin.le_find_iff hex i).mpr ?_)
   intro m hm hp
   exact absurd ((h m).mp hp) (ne_of_lt hm)
 
 /-! ## The finite binary counter register, and its round trip -/
 
-private lemma counter_val_lt (c : ZMod N) : c.val < 2 ^ Nat.size N :=
+/-- `c.val` stays below `2 ^ Nat.size N`, for any `c : ZMod N`. -/
+lemma counter_val_lt (c : ZMod N) : c.val < 2 ^ Nat.size N :=
   lt_trans (ZMod.val_lt c) (Nat.lt_size_self _)
 
 /-- **Reading the counter register**: the finite binary word the register cells carry, read as a

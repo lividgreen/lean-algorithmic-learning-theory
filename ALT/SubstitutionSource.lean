@@ -3,7 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.GrowingComposite
+module
+
+public import ALT.GrowingComposite
+public import ALT.ParityWalk
 
 /-!
 # A substitution source: exact block correlations and non-periodicity
@@ -48,6 +51,9 @@ profile needs. Nothing here uses `GrowingComposite`'s composite carrier; it is i
 `EventuallyPeriodic` and its transport lemmas.
 -/
 
+
+@[expose] public section
+
 namespace SubstitutionSource
 
 open ParityWalk Finset
@@ -69,19 +75,20 @@ decreasing_by
     | (have h := Nat.div_lt_self (n := n) (k := 4) (by omega) (by omega); omega))
 
 theorem subFix_four_mul (n : ℕ) : subFix (4 * n) = false := by
-  rw [subFix, if_pos (by omega : (4 * n) % 4 = 0)]
+  rw [subFix, ite_eq_left (by omega : (4 * n) % 4 = 0)]
 
 theorem subFix_four_mul_add_one (n : ℕ) : subFix (4 * n + 1) = subFix n := by
-  rw [subFix, if_neg (by omega : ¬ (4 * n + 1) % 4 = 0), if_pos (by omega : (4 * n + 1) % 4 = 1),
-    show (4 * n + 1) / 4 = n by omega]
+  rw [subFix, ite_eq_right (by omega : ¬ (4 * n + 1) % 4 = 0),
+    ite_eq_left (by omega : (4 * n + 1) % 4 = 1), show (4 * n + 1) / 4 = n by omega]
 
 theorem subFix_four_mul_add_two (n : ℕ) : subFix (4 * n + 2) = true := by
-  rw [subFix, if_neg (by omega : ¬ (4 * n + 2) % 4 = 0), if_neg (by omega : ¬ (4 * n + 2) % 4 = 1),
-    if_pos (by omega : (4 * n + 2) % 4 = 2)]
+  rw [subFix, ite_eq_right (by omega : ¬ (4 * n + 2) % 4 = 0),
+    ite_eq_right (by omega : ¬ (4 * n + 2) % 4 = 1), ite_eq_left (by omega : (4 * n + 2) % 4 = 2)]
 
 theorem subFix_four_mul_add_three (n : ℕ) : subFix (4 * n + 3) = !subFix n := by
-  rw [subFix, if_neg (by omega : ¬ (4 * n + 3) % 4 = 0), if_neg (by omega : ¬ (4 * n + 3) % 4 = 1),
-    if_neg (by omega : ¬ (4 * n + 3) % 4 = 2), show (4 * n + 3) / 4 = n by omega]
+  rw [subFix, ite_eq_right (by omega : ¬ (4 * n + 3) % 4 = 0),
+    ite_eq_right (by omega : ¬ (4 * n + 3) % 4 = 1),
+    ite_eq_right (by omega : ¬ (4 * n + 3) % 4 = 2), show (4 * n + 3) / 4 = n by omega]
 
 private theorem chi_false' : chi false = 1 := rfl
 private theorem chi_true' : chi true = -1 := rfl
@@ -277,16 +284,16 @@ theorem subFix_lag2_sum_abs_le (n : ℕ) :
 def subObs (t : ℕ) : Bool := if t % 4 = 0 then subFix (t / 4) else !subFix (t / 4)
 
 theorem subObs_four_mul (n : ℕ) : subObs (4 * n) = subFix n := by
-  rw [subObs, if_pos (by omega : (4 * n) % 4 = 0), show (4 * n) / 4 = n by omega]
+  rw [subObs, ite_eq_left (by omega : (4 * n) % 4 = 0), show (4 * n) / 4 = n by omega]
 
 theorem subObs_four_mul_add_one (n : ℕ) : subObs (4 * n + 1) = !subFix n := by
-  rw [subObs, if_neg (by omega : ¬ (4 * n + 1) % 4 = 0), show (4 * n + 1) / 4 = n by omega]
+  rw [subObs, ite_eq_right (by omega : ¬ (4 * n + 1) % 4 = 0), show (4 * n + 1) / 4 = n by omega]
 
 theorem subObs_four_mul_add_two (n : ℕ) : subObs (4 * n + 2) = !subFix n := by
-  rw [subObs, if_neg (by omega : ¬ (4 * n + 2) % 4 = 0), show (4 * n + 2) / 4 = n by omega]
+  rw [subObs, ite_eq_right (by omega : ¬ (4 * n + 2) % 4 = 0), show (4 * n + 2) / 4 = n by omega]
 
 theorem subObs_four_mul_add_three (n : ℕ) : subObs (4 * n + 3) = !subFix n := by
-  rw [subObs, if_neg (by omega : ¬ (4 * n + 3) % 4 = 0), show (4 * n + 3) / 4 = n by omega]
+  rw [subObs, ite_eq_right (by omega : ¬ (4 * n + 3) % 4 = 0), show (4 * n + 3) / 4 = n by omega]
 
 /-! ## The observation's own window bounds -/
 

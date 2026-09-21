@@ -3,10 +3,12 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.NoisyWindowChain
-import ALT.SubstrateClass
-import Mathlib.Probability.Distributions.Bernoulli
-import Mathlib.Probability.Independence.InfinitePi
+module
+
+public import ALT.NoisyWindowChain
+public import ALT.SubstrateClass
+public import Mathlib.Probability.Distributions.Bernoulli
+public import Mathlib.Probability.Independence.InfinitePi
 
 /-!
 # A constructed member of `𝒮_L` ([Inevitability] §2 Definition 2.3, Remark 5.3)
@@ -89,6 +91,9 @@ named concrete values: nothing in Definition 2.2's Lean form ties `r` to the rul
 complexity.
 -/
 
+
+@[expose] public section
+
 namespace LearningWitness
 
 open MeasureTheory ProbabilityTheory NoisyWindowChain
@@ -123,7 +128,7 @@ def decodeRule [NeZero k] (s : Wit k) : Fin k :=
 private theorem decodeRule_oneHot [NeZero k] (s : Wit k) (i : Fin k)
     (h : ∀ j : Fin k, s (Sum.inl j) = true ↔ j = i) : decodeRule s = i := by
   have hex : ∃ j : Fin k, s (Sum.inl j) = true := ⟨i, (h i).mpr rfl⟩
-  rw [decodeRule, dif_pos hex]
+  rw [decodeRule, dite_eq_left hex]
   refine le_antisymm (Fin.find_le_of_pos hex ((h i).mpr rfl)) ((Fin.le_find_iff hex i).mpr ?_)
   intro m hm hp
   exact absurd ((h m).mp hp) (ne_of_lt hm)
@@ -215,7 +220,7 @@ theorem chainUpdate_reads_code [NeZero k] (hk : 2 ≤ k) :
     have hlast : ((k - 1 : ℕ) : ℕ) + 1 < k → False := by omega
     have h := congrFun hcon (Sum.inr (Sum.inl ⟨k - 1, by omega⟩))
     rw [chainUpdate, chainUpdate] at h
-    simp only [dif_neg (fun hh => hlast hh), hdec, hdec'] at h
+    simp only [dite_eq_right (fun hh => hlast hh), hdec, hdec'] at h
     revert h
     simp
 
@@ -250,12 +255,12 @@ private theorem iterate_loadChain [NeZero k] (ω : ℕ → Bool) (t : ℕ) :
     · rw [Function.iterate_succ_apply', chainUpdate, ihc i]
     · rw [Function.iterate_succ_apply', chainUpdate]
       by_cases h : (i : ℕ) + 1 < k
-      · rw [dif_pos h, ihw ⟨(i : ℕ) + 1, h⟩]
+      · rw [dite_eq_left h, ihw ⟨(i : ℕ) + 1, h⟩]
         congr 1
         change t + ((i : ℕ) + 1) = t + 1 + (i : ℕ)
         omega
       · have hik : (i : ℕ) + 1 = k := by have := i.isLt; omega
-        rw [dif_neg h, hdec, ihw ⟨0, hkpos⟩, ihn 0]
+        rw [dite_eq_right h, hdec, ihw ⟨0, hkpos⟩, ihn 0]
         have hz : ((⟨0, hkpos⟩ : Fin k) : ℕ) = 0 := rfl
         rw [hz, Nat.add_zero, Nat.add_zero, show t + 1 + (i : ℕ) = t + k by omega,
           obs_add hkpos ω t, show k + t = t + k by omega]
@@ -674,7 +679,8 @@ theorem witness_truth_survives_to [NeZero k] {Ω : Type*} [MeasurableSpace Ω] {
     rw [show samePairConst k = 48 * (k : ℝ) from rfl]; linarith
   have : IsProbabilityMeasure (Measure.map (substrateTraj (k := k) ξ) P) := by
     rw [substrateTraj_eq_traj]
-    exact Measure.isProbabilityMeasure_map (measurable_traj hkpos hmeas).aemeasurable
+    exact (Measure.isProbabilityMeasure_map_iff (measurable_traj hkpos hmeas).aemeasurable).mpr
+      inferInstance
   refine BirkhoffTool.mixing_oracle_truth_survives_noisy_to _ _ (samePairMean ψ (-1))
     (samePairMean ψ (2 * η - 1)) (samePairConst k) N n τ δ η hmix hc
     (fun i => measurable_pairEnsemble ψ 0 k i) hn1 hnN hτ hδ0 hn hη0 hbudget ?_

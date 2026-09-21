@@ -3,9 +3,11 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.SubstrateClass
-import ALT.PersistenceCapacity
-import ALT.AccretingExcess
+module
+
+public import ALT.SubstrateClass
+public import ALT.PersistenceCapacity
+public import ALT.AccretingExcess
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -61,6 +63,9 @@ relates no learning-world count to any guest-world bit.
 Anchors: [Inevitability] §2 Definition 2.3, §5 Remark 5.6, §5 Theorem 5.8, [Guests] §6 Theorem 6.1,
 [Decoupling] §2 Definition 2.1, rows IN-5, IN-38.
 -/
+
+
+@[expose] public section
 
 namespace SubstrateEmergence
 

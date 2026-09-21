@@ -3,10 +3,12 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.Algebra.Order.BigOperators.Ring.Finset
-import Mathlib.Data.Real.Basic
-import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.Linarith
+module
+
+public import Mathlib.Algebra.Order.BigOperators.Ring.Finset
+public import Mathlib.Basic.Real.Basic
+public import Mathlib.Tactic.FieldSimp
+public import Mathlib.Tactic.Linarith
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -58,6 +60,9 @@ sharpened. Any `α`-guarantee on `P` (L1 vs. the truth `q`) transfers to `α + 2
 * Not WHY the pruned mass is small: that is FV-F (post-discovery decay+Kraft) and FV-G (search-phase
   log-Bayes potential + Ville) — this file only transfers a *given* small `∑ ε_t` to the predictor.
 -/
+
+
+@[expose] public section
 
 namespace SQPredictiveTransfer
 

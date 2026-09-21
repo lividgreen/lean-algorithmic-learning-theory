@@ -3,9 +3,11 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.Data.Nat.Digits.Lemmas
-import ALT.MDLDominance
-import ALT.KolmogorovComplexity
+module
+
+public import Mathlib.Data.Nat.Digits.Lemmas
+public import ALT.MDLDominance
+public import ALT.KolmogorovComplexity
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -38,6 +40,9 @@ A concrete lossless code `tableEnc` storing each symbol in a fixed `⌈log₂ O�
 
 `Nat.clog 2 O` is `⌈log₂ O⌉`; the bound uses `Nat.le_pow_clog` (`O ≤ 2^⌈log₂ O⌉`). No `sorry`.
 -/
+
+
+@[expose] public section
 
 namespace MDLCoding
 

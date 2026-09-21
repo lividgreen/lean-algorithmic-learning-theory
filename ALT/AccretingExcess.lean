@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.AccretingWitness
-import ALT.ExcessOrderComplete
+module
+
+public import ALT.AccretingWitness
+public import ALT.ExcessOrderComplete
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -42,6 +44,9 @@ The affordability clause — one fixed description for the whole family — is *
 the pricing machinery (`KE`, `packWorld`, the builders) is stated on numeral-packed fixed carriers
 and does not reach the list carrier this module accretes over. No pricing statement appears below.
 -/
+
+
+@[expose] public section
 
 namespace AccretingWitness
 

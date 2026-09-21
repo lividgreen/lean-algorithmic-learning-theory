@@ -3,9 +3,11 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.BlockPairWitness
-import ALT.ExcessOrderComplete
-import ALT.AccretingExcess
+module
+
+public import ALT.BlockPairWitness
+public import ALT.ExcessOrderComplete
+public import ALT.AccretingExcess
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -65,6 +67,9 @@ boundary.
 Anchors: [Inevitability] §2 Definition 2.3, [Inevitability] §5 Theorem 5.1(a), [Guests] §6 Theorem
 6.1, rows GV-5, GV-7, IN-5, IN-14.
 -/
+
+
+@[expose] public section
 
 namespace BlockPairOverlap
 

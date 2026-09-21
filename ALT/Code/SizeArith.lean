@@ -3,10 +3,12 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.Data.Nat.Pairing
-import Mathlib.Data.Nat.Size
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Ring
+module
+
+public import Mathlib.Data.Nat.Pairing
+public import Mathlib.Data.Nat.Size
+public import Mathlib.Tactic.Linarith
+public import Mathlib.Tactic.Ring
 
 /-!
 # Bit-length arithmetic for size accounts
@@ -29,6 +31,9 @@ programs whose sizes are being counted.
 -/
 
 -- "knows nothing about the programs whose sizes are being counted"
+
+@[expose] public section
+
 assert_not_exists Nat.Partrec.Code
 
 namespace CodeSizeArith
@@ -79,5 +84,32 @@ theorem size_pair_le (a b : ℕ) :
 
 /-- Widths never exceed the value. Safe at zero, unlike the `max`-form bounds. -/
 theorem size_le_self (n : ℕ) : Nat.size n ≤ n := Nat.size_le.mpr Nat.lt_two_pow_self
+
+/-- `Nat.size (4 * p + 4) ≤ Nat.size p + 3`: quadrupling and adding a small constant costs at most
+three more bits. From `p < 2 ^ size p` (`Nat.lt_size_self`), `4 * p + 4 ≤ 4 * 2 ^ size p < 8 * 2 ^
+size p = 2 ^ (size p + 3)`, uniformly — no case on `p = 0` is needed here, unlike the `+ 6` sibling
+below. -/
+theorem size_four_mul_add_four_le (p : ℕ) : Nat.size (4 * p + 4) ≤ Nat.size p + 3 := by
+  have hlt : p < 2 ^ Nat.size p := Nat.lt_size_self p
+  have hpos : (1 : ℕ) ≤ 2 ^ Nat.size p := Nat.one_le_two_pow
+  have hpow : (2 : ℕ) ^ (Nat.size p + 3) = 8 * 2 ^ Nat.size p := by rw [pow_add]; ring
+  rw [Nat.size_le, hpow]
+  omega
+
+/-- `Nat.size (4 * p + 6) ≤ Nat.size p + 3`. Splits on `p = 0`, where `Nat.size p = 0` and the bound
+is the direct numeral fact `6 < 8`; otherwise `size p ≥ 1` gives `2 ^ size p ≥ 2`, and `4 * p + 6 ≤
+4 * 2 ^ size p + 2 < 8 * 2 ^ size p = 2 ^ (size p + 3)`. -/
+theorem size_four_mul_add_six_le (p : ℕ) : Nat.size (4 * p + 6) ≤ Nat.size p + 3 := by
+  rw [Nat.size_le]
+  rcases Nat.eq_zero_or_pos p with hp0 | hp0
+  · subst hp0; decide
+  · have hlt : p < 2 ^ Nat.size p := Nat.lt_size_self p
+    have hpos : (1 : ℕ) ≤ Nat.size p := Nat.size_pos.mpr hp0
+    have h2le : (2 : ℕ) ≤ 2 ^ Nat.size p := by
+      calc (2 : ℕ) = 2 ^ 1 := (pow_one 2).symm
+      _ ≤ 2 ^ Nat.size p := Nat.pow_le_pow_right (by norm_num) hpos
+    have hpow : (2 : ℕ) ^ (Nat.size p + 3) = 8 * 2 ^ Nat.size p := by rw [pow_add]; ring
+    rw [hpow]
+    omega
 
 end CodeSizeArith

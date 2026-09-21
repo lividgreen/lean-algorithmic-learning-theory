@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.Analysis.Complex.ExponentialBounds
-import Mathlib.Analysis.SpecialFunctions.Log.Base
+module
+
+public import Mathlib.Analysis.Complex.ExponentialBounds
+public import Mathlib.Analysis.SpecialFunctions.Log.Base
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -44,6 +46,9 @@ Corollary 2.2 only.
 `Real.log` is the natural logarithm; constant base-change factors are absorbed into `c₀`,
 exactly as in the paper's "O(·) with constants traceable in principle" convention.
 -/
+
+
+@[expose] public section
 
 namespace CapacityThreshold
 

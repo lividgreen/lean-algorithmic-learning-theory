@@ -3,9 +3,11 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.CartesianClosed
-import ALT.ParameterizedNNO
-import ALT.GodelThreshold
+module
+
+public import ALT.CartesianClosed
+public import ALT.ParameterizedNNO
+public import ALT.GodelThreshold
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -72,6 +74,9 @@ face of the stand-in mismatch. For a real `Rep(S)` it would be the substantive P
 * Added / modeling: the CCC and NNO on separate stand-ins (not unified `Rep(S)`);
   `Sentence`/`gnum`/`Derivable`/`True_` abstract; incompleteness imported.
 -/
+
+
+@[expose] public section
 
 namespace ReflectiveAssembly
 

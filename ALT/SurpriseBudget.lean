@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.BayesRedundancy
-import ALT.PersistenceCapacity
+module
+
+public import ALT.BayesRedundancy
+public import ALT.PersistenceCapacity
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -115,6 +117,9 @@ real restrictions on the host, stated rather than assumed away, and the countere
 can simply be dropped. Nothing here says when the surprises arrive — every result is uniform over
 arrival patterns, which is the point of a budget.
 -/
+
+
+@[expose] public section
 
 namespace SurpriseBudget
 
@@ -1178,7 +1183,7 @@ private theorem cycleU_corrects : Corrects cycleU Set.univ 1 := by
   · have hs'' : hammingDist cycleZero s' ≤ 1 := hs'
     have h0 : hammingDist cycleZero cycleZero ≤ 1 := by decide
     unfold cycleU
-    rw [if_pos hs'', if_pos h0]
+    rw [ite_eq_left hs'', ite_eq_left h0]
   · have hd' : hammingDist cycleOne s' ≤ 1 := hs'
     have hnot_s' : ¬ hammingDist cycleZero s' ≤ 1 := by
       intro hbad
@@ -1189,7 +1194,7 @@ private theorem cycleU_corrects : Corrects cycleU Set.univ 1 := by
       omega
     have hnot_one : ¬ hammingDist cycleZero cycleOne ≤ 1 := by decide
     unfold cycleU
-    rw [if_neg hnot_s', if_neg hnot_one]
+    rw [ite_eq_right hnot_s', ite_eq_right hnot_one]
 
 /-- **`cycleU`'s reading never settles.** Along the `2`-cycle from `cycleZero`, cell `0`
 alternates `false, true, false, true, …` forever, so no tail is ever constant. -/

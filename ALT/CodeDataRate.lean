@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.Data.Nat.Size
-import ALT.AdditiveComplexity
+module
+
+public import Mathlib.Data.Nat.Size
+public import ALT.AdditiveComplexity
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -46,6 +48,9 @@ draws the consequence for `KE`'s data rate.
 * Added / modeling: the fixed serialization `E` and its opcode budget (inherited from
   `AdditiveComplexity.lean`).
 -/
+
+
+@[expose] public section
 
 namespace CodeDataRate
 
@@ -343,7 +348,7 @@ private theorem g_step (i : ℕ) : g (i + 1) ≤
     simp [g_one, g_zero]
   · obtain ⟨i', rfl⟩ := Nat.exists_eq_succ_of_ne_zero hi
     simp only [Nat.succ_eq_add_one]
-    rw [if_neg (by omega)]
+    rw [ite_eq_right (by omega)]
     have hcard := card_codesOfNodes_add_two_le i'
     have hcard' : ((codesOfNodes (i' + 1 + 1)).card : ℚ) ≤ ((codesOfNodes (i' + 1)).card : ℚ) +
         3 * ∑ ij ∈ Finset.antidiagonal (i' + 1),

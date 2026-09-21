@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.Data.Fintype.Pigeonhole
-import Mathlib.Data.Fintype.Pi
+module
+
+public import Mathlib.Data.Fintype.Pigeonhole
+public import Mathlib.Data.Fintype.Pi
 
 set_option linter.style.header false
 set_option linter.style.longLine false
@@ -37,6 +39,9 @@ predictor `f` on a window of fixed length `k`.
 * Not membership of any particular system in a substrate class: this is a structural fact about
   sequences obeying (W) exactly, independent of every other hypothesis.
 -/
+
+
+@[expose] public section
 
 namespace WindowDeterminism
 

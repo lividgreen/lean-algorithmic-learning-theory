@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.RealizabilityCCC
-import ALT.RealizabilityCoproduct
+module
+
+public import ALT.RealizabilityCCC
+public import ALT.RealizabilityCoproduct
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -47,6 +49,9 @@ combinatory algebra no full classifier exists (a quasitopos, not a topos; van Oo
 comprehension subobjects are classified here; that a *mono* between finite objects is isomorphic to a
 comprehension subobject (upgrading the classification to all monos) is stated at paper level.
 -/
+
+
+@[expose] public section
 
 namespace RealizabilitySubobject
 
@@ -165,7 +170,7 @@ theorem charFn_eq_true_iff {A : Asm} (P : A.carrier → Prop) [DecidablePred P] 
     charFn P a = Sum.inl PUnit.unit ↔ P a := by
   unfold charFn
   by_cases h : P a
-  · exact iff_of_true (if_pos h) h
+  · exact iff_of_true (ite_eq_left h) h
   · refine iff_of_false ?_ h
     simp [h]
 
@@ -251,7 +256,7 @@ theorem chi_unique (A : Asm) (P : A.carrier → Prop) [DecidablePred P] (hA : Al
     rw [← hA_sq, hχ' (globalElt A a)]; exact hB
   by_cases hPa : P a
   · rw [(charFn_eq_true_iff P a).mpr hPa]; exact hkey.mpr hPa
-  · have h2 : charFn P a = Sum.inr PUnit.unit := by unfold charFn; exact if_neg hPa
+  · have h2 : charFn P a = Sum.inr PUnit.unit := by unfold charFn; exact ite_eq_right hPa
     rw [h2]
     rcases boolAsm_eq_or (χ'.1 a) with h | h
     · exact absurd ((hkey.mp h)) hPa

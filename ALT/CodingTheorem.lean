@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.KraftChaitin
-import ALT.CodingTheoremDecoder
+module
+
+public import ALT.KraftChaitin
+public import ALT.CodingTheoremDecoder
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -26,12 +28,19 @@ Provenance: [Discovery] §1.1 and FV-21, over the online Kraft–Chaitin assignm
   second coordinate.
 * `coding_theorem`, `coding_theorem_QB`, `QB_le_two_pow_mul`: the coding theorem with an additive
   constant loss (no logarithmic term), and both directions of the `QB` estimate it gives.
+* `coding_theorem_mul`, `QB_universal`, `QB_universal_nonvacuous`: the coding theorem in
+  multiplicative form at a general semimeasure, its universality corollary — `QB` dominates every
+  lower-semicomputable semimeasure up to a constant factor — and a witness to the joint
+  satisfiability of that corollary's hypotheses.
 
 ## What this does NOT establish (flagged)
 
 Nothing further is deferred: this closes the boundary `ALT/KraftChaitin.lean` and
 `ALT/CodingTheoremDecoder.lean` both flag.
 -/
+
+
+@[expose] public section
 
 namespace PrefixMachine
 
@@ -88,7 +97,7 @@ private theorem level_spec {a : ℕ → ℕ → ℕ} {t y : ℕ} (hpos : 0 < a t
   have hspos : 0 < s := Nat.size_pos.mpr hpos
   have hlow : 2 ^ (s - 1) ≤ A := two_pow_size_sub_one_le hpos
   have hhigh : A < 2 ^ s := Nat.lt_size_self A
-  have hlevel : level a t y = t - (s - 1) := if_neg (by omega : A ≠ 0)
+  have hlevel : level a t y = t - (s - 1) := ite_eq_right (by omega : A ≠ 0)
   by_cases hle : s - 1 ≤ t
   · rw [hlevel]
     have hteq : t - (s - 1) + (s - 1) = t := Nat.sub_add_cancel hle
@@ -160,7 +169,7 @@ private theorem level_antitone {a : ℕ → ℕ → ℕ}
     have := Nat.lt_size.mpr hchain
     omega
   unfold level
-  rw [if_neg hpos.ne', if_neg hpos2.ne']
+  rw [ite_eq_right hpos.ne', ite_eq_right hpos2.ne']
   omega
 
 /-! ## `improves`: an improving step vs. a silent step -/
@@ -404,7 +413,7 @@ private theorem fiber_sum_le {a : ℕ → ℕ → ℕ} {μ : ℕ → ℝ}
   have hlevinReq : ∀ m ∈ S, levinReq a m = level a (Nat.unpair m).1 y + 2 := by
     intro m hm
     unfold levinReq
-    rw [if_pos (hS m hm).1, (hS m hm).2]
+    rw [ite_eq_left (hS m hm).1, (hS m hm).2]
   have heq1 : ∑ m ∈ S, (1 / 2 : ℝ) ^ (levinReq a m)
       = (1 / 4 : ℝ) * ∑ m ∈ S, (1 / 2 : ℝ) ^ (level a (Nat.unpair m).1 y) := by
     rw [Finset.mul_sum]
@@ -446,7 +455,7 @@ theorem levinReq_mass {a : ℕ → ℕ → ℕ} {μ : ℕ → ℝ}
     intro m hm
     have hmi : ¬ improves a m = true := (Finset.mem_filter.mp hm).2
     unfold levinReq
-    rw [if_neg hmi]
+    rw [ite_eq_right hmi]
   have hsil_sum : ∑ m ∈ Msil, (1 / 2 : ℝ) ^ (levinReq a m) ≤ 1 / 2 := by
     have heq : ∑ m ∈ Msil, (1 / 2 : ℝ) ^ (levinReq a m)
         = (1 / 4 : ℝ) * ∑ m ∈ Msil, (1 / 2 : ℝ) ^ m := by
@@ -656,7 +665,7 @@ theorem coding_theorem {μ : ℕ → ℝ} (hμ : LowerSemicomputable μ) (hnn : 
         exact Or.inr (by omega)
   have hlevinReq : levinReq a (Nat.pair t x) = level a t x + 2 := by
     unfold levinReq
-    rw [if_pos himp, Nat.unpair_pair]
+    rw [ite_eq_left himp, Nat.unpair_pair]
   obtain ⟨w, hw, hwlen⟩ := (kcRun_invariant hmass (Nat.pair t x + 1)).2.1
     (Nat.pair t x) (Nat.lt_succ_self _)
   rw [hlevinReq] at hwlen
@@ -670,43 +679,100 @@ theorem coding_theorem {μ : ℕ → ℝ} (hμ : LowerSemicomputable μ) (hnn : 
 theorem coding_theorem_QB : ∃ C : ℕ, ∀ x k : ℕ, (1 / 2 : ℝ) ^ k < QB x → KB x ≤ k + C :=
   coding_theorem QB_lsc QB_nonneg sum_QB_le_one
 
-/-- **Both directions at `QB`**: with `two_pow_neg_KB_le_QB`,
-`2 ^ (-KB x) ≤ QB x ≤ 2 ^ C · 2 ^ (-KB x)`. -/
-theorem QB_le_two_pow_mul : ∃ C : ℕ, ∀ x : ℕ, QB x ≤ 2 ^ C * (1 / 2 : ℝ) ^ (KB x) := by
-  obtain ⟨C, hC⟩ := coding_theorem_QB
+/-- **The coding theorem, multiplicative form, at a general semimeasure**: `coding_theorem`'s
+additive-in-the-exponent bound restated as a multiplicative one, over any lower-semicomputable
+semimeasure `μ` (not only `QB`). -/
+theorem coding_theorem_mul {μ : ℕ → ℝ} (hμ : LowerSemicomputable μ) (hnn : ∀ x, 0 ≤ μ x)
+    (hsum : ∀ F : Finset ℕ, ∑ x ∈ F, μ x ≤ 1) :
+    ∃ C : ℕ, ∀ x : ℕ, μ x ≤ 2 ^ C * (1 / 2 : ℝ) ^ (KB x) := by
+  obtain ⟨C, hC⟩ := coding_theorem hμ hnn hsum
   refine ⟨C + 1, fun x => ?_⟩
-  by_cases hex : ∃ k, (1 / 2 : ℝ) ^ k < QB x
+  by_cases hex : ∃ k, (1 / 2 : ℝ) ^ k < μ x
   · set k0 := Nat.find hex with hk0def
-    have hk0spec : (1 / 2 : ℝ) ^ k0 < QB x := Nat.find_spec hex
+    have hk0spec : (1 / 2 : ℝ) ^ k0 < μ x := Nat.find_spec hex
     have hKBle : KB x ≤ k0 + C := hC x k0 hk0spec
-    have hQBx1 : QB x ≤ 1 := by have := sum_QB_le_one {x}; simpa using this
+    have hμx1 : μ x ≤ 1 := by have := hsum {x}; simpa using this
     have hk0pos : 0 < k0 := by
       rcases Nat.eq_zero_or_pos k0 with hz | hpos
       · exfalso
         rw [hz, pow_zero] at hk0spec
         linarith
       · exact hpos
-    have hnotmin : ¬ (1 / 2 : ℝ) ^ (k0 - 1) < QB x := Nat.find_min hex (by omega)
-    have hQBle : QB x ≤ (1 / 2 : ℝ) ^ (k0 - 1) := not_lt.mp hnotmin
-    have hstep : QB x * (1 / 2 : ℝ) ^ (C + 1) ≤ (1 / 2 : ℝ) ^ (KB x) :=
-      calc QB x * (1 / 2 : ℝ) ^ (C + 1)
+    have hnotmin : ¬ (1 / 2 : ℝ) ^ (k0 - 1) < μ x := Nat.find_min hex (by omega)
+    have hμle : μ x ≤ (1 / 2 : ℝ) ^ (k0 - 1) := not_lt.mp hnotmin
+    have hstep : μ x * (1 / 2 : ℝ) ^ (C + 1) ≤ (1 / 2 : ℝ) ^ (KB x) :=
+      calc μ x * (1 / 2 : ℝ) ^ (C + 1)
           ≤ (1 / 2 : ℝ) ^ (k0 - 1) * (1 / 2 : ℝ) ^ (C + 1) :=
-            mul_le_mul_of_nonneg_right hQBle (by positivity)
+            mul_le_mul_of_nonneg_right hμle (by positivity)
         _ = (1 / 2 : ℝ) ^ (k0 + C) := by rw [← pow_add]; congr 1; omega
         _ ≤ (1 / 2 : ℝ) ^ (KB x) := two_pow_neg_antitone hKBle
     have hone : (2 : ℝ) ^ (C + 1) * (1 / 2 : ℝ) ^ (C + 1) = 1 := by rw [← mul_pow]; norm_num
-    calc QB x = QB x * ((2 : ℝ) ^ (C + 1) * (1 / 2 : ℝ) ^ (C + 1)) := by rw [hone, mul_one]
-      _ = (2 : ℝ) ^ (C + 1) * (QB x * (1 / 2 : ℝ) ^ (C + 1)) := by ring
+    calc μ x = μ x * ((2 : ℝ) ^ (C + 1) * (1 / 2 : ℝ) ^ (C + 1)) := by rw [hone, mul_one]
+      _ = (2 : ℝ) ^ (C + 1) * (μ x * (1 / 2 : ℝ) ^ (C + 1)) := by ring
       _ ≤ (2 : ℝ) ^ (C + 1) * (1 / 2 : ℝ) ^ (KB x) :=
           mul_le_mul_of_nonneg_left hstep (by positivity)
-  · have hQBx0 : QB x ≤ 0 := by
+  · have hμx0 : μ x ≤ 0 := by
       by_contra hpos
-      have hpos' : 0 < QB x := not_le.mp hpos
+      have hpos' : 0 < μ x := not_le.mp hpos
       obtain ⟨n, hn⟩ := exists_pow_lt_of_lt_one hpos' (show (1 / 2 : ℝ) < 1 from by norm_num)
       exact hex ⟨n, hn⟩
-    have hQBnn := QB_nonneg x
-    have hQB0 : QB x = 0 := le_antisymm hQBx0 hQBnn
-    rw [hQB0]
+    have hμnn := hnn x
+    have hμ0 : μ x = 0 := le_antisymm hμx0 hμnn
+    rw [hμ0]
     positivity
+
+/-- **Both directions at `QB`**: with `two_pow_neg_KB_le_QB`,
+`2 ^ (-KB x) ≤ QB x ≤ 2 ^ C · 2 ^ (-KB x)`. -/
+theorem QB_le_two_pow_mul : ∃ C : ℕ, ∀ x : ℕ, QB x ≤ 2 ^ C * (1 / 2 : ℝ) ^ (KB x) :=
+  coding_theorem_mul QB_lsc QB_nonneg sum_QB_le_one
+
+/-- **`QB` is a universal (maximal) lower-semicomputable semimeasure** ([Discovery] §1.1, FV-25):
+it dominates every lower-semicomputable semimeasure up to a constant factor. The classical
+statement fixes its `m` as ANY maximal such semimeasure, so this shows `QB` is a universal
+semimeasure — never "the" universal semimeasure. -/
+theorem QB_universal {μ : ℕ → ℝ} (hμ : LowerSemicomputable μ) (hnn : ∀ x, 0 ≤ μ x)
+    (hsum : ∀ F : Finset ℕ, ∑ x ∈ F, μ x ≤ 1) :
+    ∃ C : ℕ, ∀ x : ℕ, μ x ≤ 2 ^ C * QB x := by
+  obtain ⟨C, hC⟩ := coding_theorem_mul hμ hnn hsum
+  refine ⟨C, fun x => ?_⟩
+  calc μ x ≤ 2 ^ C * (1 / 2 : ℝ) ^ (KB x) := hC x
+    _ ≤ 2 ^ C * QB x := mul_le_mul_of_nonneg_left (two_pow_neg_KB_le_QB x) (by positivity)
+
+/-- **A witness to the joint satisfiability of `QB_universal`'s hypotheses**, beyond the instance
+the theorem already proves at `μ = QB` (true there at `C = 0`) and the instance it makes vacuous at
+`μ = 0` (whose conclusion is `0 ≤ 2 ^ C * QB x`): the point mass at `0`, lower-semicomputable via
+the dyadic approximation `a t x := if x = 0 then 2 ^ t else 0`, is a genuine semimeasure the
+theorem says something about — it forces `1 ≤ 2 ^ C * QB 0`. -/
+theorem QB_universal_nonvacuous :
+    ∃ μ : ℕ → ℝ, LowerSemicomputable μ ∧ (∀ x, 0 ≤ μ x) ∧
+      (∀ F : Finset ℕ, ∑ x ∈ F, μ x ≤ 1) ∧ μ 0 = 1 := by
+  refine ⟨fun x => if x = 0 then 1 else 0, ⟨fun t x => if x = 0 then 2 ^ t else 0, ?_, ?_, ?_, ?_⟩,
+    ?_, ?_, ?_⟩
+  · have hsel : PrimrecPred (fun p : ℕ × ℕ => p.2 = 0) :=
+      Primrec.eq.comp Primrec.snd (Primrec.const 0)
+    have hpow2 : Primrec₂ ((· ^ ·) : ℕ → ℕ → ℕ) := Primrec₂.unpaired'.1 Nat.Primrec.pow
+    have hpowP : Primrec fun p : ℕ × ℕ => (2 : ℕ) ^ p.1 :=
+      hpow2.comp (Primrec.const 2) Primrec.fst
+    exact (Primrec.ite hsel hpowP (Primrec.const 0)).to_comp
+  · intro t x
+    by_cases hx : x = 0
+    · simp [hx, pow_succ]
+    · simp [hx]
+  · intro t x
+    by_cases hx : x = 0
+    · simp [hx]
+    · simp [hx]
+  · intro x q hq
+    by_cases hx : x = 0
+    · subst hx
+      exact ⟨0, by simpa using hq⟩
+    · simp only [ite_eq_right hx] at hq
+      exact ⟨0, by simpa [hx] using hq⟩
+  · intro x
+    by_cases hx : x = 0 <;> simp [hx]
+  · intro F
+    simp only [Finset.sum_ite_eq']
+    split <;> norm_num
+  · simp
 
 end PrefixMachine

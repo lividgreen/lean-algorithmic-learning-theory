@@ -3,9 +3,11 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.Data.List.GetD
-import Mathlib.Data.Nat.Log
-import ALT.PrefixInvariance
+module
+
+public import Mathlib.Data.List.GetD
+public import Mathlib.Data.Nat.Log
+public import ALT.PrefixInvariance
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -60,6 +62,9 @@ singleton `{x}` gives nonemptiness for `α ≥ KE x + c₀`.
 * Evaln-budgeted version — the `evaln`-budget wall applies identically (eval-level only, like `prop_2_2_eval`).
 * [Discovery] §2.3's use stays backdrop; this module makes its load-bearing inequality genuine.
 -/
+
+
+@[expose] public section
 
 namespace StructureFunction
 
@@ -182,9 +187,9 @@ theorem structFn_antitone (x : ℕ) {α α' : ℕ} (h : α ≤ α') : structFn x
   unfold structFn
   by_cases hm : (modelLogCards x α).Nonempty
   · have hm' : (modelLogCards x α').Nonempty := hm.mono (modelLogCards_subset h)
-    rw [if_pos hm, if_pos hm']
+    rw [ite_eq_left hm, ite_eq_left hm']
     exact_mod_cast Nat.sInf_le (modelLogCards_subset h (Nat.sInf_mem hm))
-  · rw [if_neg hm]; exact le_top
+  · rw [ite_eq_right hm]; exact le_top
 
 /-- **(b) Singleton collapse.** For `α ≥ KE x + (3 + elen mkSingleton)` the singleton model `{x}` is
 available, so `structFn x α = 0`. Witness `comp mkSingleton cx` (`cx` the `KE`-optimal code for `x`),
@@ -199,7 +204,7 @@ theorem structFn_singleton (x : ℕ) {α : ℕ} (h : KE x + (3 + elen mkSingleto
     ⟨comp mkSingleton cx, [x], hlen, hmodel, List.nodup_singleton x, by simp, by simp⟩
   have hm : (modelLogCards x α).Nonempty := ⟨0, h0mem⟩
   unfold structFn
-  rw [if_pos hm]
+  rw [ite_eq_left hm]
   exact_mod_cast Nat.le_zero.mp (Nat.sInf_le h0mem)
 
 /-- **(c) The 45° slice.** `KE x ≤ α + c₁·structFn x α + c₂` (`c₁ = 15 + elen dbl`,
@@ -210,7 +215,7 @@ theorem KE_le_structFn (x α : ℕ) :
       + ((36 + elen extractor + 2 * elen dbl : ℕ) : ℕ∞) := by
   unfold structFn
   by_cases hm : (modelLogCards x α).Nonempty
-  · rw [if_pos hm]
+  · rw [ite_eq_left hm]
     obtain ⟨c, L, hcelen, hceval, _hnodup, hxL, hlcard⟩ := Nat.sInf_mem hm
     have hpm := KE_le_of_model hceval hxL
     have hfin : KE x ≤ α + (15 + elen dbl) * sInf (modelLogCards x α)
@@ -221,7 +226,7 @@ theorem KE_le_structFn (x α : ℕ) :
         _ ≤ α + (15 + elen dbl) * Nat.log 2 L.length
               + (36 + elen extractor + 2 * elen dbl) := by gcongr
     exact_mod_cast hfin
-  · rw [if_neg hm]
+  · rw [ite_eq_right hm]
     have hc1 : ((15 + elen dbl : ℕ) : ℕ∞) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
     rw [ENat.mul_top hc1]; simp
 
@@ -233,7 +238,7 @@ theorem structFn_ge (x α : ℕ) :
       ≤ structFn x α := by
   unfold structFn
   by_cases hm : (modelLogCards x α).Nonempty
-  · rw [if_pos hm]
+  · rw [ite_eq_left hm]
     obtain ⟨c, L, hcelen, hceval, _hnodup, hxL, hlcard⟩ := Nat.sInf_mem hm
     have hpm := KE_le_of_model hceval hxL
     have hKE : KE x ≤ α + (15 + elen dbl) * sInf (modelLogCards x α)
@@ -252,6 +257,6 @@ theorem structFn_ge (x α : ℕ) :
             Nat.div_le_div_right hsub
         _ = sInf (modelLogCards x α) := Nat.mul_div_cancel_left _ (by omega)
     exact_mod_cast hdiv
-  · rw [if_neg hm]; exact le_top
+  · rw [ite_eq_right hm]; exact le_top
 
 end StructureFunction

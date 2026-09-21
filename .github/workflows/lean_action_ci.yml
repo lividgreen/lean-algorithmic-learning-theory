@@ -50,12 +50,14 @@ jobs:
       # complements the `#guard_msgs in #print axioms` guards rather than
       # replacing them: the guards pin each capstone's EXACT axiom set in-source
       # and render into the API docs; the audit covers everything they do not
-      # name. The tool is an INHERITED dependency (it arrives via Foundation), so
-      # nothing is added to lakefile.toml and `lake exe` resolves it as-is. It
-      # also exits non-zero when it audits NOTHING, so a misconfigured root
-      # cannot pass silently — the "green that never tested anything" failure.
+      # name. The tool is `forgive`, an INHERITED dependency (it arrives via
+      # Foundation, tagged per toolchain), so nothing is added to lakefile.toml
+      # and `lake exe` resolves it as-is. Its allowlist is the checked-in
+      # `forgive.yml`: the three standard axioms accepted, nothing forgiven. An
+      # accept list missing `Classical.choice` was checked to fail, so the audit
+      # is not a green that never tested anything.
       - name: Axiom audit (whole library)
-        run: ~/.elan/bin/lake exe axiom-audit --root ALT
+        run: ~/.elan/bin/lake exe forgive ALT
       # Docs for the closure are heavy; a killed run must not start over.
       # Restore prior progress, cap the step below GitHub's 6 h job kill, and
       # save progress EVEN ON FAILURE — successive runs then converge instead

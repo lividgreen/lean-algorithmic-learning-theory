@@ -3,10 +3,14 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.Data.Nat.Size
-import ALT.AdditiveComplexity
-import ALT.BinaryKraft
-import ALT.Code.EvalLaws
+module
+
+public import Mathlib.Data.Nat.Size
+public import Mathlib.InformationTheory.Coding.Kraft
+public import Mathlib.InformationTheory.Coding.PrefixFree
+public import ALT.AdditiveComplexity
+public import ALT.BinaryKraft
+public import ALT.Code.EvalLaws
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -24,9 +28,11 @@ machine is made prefix-free the standard way (prefix-free-ification by stages) r
 so.
 
 * `bitsToNat`, `natToBits`: a bit-string/natural bijection, `[] ↦ 0`.
-* `PrefixFree`: no member of a set of bit-strings is a proper prefix of another.
+* `PrefixFree`: no member of a set of bit-strings is a proper prefix of another — Mathlib's
+  `InformationTheory.IsPrefixFree` at the binary alphabet (`prefixFree_iff_isPrefixFree`).
 * `uniquelyDecodable_of_prefixFree`, `kraft_of_prefixFree`: a prefix-free set of bit-strings is
-  uniquely decodable, hence satisfies Kraft's inequality.
+  uniquely decodable and satisfies Kraft's inequality — Mathlib's two theorems, specialized to
+  bit-strings.
 * `pfy`: the prefix-free-ification of a code by stages; `pfy_prefixFree`, `pfy_sub`,
   `pfy_eq_of_prefixFree`.
 * `KB`: prefix complexity — least `elen c + p.length` over a serialized machine and a binary
@@ -47,6 +53,9 @@ established in `ALT/BitStringPrimrec.lean`, over the bit-string computability la
 * Added / modeling: the concrete prefix-free-ification by stages (a fixed effective enumeration);
   the machine-plus-binary-argument description shape (`E c ++ p`).
 -/
+
+
+@[expose] public section
 
 namespace PrefixMachine
 
@@ -97,13 +106,13 @@ theorem bitsToNat_natToBits (n : ℕ) : bitsToNat (natToBits n) = n := by
   induction n using natToBits.induct with
   | case1 n h =>
       rw [natToBits]
-      simp only [dif_pos h]
+      simp only [dite_eq_left h]
       have hn0 : n = 0 := by omega
       subst hn0
       simp [bitsToNat]
   | case2 n h ih =>
       rw [natToBits]
-      simp only [dif_neg h]
+      simp only [dite_eq_right h]
       rw [bitsToNat_append_bit, ih]
       have hq : (n + 1) / 2 - 1 + 1 = (n + 1) / 2 := by omega
       have hmod : (decide ((n + 1) % 2 = 1)).toNat = (n + 1) % 2 := by
@@ -122,7 +131,7 @@ theorem natToBits_bitsToNat : ∀ p : List Bool, natToBits (bitsToNat p) = p := 
         omega
       rw [natToBits]
       have hge2 : ¬ bitsToNat (p ++ [b]) + 1 < 2 := by omega
-      simp only [dif_neg hge2]
+      simp only [dite_eq_right hge2]
       have hbnat : b.toNat ≤ 1 := by cases b <;> simp
       have heq1 : (bitsToNat (p ++ [b]) + 1) / 2 - 1 = bitsToNat p := by omega
       have heq2 : decide ((bitsToNat (p ++ [b]) + 1) % 2 = 1) = b := by
@@ -135,13 +144,13 @@ theorem length_natToBits (n : ℕ) : (natToBits n).length + 1 = Nat.size (n + 1)
   induction n using natToBits.induct with
   | case1 n h =>
       rw [natToBits]
-      simp only [dif_pos h]
+      simp only [dite_eq_left h]
       have hn0 : n = 0 := by omega
       subst hn0
       decide
   | case2 n h ih =>
       rw [natToBits]
-      simp only [dif_neg h]
+      simp only [dite_eq_right h]
       simp only [List.length_append, List.length_singleton]
       have hsize : Nat.size (n + 1) = Nat.size ((n + 1) / 2) + 1 := by
         have hne : Nat.bit (n + 1).bodd (n + 1).div2 ≠ 0 := by
@@ -152,83 +161,35 @@ theorem length_natToBits (n : ℕ) : (natToBits n).length + 1 = Nat.size (n + 1)
       rw [harg] at ih
       omega
 
-/-! ## Prefix-free sets are uniquely decodable
+/-! ## Prefix-free sets of bit-strings
 
-A prefix-free set of codewords (none the empty word, no member a proper prefix of another) is
-uniquely decodable: the generalization of `AdditiveComplexity.uniquelyDecodable_range_E`'s peeling
-argument from `E`'s range to any prefix-free set. -/
+`PrefixFree` is Mathlib's `InformationTheory.IsPrefixFree` at the binary alphabet
+(`prefixFree_iff_isPrefixFree`). Mathlib proves that a prefix-free set without the empty word is
+uniquely decodable and Kraft's inequality for an arbitrary prefix-free set over a finite alphabet;
+the two theorems below are those, specialized to bit-strings and to the base `1 / 2` of `KB`'s
+series. -/
 
-/-- No member is a proper prefix of another. (A prefix-free set containing `[]` is forced,
-by this very property, down to `{[]}` — see `eq_singleton_of_nil_mem` below; unique decodability
-needs the extra hypothesis `[] ∉ S` ruling that degenerate case out.) -/
+/-- No member is a proper prefix of another. (A prefix-free set containing `[]` is forced, by this
+very property, down to `{[]}`, Mathlib's `IsPrefixFree.eq_singleton_empty_of_empty_mem`; unique
+decodability needs the extra hypothesis `[] ∉ S` ruling that degenerate case out.) -/
 def PrefixFree (S : Set (List Bool)) : Prop :=
   ∀ p ∈ S, ∀ q ∈ S, p <+: q → p = q
 
-/-- Two codewords of a prefix-free set that prefix a common list coincide, and so do the
-remainders: the peeling step behind unique decodability. -/
-private theorem prefixFree_peel {S : Set (List Bool)} (h : PrefixFree S)
-    {w w' r1 r2 : List Bool} (hw : w ∈ S) (hw' : w' ∈ S) (heq : w ++ r1 = w' ++ r2) :
-    w = w' ∧ r1 = r2 := by
-  have hww' : w = w' := by
-    rcases le_total w.length w'.length with hle | hle
-    · have hp : w <+: w' ++ r2 := ⟨r1, heq⟩
-      exact h w hw w' hw' ((List.isPrefix_append_of_length hle).mp hp)
-    · have hp : w' <+: w ++ r1 := ⟨r2, heq.symm⟩
-      exact (h w' hw' w hw ((List.isPrefix_append_of_length hle).mp hp)).symm
-  refine ⟨hww', ?_⟩
-  rw [hww'] at heq
-  exact List.append_cancel_left heq
-
-/-- A prefix-free set containing the empty word is forced down to `{[]}`: `[]` is a prefix of
-everything, so prefix-freeness identifies every member with it. -/
-private theorem eq_singleton_of_nil_mem {S : Set (List Bool)} (h : PrefixFree S) (hnil : [] ∈ S) :
-    S = {[]} := by
-  ext q
-  refine ⟨fun hq => (h [] hnil q hq List.nil_prefix).symm, fun hq => hq ▸ hnil⟩
+/-- The local predicate is Mathlib's `IsPrefixFree` at the binary alphabet. -/
+theorem prefixFree_iff_isPrefixFree {S : Set (List Bool)} :
+    PrefixFree S ↔ InformationTheory.IsPrefixFree S := Iff.rfl
 
 /-- **A prefix-free set not containing the empty word is uniquely decodable.** -/
 theorem uniquelyDecodable_of_prefixFree {S : Set (List Bool)} (h : PrefixFree S)
-    (hnil : [] ∉ S) : InformationTheory.UniquelyDecodable S := by
-  intro L₁
-  induction L₁ with
-  | nil =>
-      rintro (_ | ⟨v, vs⟩) - h₂ hflat
-      · rfl
-      · exfalso
-        have hv := h₂ v (by simp)
-        simp only [List.flatten_nil, List.flatten_cons] at hflat
-        have hv0 : v = [] := (List.append_eq_nil_iff.mp hflat.symm).1
-        rw [hv0] at hv
-        exact hnil hv
-  | cons w ws ih =>
-      rintro (_ | ⟨v, vs⟩) h₁ h₂ hflat
-      · exfalso
-        have hw := h₁ w (by simp)
-        simp only [List.flatten_nil, List.flatten_cons] at hflat
-        have hw0 : w = [] := (List.append_eq_nil_iff.mp hflat).1
-        rw [hw0] at hw
-        exact hnil hw
-      · have hw := h₁ w (by simp)
-        have hv := h₂ v (by simp)
-        simp only [List.flatten_cons] at hflat
-        obtain ⟨rfl, htail⟩ := prefixFree_peel h hw hv hflat
-        rw [ih vs (fun x hx => h₁ x (List.mem_cons_of_mem _ hx))
-              (fun x hx => h₂ x (List.mem_cons_of_mem _ hx)) htail]
+    (hnil : [] ∉ S) : InformationTheory.IsUniquelyDecodable S :=
+  (prefixFree_iff_isPrefixFree.mp h).isUniquelyDecodable hnil
 
 /-- **Kraft's inequality for a prefix-free set of bit-strings** — including the degenerate case
 `S = {[]}`, where the single term `2⁻⁰ = 1` meets the bound with equality. -/
 theorem kraft_of_prefixFree {S : Set (List Bool)} (h : PrefixFree S) :
     ∑' p : S, (1 / 2 : ℝ) ^ (p : List Bool).length ≤ 1 := by
-  by_cases hnil : [] ∈ S
-  · have hSeq := eq_singleton_of_nil_mem h hnil
-    subst hSeq
-    rw [tsum_eq_single (⟨[], rfl⟩ : ({[]} : Set (List Bool)))]
-    · simp
-    · intro p hp
-      exact absurd (Subtype.ext (Set.mem_singleton_iff.mp p.2)) hp
-  · have hud := uniquelyDecodable_of_prefixFree h hnil
-    simpa using BinaryKraft.indexed_tsum_le_one (fun p : S => (p : List Bool))
-      Subtype.coe_injective (by simpa using hud)
+  simpa [Fintype.card_bool] using
+    (prefixFree_iff_isPrefixFree.mp h).tsum_one_div_card_pow_length_le_one
 
 /-! ## Prefix-free-ification of a code, by stages
 
@@ -247,11 +208,11 @@ def foldStep (acc : List ℕ) (n : ℕ) : List ℕ :=
 
 private theorem foldStep_eq_of_pos {acc : List ℕ} {n : ℕ}
     (h : ∃ m ∈ acc, natToBits m <+: natToBits n ∨ natToBits n <+: natToBits m) :
-    foldStep acc n = acc := if_pos h
+    foldStep acc n = acc := ite_eq_left h
 
 private theorem foldStep_eq_of_neg {acc : List ℕ} {n : ℕ}
     (h : ¬ ∃ m ∈ acc, natToBits m <+: natToBits n ∨ natToBits n <+: natToBits m) :
-    foldStep acc n = acc ++ [n] := if_neg h
+    foldStep acc n = acc ++ [n] := ite_eq_right h
 
 /-- The inputs newly halting at stage `s + 1`. -/
 def newlyHalting (c : Code) (s : ℕ) : List ℕ :=
@@ -549,9 +510,9 @@ private theorem domain_comp_guard0 {c : Code} {x : ℕ} (h : Computes c x) :
   funext n
   by_cases hn : n = 0
   · subst hn
-    simp only [if_true]
+    simp only [ite_true]
     exact (eval_comp_some eval_guard0_zero).trans (by simpa [Computes] using h)
-  · simp only [if_neg hn]
+  · simp only [ite_eq_right hn]
     have hguard : guard0.eval n = Part.none := by
       rw [eval_guard0, Part.eq_none_iff]
       rintro v hv
@@ -637,10 +598,6 @@ theorem kbWeight_nonneg (cp : Code × List Bool) : 0 ≤ kbWeight cp := by
 
 theorem summable_row (c : Code) : Summable (fun p => kbWeight (c, p)) := by
   have hpf := pfy_prefixFree c
-  have hnil : [] ∉ natToBits '' (pfy c).Dom ∨ natToBits '' (pfy c).Dom = {[]} := by
-    by_cases hnil : [] ∈ natToBits '' (pfy c).Dom
-    · exact Or.inr (eq_singleton_of_nil_mem hpf hnil)
-    · exact Or.inl hnil
   have heq : (fun p => kbWeight (c, p)) =
       (natToBits '' (pfy c).Dom).indicator (fun p => (1 / 2 : ℝ) ^ (elen c + p.length)) := by
     funext p
@@ -654,14 +611,8 @@ theorem summable_row (c : Code) : Summable (fun p => kbWeight (c, p)) := by
     funext q; rw [pow_add]
   rw [Function.comp_def, this]
   apply Summable.mul_left
-  rcases hnil with hnil | hnil
-  · have hud := uniquelyDecodable_of_prefixFree hpf hnil
-    refine BinaryKraft.indexed_summable (fun q : (natToBits '' (pfy c).Dom) => (q : List Bool))
-      Subtype.coe_injective ?_
-    rwa [Subtype.range_coe]
-  · rw [hnil]
-    have : Finite (↥({[]} : Set (List Bool))) := (Set.finite_singleton _).to_subtype
-    exact Summable.of_finite
+  simpa [Fintype.card_bool] using
+    (prefixFree_iff_isPrefixFree.mp hpf).summable_one_div_card_pow_length
 
 theorem tsum_row_le (c : Code) : ∑' p, kbWeight (c, p) ≤ (1 / 2 : ℝ) ^ elen c := by
   have hpf := pfy_prefixFree c
@@ -695,6 +646,26 @@ theorem summable_kbWeight : Summable kbWeight := by
   rw [summable_prod_of_nonneg kbWeight_nonneg]
   exact ⟨summable_row, summable_tsum_row⟩
 
+/-- **`KB`'s Kraft series is summable.** Each `x` contributes the weight of its own shortest
+description (`minDesc_spec`), and the descriptions are pairwise distinct (`minDesc_injective`), so
+the series is dominated, along that injection, by `summable_kbWeight`. Hoisted out of `kraft_KB` so
+the counting bound (`ALT/PrefixCounting.lean`) can cite it without re-deriving `kraft_KB` itself. -/
+theorem summable_two_pow_neg_KB : Summable fun x : ℕ => (1 / 2 : ℝ) ^ KB x := by
+  set Φ : ℕ → Code × List Bool := fun x => (minDescCode x, minDescArg x) with hΦ
+  have hΦinj : Function.Injective Φ := by
+    intro x y hxy
+    exact minDesc_injective hxy
+  have hval : ∀ x : ℕ, (1 / 2 : ℝ) ^ KB x ≤ kbWeight (Φ x) := by
+    intro x
+    have hspec := minDesc_spec x
+    have hmemS : minDescArg x ∈ natToBits '' (pfy (minDescCode x)).Dom :=
+      ⟨bitsToNat (minDescArg x), Part.dom_iff_mem.mpr ⟨x, hspec.1⟩, natToBits_bitsToNat _⟩
+    have : kbWeight (Φ x) = (1 / 2 : ℝ) ^ (elen (minDescCode x) + (minDescArg x).length) := by
+      unfold kbWeight; simp only [hΦ]; rw [ite_eq_left hmemS]
+    rw [this, hspec.2]
+  exact summable_kbWeight.comp_injective hΦinj |>.of_nonneg_of_le
+    (fun x => by positivity) hval
+
 /-- **Kraft's inequality for `KB`**: `∑ₓ 2⁻ᴷᴮ⁽ˣ⁾ ≤ 1` — `KB` is a semimeasure. Each `x` contributes
 the weight of its own shortest description; the descriptions are pairwise distinct
 (`minDesc_injective`), and for a fixed machine `c` the arguments range over `pfy c`'s domain,
@@ -710,13 +681,11 @@ theorem kraft_KB : ∑' x : ℕ, (1 / 2 : ℝ) ^ KB x ≤ 1 := by
     have hmemS : minDescArg x ∈ natToBits '' (pfy (minDescCode x)).Dom :=
       ⟨bitsToNat (minDescArg x), Part.dom_iff_mem.mpr ⟨x, hspec.1⟩, natToBits_bitsToNat _⟩
     have : kbWeight (Φ x) = (1 / 2 : ℝ) ^ (elen (minDescCode x) + (minDescArg x).length) := by
-      unfold kbWeight; simp only [hΦ]; rw [if_pos hmemS]
+      unfold kbWeight; simp only [hΦ]; rw [ite_eq_left hmemS]
     rw [this, hspec.2]
-  have hf : Summable fun x : ℕ => (1 / 2 : ℝ) ^ KB x :=
-    summable_kbWeight.comp_injective hΦinj |>.of_nonneg_of_le
-      (fun x => by positivity) hval
   have hle : ∑' x : ℕ, (1 / 2 : ℝ) ^ KB x ≤ ∑' cp : Code × List Bool, kbWeight cp :=
-    Summable.tsum_le_tsum_of_inj Φ hΦinj (fun cp _ => kbWeight_nonneg cp) hval hf summable_kbWeight
+    Summable.tsum_le_tsum_of_inj Φ hΦinj (fun cp _ => kbWeight_nonneg cp) hval
+      summable_two_pow_neg_KB summable_kbWeight
   refine hle.trans ?_
   rw [summable_kbWeight.tsum_prod' summable_row]
   calc ∑' c : Code, ∑' p, kbWeight (c, p) ≤ ∑' c : Code, (1 / 2 : ℝ) ^ elen c :=

@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.GrowingComposite
+module
+
+public import ALT.GrowingComposite
 
 /-!
 # The periodic dichotomy at a Dirac: E1 against the cycle average, and nowhere else
@@ -57,6 +59,9 @@ eventually periodic observation can carry against its cycle average; only the es
 -/
 
 set_option linter.style.header false
+
+
+@[expose] public section
 
 namespace PeriodicObservability
 

@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.DeterministicDiscovery
+module
+
+public import ALT.DeterministicDiscovery
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -69,6 +71,9 @@ reading is stated with exactly that mean-level qualifier ([SQ] §4, Remark on ε
 
 Everything is elementary (Mathlib calculus + `Finset`); no `sorry`.
 -/
+
+
+@[expose] public section
 
 namespace HellingerBridge
 

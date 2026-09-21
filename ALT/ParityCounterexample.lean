@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+module
+
+public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -42,6 +44,9 @@ Status: PROVED as pure real-asymptotics statements. This is the *arithmetic core
   positive `ε` is fully general (the base is absorbed into `ε`); this is precisely the exponential
   lower bound on `d_SQ` the paper asserts, made concrete.
 -/
+
+
+@[expose] public section
 
 namespace ParityCounterexample
 

@@ -3,10 +3,12 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.Realizability
-import Mathlib.Data.Nat.Size
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Positivity
+module
+
+public import ALT.Realizability
+public import Mathlib.Data.Nat.Size
+public import Mathlib.Tactic.Linarith
+public import Mathlib.Tactic.Positivity
 set_option linter.style.header false
 set_option linter.style.longLine false
 
@@ -20,6 +22,9 @@ morphism `A → B` has **no realizer of bit-length ≤ b** — it needs a code l
 capacity threshold `b = s`, the same object whose exponential overflows in cardinality has a genuine
 morphism (every function is realized, `realizes_of_finite`) whose every realizer exceeds `s` bits.
 -/
+
+
+@[expose] public section
 
 namespace Realizability
 

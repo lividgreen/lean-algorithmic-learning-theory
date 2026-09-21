@@ -3,10 +3,12 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.GodelCore
-import ALT.ParameterizedNNO
-import Mathlib.AlgebraicTopology.SimplexCategory.Basic
-import Mathlib.Tactic.Linarith
+module
+
+public import ALT.GodelCore
+public import ALT.ParameterizedNNO
+public import Mathlib.AlgebraicTopology.SimplexCategory.Basic
+public import Mathlib.Tactic.Linarith
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -75,6 +77,9 @@ fold along the orbit of the bounded recursor `cyclicParamNNO M_chk` — no expon
 * Added / modeling: `Formula`/`gnum`/`Derivable` abstract; the concrete `poly(g) := g^2` witness for
   `M_chk`; `capacity n := 2*n`; the recursor on `ZMod (M_chk+1)` (`cyclicParamNNO`).
 -/
+
+
+@[expose] public section
 
 namespace GodelInternalization
 

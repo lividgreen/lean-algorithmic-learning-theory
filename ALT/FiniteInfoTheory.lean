@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.Algebra.BigOperators.Field
-import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
+module
+
+public import Mathlib.Algebra.BigOperators.Field
+public import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -50,6 +52,9 @@ and `cheng_forgetting_bound_discharged` discharge all three against these theore
 chain `T → c → θ`, leaving only the modelling setup (and, for forgetting, Cheng's informal Step-4
 link `hConn`). No `sorry` is used; missing results are simply absent.
 -/
+
+
+@[expose] public section
 
 namespace FiniteInfoTheory
 
@@ -655,8 +660,8 @@ theorem condEntropy_le_log2 [DecidableEq α] (μ : α → β → ℝ) (g : β �
           + ∑ a ∈ Finset.univ.erase (g b), (if a = g b then 0 else μ a b) :=
       (Finset.add_sum_erase Finset.univ (fun a => if a = g b then 0 else μ a b)
         (Finset.mem_univ (g b))).symm
-    rw [hpe, if_pos rfl, zero_add]
-    exact Finset.sum_congr rfl (fun a ha => if_neg (Finset.ne_of_mem_erase ha))
+    rw [hpe, ite_eq_left rfl, zero_add]
+    exact Finset.sum_congr rfl (fun a ha => ite_eq_right (Finset.ne_of_mem_erase ha))
   have hmarg : ∑ b, marg₂ μ b = 1 := by unfold marg₂; rw [Finset.sum_comm]; exact hsum
   have hPe : ∑ b, (∑ a ∈ Finset.univ.erase (g b), μ a b)
       = ∑ a, ∑ b, (if a = g b then 0 else μ a b) := by

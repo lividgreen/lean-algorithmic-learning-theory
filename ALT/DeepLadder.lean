@@ -3,9 +3,11 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.AccretingExcess
-import ALT.AccretiveDecoupling
-import Foundation.FirstOrder.Incompleteness.Speedup
+module
+
+public import ALT.AccretingExcess
+public import ALT.AccretiveDecoupling
+public import Foundation.FirstOrder.Incompleteness.Speedup
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -67,6 +69,9 @@ crossing recurrence itself. The rate — the growth of each rung's defining data
 decoupled subsystem carrying an internal theory ([Inevitability] §2's own modelling step) also stays
 paper-level, exactly as `CategoricalThreshold.lean`'s own ladder section already records.
 -/
+
+
+@[expose] public section
 
 namespace DeepLadder
 
@@ -417,12 +422,12 @@ theorem ladderStream_commitStep (n : ℕ) :
   have hex : ∃ m, commitStep sel T₀ d₀ m = commitStep sel T₀ d₀ n := ⟨n, rfl⟩
   have heq : Classical.choose hex = n :=
     (commitStep_strictMono sel T₀ d₀).injective (Classical.choose_spec hex)
-  simp only [ladderStream, dif_pos hex, heq]
+  simp only [ladderStream, dite_eq_left hex, heq]
 
 theorem ladderStream_eq_zero (k : ℕ) (h : ∀ n, commitStep sel T₀ d₀ n ≠ k) :
     ladderStream sel T₀ d₀ k = 0 := by
   unfold ladderStream
-  rw [dif_neg (not_exists.mpr h)]
+  rw [dite_eq_right (not_exists.mpr h)]
 
 /-- **EXACT**: at the commit step of rung `n` the region carries exactly the first `n` rungs — the
 ladder's theory at stage `n` is precisely the code held in the committing substrate's written
@@ -432,7 +437,7 @@ theorem committedTheory_at_commitStep (n : ℕ) :
         ((Decoupling.seqWrite (ladderStream sel T₀ d₀))^[commitStep sel T₀ d₀ n] Decoupling.seqStart)
       = ladderTheory sel T₀ d₀ n := by
   rw [Decoupling.seqWrite_iterate_seqStart, ladderTheory_eq_union]
-  simp only [committedTheory, if_true]
+  simp only [committedTheory, ite_true]
   set t := commitStep sel T₀ d₀ n with ht
   ext φ
   simp only [Set.mem_union, Set.mem_ofPred_eq]
@@ -440,7 +445,7 @@ theorem committedTheory_at_commitStep (n : ℕ) :
   · rintro (hφ | ⟨a, ha1, ha2, hφ⟩)
     · exact Or.inl hφ
     · right
-      rw [if_neg (show a ≠ 0 by omega), if_pos ⟨ha1, ha2⟩] at hφ
+      rw [ite_eq_right (show a ≠ 0 by omega), ite_eq_left ⟨ha1, ha2⟩] at hφ
       have hpos : 0 < Encodable.encode φ := encode_sentence_pos φ
       by_cases hex : ∃ i, commitStep sel T₀ d₀ i = a - 1
       · obtain ⟨i, hi⟩ := hex
@@ -465,7 +470,7 @@ theorem committedTheory_at_commitStep (n : ℕ) :
         have hmono := (commitStep_strictMono sel T₀ d₀).monotone (show i + 1 ≤ n by omega)
         omega
       refine ⟨commitStep sel T₀ d₀ i + 1, ha1, ha2, ?_⟩
-      rw [if_neg (show commitStep sel T₀ d₀ i + 1 ≠ 0 by omega), if_pos ⟨ha1, ha2⟩]
+      rw [ite_eq_right (show commitStep sel T₀ d₀ i + 1 ≠ 0 by omega), ite_eq_left ⟨ha1, ha2⟩]
       have heq : commitStep sel T₀ d₀ i + 1 - 1 = commitStep sel T₀ d₀ i := by omega
       rw [heq, ladderStream_commitStep, hφ]
 
@@ -475,7 +480,7 @@ theorem ladderTheory_subset_committedTheory (n k : ℕ) (hk : commitStep sel T�
     ladderTheory sel T₀ d₀ (n + 1) ⊆
       committedTheory T₀ ((Decoupling.seqWrite (ladderStream sel T₀ d₀))^[k] Decoupling.seqStart) := by
   rw [Decoupling.seqWrite_iterate_seqStart, ladderTheory_eq_union]
-  simp only [committedTheory, if_true]
+  simp only [committedTheory, ite_true]
   intro φ hφ
   simp only [Set.mem_union, Set.mem_ofPred_eq] at hφ ⊢
   rcases hφ with hφ | ⟨i, hi, hφ⟩
@@ -487,7 +492,7 @@ theorem ladderTheory_subset_committedTheory (n k : ℕ) (hk : commitStep sel T�
       have hmono := (commitStep_strictMono sel T₀ d₀).monotone hin
       omega
     refine ⟨commitStep sel T₀ d₀ i + 1, ha1, ha2, ?_⟩
-    rw [if_neg (show commitStep sel T₀ d₀ i + 1 ≠ 0 by omega), if_pos ⟨ha1, ha2⟩]
+    rw [ite_eq_right (show commitStep sel T₀ d₀ i + 1 ≠ 0 by omega), ite_eq_left ⟨ha1, ha2⟩]
     have heq : commitStep sel T₀ d₀ i + 1 - 1 = commitStep sel T₀ d₀ i := by omega
     rw [heq, ladderStream_commitStep, hφ]
 

@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.Data.Set.Insert
+module
+
+public import Mathlib.Data.Set.Insert
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -53,6 +55,9 @@ Status: PROVED as the information-theoretic core (pure shared-memory algebra), b
 * Added / modeling: the single shared memory `ι → V`, single update `U`, region `R`, and `decode`;
   "code vs work" earned by `Fixes U R`.
 -/
+
+
+@[expose] public section
 
 namespace Decoupling
 

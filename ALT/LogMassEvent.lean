@@ -3,7 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.BasinSettling
+module
+
+public import Mathlib.Algebra.Order.Ring.Pow
+public import ALT.BasinSettling
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -100,6 +103,9 @@ unquantized setting — together with the exact constants above and the reading 
 ratio as an integer deficit.
 -/
 
+
+@[expose] public section
+
 namespace WeightedFiber
 
 /-! ## The seeded exponent automaton -/
@@ -136,12 +142,12 @@ theorem expRunFrom_le {e₀ : Fin C → ℕ} {b : ℕ} (he₀ : ∀ i, e₀ i �
       rw [expStep]
       have hi := ih i
       by_cases hδ : ∃ j, expRunFrom e₀ M b t j = b ∧ M t j = false
-      · rw [if_pos hδ]
+      · rw [ite_eq_left hδ]
         split <;> omega
-      · rw [if_neg hδ]
+      · rw [ite_eq_right hδ]
         by_cases hm : M t i
-        · rw [if_pos hm]; omega
-        · rw [if_neg hm]
+        · rw [ite_eq_left hm]; omega
+        · rw [ite_eq_right hm]
           have : expRunFrom e₀ M b t i ≠ b := fun hb => hδ ⟨i, hb, by simpa using hm⟩
           omega
 
@@ -170,14 +176,14 @@ theorem raw_wRunFrom_eq_pow_expRunFrom {e₀ : Fin C → ℕ} {b : ℕ} (he₀ :
         intro j
         rw [hu, bayesStep, ih j, missFit]
         by_cases h : M t j
-        · rw [if_pos h, if_pos h, Nat.mul_one, Nat.add_zero]
-        · rw [if_neg h, if_neg h, pow_succ]
+        · rw [ite_eq_left h, ite_eq_left h, Nat.mul_one, Nat.add_zero]
+        · rw [ite_eq_right h, ite_eq_right h, pow_succ]
       rw [hstep]
       change project (2 ^ b) u i = 2 ^ expStep b (M t) (expRunFrom e₀ M b t) i
       rw [expStep, project]
       by_cases hδ : ∃ j, expRunFrom e₀ M b t j = b ∧ M t j = false
       · -- a candidate at the ceiling hits: the post-step maximum is `2 ^ (b+1)`, the divisor is `2`
-        rw [if_pos hδ]
+        rw [ite_eq_left hδ]
         obtain ⟨j₀, hj₀e, hj₀m⟩ := hδ
         have hmax : wMax u = 2 ^ (b + 1) := by
           refine le_antisymm (Finset.sup_le fun j _ => ?_) ?_
@@ -186,7 +192,7 @@ theorem raw_wRunFrom_eq_pow_expRunFrom {e₀ : Fin C → ℕ} {b : ℕ} (he₀ :
             have := expRunFrom_le he₀ M t j
             split <;> omega
           · have hj : u j₀ = 2 ^ (b + 1) := by
-              rw [hui j₀, hj₀e, if_neg (by simp [hj₀m])]
+              rw [hui j₀, hj₀e, ite_eq_right (by simp [hj₀m])]
             exact hj ▸ le_wMax u j₀
         have hd2 : scaleDiv (2 ^ b) u = 2 := by
           rw [scaleDiv, hmax, pow_succ]
@@ -201,15 +207,15 @@ theorem raw_wRunFrom_eq_pow_expRunFrom {e₀ : Fin C → ℕ} {b : ℕ} (he₀ :
           rw [hk, pow_succ, Nat.mul_div_cancel _ (by norm_num), Nat.succ_sub_one]
           exact max_eq_right Nat.one_le_two_pow
       · -- no ceiling candidate hits: the maximum stays inside the budget and the divisor is `1`
-        rw [if_neg hδ]
+        rw [ite_eq_right hδ]
         have hle : wMax u ≤ 2 ^ b := by
           refine Finset.sup_le fun j _ => ?_
           rw [hui j]
           refine Nat.pow_le_pow_right (by norm_num) ?_
           have h1 := expRunFrom_le he₀ M t j
           by_cases hm : M t j
-          · rw [if_pos hm]; omega
-          · rw [if_neg hm]
+          · rw [ite_eq_left hm]; omega
+          · rw [ite_eq_right hm]
             have : expRunFrom e₀ M b t j ≠ b := fun hb => hδ ⟨j, hb, by simpa using hm⟩
             omega
         have hd1 : scaleDiv (2 ^ b) u = 1 := by
@@ -291,12 +297,12 @@ private theorem expClip_le_expMiss (e : Fin C → ℕ) (m : Fin C → Bool) :
     expClip e m ≤ expMiss e m := by
   refine Finset.sum_le_sum fun j _ => ?_
   by_cases hm : m j = true
-  · rw [if_pos hm]
+  · rw [ite_eq_left hm]
     by_cases h0 : e j = 0
-    · rw [if_pos ⟨hm, h0⟩, h0, pow_zero]
-    · rw [if_neg (fun hc => h0 hc.2)]
+    · rw [ite_eq_left ⟨hm, h0⟩, h0, pow_zero]
+    · rw [ite_eq_right (fun hc => h0 hc.2)]
       positivity
-  · rw [if_neg hm, if_neg (fun hc => hm hc.1)]
+  · rw [ite_eq_right hm, ite_eq_right (fun hc => hm hc.1)]
 
 /-- The floor can hold at most one candidate per competitor: the reference hits, so it is never
 among them. -/
@@ -304,7 +310,7 @@ private theorem expClip_le_sub_one (e : Fin C → ℕ) {m : Fin C → Bool} {iR 
     (h : m iR = false) : expClip e m ≤ (C : ℚ) - 1 := by
   have hC1 : 1 ≤ C := iR.pos
   have h0 : (if m iR = true ∧ e iR = 0 then (1 : ℚ) else 0) = 0 := by
-    rw [if_neg]
+    rw [ite_eq_right]
     rintro ⟨h1, -⟩
     rw [h] at h1
     exact Bool.noConfusion h1
@@ -324,11 +330,11 @@ private theorem expTotal_expStep_of_not_rescale {b : ℕ} {m : Fin C → Bool} {
   rw [expTotal, expTotal, expMiss, Finset.mul_sum, ← Finset.sum_sub_distrib]
   refine Finset.sum_congr rfl fun j _ => ?_
   have hj : expStep b m e j = e j + (if m j = true then 0 else 1) := by
-    simp only [expStep, if_neg h, Nat.sub_zero]
+    simp only [expStep, ite_eq_right h, Nat.sub_zero]
   rw [hj]
   by_cases hm : m j = true
-  · rw [if_pos hm, if_pos hm, Nat.add_zero]; ring
-  · rw [if_neg hm, if_neg hm, pow_succ]; ring
+  · rw [ite_eq_left hm, ite_eq_left hm, Nat.add_zero]; ring
+  · rw [ite_eq_right hm, ite_eq_right hm, pow_succ]; ring
 
 /-- **One step, with the rescale**: the same, halved — except at the floor, where the reserve
 holds a candidate at one quantum instead of the half it would otherwise carry. That excess is
@@ -340,17 +346,17 @@ private theorem expTotal_expStep_of_rescale {b : ℕ} {m : Fin C → Bool} {e : 
     ← Finset.sum_sub_distrib, ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun j _ => ?_
   have hj : expStep b m e j = (e j + (if m j = true then 0 else 1)) - 1 := by
-    simp only [expStep, if_pos h]
+    simp only [expStep, ite_eq_left h]
   rw [hj]
   by_cases hm : m j = true
-  · rw [if_pos hm, if_pos hm, Nat.add_zero]
+  · rw [ite_eq_left hm, ite_eq_left hm, Nat.add_zero]
     rcases Nat.eq_zero_or_pos (e j) with h0 | hpos
-    · rw [if_pos ⟨hm, h0⟩, h0]
+    · rw [ite_eq_left ⟨hm, h0⟩, h0]
       norm_num
     · obtain ⟨k, hk⟩ := Nat.exists_eq_succ_of_ne_zero hpos.ne'
-      rw [if_neg (fun hc => by omega), hk, Nat.succ_sub_one, pow_succ]
+      rw [ite_eq_right (fun hc => by omega), hk, Nat.succ_sub_one, pow_succ]
       ring
-  · rw [if_neg hm, if_neg hm, if_neg (fun hc => hm hc.1), Nat.add_sub_cancel]
+  · rw [ite_eq_right hm, ite_eq_right hm, ite_eq_right (fun hc => hm hc.1), Nat.add_sub_cancel]
     ring
 
 /-- **The potential's step law**, in the one form both readings need. Whatever the divisor does,
@@ -365,14 +371,14 @@ private theorem expPot_expStep_le {b : ℕ} {m : Fin C → Bool} {e : Fin C → 
   have hmiR : ¬ (m iR = true) := by rw [hiR]; exact Bool.noConfusion
   by_cases hδ : ∃ j, e j = b ∧ m j = false
   · have hstep : expStep b m e iR = e iR := by
-      simp only [expStep, if_pos hδ, if_neg hmiR]
+      simp only [expStep, ite_eq_left hδ, ite_eq_right hmiR]
       omega
     have htot := expTotal_expStep_of_rescale hδ
     have hc := hJ hδ
     rw [expPot, hstep, div_le_div_iff₀ hpow (by positivity)]
     nlinarith [htot, hc, hpow]
   · have hstep : expStep b m e iR = e iR + 1 := by
-      simp only [expStep, if_neg hδ, if_neg hmiR, Nat.sub_zero]
+      simp only [expStep, ite_eq_right hδ, ite_eq_right hmiR, Nat.sub_zero]
     have htot := expTotal_expStep_of_not_rescale hδ
     rw [expPot, hstep, htot, pow_succ, mul_comm ((2 : ℚ) ^ e iR) 2]
     exact div_le_div_of_nonneg_right (by linarith) (by positivity)
@@ -401,14 +407,14 @@ private theorem wrongMassFrom_eq_div {e₀ : Fin C → ℕ} {b : ℕ} (he₀ : �
   rw [wrongMassFrom, expMiss, div_eq_mul_inv, Finset.sum_mul]
   refine Finset.sum_congr rfl fun i _ => ?_
   by_cases hm : M t i = true
-  · rw [if_pos hm, if_pos hm, ← div_eq_mul_inv]
+  · rw [ite_eq_left hm, ite_eq_left hm, ← div_eq_mul_inv]
     change ((raw (wRunFrom (2 ^ b) (missFit M) (pack (2 ^ b) fun k => 2 ^ e₀ k) t) i : ℕ) : ℚ)
         / ∑ j, ((raw (wRunFrom (2 ^ b) (missFit M) (pack (2 ^ b) fun k => 2 ^ e₀ k) t) j : ℕ) : ℚ)
       = _
     rw [sum_raw_cast he₀, raw_wRunFrom_eq_pow_expRunFrom he₀]
     push_cast
     ring
-  · rw [if_neg hm, if_neg hm, zero_mul]
+  · rw [ite_eq_right hm, ite_eq_right hm, zero_mul]
 
 /-- **The potential never rises.** Whatever the divisor does and whoever misses, the floor feeds
 back no more than the missing mass it was charged on — so the reference candidate's share of the
@@ -497,8 +503,8 @@ private theorem floorSurpriseSetFrom_card_succ (e₀ : Fin C → ℕ) (M : ℕ �
         + (if θ < wrongMassFrom e₀ M b n then 1 else 0) := by
   rw [floorSurpriseSetFrom, floorSurpriseSetFrom, Finset.range_add_one, Finset.filter_insert]
   by_cases h : θ < wrongMassFrom e₀ M b n
-  · rw [if_pos h, Finset.card_insert_of_notMem (by simp), if_pos h]
-  · rw [if_neg h, if_neg h, Nat.add_zero]
+  · rw [ite_eq_left h, Finset.card_insert_of_notMem (by simp), ite_eq_left h]
+  · rw [ite_eq_right h, ite_eq_right h, Nat.add_zero]
 
 /-- **Every surprise is paid out of the potential.** The count of surprises before the horizon
 appears as an exponent: each one multiplies the reference candidate's share by at most
@@ -514,7 +520,7 @@ private theorem expPot_run_le_pow {e₀ : Fin C → ℕ} {b : ℕ} (he₀ : ∀ 
   | succ n ih =>
       rw [floorSurpriseSetFrom_card_succ]
       by_cases h : θ < wrongMassFrom e₀ M b n
-      · rw [if_pos h, pow_succ]
+      · rw [ite_eq_left h, pow_succ]
         calc expPot (expRunFrom e₀ M b (n + 1)) iR
             ≤ (1 - θ / 4) * expPot (expRunFrom e₀ M b n) iR :=
               expPot_run_step_le_of_surprise he₀ M hR hθ0 hbudget h
@@ -522,7 +528,7 @@ private theorem expPot_run_le_pow {e₀ : Fin C → ℕ} {b : ℕ} (he₀ : ∀ 
               * ((1 - θ / 4) ^ (floorSurpriseSetFrom e₀ M b θ n).card * expPot e₀ iR) :=
               mul_le_mul_of_nonneg_left ih hc
           _ = _ := by ring
-      · rw [if_neg h, Nat.add_zero]
+      · rw [ite_eq_right h, Nat.add_zero]
         exact le_trans (expPot_run_step_le M hR n) ih
 
 /-- **The log-mass event bound over seeded starts** ([Discovery] §3.3, Proposition 3.4).
@@ -683,11 +689,11 @@ theorem floorSurpriseFrom_card_mul_le_prior (M : ℕ → Fin C → Bool) {iR : F
     split <;> omega
   obtain ⟨j, hj⟩ : ∃ j : Fin C, j ≠ iR :=
     Fintype.exists_ne_of_one_lt_card (by simp only [Fintype.card_fin]; omega) iR
-  have hjval : e₀ j = b := by rw [he₀def]; dsimp only; rw [if_neg hj]
+  have hjval : e₀ j = b := by rw [he₀def]; dsimp only; rw [ite_eq_right hj]
   have hsup : Finset.univ.sup e₀ = b :=
     le_antisymm (Finset.sup_le fun i _ => he₀ i)
       (hjval ▸ Finset.le_sup (Finset.mem_univ j))
-  have hiR : e₀ iR = b - r := by rw [he₀def]; dsimp only; rw [if_pos rfl]
+  have hiR : e₀ iR = b - r := by rw [he₀def]; dsimp only; rw [ite_eq_left rfl]
   have h := floorSurpriseFrom_card_mul_le he₀ M hR θ hbudget n
   rw [hsup, hiR, show b - (b - r) = r by omega] at h
   exact h
@@ -769,7 +775,7 @@ private theorem expRunFrom_deficit {b r : ℕ} (hr : r ≤ b) :
           omega
         · simp [deficitMiss] at hj2
       funext i
-      rw [expStep, if_neg hδ]
+      rw [expStep, ite_eq_right hδ]
       fin_cases i <;> simp [deficitMiss]
       all_goals omega
 

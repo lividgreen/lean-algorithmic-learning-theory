@@ -3,10 +3,12 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.Realizability
-import ALT.RealizabilityCCC
-import ALT.ParameterizedNNO
-import ALT.GodelThreshold
+module
+
+public import ALT.Realizability
+public import ALT.RealizabilityCCC
+public import ALT.ParameterizedNNO
+public import ALT.GodelThreshold
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -40,6 +42,9 @@ This is the **un-capacitated** realizability CCC (no `s_work` size bound); the c
 The recursor successor is realized concretely; its iterates' distinctness (the depth bound) is the
 `ParamNNO.orbit_injective` of `cyclicParamNNO`, reused here on the same carrier.
 -/
+
+
+@[expose] public section
 
 namespace RealizabilityRecursor
 

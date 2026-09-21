@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.SubstitutionSource
-import ALT.TapeHostSchedule
+module
+
+public import ALT.SubstitutionSource
+public import ALT.TapeHostSchedule
 
 /-!
 # The substitution source's identification, over ℕ directly
@@ -39,6 +41,9 @@ window from `η, μ` alone, and `subObs`'s `τ = 5/16` is already pinned by the 
 `identifies_of_lt_quarter`'s own proof would pick at `η = 1/8, μ = 1/4`), so `subObs_identifies`
 calls `schedSurvivors_eq_singleton_sharp_nat` at that `τ` directly.
 -/
+
+
+@[expose] public section
 
 namespace SubstitutionSchedule
 
@@ -152,7 +157,7 @@ theorem schedSurvivors_eq_singleton_sharp_nat {o : ℕ → Bool} {S : ℝ} {ρ W
         exact ha0 (by ext; simpa using hcontra)
       have hlit : LearningWitness.singleLiteralAns a (0 : Fin 8) = 0 := by
         unfold LearningWitness.singleLiteralAns
-        rw [if_neg ha0]
+        rw [ite_eq_right ha0]
       rw [hlit, abs_le]
       obtain ⟨hεl, hεu⟩ := abs_le.mp (hε a)
       obtain ⟨hρl, hρu⟩ := abs_le.mp (hρ a hane)

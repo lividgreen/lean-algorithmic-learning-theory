@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.KolmogorovBitlen
-import Foundation.FirstOrder.Incompleteness.Halting
+module
+
+public import ALT.KolmogorovBitlen
+public import Foundation.FirstOrder.Incompleteness.Halting
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -40,6 +42,9 @@ Status: PROVED, axiom-clean at the standard triple (guarded in `ALT/AxiomAuditFo
   size-controlled recursion theorem on an additive measure, which `fixed_point₂` does not give.
 * Nothing is claimed of any arithmetization of "`K(s) > n`" other than `codeOfREPred kle`.
 -/
+
+
+@[expose] public section
 
 namespace KolmogorovComplexity
 

@@ -3,9 +3,11 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.Data.Fintype.CardEmbedding
-import ALT.Persistence.Counting
-import ALT.MemoryWidth
+module
+
+public import Mathlib.Data.Fintype.CardEmbedding
+public import ALT.Persistence.Counting
+public import ALT.MemoryWidth
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -130,6 +132,9 @@ the same enumeration-relativity `[Persistence]` §2.1's encoding convention alre
 is silent about the world's law on states outside the two named profiles.
 -/
 
+
+@[expose] public section
+
 namespace GrowingPrice
 
 open PersistenceCapacity AdditiveComplexity GrowingWorld GrowingCore MemoryWidth MulAction
@@ -168,7 +173,7 @@ theorem exists_ne_frames_agreeing_on_range {n m : ℕ} (h : n < m) (μ : Fin n �
     have hcontra := congrFun heq y₀
     simp at hcontra
   · intro q
-    simp only [if_neg (hy₀ q)]
+    simp only [ite_eq_right (hy₀ q)]
 
 /-! ## The law population -/
 
@@ -710,14 +715,14 @@ is file-private. -/
 private theorem markingLens_mark' {r n : ℕ} {x : Fin r → Fin n} (hx : Function.Injective x)
     (j : Fin r) : markingLens x (x j) = j.succ := by
   have h : ∃ j', x j' = x j := ⟨j, rfl⟩
-  rw [markingLens, dif_pos h]
+  rw [markingLens, dite_eq_left h]
   exact congrArg Fin.succ (hx h.choose_spec)
 
 /-- An unmarked point is read as `0`, restated because `PersistenceCapacity.markingLens_unmark` is
 file-private. -/
 private theorem markingLens_unmark' {r n : ℕ} {x : Fin r → Fin n} {i : Fin n}
     (h : ¬∃ j, x j = i) : markingLens x i = 0 := by
-  rw [markingLens, dif_neg h]
+  rw [markingLens, dite_eq_right h]
 
 /-- **The marks transport forward along an embedding** ([Guests] §7, Theorem 7.13(iii), the
 transport step): a marked point's image carries its label, and an unmarked point's image is
@@ -862,7 +867,7 @@ private theorem rankOf_eq_idxOf {m k : ℕ} {ℓ' : Fin m → Fin k} {hm : 0 < m
     ((rankOf ℓ' hm v : Fin m) : ℕ) = List.idxOf (v : ℕ) (lensTable ℓ') := by
   have hlt : List.idxOf (v : ℕ) (lensTable ℓ') < m :=
     (List.idxOf_lt_length_of_mem h).trans_eq (lensTable_length ℓ')
-  simp only [rankOf, dif_pos hlt]
+  simp only [rankOf, dite_eq_left hlt]
 
 /-- **The rank map is injective on the labels its own frame table carries** ([Guests] §7, Finding
 1: "distinct present values have distinct first-occurrence indices"): two present labels agreeing
@@ -958,7 +963,8 @@ theorem orbit_postcomp_card_eq {n : ℕ} {β γ : Type*} (ρ : β → γ) (ℓ :
 
 /-! ### The rank builder: the normalization as a single fixed program -/
 
-private def rankFun (p : ℕ) : ℕ :=
+/-- The rank the price table transports. -/
+def rankFun (p : ℕ) : ℕ :=
   Nat.pair
     (Encodable.encode
       (((Encodable.decode (α := List ℕ) p.unpair.1).getD []).map fun v =>
@@ -987,7 +993,8 @@ private theorem primrec_rankFun : Primrec rankFun := by
     Primrec.list_map hdec2 hg
   exact Primrec₂.natPair.comp (Primrec.encode.comp hmap1) (Primrec.encode.comp hmap2)
 
-private theorem partrec_rankFun : Nat.Partrec rankFun :=
+/-- `rankFun` is partial recursive. -/
+theorem partrec_rankFun : Nat.Partrec rankFun :=
   _root_.Partrec.nat_iff.mp primrec_rankFun.to_comp.partrec
 
 /-- **The fixed rank-normalization program** ([Guests] §7, the alphabet-uniform round): extracted
@@ -1365,7 +1372,7 @@ private noncomputable def telescopeEquivA (ns : ℕ → ℕ) (t : ℕ) :
 
 private noncomputable def telescopeEquivB (ns : ℕ → ℕ) (t : ℕ) :
     ↥(Set.range (fun q : Fin (ns t) => (⟨t, q⟩ : Σ t, Fin (ns t)))) ≃ ↥(telescopeΩ ns t) :=
-  Equiv.setCongr (telescopeΩ_eq_range ns t).symm
+  Set.equivOfEq (telescopeΩ_eq_range ns t).symm
 
 private noncomputable def telescopeEquivC {ns : ℕ → ℕ} (lam : ∀ t, Fin (ns t) ↪ Fin (ns (t + 1)))
     (t : ℕ) :
@@ -1386,7 +1393,7 @@ private theorem telescopeFullEquiv0_coe {ns : ℕ → ℕ} (lam : ∀ t, Fin (ns
     (telescopeFullEquiv0 lam t q : MergeQuot (telescopeU lam)) =
       mergeMk (telescopeU lam) (⟨t, q⟩ : Σ t, Fin (ns t)) := by
   simp [telescopeFullEquiv0, telescopeEquivA, telescopeEquivB, telescopeEquivC, Equiv.trans_apply,
-    Equiv.Set.image_apply, Equiv.setCongr_apply, Equiv.ofInjective_apply]
+    Equiv.Set.image_apply, Set.equivOfEq_apply, Equiv.ofInjective_apply]
 
 /-- **The chosen enumeration** `stageLawEmb`'s own docstring names: `mergeStage`'s stage-`t`
 retained profile enumerated by the telescope's own construction, `⟨t, ·⟩` composed with the
@@ -1394,15 +1401,15 @@ merge quotient's reading. -/
 private noncomputable def telescopeFullEquiv {ns : ℕ → ℕ} (lam : ∀ t, Fin (ns t) ↪ Fin (ns (t + 1)))
     (t : ℕ) :
     Fin (ns t) ≃ ↥(mergeStage (telescopeU lam) (telescopeΩ ns) t) :=
-  (telescopeFullEquiv0 lam t).trans (Equiv.setCongr rfl)
+  (telescopeFullEquiv0 lam t).trans (Set.equivOfEq rfl)
 
 private theorem telescopeFullEquiv_coe {ns : ℕ → ℕ} (lam : ∀ t, Fin (ns t) ↪ Fin (ns (t + 1)))
     (t : ℕ) (q : Fin (ns t)) :
     (telescopeFullEquiv lam t q : MergeQuot (telescopeU lam)) =
       mergeMk (telescopeU lam) (⟨t, q⟩ : Σ t, Fin (ns t)) := by
-  change ((telescopeFullEquiv0 lam t).trans (Equiv.setCongr rfl) q :
+  change ((telescopeFullEquiv0 lam t).trans (Set.equivOfEq rfl) q :
     MergeQuot (telescopeU lam)) = _
-  rw [Equiv.trans_apply, Equiv.setCongr_apply]
+  rw [Equiv.trans_apply, Set.equivOfEq_apply]
   exact telescopeFullEquiv0_coe lam t q
 
 /-- **The telescope's own law IS `lam`, under the chosen enumeration**: `mergeLaw` applied to the

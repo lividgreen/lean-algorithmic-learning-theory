@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.InformationTheory.Coding.KraftMcMillan
-import Mathlib.Topology.Algebra.InfiniteSum.Real
+module
+
+public import Mathlib.InformationTheory.Coding.KraftMcMillan
+public import Mathlib.Topology.Algebra.InfiniteSum.Real
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -12,7 +14,8 @@ set_option linter.style.header false
 /-!
 # Binary Kraft–McMillan bridges
 
-Mathlib proves Kraft–McMillan (`InformationTheory.kraft_mcmillan_inequality`) for a finite
+Mathlib proves Kraft–McMillan
+(`InformationTheory.IsUniquelyDecodable.finsetSum_one_div_card_pow_length_le_one`) for a finite
 uniquely-decodable code over a finite alphabet, as a statement about `Fintype.card α` raised to
 minus the codeword lengths.  Every use of it in this development wants one of two things instead:
 the *binary* form `∑ (1/2)^|w| ≤ 1`, and the sum taken over an *index type* — a hypothesis class,
@@ -24,7 +27,7 @@ importing the other for a generic list lemma.
 ## Contents
 
 * `uniquelyDecodable_of_subset` — unique decodability passes to subsets (absent upstream: the
-  `UniquelyDecodable` file has only `epsilon_not_mem` / `flatten_injective`).
+  `UniquelyDecodable.lean` file has only `epsilon_not_mem` / `flatten_injective`).
 * `finset_sum_le_one` — the binary (`α = Bool`) specialization of Kraft–McMillan, over a finite
   set of codewords.
 * `indexed_finset_sum_le_one` — the same bound with the sum reindexed along an injective code
@@ -46,6 +49,9 @@ complete, and sub-normalization is what the `∝ 2^{−K}` prior of [Discovery] 
 
 -- "it is deliberately a leaf: it imports only Mathlib, so both the universal-prior side and the
 -- program-length side can use it without either importing the other": neither consumer is in scope.
+
+@[expose] public section
+
 assert_not_exists PriorNormalization.prior_tsum_le_one
 assert_not_exists AdditiveComplexity.KE
 
@@ -56,16 +62,16 @@ open InformationTheory
 /-- A subset of a uniquely-decodable code is uniquely decodable.  The unique-decodability test on
 `S` only ever quantifies over codewords that lie in `S ⊆ T`, so it is inherited from `T`. -/
 theorem uniquelyDecodable_of_subset {α : Type*} {S T : Set (List α)}
-    (hsub : S ⊆ T) (h : UniquelyDecodable T) : UniquelyDecodable S :=
+    (hsub : S ⊆ T) (h : IsUniquelyDecodable T) : IsUniquelyDecodable S :=
   fun L₁ L₂ h1 h2 hflat =>
     h L₁ L₂ (fun w hw => hsub (h1 w hw)) (fun w hw => hsub (h2 w hw)) hflat
 
 /-- **Binary Kraft–McMillan**: for a finite uniquely-decodable binary code, the weights `2^{−|w|}`
 sum to `≤ 1`.  Mathlib's inequality specialized at `Fintype.card Bool = 2`. -/
 theorem finset_sum_le_one {S : Finset (List Bool)}
-    (hUD : UniquelyDecodable (S : Set (List Bool))) :
+    (hUD : IsUniquelyDecodable (S : Set (List Bool))) :
     ∑ w ∈ S, (1 / 2 : ℝ) ^ w.length ≤ 1 := by
-  have h := kraft_mcmillan_inequality hUD
+  have h := IsUniquelyDecodable.finsetSum_one_div_card_pow_length_le_one hUD
   simpa [Fintype.card_bool] using h
 
 /-- **Binary Kraft–McMillan, reindexed along an injective code.**  For `code : ι → List Bool`
@@ -74,7 +80,7 @@ injective with uniquely-decodable range, any finite set of indices carries total
 The finite image is uniquely decodable because the whole range is (`uniquelyDecodable_of_subset`),
 and injectivity of `code` transports the sum from the codewords back to the indices. -/
 theorem indexed_finset_sum_le_one {ι : Type*} (code : ι → List Bool)
-    (hinj : Function.Injective code) (hUD : UniquelyDecodable (Set.range code))
+    (hinj : Function.Injective code) (hUD : IsUniquelyDecodable (Set.range code))
     (F : Finset ι) :
     ∑ i ∈ F, (1 / 2 : ℝ) ^ (code i).length ≤ 1 := by
   classical
@@ -94,14 +100,14 @@ Every finite subtotal is at most one (`indexed_finset_sum_le_one`) and the summa
 nonnegative, so the sum over all of `ι` is too — no summability hypothesis is needed, since a
 nonnegative family with bounded finite subtotals is summable. -/
 theorem indexed_tsum_le_one {ι : Type*} (code : ι → List Bool)
-    (hinj : Function.Injective code) (hUD : UniquelyDecodable (Set.range code)) :
+    (hinj : Function.Injective code) (hUD : IsUniquelyDecodable (Set.range code)) :
     ∑' i, (1 / 2 : ℝ) ^ (code i).length ≤ 1 :=
   Real.tsum_le_of_sum_le (fun _ => by positivity) (indexed_finset_sum_le_one code hinj hUD)
 
 /-- The weights of a uniquely-decodable code are summable: nonnegative, with every finite subtotal
 bounded by `1` (`indexed_finset_sum_le_one`). -/
 theorem indexed_summable {ι : Type*} (code : ι → List Bool)
-    (hinj : Function.Injective code) (hUD : UniquelyDecodable (Set.range code)) :
+    (hinj : Function.Injective code) (hUD : IsUniquelyDecodable (Set.range code)) :
     Summable fun i => (1 / 2 : ℝ) ^ (code i).length :=
   summable_of_sum_le (fun _ => by positivity) (indexed_finset_sum_le_one code hinj hUD)
 
@@ -109,7 +115,7 @@ theorem indexed_summable {ι : Type*} (code : ι → List Bool)
 Together with `indexed_tsum_le_one` this says the normalizer of a `2^{−ℓ}` prior lies in `(0, 1]` —
 the two facts a normalization step needs. -/
 theorem indexed_tsum_pos {ι : Type*} (code : ι → List Bool)
-    (hinj : Function.Injective code) (hUD : UniquelyDecodable (Set.range code)) (i₀ : ι) :
+    (hinj : Function.Injective code) (hUD : IsUniquelyDecodable (Set.range code)) (i₀ : ι) :
     0 < ∑' i, (1 / 2 : ℝ) ^ (code i).length :=
   (indexed_summable code hinj hUD).tsum_pos (fun _ => by positivity) i₀ (by positivity)
 

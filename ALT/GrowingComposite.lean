@@ -3,9 +3,11 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.GrowingWorld
-import ALT.NoisyWindowChain
-import ALT.DamageGate
+module
+
+public import ALT.GrowingWorld
+public import ALT.NoisyWindowChain
+public import ALT.DamageGate
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -90,6 +92,9 @@ instance of either at `mephDecim`).
 No empirical figures — densities or fitted constants — appear in this file.
 -/
 
+
+@[expose] public section
+
 namespace GrowingComposite
 
 /-! ## The parametric growing source, and the composite world -/
@@ -108,15 +113,15 @@ theorem advances_seqWrite (ξ : ℕ → Bool) :
   · simp [seqWrite, h0]
   · intro a ha1 ha2
     simp only [seqWrite]
-    rw [if_neg (by omega : a ≠ 0)]
+    rw [ite_eq_right (by omega : a ≠ 0)]
     by_cases hb : a = s 0 + 1
     · simp only [hb]
       cases ξ (s 0 + 1) <;> simp
-    · rw [if_neg hb]
+    · rw [ite_eq_right hb]
       exact hbin a ha1 (by omega)
   · intro a ha
     simp only [seqWrite]
-    rw [if_neg (by omega : a ≠ 0), if_neg (by rw [h0]; omega : a ≠ s 0 + 1)]
+    rw [ite_eq_right (by omega : a ≠ 0), ite_eq_right (by rw [h0]; omega : a ≠ s 0 + 1)]
     exact hzero a (by omega)
 
 /-- **The composite carrier's update**: the window steps by `NoisyWindowChain.noisyStep` on exactly
@@ -177,7 +182,7 @@ theorem windowFst_iterate_compUpdate (k : ℕ) [NeZero k] (ξ : ℕ → Bool) (w
     rw [show (compUpdate k ξ)^[0] (w₀, fun _ => 0) = (w₀, fun _ => 0) from rfl]
     change w₀ i = NoisyWindowChain.windowAt k ξ' 0 i
     rw [NoisyWindowChain.windowAt, NoisyWindowChain.obs_of_lt ξ' (by omega)]
-    simp only [hξ', Nat.zero_add, dif_pos hi]
+    simp only [hξ', Nat.zero_add, dite_eq_left hi]
   | succ t ih =>
     rw [Function.iterate_succ_apply']
     change (compUpdate k ξ ((compUpdate k ξ)^[t] (w₀, fun _ => 0))).1
@@ -189,7 +194,7 @@ theorem windowFst_iterate_compUpdate (k : ℕ) [NeZero k] (ξ : ℕ → Bool) (w
     rw [snd_iterate_compUpdate_zero k ξ w₀ t]
     congr 1
     have hnk : ¬ (t + k < k) := by omega
-    simp only [hξ', dif_neg hnk]
+    simp only [hξ', dite_eq_right hnk]
     congr 1
     omega
 
@@ -206,7 +211,7 @@ private theorem noisyStep_ne_of_ne (k : ℕ) [NeZero k] (w : Fin k → Bool) {b1
     have : ((⟨k - 1, hlast⟩ : Fin k) : ℕ) = k - 1 := rfl
     omega
   have hcong := congrFun heq ⟨k - 1, hlast⟩
-  simp only [NoisyWindowChain.noisyStep, if_neg hne] at hcong
+  simp only [NoisyWindowChain.noisyStep, ite_eq_right hne] at hcong
   apply hb
   cases hw : NoisyWindowChain.windowMap k w ⟨k - 1, hlast⟩ <;>
     cases b1 <;> cases b2 <;> simp_all

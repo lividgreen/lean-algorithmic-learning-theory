@@ -3,10 +3,12 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.DerivedStages
-import Mathlib.Data.Finsupp.Basic
-import Mathlib.Data.ZMod.Basic
-import Mathlib.Tactic.Abel
+module
+
+public import ALT.DerivedStages
+public import Mathlib.Data.Finsupp.Basic
+public import Mathlib.Data.ZMod.Basic
+public import Mathlib.Tactic.Abel
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -131,6 +133,9 @@ the same rules are known to fail injectivity on other carriers, and this file ma
 either way.
 -/
 
+
+@[expose] public section
+
 namespace ExtremeTapWidth
 
 open DerivedStages MemoryWidth GrowingCore GrowingWorld
@@ -141,13 +146,13 @@ private theorem mapDomain_succ_apply (s : ℤ →₀ ZMod 2) (i : ℤ) :
     Finsupp.mapDomain (· + 1) s i = s (i - 1) := by
   have h : i = (i - 1) + 1 := by omega
   conv_lhs => rw [h]
-  exact Finsupp.mapDomain_apply (add_left_injective 1) s (i - 1)
+  exact Finsupp.mapDomain_apply_of_injective (add_left_injective 1) s (i - 1)
 
 private theorem mapDomain_pred_apply (s : ℤ →₀ ZMod 2) (i : ℤ) :
     Finsupp.mapDomain (· - 1) s i = s (i + 1) := by
   have h : i = (i + 1) - 1 := by omega
   conv_lhs => rw [h]
-  exact Finsupp.mapDomain_apply sub_left_injective s (i + 1)
+  exact Finsupp.mapDomain_apply_of_injective sub_left_injective s (i + 1)
 
 /-! ## Rule 90 -/
 
@@ -505,8 +510,9 @@ private theorem shiftEmbed_injective (n : ℕ) :
 private theorem leftEdgeMember_apply_shift (n : ℕ) (g : Fin (n - 1) → ZMod 2) (i : Fin (n - 1)) :
     leftEdgeMember n g ((i : ℤ) + 1) = g i := by
   have hne : (0 : ℤ) ≠ (i : ℤ) + 1 := by positivity
-  rw [leftEdgeMember, Finsupp.add_apply, Finsupp.single_apply, if_neg hne, zero_add]
-  simpa using Finsupp.mapDomain_apply (shiftEmbed_injective n) (Finsupp.equivFunOnFinite.symm g) i
+  rw [leftEdgeMember, Finsupp.add_apply, Finsupp.single_apply, ite_eq_right hne, zero_add]
+  simpa using Finsupp.mapDomain_apply_of_injective (shiftEmbed_injective n)
+    (Finsupp.equivFunOnFinite.symm g) i
 
 private theorem leftEdgeMember_zero (n : ℕ) (g : Fin (n - 1) → ZMod 2) :
     leftEdgeMember n g 0 = 1 := by
@@ -523,7 +529,7 @@ private theorem leftEdgeMember_zero (n : ℕ) (g : Fin (n - 1) → ZMod 2) :
 private theorem leftEdgeMember_outside (n : ℕ) (g : Fin (n - 1) → ZMod 2) (x : ℤ)
     (hx0 : x ≠ 0) (hxrange : ¬ (0 < x ∧ x < n)) :
     leftEdgeMember n g x = 0 := by
-  rw [leftEdgeMember, Finsupp.add_apply, Finsupp.single_apply, if_neg (Ne.symm hx0), zero_add]
+  rw [leftEdgeMember, Finsupp.add_apply, Finsupp.single_apply, ite_eq_right (Ne.symm hx0), zero_add]
   apply Finsupp.mapDomain_of_notMem_range
   rintro ⟨i, hi⟩
   simp only [] at hi
@@ -592,7 +598,7 @@ theorem memWidth_rule90_derived_ge {n : ℕ} (hn : 1 ≤ n) :
     rw [Function.Injective.encard_image (mergeMk_injective_of_injective rule90_injective) L,
       card_leftEdge]
     calc ENat.card (Fin (n - 1) → ZMod 2)
-        ≤ (Set.range (leftEdgeMember n)).encard := (leftEdgeMember_injective n).encard_range
+        ≤ (Set.range (leftEdgeMember n)).encard := (leftEdgeMember_injective n).encard_range.ge
       _ ≤ L.encard := Set.encard_mono (by
           rintro _ ⟨g, rfl⟩
           exact ⟨leftEdgeMember_mem_regionStates n hn g, leftEdgeMember_zero n g⟩)
@@ -626,7 +632,7 @@ theorem memWidth_rule150_derived_ge {n : ℕ} (hn : 1 ≤ n) :
     rw [Function.Injective.encard_image (mergeMk_injective_of_injective rule150_injective) L,
       card_leftEdge]
     calc ENat.card (Fin (n - 1) → ZMod 2)
-        ≤ (Set.range (leftEdgeMember n)).encard := (leftEdgeMember_injective n).encard_range
+        ≤ (Set.range (leftEdgeMember n)).encard := (leftEdgeMember_injective n).encard_range.ge
       _ ≤ L.encard := Set.encard_mono (by
           rintro _ ⟨g, rfl⟩
           exact ⟨leftEdgeMember_mem_regionStates n hn g, leftEdgeMember_zero n g⟩)
@@ -1042,7 +1048,8 @@ private theorem windowEmbed_injective (a : ℤ) (w : ℕ) :
 private theorem windowMember_apply_mem (a : ℤ) (w : ℕ) (g : Fin w → ZMod 2) (i : Fin w) :
     windowMember a w g ((i : ℤ) + a) = g i := by
   simpa [windowMember] using
-    Finsupp.mapDomain_apply (windowEmbed_injective a w) (Finsupp.equivFunOnFinite.symm g) i
+    Finsupp.mapDomain_apply_of_injective (windowEmbed_injective a w)
+      (Finsupp.equivFunOnFinite.symm g) i
 
 private theorem windowMember_outside (a : ℤ) (w : ℕ) (g : Fin w → ZMod 2) (x : ℤ)
     (hx : ¬ (a ≤ x ∧ x < a + w)) : windowMember a w g x = 0 := by
@@ -1760,11 +1767,12 @@ private theorem rootSet_encard_eq_of_hyps_eq {U V : (ℤ →₀ ZMod 2) → (ℤ
 
 /-- **Table `30`**, `f a b c = a + b + c + b·c`: left-permutive, `g b c = b + c + b·c`,
 non-additive. -/
-private def f30 (a b c : ZMod 2) : ZMod 2 := a + b + c + b * c
+def f30 (a b c : ZMod 2) : ZMod 2 := a + b + c + b * c
 
 private def g30 (b c : ZMod 2) : ZMod 2 := b + c + b * c
 
-private theorem hq30 : f30 0 0 0 = 0 := by decide
+/-- `f30 0 0 0 = 0`. -/
+theorem hq30 : f30 0 0 0 = 0 := by decide
 
 private theorem hg30 : ∀ a b c, f30 a b c = a + g30 b c := by
   intro a b c; unfold f30 g30; ring
@@ -1813,11 +1821,12 @@ theorem memWidth_rule30_derived_eq_rule90 {n : ℕ} (hn : 2 ≤ n) :
     rootSet_encard_eq_of_hyps_eq (rootSet_encard_add_rule30 hn) (rootSet_encard_add hn)]
 
 /-- **Table `210`**, `f a b c = a + c + b·c`: left-permutive, `g b c = c + b·c`, non-additive. -/
-private def f210 (a b c : ZMod 2) : ZMod 2 := a + c + b * c
+def f210 (a b c : ZMod 2) : ZMod 2 := a + c + b * c
 
 private def g210 (b c : ZMod 2) : ZMod 2 := c + b * c
 
-private theorem hq210 : f210 0 0 0 = 0 := by decide
+/-- `f210 0 0 0 = 0`. -/
+theorem hq210 : f210 0 0 0 = 0 := by decide
 
 private theorem hg210 : ∀ a b c, f210 a b c = a + g210 b c := by
   intro a b c; unfold f210 g210; ring
@@ -1859,11 +1868,12 @@ theorem rootSet_encard_add_rule210 {n : ℕ} (hn : 2 ≤ n) :
 
 /-- **Table `86`**, `f a b c = a + b + c + a·b`: right-permutive, `h a b = a + b + a·b`,
 non-additive. -/
-private def f86 (a b c : ZMod 2) : ZMod 2 := a + b + c + a * b
+def f86 (a b c : ZMod 2) : ZMod 2 := a + b + c + a * b
 
 private def h86 (a b : ZMod 2) : ZMod 2 := a + b + a * b
 
-private theorem hq86 : f86 0 0 0 = 0 := by decide
+/-- `f86 0 0 0 = 0`. -/
+theorem hq86 : f86 0 0 0 = 0 := by decide
 
 private theorem hh86 : ∀ a b c, f86 a b c = c + h86 a b := by
   intro a b c; unfold f86 h86; ring
@@ -1904,11 +1914,12 @@ theorem rootSet_encard_add_rule86 {n : ℕ} (hn : 2 ≤ n) :
     rule86_support_min'_spread rule86_support_max'_spread (m := 2) (by norm_num) hn
 
 /-- **Table `154`**, `f a b c = a + c + a·b`: right-permutive, `h a b = a + a·b`, non-additive. -/
-private def f154 (a b c : ZMod 2) : ZMod 2 := a + c + a * b
+def f154 (a b c : ZMod 2) : ZMod 2 := a + c + a * b
 
 private def h154 (a b : ZMod 2) : ZMod 2 := a + a * b
 
-private theorem hq154 : f154 0 0 0 = 0 := by decide
+/-- `f154 0 0 0 = 0`. -/
+theorem hq154 : f154 0 0 0 = 0 := by decide
 
 private theorem hh154 : ∀ a b c, f154 a b c = c + h154 a b := by
   intro a b c; unfold f154 h154; ring
@@ -1958,9 +1969,12 @@ the machinery applies: the shift is permutive and quiescent and still gets a dif
 (`2 ^ (n - 1) + 1`, proved below at the endpoint-move generalization's own `(a, b) = (1, -1)`, not
 via the class-level lemma this guard shows insufficient) from the six tables above. -/
 
-private def f170 (_a _b c : ZMod 2) : ZMod 2 := c
+/-- **Table `170`**, `f a b c = c`: the pure right shift, `(rule170 s) i = s (i + 1)`,
+right-permutive trivially (`h ≡ 0`). -/
+def f170 (_a _b c : ZMod 2) : ZMod 2 := c
 
-private theorem hq170 : f170 0 0 0 = 0 := by decide
+/-- `f170 0 0 0 = 0`. -/
+theorem hq170 : f170 0 0 0 = 0 := by decide
 
 /-- **The pure shift, as a table rule**: `(rule170 s) i = s (i + 1)`. -/
 noncomputable def rule170 : (ℤ →₀ ZMod 2) → (ℤ →₀ ZMod 2) := tableRule f170 hq170
@@ -1991,7 +2005,7 @@ theorem guard_rule170_max'_spread_load_bearing :
     by_contra hc
     push Not at hc
     apply hb
-    rw [Finsupp.single_apply, if_neg (by omega : ¬ (0 : ℤ) = b + 1)]
+    rw [Finsupp.single_apply, ite_eq_right (by omega : ¬ (0 : ℤ) = b + 1)]
   omega
 
 /-! ## The two shifts, at the endpoint-move generalization
@@ -2069,11 +2083,12 @@ theorem rootSet_encard_add_rule170 {n : ℕ} (hn : 1 ≤ n) :
 
 /-- **Table `240`**, `f a _b _c = a`: the pure LEFT shift, `(rule240 s) i = s (i - 1)`,
 left-permutive trivially (`g ≡ 0`). -/
-private def f240 (a _b _c : ZMod 2) : ZMod 2 := a
+def f240 (a _b _c : ZMod 2) : ZMod 2 := a
 
 private def g240 (_b _c : ZMod 2) : ZMod 2 := 0
 
-private theorem hq240 : f240 0 0 0 = 0 := by decide
+/-- `f240 0 0 0 = 0`. -/
+theorem hq240 : f240 0 0 0 = 0 := by decide
 
 private theorem hg240 : ∀ a b c, f240 a b c = a + g240 b c := by
   intro a b c; unfold f240 g240; ring

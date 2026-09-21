@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.LogMassEvent
+module
+
+public import ALT.LogMassEvent
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -75,6 +77,9 @@ copies, not a Hamming-bounded perturbation of one shared memory — is more dire
 to repackage as an instance of that structure.
 -/
 
+
+@[expose] public section
+
 namespace WeightedFiber
 
 open PersistenceCapacity AdditiveComplexity SkewFiber CodeEvalLaws
@@ -120,7 +125,7 @@ theorem dRun_eq_wRunFrom_of_hitFree (W : ℕ) (M : ℕ → Fin C → Bool) (w₀
         fun u hu hus => hfree u hu (by omega)
       have hthis : t₀ + s ∉ H := hfree (t₀ + s) (Nat.le_add_right _ _) (by omega)
       change dRun W M w₀ H hit (t₀ + s + 1) = _
-      rw [dRun, if_neg hthis, ih hprev]
+      rw [dRun, ite_eq_right hthis, ih hprev]
       rfl
 
 /-- **A damaged run agrees with the undamaged one below its own first hit** — the `t₀ = 0` instance
@@ -133,7 +138,7 @@ theorem dRun_eq_wRunFrom_of_lt (W : ℕ) (M : ℕ → Fin C → Bool) (w₀ : WV
   | zero => rfl
   | succ t ih =>
       have ht : t ∉ H := hfree t (Nat.lt_succ_self t)
-      rw [dRun, if_neg ht, ih (fun u hu => hfree u (by omega))]
+      rw [dRun, ite_eq_right ht, ih (fun u hu => hfree u (by omega))]
       rfl
 
 /-- **The reading settles for every finite hit schedule** ([Inevitability] §6, Finding 2 —
@@ -182,18 +187,18 @@ theorem dExpRun_le {b : ℕ} {e₀ : Fin C → ℕ} (he₀ : ∀ i, e₀ i ≤ b
   | zero => exact he₀ i
   | succ t ih =>
       by_cases ht : t ∈ H
-      · rw [dExpRun, if_pos ht]
+      · rw [dExpRun, ite_eq_left ht]
         exact hhit t ht i
-      · rw [dExpRun, if_neg ht]
+      · rw [dExpRun, ite_eq_right ht]
         rw [expStep]
         have hi := ih i
         by_cases hδ : ∃ j, dExpRun b M e₀ H hit t j = b ∧ M t j = false
-        · rw [if_pos hδ]
+        · rw [ite_eq_left hδ]
           split <;> omega
-        · rw [if_neg hδ]
+        · rw [ite_eq_right hδ]
           by_cases hm : M t i
-          · rw [if_pos hm]; omega
-          · rw [if_neg hm]
+          · rw [ite_eq_left hm]; omega
+          · rw [ite_eq_right hm]
             have : dExpRun b M e₀ H hit t i ≠ b := fun hb => hδ ⟨i, hb, by simpa using hm⟩
             omega
 
@@ -215,27 +220,27 @@ theorem raw_dRun_eq_pow_dExpRun {b : ℕ} {e₀ : Fin C → ℕ} (he₀ : ∀ i,
       exact min_eq_left (Nat.pow_le_pow_right (by norm_num) (he₀ i))
   | succ t ih =>
       by_cases ht : t ∈ H
-      · rw [dRun, if_pos ht, dExpRun, if_pos ht]
+      · rw [dRun, ite_eq_left ht, dExpRun, ite_eq_left ht]
         rw [raw, pack]
         exact min_eq_left (Nat.pow_le_pow_right (by norm_num) (hhit t ht i))
       · set w := dRun (2 ^ b) M (pack (2 ^ b) fun j => 2 ^ e₀ j) H
           (fun s => pack (2 ^ b) fun j => 2 ^ hit s j) with hw
         have hstep : raw (w (t + 1))
             = project (2 ^ b) (bayesStep (missFit M t) (raw (w t))) := by
-          rw [hw, dRun, if_neg ht]
+          rw [hw, dRun, ite_eq_right ht]
           exact raw_wGen hW _ _
         set u : Fin C → ℕ := bayesStep (missFit M t) (raw (w t)) with hu
         have hui : ∀ j, u j = 2 ^ (dExpRun b M e₀ H hit t j + (if M t j then 0 else 1)) := by
           intro j
           rw [hu, bayesStep, ih j, missFit]
           by_cases h : M t j
-          · rw [if_pos h, if_pos h, Nat.mul_one, Nat.add_zero]
-          · rw [if_neg h, if_neg h, pow_succ]
-        rw [hstep, dExpRun, if_neg ht]
+          · rw [ite_eq_left h, ite_eq_left h, Nat.mul_one, Nat.add_zero]
+          · rw [ite_eq_right h, ite_eq_right h, pow_succ]
+        rw [hstep, dExpRun, ite_eq_right ht]
         change project (2 ^ b) u i = 2 ^ expStep b (M t) (dExpRun b M e₀ H hit t) i
         rw [expStep, project]
         by_cases hδ : ∃ j, dExpRun b M e₀ H hit t j = b ∧ M t j = false
-        · rw [if_pos hδ]
+        · rw [ite_eq_left hδ]
           obtain ⟨j₀, hj₀e, hj₀m⟩ := hδ
           have hmax : wMax u = 2 ^ (b + 1) := by
             refine le_antisymm (Finset.sup_le fun j _ => ?_) ?_
@@ -244,7 +249,7 @@ theorem raw_dRun_eq_pow_dExpRun {b : ℕ} {e₀ : Fin C → ℕ} (he₀ : ∀ i,
               have := dExpRun_le he₀ M hhit t j
               split <;> omega
             · have hj : u j₀ = 2 ^ (b + 1) := by
-                rw [hui j₀, hj₀e, if_neg (by simp [hj₀m])]
+                rw [hui j₀, hj₀e, ite_eq_right (by simp [hj₀m])]
               exact hj ▸ le_wMax u j₀
           have hd2 : scaleDiv (2 ^ b) u = 2 := by
             rw [scaleDiv, hmax, pow_succ]
@@ -259,15 +264,15 @@ theorem raw_dRun_eq_pow_dExpRun {b : ℕ} {e₀ : Fin C → ℕ} (he₀ : ∀ i,
           · obtain ⟨k, hk⟩ := Nat.exists_eq_succ_of_ne_zero hpos.ne'
             rw [hk, pow_succ, Nat.mul_div_cancel _ (by norm_num), Nat.succ_sub_one]
             exact max_eq_right Nat.one_le_two_pow
-        · rw [if_neg hδ]
+        · rw [ite_eq_right hδ]
           have hle : wMax u ≤ 2 ^ b := by
             refine Finset.sup_le fun j _ => ?_
             rw [hui j]
             refine Nat.pow_le_pow_right (by norm_num) ?_
             have h1 := dExpRun_le he₀ M hhit t j
             by_cases hm : M t j
-            · rw [if_pos hm]; omega
-            · rw [if_neg hm]
+            · rw [ite_eq_left hm]; omega
+            · rw [ite_eq_right hm]
               have : dExpRun b M e₀ H hit t j ≠ b := fun hb => hδ ⟨j, hb, by simpa using hm⟩
               omega
           have hd1 : scaleDiv (2 ^ b) u = 1 := by
@@ -411,15 +416,15 @@ theorem dRun_shift (W : ℕ) (M : ℕ → Fin C → Bool) (w₀ : WVec C W) (H :
       = dRun W (fun k => M (τ + 1 + k)) (hit τ) ((H.erase τ).image (· - (τ + 1)))
           (fun k => hit (τ + 1 + k)) u := by
   induction u with
-  | zero => simp only [dRun, if_pos hτmem]
+  | zero => simp only [dRun, ite_eq_left hτmem]
   | succ u ih =>
       by_cases hmem : (τ + 1 + u) ∈ H
       · have hsub : (τ + 1 + u) - (τ + 1) = u := by omega
         have hne : τ + 1 + u ≠ τ := by omega
         have himg : u ∈ (H.erase τ).image (· - (τ + 1)) :=
           Finset.mem_image.mpr ⟨τ + 1 + u, Finset.mem_erase.mpr ⟨hne, hmem⟩, hsub⟩
-        rw [show τ + 1 + (u + 1) = τ + 1 + u + 1 from by omega, dRun, if_pos hmem,
-          dRun, if_pos himg]
+        rw [show τ + 1 + (u + 1) = τ + 1 + u + 1 from by omega, dRun, ite_eq_left hmem,
+          dRun, ite_eq_left himg]
       · have hnimg : u ∉ (H.erase τ).image (· - (τ + 1)) := by
           intro hc
           obtain ⟨s, hsmem, hsu⟩ := Finset.mem_image.mp hc
@@ -427,8 +432,8 @@ theorem dRun_shift (W : ℕ) (M : ℕ → Fin C → Bool) (w₀ : WVec C W) (H :
           have hle := hτmin s (Finset.mem_of_mem_erase hsmem)
           have hseq : s = τ + 1 + u := by omega
           exact hmem (hseq ▸ Finset.mem_of_mem_erase hsmem)
-        rw [show τ + 1 + (u + 1) = τ + 1 + u + 1 from by omega, dRun, if_neg hmem, ih,
-          dRun, if_neg hnimg]
+        rw [show τ + 1 + (u + 1) = τ + 1 + u + 1 from by omega, dRun, ite_eq_right hmem, ih,
+          dRun, ite_eq_right hnimg]
         rfl
 
 /-- **The recursion `dRun_shift` gives for the seeded, exponent-landed schedule's own wrong mass**:
@@ -629,7 +634,7 @@ private lemma reseed_dRun_eq {N t : ℕ} (ht : t < N) :
       change dRun (2 ^ 2) (fun _ : ℕ => (![false, true] : Fin 2 → Bool))
         (pack (2 ^ 2) (fun j => 2 ^ (![0, 2] : Fin 2 → ℕ) j)) (Finset.range N)
         (fun _ => pack (2 ^ 2) (fun j => 2 ^ (![0, 2] : Fin 2 → ℕ) j)) (t' + 1) = _
-      rw [dRun, if_pos hmem]
+      rw [dRun, ite_eq_left hmem]
 
 private lemma reseed_dWrongMass_eq {N t : ℕ} (ht : t < N) :
     dWrongMass 2 (fun _ : ℕ => (![false, true] : Fin 2 → Bool)) (![0, 2] : Fin 2 → ℕ)
@@ -661,7 +666,7 @@ private lemma reseed_wrongMassFrom_eq (t : ℕ) :
           (fun _ : ℕ => (![false, true] : Fin 2 → Bool)) 2 t i)) 1 := by
   have he₀ : ∀ i : Fin 2, (![0, 2] : Fin 2 → ℕ) i ≤ 2 := by decide
   rw [wrongMassFrom, Fin.sum_univ_two]
-  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Bool.false_eq_true, if_false, if_true,
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Bool.false_eq_true, ite_false, ite_true,
     zero_add]
   congr 1
   funext i
@@ -747,7 +752,7 @@ theorem compPredFrame_eq_of_mem_verifiers [NeZero C] [NeZero P] {S : Fin n₁ �
     (hi : i ∈ verifiers S dec x v) : compPredFrame S dec x v = S x := by
   have hne : (verifiers S dec x v).Nonempty := ⟨i, hi⟩
   have hmem : (verifiers S dec x v).min' hne ∈ verifiers S dec x v := Finset.min'_mem _ _
-  rw [compPredFrame, dif_pos hne]
+  rw [compPredFrame, dite_eq_left hne]
   simpa only [verifiers, Finset.mem_filter, Finset.mem_univ, true_and] using hmem
 
 /-! ### The decode, generalized and priced ([Inevitability] Theorem 6.6(vi), the decode half)
@@ -858,7 +863,7 @@ theorem compFrameFlat_eq_compPredFrame [NeZero C] [NeZero P] (S : Fin n₁ → F
         exact ⟨Finset.mem_univ i, hθv i ▸ hmem.2⟩
       rw [heq] at hiv
       exact absurd hiv (Finset.notMem_empty i)
-    rw [hempty, List.getD_nil, hθv, compPredFrame, dif_neg hne]
+    rw [hempty, List.getD_nil, hθv, compPredFrame, dite_eq_right hne]
 
 end Composite
 
@@ -919,7 +924,7 @@ private theorem primrec_decAtRaw' :
 at `n2 ^ P` (`finProdFinEquiv`'s own convention), and the decode searches `List.range P` for the
 least verifying copy, falling back to copy `0` — `List.getD · 0 0` on a filtered `List.range`, the
 `candList`/`gradedTableFn` recipe. -/
-private def compFrameEntry (TS Tdec Tθ : List ℕ) (P q : ℕ) : ℕ :=
+def compFrameEntry (TS Tdec Tθ : List ℕ) (P q : ℕ) : ℕ :=
   let n2 := Tθ.length
   let x := q / n2 ^ P
   let w := q % n2 ^ P
@@ -986,7 +991,7 @@ private theorem primrec_compFrameEntry :
 
 /-- **The composite decode's table.** `n1 := TS.length`, `n2 := Tθ.length` are read off the tables,
 so no size parameter is loaded — only `P`, which cannot be recovered from any table's length. -/
-private def compFrameTable (TS Tdec Tθ : List ℕ) (P : ℕ) : List ℕ :=
+def compFrameTable (TS Tdec Tθ : List ℕ) (P : ℕ) : List ℕ :=
   (List.range (TS.length * Tθ.length ^ P)).map (compFrameEntry TS Tdec Tθ P)
 
 private theorem primrec_compFrameTable :
@@ -1071,7 +1076,7 @@ private theorem compFrameTable_eq {n₁ n₂ C P : ℕ} [NeZero P] (S : Fin n₁
   simp only [compFrameTable, hTSlen, hTθlen]
   refine List.map_congr_left fun q hq => ?_
   have hqlt : q < n₁ * n₂ ^ P := List.mem_range.mp hq
-  rw [dif_pos hqlt]
+  rw [dite_eq_left hqlt]
   simp only [compFrameEntry, hTSlen, hTθlen]
   have hn2P : 0 < n₂ ^ P := pow_pos hn₂ P
   set x := q / n₂ ^ P with hxdef
@@ -1118,7 +1123,7 @@ private theorem compFrameTable_eq {n₁ n₂ C P : ℕ} [NeZero P] (S : Fin n₁
 
 /-- **The composite decode builder, from `⟨T_S, T_dec, T_θ, P⟩`** — ONE fixed function, with `P`
 the only loaded numeral. -/
-private def compFrameTableFn (p : ℕ) : ℕ :=
+def compFrameTableFn (p : ℕ) : ℕ :=
   Encodable.encode (compFrameTable
     ((Encodable.decode (α := List ℕ) p.unpair.1).getD [])
     ((Encodable.decode (α := List ℕ) p.unpair.2.unpair.1).getD [])
@@ -1147,7 +1152,8 @@ private theorem primrec_compFrameTableFn : Primrec compFrameTableFn := by
   exact Primrec.encode.comp
     (primrec_compFrameTable.comp ((hdec1.pair (hdec2.pair hdec3)).pair hP))
 
-private theorem partrec_compFrameTableFn : Nat.Partrec (fun p : ℕ => (compFrameTableFn p : ℕ)) :=
+/-- `compFrameTableFn` is partial recursive. -/
+theorem partrec_compFrameTableFn : Nat.Partrec (fun p : ℕ => (compFrameTableFn p : ℕ)) :=
   _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_compFrameTableFn).partrec
 
 /-- **The builder's packed correctness law.** -/
@@ -1264,7 +1270,7 @@ theorem compRun_eq_wRunFrom_of_untouched (W : ℕ) (M : ℕ → Fin C → Bool)
       have hnot : ¬ (t ∈ H ∧ i₀ ∈ col t) := fun ⟨htH, hti₀⟩ => hi₀ t htH hti₀
       change (if t ∈ H ∧ i₀ ∈ col t then land t i₀
         else wGen W (missFit M t) (compRun W M v₀ H col land t i₀)) = _
-      rw [if_neg hnot, ih]
+      rw [ite_eq_right hnot, ih]
       rfl
 
 /-- **Every schedule touching fewer than `P` distinct copies leaves one untouched** — the

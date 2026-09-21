@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.SearchCost
+module
+
+public import ALT.SearchCost
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -50,6 +52,9 @@ The `rfind'` space law comes in two forms: the exact identity `spaceCostP_rfind'
 at all; only *holding the answer* costs bits. As for the step account, the halting witness `n` stays
 a hypothesis rather than a constant: an unbounded search admits no bound uniform in its input.
 -/
+
+
+@[expose] public section
 
 namespace TimeCost
 

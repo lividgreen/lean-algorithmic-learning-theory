@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.Tactic.Linter.Header
+module
+
+public import Mathlib.Tactic.Linter.Header
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -56,6 +58,9 @@ Status: PROVED as pure propositional logic. This is a STRUCTURAL check of the de
 -- "It proves NO import — all are abstract `Prop`s … not the Decoupling Lemma, not the
 -- [Discovery] / [SQ] bounds, not the categorical threshold of [Decoupling] Thm 6.2." One witness
 -- per territory the docstring disclaims.
+
+@[expose] public section
+
 assert_not_exists Decoupling.decoupling_iff_persists_all
 assert_not_exists SampleComplexity.sample_complexity_r2
 assert_not_exists SQEnvelope.version_space_card_le

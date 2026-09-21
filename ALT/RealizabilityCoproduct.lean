@@ -3,9 +3,11 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.Realizability
-import ALT.RealizabilityCCC
-import ALT.RecursorAlgebra
+module
+
+public import ALT.Realizability
+public import ALT.RealizabilityCCC
+public import ALT.RecursorAlgebra
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -53,6 +55,9 @@ infinite `ℕ`, and `ParameterizedNNO.no_true_nno` forbids a true NNO on a finit
 here by `finAsm` being finite). This is exactly the same honest boundary as the `Type`-level FV-18;
 the upgrade is that the carrier is now the genuine PCA-realizability `Asm`.
 -/
+
+
+@[expose] public section
 
 namespace RealizabilityCoproduct
 
@@ -144,11 +149,11 @@ theorem exists_copairCode (rf rg : ℕ) :
   refine ⟨Encodable.encode c, fun n => ?_⟩
   rw [ap_encode, congrFun hc' n]
   by_cases h : n.unpair.1 = 0
-  · simp only [if_pos h]
+  · simp only [ite_eq_left h]
     have hEr := hE (Denumerable.ofNat Code rf) n.unpair.2
     rw [Denumerable.encode_ofNat] at hEr
     exact hEr
-  · simp only [if_neg h]
+  · simp only [ite_eq_right h]
     have hEr := hE (Denumerable.ofNat Code rg) n.unpair.2
     rw [Denumerable.encode_ofNat] at hEr
     exact hEr
@@ -202,14 +207,14 @@ theorem tracks_copair {A B C : Asm} {rf rg : ℕ} {f : A.carrier → C.carrier} 
       obtain ⟨htag, ha⟩ := hn
       obtain ⟨m, hm, hc⟩ := hrf a n.unpair.2 ha
       refine ⟨m, ?_, hc⟩
-      rw [ap_copairCode, if_pos htag]
+      rw [ap_copairCode, ite_eq_left htag]
       exact hm
   | inr b =>
       rw [coprodAsm_realizes_inr] at hn
       obtain ⟨htag, hb⟩ := hn
       obtain ⟨m, hm, hc⟩ := hrg b n.unpair.2 hb
       refine ⟨m, ?_, hc⟩
-      rw [ap_copairCode, if_neg (by omega)]
+      rw [ap_copairCode, ite_eq_right (by omega)]
       exact hm
 
 /-! ### The coproduct as a categorical object of `Asm` -/

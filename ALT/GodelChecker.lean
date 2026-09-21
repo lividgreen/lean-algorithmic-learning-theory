@@ -3,9 +3,11 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Foundation.FirstOrder.Incompleteness.Examples
-import ALT.GodelCore
-import ALT.GodelComplete
+module
+
+public import Foundation.FirstOrder.Incompleteness.Examples
+public import ALT.GodelCore
+public import ALT.GodelComplete
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -35,8 +37,8 @@ decidable, **provable** axiom list `Ax`:
 * `Step.mp i j b` — modus ponens: valid iff line `i` is `line j 🡒 b` (decidable equality).
 `run` folds a script into the list of proven formulas (or `none` on any invalid step); `Prf Ax φ p`
 accepts iff the decoded script is valid and proves `φ`. **Soundness** (`Prf_sound`): every accepted
-formula is genuinely `T`-provable (`ax` via `Axiomatized.provable_axm`, `mp` via `mdp`). This is
-the forward direction §6.3 L2b needs; we do NOT claim completeness, nor a degenerate
+formula is genuinely `T`-provable (`ax` via the provability hypothesis on `Ax`, `mp` via `mdp`).
+This is the forward direction §6.3 L2b needs; we do NOT claim completeness, nor a degenerate
 always-`false` checker (`Prf_accepts` exhibits a real accepted proof — non-degeneracy).
 
 ## Witness theory and axioms
@@ -67,6 +69,9 @@ decider is a **documented WALL**; the precise missing object is a runnable
 `Bootstrapping.Proof` — see the wall section of `GodelCheckerComplete.lean` for the full statement.
 Non-load-bearing: the §6.3 verdict needs only this checker's soundness.
 -/
+
+
+@[expose] public section
 
 namespace GodelChecker
 
@@ -131,7 +136,7 @@ def Prf (Ax : List S) (φ : S) (p : ℕ) : Bool :=
 
 /-- Core soundness invariant: if every formula already in `acc` is `T`-provable and the script runs
 to `proven`, then every formula in `proven` is `T`-provable. By induction on the script — `ax` via
-`Axiomatized.provable_axm`, `mp` via `mdp`. -/
+the provability hypothesis on `Ax`, `mp` via `mdp`. -/
 theorem runAux_sound (T : ArithmeticTheory) (Ax : List S) (hAx : ∀ c ∈ Ax, T ⊢ c) :
     ∀ (steps : List Step) (acc proven : List S), (∀ ψ ∈ acc, T ⊢ ψ) →
       runAux Ax steps acc = some proven → ∀ ψ ∈ proven, T ⊢ ψ := by
@@ -154,9 +159,9 @@ theorem runAux_sound (T : ArithmeticTheory) (Ax : List S) (hAx : ∀ c ∈ Ax, T
             | ax c =>
                 simp only [checkStep] at hcs
                 by_cases hc : c ∈ Ax
-                · simp only [hc, if_true, Option.some.injEq] at hcs
+                · simp only [hc, ite_true, Option.some.injEq] at hcs
                   subst hcs; exact hAx c hc
-                · simp only [hc, if_false, reduceCtorEq] at hcs
+                · simp only [hc, ite_false, reduceCtorEq] at hcs
             | mp i j b =>
                 simp only [checkStep] at hcs
                 split at hcs
@@ -216,7 +221,7 @@ provable axiom `Ax`, and `#print axioms` shows only `propext, Classical.choice, 
 
 `𝗣𝗔⁻ ⊊ 𝗜𝚺₁`, so unprovability in `𝗣𝗔⁻` is the *weaker* (and thus more faithful, §5.3-class)
 statement; the three incompleteness instances are `𝗣𝗔⁻.Δ₁` (here, via `ofFinite`), `𝗥₀ ⪯ 𝗣𝗔⁻`
-(`PeanoMinus/Basic.lean:352`), and `ℕ↓[ℒₒᵣ] ⊧* 𝗣𝗔⁻` (`PeanoMinus/Basic.lean:140`). -/
+(`PeanoMinus/Basic.lean:402`), and `ℕ↓[ℒₒᵣ] ⊧* 𝗣𝗔⁻` (`PeanoMinus/Basic.lean:184`). -/
 theorem paMinus_decides_bounded_nonprovability
     (Ax : List S) (hAx : ∀ c ∈ Ax, (𝗣𝗔⁻ : ArithmeticTheory) ⊢ c) (Mchk : ℕ) :
     ∃ G : S, (ℕ↓[ℒₒᵣ] ⊧ G) ∧ ((𝗣𝗔⁻ : ArithmeticTheory) ⊬ G) ∧

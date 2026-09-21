@@ -3,11 +3,14 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Batteries.Tactic.OpenPrivate
-import Mathlib.Data.List.GetD
-import ALT.AdditiveComplexity
-import ALT.Code.EvalLaws
-import ALT.Persistence.Core
+module
+
+public import Batteries.Tactic.OpenPrivate
+public import Mathlib.Data.List.GetD
+public import ALT.AdditiveComplexity
+public import ALT.Code.EvalLaws
+public import ALT.Persistence.Core
+import all ALT.Persistence.Core
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -36,6 +39,8 @@ can be read off the observer's first two frames.
   the world, the lens, the enumerations, nor the size of the memory. The complexity has not
   vanished; it has been relocated, out of the world and into the decoder.
 -/
+
+@[expose] public section
 
 namespace PersistenceCapacity
 
@@ -294,7 +299,8 @@ private theorem primrec_invcomp : Primrec invcomp := by
     primrec_idx.comp (Primrec.pair Primrec.snd (hdec2.comp Primrec.fst))
   exact Primrec.encode.comp (Primrec.list_map hdec1 hg)
 
-private theorem partrec_invcomp : Nat.Partrec invcomp :=
+/-- `invcomp` is partial recursive. -/
+theorem partrec_invcomp : Nat.Partrec invcomp :=
   Partrec.nat_iff.mp primrec_invcomp.to_comp.partrec
 
 /-- The invert-and-compose program as a single fixed `Code`: its length `elen icode` is the whole

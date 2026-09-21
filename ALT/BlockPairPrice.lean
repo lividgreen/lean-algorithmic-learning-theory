@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.BlockPairOverlap
+module
+
+public import ALT.BlockPairOverlap
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -53,6 +55,9 @@ clause's own affordability, sharpened from a design count to a machine-checked p
 Anchors: [Inevitability] §5 Theorem 5.8, [Guests] §6 Theorem 6.1, rows IN-38, GV-5.
 -/
 
+
+@[expose] public section
+
 namespace BlockPairPrice
 
 open BlockPairOverlap BlockPairWitness BlockPairHost BlockPairProfile
@@ -84,10 +89,10 @@ theorem tmPrefix_eq_tmPrefixBit (n : ℕ) : tmPrefix n = (-1 : ℤ) ^ tmPrefixBi
   · have hn2 : n = 2 * t := by omega
     have hmod : n % 2 = 0 := by omega
     have hdiv : n / 2 = t := by omega
-    rw [tmPrefixBit, hmod, hdiv, if_neg (by norm_num), Nat.add_zero, hn2, tmPrefix_two_mul]
+    rw [tmPrefixBit, hmod, hdiv, ite_eq_right (by norm_num), Nat.add_zero, hn2, tmPrefix_two_mul]
   · have hmod : n % 2 = 1 := by omega
     have hdiv : n / 2 = t := by omega
-    rw [tmPrefixBit, hmod, hdiv, if_pos rfl, ht, tmPrefix_two_mul_add_one, tmSign_eq_tmBit,
+    rw [tmPrefixBit, hmod, hdiv, ite_eq_left rfl, ht, tmPrefix_two_mul_add_one, tmSign_eq_tmBit,
       pow_add]
 
 /-- `blockSign`'s own exponent, straddling `j` per `blockSign_eq_tmPrefix`. -/
@@ -130,9 +135,9 @@ theorem designObs_eq (M : ℕ) [NeZero (2 * (2 * M))] (u : ℕ) (hu : u < 2 * (2
     simp only [blockSeq_val, hval, designExp, blockWordBit]
     by_cases h : Even (u / 24)
     · have hmod : u / 24 % 2 = 0 := by rw [Nat.even_iff] at h; exact h
-      rw [if_pos h, if_pos hmod, blockSign_eq_blockSignBit, wordU_eq_wordUBit, pow_add]
+      rw [ite_eq_left h, ite_eq_left hmod, blockSign_eq_blockSignBit, wordU_eq_wordUBit, pow_add]
     · have hmod : ¬ u / 24 % 2 = 0 := by rw [Nat.even_iff] at h; exact h
-      rw [if_neg h, if_neg hmod, blockSign_eq_blockSignBit, wordV_eq_wordVBit, pow_add]
+      rw [ite_eq_right h, ite_eq_right hmod, blockSign_eq_blockSignBit, wordV_eq_wordVBit, pow_add]
   unfold BlockPairHost.designObs
   rw [hkey]
   by_cases hodd : Odd (designExp u)
@@ -229,44 +234,44 @@ private theorem decNum_spec (P : Fin 8 → Bool) (hex : ∃ i, P i = true) :
     intro i hmin hi
     rw [(Fin.find_eq_iff hex).mpr ⟨hi, hmin⟩]
   by_cases h0 : P 0 = true
-  · rw [if_pos h0]
+  · rw [ite_eq_left h0]
     exact (key 0 (fun j hj => absurd hj (by omega)) h0).symm
-  · rw [if_neg h0]
+  · rw [ite_eq_right h0]
     by_cases h1 : P 1 = true
-    · rw [if_pos h1]
+    · rw [ite_eq_left h1]
       refine (key 1 (fun j hj => ?_) h1).symm
       fin_cases j <;> first | (exact absurd hj (by decide)) | assumption
-    · rw [if_neg h1]
+    · rw [ite_eq_right h1]
       by_cases h2 : P 2 = true
-      · rw [if_pos h2]
+      · rw [ite_eq_left h2]
         refine (key 2 (fun j hj => ?_) h2).symm
         fin_cases j <;> first | (exact absurd hj (by decide)) | assumption
-      · rw [if_neg h2]
+      · rw [ite_eq_right h2]
         by_cases h3 : P 3 = true
-        · rw [if_pos h3]
+        · rw [ite_eq_left h3]
           refine (key 3 (fun j hj => ?_) h3).symm
           fin_cases j <;> first | (exact absurd hj (by decide)) | assumption
-        · rw [if_neg h3]
+        · rw [ite_eq_right h3]
           by_cases h4 : P 4 = true
-          · rw [if_pos h4]
+          · rw [ite_eq_left h4]
             refine (key 4 (fun j hj => ?_) h4).symm
             fin_cases j <;> first | (exact absurd hj (by decide)) | assumption
-          · rw [if_neg h4]
+          · rw [ite_eq_right h4]
             by_cases h5 : P 5 = true
-            · rw [if_pos h5]
+            · rw [ite_eq_left h5]
               refine (key 5 (fun j hj => ?_) h5).symm
               fin_cases j <;> first | (exact absurd hj (by decide)) | assumption
-            · rw [if_neg h5]
+            · rw [ite_eq_right h5]
               by_cases h6 : P 6 = true
-              · rw [if_pos h6]
+              · rw [ite_eq_left h6]
                 refine (key 6 (fun j hj => ?_) h6).symm
                 fin_cases j <;> first | (exact absurd hj (by decide)) | assumption
-              · rw [if_neg h6]
+              · rw [ite_eq_right h6]
                 by_cases h7 : P 7 = true
-                · rw [if_pos h7]
+                · rw [ite_eq_left h7]
                   refine (key 7 (fun j hj => ?_) h7).symm
                   fin_cases j <;> first | (exact absurd hj (by decide)) | assumption
-                · rw [if_neg h7]
+                · rw [ite_eq_right h7]
                   obtain ⟨i, hi⟩ := hex
                   fin_cases i <;> exact absurd hi (by assumption)
 
@@ -296,9 +301,9 @@ theorem decNum_eq_hostDecodeRule (M : ℕ) [NeZero (2 * (2 * M))] (x : BlockPair
   simp only [decNum, hb0, hb1, hb2, hb3, hb4, hb5, hb6, hb7]
   unfold BlockPairWitness.hostDecodeRule
   by_cases hex : ∃ i : Fin 8, x (Sum.inl i) = true
-  · rw [dif_pos hex]
+  · rw [dite_eq_left hex]
     exact decNum_spec (fun i => x (Sum.inl i)) hex
-  · rw [dif_neg hex]
+  · rw [dite_eq_right hex]
     push Not at hex
     simp [hex]
 
@@ -498,7 +503,7 @@ private theorem hostStepNum_window (M : ℕ) [NeZero (2 * (2 * M))] (x : BlockPa
     have hstep : BlockPairWitness.hostSubUpdate M x (Sum.inr (Sum.inl (⟨(i : ℕ), hb8⟩ : Fin 8)))
         = x (Sum.inr (Sum.inl (⟨(i : ℕ) + 1, hb8'⟩ : Fin 8))) := by
       simp only [BlockPairWitness.hostSubUpdate]
-      rw [dif_pos hb8']
+      rw [dite_eq_left hb8']
     have hd2 := hostStateEquiv_digit M x (Sum.inr (Sum.inl (⟨(i : ℕ) + 1, hb8'⟩ : Fin 8)))
     rw [hostIdxEquiv_inr_inl] at hd2
     rw [hd1, hstep]
@@ -520,7 +525,7 @@ private theorem hostStepNum_window (M : ℕ) [NeZero (2 * (2 * M))] (x : BlockPa
       = xor (!(x (Sum.inr (Sum.inl (BlockPairWitness.hostDecodeRule M x)))))
           (hostTape M (BlockPairWitness.readCounter M x + 1)) := by
     simp only [BlockPairWitness.hostSubUpdate]
-    rw [dif_neg (by norm_num : ¬ (7 : ℕ) + 1 < 8)]
+    rw [dite_eq_right (by norm_num : ¬ (7 : ℕ) + 1 < 8)]
   rw [show (8 : ℕ) + 7 = 15 from rfl] at hd7
   rw [hd7, hstep7, xor_not_bit]
   have ha : (if x (Sum.inr (Sum.inl (BlockPairWitness.hostDecodeRule M x))) then (1 : ℕ) else 0)
@@ -739,12 +744,13 @@ theorem hostTableFn_eq (M : ℕ) [NeZero (2 * (2 * M))] :
   congr 1
   refine List.map_congr_left fun s hs => ?_
   have hsN : s < 2 ^ (8 + (8 + Nat.size (2 * (2 * M) * 24))) := List.mem_range.mp hs
-  rw [dif_pos hsN, hostPacked]
+  rw [dite_eq_left hsN, hostPacked]
   have hx := hostStepNum_stateEquiv M ((hostStateEquiv M).symm (⟨s, hsN⟩ : Fin _))
   rw [Equiv.apply_symm_apply] at hx
   exact hx
 
-private theorem partrec_hostTableFn : Nat.Partrec (fun a : ℕ => (hostTableFn a : ℕ)) :=
+/-- `hostTableFn` is partial recursive. -/
+theorem partrec_hostTableFn : Nat.Partrec (fun a : ℕ => (hostTableFn a : ℕ)) :=
   _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_hostTableFn).partrec
 
 /-- **The fixed host builder code**, extracted from universality: one program taking
@@ -791,12 +797,13 @@ theorem frameTableFn_eq (M : ℕ) [NeZero (2 * (2 * M))] :
   congr 1
   refine List.map_congr_left fun s hs => ?_
   have hsN : s < 2 ^ (8 + (8 + Nat.size (2 * (2 * M) * 24))) := List.mem_range.mp hs
-  rw [dif_pos hsN]
+  rw [dite_eq_left hsN]
   have hx := frameStepNum_stateEquiv M ((hostStateEquiv M).symm (⟨s, hsN⟩ : Fin _))
   rw [Equiv.apply_symm_apply] at hx
   exact hx
 
-private theorem partrec_frameTableFn : Nat.Partrec (fun a : ℕ => (frameTableFn a : ℕ)) :=
+/-- `frameTableFn` is partial recursive. -/
+theorem partrec_frameTableFn : Nat.Partrec (fun a : ℕ => (frameTableFn a : ℕ)) :=
   _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_frameTableFn).partrec
 
 /-- **The fixed frame builder code**, extracted from universality: one program taking

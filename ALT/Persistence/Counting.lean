@@ -3,12 +3,16 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Batteries.Tactic.OpenPrivate
-import Mathlib.Data.Finite.Perm
-import Mathlib.Data.Nat.Choose.Multinomial
-import ALT.BinaryConstant
-import ALT.Collector
-import ALT.Persistence.MovingLens
+module
+
+public import Batteries.Tactic.OpenPrivate
+public import Mathlib.Data.Finite.Perm
+public import Mathlib.Data.Nat.Choose.Multinomial
+public import Mathlib.Tactic.Group
+public import ALT.BinaryConstant
+public import ALT.Collector
+public import ALT.Persistence.MovingLens
+import all ALT.Persistence.MovingLens
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -51,6 +55,8 @@ that storage costs and shows the price is generically unpayable.
 * The multiplicative congruential world (cheap dynamics, exhibited), faithful self-reading priced
   at the world's rule, and capacity out to a finite horizon (`CbH_upTo` / `CbHu_upTo`).
 -/
+
+@[expose] public section
 
 namespace PersistenceCapacity
 
@@ -1012,13 +1018,13 @@ noncomputable def markingLens {r : ℕ} (x : Fin r → Fin n) (i : Fin n) : Fin 
 private theorem markingLens_mark {r : ℕ} {x : Fin r → Fin n} (hx : Function.Injective x)
     (j : Fin r) : markingLens x (x j) = j.succ := by
   have h : ∃ j', x j' = x j := ⟨j, rfl⟩
-  rw [markingLens, dif_pos h]
+  rw [markingLens, dite_eq_left h]
   exact congrArg Fin.succ (hx h.choose_spec)
 
 /-- An unmarked point is read as `0`. -/
 private theorem markingLens_unmark {r : ℕ} {x : Fin r → Fin n} {i : Fin n} (h : ¬∃ j, x j = i) :
     markingLens x i = 0 := by
-  rw [markingLens, dif_neg h]
+  rw [markingLens, dite_eq_right h]
 
 /-- Only the marked points carry labels: reading `j + 1` identifies the state as `x j`. -/
 private theorem markingLens_eq_succ_iff {r : ℕ} {x : Fin r → Fin n} (hx : Function.Injective x)
@@ -1026,7 +1032,7 @@ private theorem markingLens_eq_succ_iff {r : ℕ} {x : Fin r → Fin n} (hx : Fu
   constructor
   · intro h
     by_cases hex : ∃ j', x j' = i
-    · rw [markingLens, dif_pos hex] at h
+    · rw [markingLens, dite_eq_left hex] at h
       rw [← Fin.succ_injective _ h]
       exact hex.choose_spec
     · rw [markingLens_unmark hex] at h
@@ -1239,7 +1245,7 @@ theorem digit_packMarks (hn : 0 < n) {r : ℕ} (x : Fin r → Fin n) (k : Fin r)
     packMarks x / n ^ (k : ℕ) % n = (x k : ℕ) := by
   rw [packMarks, sum_digits_div_mod hn r (markDigit x) (markDigit_lt hn x) k k.2]
   unfold markDigit
-  rw [dif_pos k.2]
+  rw [dite_eq_left k.2]
 
 /-- The packing fits in `r` base-`n` digits. -/
 private theorem packMarks_lt (hn : 0 < n) {r : ℕ} (x : Fin r → Fin n) : packMarks x < n ^ r :=
@@ -1285,17 +1291,17 @@ private theorem size_pair_le (a b : ℕ) :
         apply Nat.pow_le_pow_right (by norm_num); omega
 
 /-- The `j`-th base-`n` digit of `v`, at the level the builder works: plain arithmetic on `ℕ`. -/
-private def digitAt (n v j : ℕ) : ℕ := v / n ^ j % n
+def digitAt (n v j : ℕ) : ℕ := v / n ^ j % n
 
 /-- The label the marking lens assigns to state `i`, read off the packed marks: the index of the
 mark sitting at `i`, plus one, or `0` if none does. The sum is a bounded search — under injectivity
 at most one term survives. -/
-private def markVal (n r v i : ℕ) : ℕ :=
+def markVal (n r v i : ℕ) : ℕ :=
   ((List.range r).map fun j => if digitAt n v j = i then j + 1 else 0).sum
 
 /-- **The tabulation, rebuilt from the packed program `⟨n, r, v⟩`** — ONE fixed function of a single
 natural number, carrying no dependence on `n`, `r`, or the marks. -/
-private def markTableFn (a : ℕ) : ℕ :=
+def markTableFn (a : ℕ) : ℕ :=
   Encodable.encode ((List.range a.unpair.1).map
     (markVal a.unpair.1 a.unpair.2.unpair.1 a.unpair.2.unpair.2))
 
@@ -1328,11 +1334,11 @@ private theorem markVal_eq (hn : 0 < n) {r : ℕ} {x : Fin r → Fin n} (hx : Fu
       have hnc : ¬(digitAt n (packMarks x) j = (i : ℕ)) := by
         rw [htest j hj]
         exact fun hcontra => hjk (congrArg Fin.val (hx (hcontra.trans hk.symm)))
-      rw [if_neg hnc]
+      rw [ite_eq_right hnc]
     have h1 : (k : ℕ) ∉ Finset.range r →
         (if digitAt n (packMarks x) (k : ℕ) = (i : ℕ) then (k : ℕ) + 1 else 0) = 0 :=
       fun hk' => absurd (Finset.mem_range.mpr k.2) hk'
-    rw [Finset.sum_eq_single (k : ℕ) h0 h1, if_pos hc, hml]
+    rw [Finset.sum_eq_single (k : ℕ) h0 h1, ite_eq_left hc, hml]
   · -- unmarked: every term vanishes
     rw [markingLens_unmark hex, Fin.val_zero]
     refine Finset.sum_eq_zero fun j hj => ?_
@@ -1340,7 +1346,7 @@ private theorem markVal_eq (hn : 0 < n) {r : ℕ} {x : Fin r → Fin n} (hx : Fu
     have hnc : ¬(digitAt n (packMarks x) j = (i : ℕ)) := by
       rw [htest j hj]
       exact fun hcontra => hex ⟨⟨j, hj⟩, hcontra⟩
-    rw [if_neg hnc]
+    rw [ite_eq_right hnc]
 
 /-- **The builder is correct**: on the packed program `⟨n, r, packMarks x⟩` it outputs exactly the
 marking lens's encoded tabulation — the very number whose `KE` is the frame's price. -/
@@ -1391,7 +1397,8 @@ private theorem primrec_markTableFn : Primrec markTableFn := by
       (Primrec.list_map (Primrec.list_range.comp (hR.comp Primrec.fst)) hinner)).to₂
   exact Primrec.encode.comp (Primrec.list_map (Primrec.list_range.comp hN) hmarkVal)
 
-private theorem partrec_markTableFn : Nat.Partrec (fun a : ℕ => (markTableFn a : ℕ)) :=
+/-- `markTableFn` is partial recursive. -/
+theorem partrec_markTableFn : Nat.Partrec (fun a : ℕ => (markTableFn a : ℕ)) :=
   _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_markTableFn).partrec
 
 /-- **The fixed table-builder code.** Extracted from universality, it takes no parameters: one
@@ -1493,24 +1500,24 @@ private theorem labelledMarkingLens_mark {r k : ℕ} {x : Fin r → Fin n} (hx :
     (lab : Fin r → Fin k) (default : Fin k) (j : Fin r) :
     labelledMarkingLens x lab default (x j) = lab j := by
   have h : ∃ j', x j' = x j := ⟨j, rfl⟩
-  rw [labelledMarkingLens, dif_pos h]
+  rw [labelledMarkingLens, dite_eq_left h]
   exact congrArg lab (hx h.choose_spec)
 
 /-- An unmarked point reads the default. -/
 private theorem labelledMarkingLens_unmark {r k : ℕ} {x : Fin r → Fin n} {lab : Fin r → Fin k}
     {default : Fin k} {i : Fin n} (h : ¬∃ j, x j = i) :
     labelledMarkingLens x lab default i = default := by
-  rw [labelledMarkingLens, dif_neg h]
+  rw [labelledMarkingLens, dite_eq_right h]
 
 /-- The bounded search for the mark sitting at `i`, shifted up by one exactly as `markVal` shifts —
 `0` unambiguously means "no mark here" — but returning the LABEL digit rather than the mark's own
 index, so a repeated or non-increasing label alphabet is no obstruction. -/
-private def labelMatchSum (n r k v pos i : ℕ) : ℕ :=
+def labelMatchSum (n r k v pos i : ℕ) : ℕ :=
   ((List.range r).map fun j => if digitAt n pos j = i then digitAt k v j + 1 else 0).sum
 
 /-- The label read off the packed positions and packed labels at state `i`: the shifted search,
 un-shifted, or the default when the search finds nothing. -/
-private def labelVal (n r k default v pos i : ℕ) : ℕ :=
+def labelVal (n r k default v pos i : ℕ) : ℕ :=
   if labelMatchSum n r k v pos i = 0 then default else labelMatchSum n r k v pos i - 1
 
 private theorem labelMatchSum_eq_sum (n r k v pos i : ℕ) :
@@ -1546,12 +1553,12 @@ private theorem labelVal_eq {r k : ℕ} (hn : 0 < n) (hk : 0 < k) {x : Fin r →
       have hnc : ¬(digitAt n (packMarks x) j = (i : ℕ)) := by
         rw [htest j hj]
         exact fun hcontra => hjk (congrArg Fin.val (hx (hcontra.trans hj₀.symm)))
-      rw [if_neg hnc]
+      rw [ite_eq_right hnc]
     have h1 : (j₀ : ℕ) ∉ Finset.range r →
         (if digitAt n (packMarks x) (j₀ : ℕ) = (i : ℕ)
           then digitAt k (packMarks (n := k) lab) (j₀ : ℕ) + 1 else 0) = 0 :=
       fun hk' => absurd (Finset.mem_range.mpr j₀.2) hk'
-    rw [Finset.sum_eq_single (j₀ : ℕ) h0 h1, if_pos hc, hlab]
+    rw [Finset.sum_eq_single (j₀ : ℕ) h0 h1, ite_eq_left hc, hlab]
     simp [hml]
   · have h0 : ∀ j ∈ Finset.range r,
         (if digitAt n (packMarks x) j = (i : ℕ) then digitAt k (packMarks (n := k) lab) j + 1
@@ -1561,13 +1568,13 @@ private theorem labelVal_eq {r k : ℕ} (hn : 0 < n) (hk : 0 < k) {x : Fin r →
       have hnc : ¬(digitAt n (packMarks x) j = (i : ℕ)) := by
         rw [htest j hj]
         exact fun hcontra => hex ⟨⟨j, hj⟩, hcontra⟩
-      rw [if_neg hnc]
-    rw [Finset.sum_eq_zero h0, labelledMarkingLens_unmark hex, if_pos rfl]
+      rw [ite_eq_right hnc]
+    rw [Finset.sum_eq_zero h0, labelledMarkingLens_unmark hex, ite_eq_left rfl]
 
 /-- **The tabulation, rebuilt from the packed program** `⟨n, r, k, default, pos, v⟩` — ONE fixed
 function of a single natural number, carrying no dependence on `n`, `r`, `k`, or the marks and
 their labels. -/
-private def labelledMarkTableFn (a : ℕ) : ℕ :=
+def labelledMarkTableFn (a : ℕ) : ℕ :=
   Encodable.encode ((List.range a.unpair.1).map
     (labelVal a.unpair.1 a.unpair.2.unpair.1 a.unpair.2.unpair.2.unpair.1
       a.unpair.2.unpair.2.unpair.2.unpair.1
@@ -1658,7 +1665,8 @@ private theorem primrec_labelledMarkTableFn : Primrec labelledMarkTableFn := by
       ).to₂.of_eq fun a i => by rw [labelVal]
   exact Primrec.encode.comp (Primrec.list_map (Primrec.list_range.comp hN) hval)
 
-private theorem partrec_labelledMarkTableFn :
+/-- `labelledMarkTableFn` is partial recursive. -/
+theorem partrec_labelledMarkTableFn :
     Nat.Partrec (fun a : ℕ => (labelledMarkTableFn a : ℕ)) :=
   _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_labelledMarkTableFn).partrec
 
@@ -1974,7 +1982,7 @@ private theorem digitAt_sum_eq :
 
 /-- The decoded table, as a `List ℕ` — reading a `lensCode`/`lensTable` value back through
 `Encodable.decode`, exactly the `invcomp`/`markTableFn` idiom's first step. -/
-private def rawTable (code : ℕ) : List ℕ := (Encodable.decode (α := List ℕ) code).getD []
+def rawTable (code : ℕ) : List ℕ := (Encodable.decode (α := List ℕ) code).getD []
 
 private theorem primrec_rawTable : Primrec rawTable :=
   Primrec.option_getD.comp Primrec.decode (Primrec.const [])
@@ -1996,7 +2004,7 @@ private theorem primrec_list_all {α : Type*} [Primcodable α] {f : α → List 
       | cons b l ih => simp [List.all_cons, ih]
 
 /-- One pairwise distinctness test, `Bool`-valued: `i = j`, or the digits at `i` and `j` differ. -/
-private def pairOK (n w i j : ℕ) : Bool :=
+def pairOK (n w i j : ℕ) : Bool :=
   decide (i = j) || !decide (digitAt n w i = digitAt n w j)
 
 private theorem primrec_pairOK :
@@ -2024,7 +2032,7 @@ private theorem primrec_pairOK :
 `Bool`-valued, doubly-bounded pairwise search. Injective on a domain the same size as its codomain
 is bijective (`candTable_bijective` below), so this one check both certifies a genuine `Perm (Fin
 n)` and, by construction, excludes every non-permutation candidate from the enumeration. -/
-private def candBijBool (n w : ℕ) : Bool :=
+def candBijBool (n w : ℕ) : Bool :=
   (List.range n).all (fun i => (List.range n).all (fun j => pairOK n w i j))
 
 private theorem primrec_candBijBool : Primrec₂ candBijBool := by
@@ -2056,7 +2064,7 @@ private theorem candBijBool_iff (n w : ℕ) :
 
 /-- The candidate's full table, at domain `[0, n)` — `packMarks`'s digit packing read at the
 FULL length `r = n`, so every position is a table entry rather than a sparse mark. -/
-private def candTable (n w : ℕ) : List ℕ := (List.range n).map (digitAt n w)
+def candTable (n w : ℕ) : List ℕ := (List.range n).map (digitAt n w)
 
 private theorem primrec_candTable : Primrec₂ candTable := by
   have hpow : Primrec₂ ((· ^ ·) : ℕ → ℕ → ℕ) := Primrec₂.unpaired'.1 Nat.Primrec.pow
@@ -2105,11 +2113,12 @@ private theorem candTable_injOn : Set.InjOn (candTable n) {w | w < n ^ n} := by
 /-- **A candidate is valid** when its table is a genuine permutation AND transports `ℓ₁`'s table to
 `ℓ₀`'s — the two conditions the coset argument needs: `candBijBool` certifies bijectivity, and the
 bounded search certifies `ℓ₁ (W i) = ℓ₀ i` for every `i`, read straight off the two tables. -/
-private def isValid (n t0 t1 w : ℕ) : Prop :=
+def isValid (n t0 t1 w : ℕ) : Prop :=
   candBijBool n w = true ∧
     ∀ i < n, List.getD (rawTable t1) (digitAt n w i) 0 = List.getD (rawTable t0) i 0
 
-private instance decIsValid (n t0 t1 w : ℕ) : Decidable (isValid n t0 t1 w) := by
+/-- `isValid n t0 t1 w` is decidable. -/
+instance decIsValid (n t0 t1 w : ℕ) : Decidable (isValid n t0 t1 w) := by
   unfold isValid; infer_instance
 
 /-- **Duplicating a bound into the pair a `PrimrecRel.forall_lt` needs.** `forall_lt` bounds its
@@ -2197,7 +2206,7 @@ private theorem primrec_isValid_rel :
 /-- **The candidate list**: every numeral below `n ^ n` whose table is a valid coset element,
 in the numeral's own order. Its members are exactly the coset `U · stabilizer (ℓ₀)`'s tables
 (`candList_mem_iff`), and its length is bounded by the coset's size (`candList_length_le`). -/
-private def candList (n t0 t1 : ℕ) : List ℕ :=
+def candList (n t0 t1 : ℕ) : List ℕ :=
   (List.range (n ^ n)).filter (fun w => decide (isValid n t0 t1 w))
 
 private theorem primrec_candList :
@@ -2211,7 +2220,7 @@ private theorem primrec_candList :
 
 /-- **The tabulation, rebuilt from the packed program** `⟨n, t0, t1, idx⟩` — ONE fixed function of a
 single natural number: filter the candidates and read off the `idx`-th one's table. -/
-private def gradedTableFn (a : ℕ) : ℕ :=
+def gradedTableFn (a : ℕ) : ℕ :=
   Encodable.encode (candTable a.unpair.1
     (List.getD (candList a.unpair.1 a.unpair.2.unpair.1 a.unpair.2.unpair.2.unpair.1)
       a.unpair.2.unpair.2.unpair.2 0))
@@ -2242,7 +2251,8 @@ private theorem primrec_gradedTableFn : Primrec gradedTableFn := by
     (Primrec.list_getD 0).comp hCL hIdx
   exact Primrec.encode.comp (primrec_candTable.comp hN hSel)
 
-private theorem partrec_gradedTableFn : Nat.Partrec (fun a : ℕ => (gradedTableFn a : ℕ)) :=
+/-- `gradedTableFn` is partial recursive. -/
+theorem partrec_gradedTableFn : Nat.Partrec (fun a : ℕ => (gradedTableFn a : ℕ)) :=
   _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_gradedTableFn).partrec
 
 /-- **The fixed graded-ledger builder code.** One program, independent of `n`, the world, and the
@@ -2307,7 +2317,7 @@ private noncomputable def candPerm (n w : ℕ) : Perm (Fin n) :=
 
 private theorem candPerm_apply {n w : ℕ} (hn : 0 < n) (hb : candBijBool n w = true) (i : Fin n) :
     (candPerm n w i : ℕ) = digitAt n w i := by
-  rw [candPerm, dif_pos ⟨hn, hb⟩]; rfl
+  rw [candPerm, dite_eq_left ⟨hn, hb⟩]; rfl
 
 /-- **The coset injection**: a valid numeral's candidate permutation, composed with `U⁻¹`, lands in
 `ℓ₀`'s fiber-stabilizer — the matching condition says `ℓ₁ ∘ (candPerm) = ℓ₀`, and
@@ -2389,9 +2399,9 @@ private theorem candList_length_le (hn : 0 < n) {U : Perm (Fin n)} {ℓ : ℕ �
       have h1 := hmem w1 hw1
       have h2 := hmem w2 hw2
       have hfw1 : f w1 = ⟨U⁻¹ * candPerm n w1, candPerm_mem_stabilizer hn hpers h1.2⟩ :=
-        dif_pos h1.2
+        dite_eq_left h1.2
       have hfw2 : f w2 = ⟨U⁻¹ * candPerm n w2, candPerm_mem_stabilizer hn hpers h2.2⟩ :=
-        dif_pos h2.2
+        dite_eq_left h2.2
       rw [hfw1, hfw2, Subtype.mk_eq_mk] at heq
       exact candPerm_injOn hn t0 t1 U ⟨h1.1, h1.2⟩ ⟨h2.1, h2.2⟩ heq)
   rw [← List.toFinset_card_of_nodup hnodup, Nat.card_eq_fintype_card]
@@ -2504,7 +2514,7 @@ def ConsistentWith (ℓ : ℕ → Fin n → Fin m) (bs : List ℕ) : Set (Perm (
 entries are not one apart, else require the `j`-th frame's table to transport the `j'`-th frame's
 table exactly as `pairsOK`'s bounded search over `Fin n` reads it — `pairOK`'s own shape, one level
 further from the raw digits. -/
-private def triOK (n : ℕ) (Ts bs : List ℕ) (w j j' : ℕ) : Bool :=
+def triOK (n : ℕ) (Ts bs : List ℕ) (w j j' : ℕ) : Bool :=
   (!decide (bs.getD j 0 = bs.getD j' 0 + 1)) ||
     (List.range n).all fun i =>
       decide ((rawTable (Ts.getD j 0)).getD (digitAt n w i) 0
@@ -2576,7 +2586,7 @@ private theorem primrec_triOK :
 times one apart): every pair of positions in `bs` whose values are one apart transports the
 earlier position's frame table to the later's — `candBijBool`'s own bounded-search style, folded
 once more, over `bs`'s own positions rather than a fixed pair. -/
-private def pairsOK (n : ℕ) (Ts bs : List ℕ) (w : ℕ) : Bool :=
+def pairsOK (n : ℕ) (Ts bs : List ℕ) (w : ℕ) : Bool :=
   (List.range bs.length).all fun j =>
     (List.range bs.length).all fun j' => triOK n Ts bs w j j'
 
@@ -2635,16 +2645,17 @@ private theorem pairsOK_iff (n : ℕ) (Ts bs : List ℕ) (w : ℕ) :
 /-- **A candidate is valid for the itinerary**: its table is a genuine permutation AND transports
 every held-time pair's frame table as `pairsOK` requires — the two-frame `isValid`'s own shape, at
 `bs`'s own list of held frames rather than a fixed pair. -/
-private def isValidItin (n : ℕ) (Ts bs : List ℕ) (w : ℕ) : Prop :=
+def isValidItin (n : ℕ) (Ts bs : List ℕ) (w : ℕ) : Prop :=
   candBijBool n w = true ∧ pairsOK n Ts bs w = true
 
-private instance decIsValidItin (n : ℕ) (Ts bs : List ℕ) (w : ℕ) :
+/-- `isValidItin n Ts bs w` is decidable. -/
+instance decIsValidItin (n : ℕ) (Ts bs : List ℕ) (w : ℕ) :
     Decidable (isValidItin n Ts bs w) := by unfold isValidItin; infer_instance
 
 /-- **The itinerary's candidate list**: every numeral below `n ^ n` whose table is a valid
 itinerary member, in the numeral's own order — `candList`'s own shape, at `bs`'s own list of held
 frames. -/
-private def candListItin (n : ℕ) (Ts bs : List ℕ) : List ℕ :=
+def candListItin (n : ℕ) (Ts bs : List ℕ) : List ℕ :=
   (List.range (n ^ n)).filter (fun w => decide (isValidItin n Ts bs w))
 
 set_option maxHeartbeats 1000000 in
@@ -2678,7 +2689,7 @@ private theorem primrec_candListItin :
 function of a single natural number, `Ts`/`bs` decoded as `List ℕ`: filter the candidates and read
 off the `idx`-th one's table — `gradedTableFn`'s own shape, at a variable-length list of held
 frames rather than a fixed pair. -/
-private def itinTableFn (a : ℕ) : ℕ :=
+def itinTableFn (a : ℕ) : ℕ :=
   Encodable.encode (candTable a.unpair.1
     (List.getD (candListItin a.unpair.1
         ((Encodable.decode (α := List ℕ) a.unpair.2.unpair.1).getD [])
@@ -2713,7 +2724,8 @@ private theorem primrec_itinTableFn : Primrec itinTableFn := by
     (Primrec.list_getD 0).comp hCL hIdx
   exact Primrec.encode.comp (primrec_candTable.comp hN hSel)
 
-private theorem partrec_itinTableFn : Nat.Partrec (fun a : ℕ => (itinTableFn a : ℕ)) :=
+/-- `itinTableFn` is partial recursive. -/
+theorem partrec_itinTableFn : Nat.Partrec (fun a : ℕ => (itinTableFn a : ℕ)) :=
   _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_itinTableFn).partrec
 
 /-- **The fixed itinerary builder code.** One program, independent of `n`, the world, the lens
@@ -2929,8 +2941,8 @@ private theorem candListItin_length_le (hn : 0 < n) {ℓ : ℕ → Fin n → Fin
       rw [Finset.mem_coe] at hw1 hw2
       have h1 := hmem w1 hw1
       have h2 := hmem w2 hw2
-      have hfw1 : f w1 = ⟨candPerm n w1, hcandmem h1.2⟩ := dif_pos h1.2
-      have hfw2 : f w2 = ⟨candPerm n w2, hcandmem h2.2⟩ := dif_pos h2.2
+      have hfw1 : f w1 = ⟨candPerm n w1, hcandmem h1.2⟩ := dite_eq_left h1.2
+      have hfw2 : f w2 = ⟨candPerm n w2, hcandmem h2.2⟩ := dite_eq_left h2.2
       rw [hfw1, hfw2, Subtype.mk_eq_mk] at heq
       have hb1 : candBijBool n w1 = true := h1.2.1
       have hb2 : candBijBool n w2 = true := h2.2.1
@@ -3189,12 +3201,13 @@ the tabulation built from it are new. -/
 table is a genuine permutation, and reading `κ`'s table at the candidate's value agrees with reading
 `W`'s table at `κ`'s own value — `κ (candidate i) = W (κ i)` for every `i`, read straight off the
 three tables. -/
-private def isValidDescent (n t0 t1 w : ℕ) : Prop :=
+def isValidDescent (n t0 t1 w : ℕ) : Prop :=
   candBijBool n w = true ∧
     ∀ i < n, List.getD (rawTable t0) (digitAt n w i) 0
       = List.getD (rawTable t1) (List.getD (rawTable t0) i 0) 0
 
-private instance decIsValidDescent (n t0 t1 w : ℕ) : Decidable (isValidDescent n t0 t1 w) := by
+/-- `isValidDescent n t0 t1 w` is decidable. -/
+instance decIsValidDescent (n t0 t1 w : ℕ) : Decidable (isValidDescent n t0 t1 w) := by
   unfold isValidDescent; infer_instance
 
 /-- **`isValidDescent` is primitive recursive**, over the packed program `⟨n, t0, t1, w⟩` — the
@@ -3280,7 +3293,7 @@ private theorem primrec_isValidDescent_rel :
 /-- **The descending-candidate list**: every numeral below `n ^ n` whose table both is a genuine
 permutation and descends through `κ`'s packed table with `W`'s packed law, in the numeral's own
 order — `candList`'s own skeleton at `isValidDescent` in place of `isValid`. -/
-private def candListDescent (n t0 t1 : ℕ) : List ℕ :=
+def candListDescent (n t0 t1 : ℕ) : List ℕ :=
   (List.range (n ^ n)).filter (fun w => decide (isValidDescent n t0 t1 w))
 
 private theorem primrec_candListDescent :
@@ -3295,7 +3308,7 @@ private theorem primrec_candListDescent :
 /-- **The tabulation, rebuilt from the packed program** `⟨n, t0, t1, idx⟩` — `gradedTableFn`'s own
 skeleton, filtering `candListDescent` instead of `candList`; `candTable` itself is reused
 unchanged. -/
-private def gradedTableFnDescent (a : ℕ) : ℕ :=
+def gradedTableFnDescent (a : ℕ) : ℕ :=
   Encodable.encode (candTable a.unpair.1
     (List.getD (candListDescent a.unpair.1 a.unpair.2.unpair.1 a.unpair.2.unpair.2.unpair.1)
       a.unpair.2.unpair.2.unpair.2 0))
@@ -3327,7 +3340,8 @@ private theorem primrec_gradedTableFnDescent : Primrec gradedTableFnDescent := b
     (Primrec.list_getD 0).comp hCL hIdx
   exact Primrec.encode.comp (primrec_candTable.comp hN hSel)
 
-private theorem partrec_gradedTableFnDescent :
+/-- `gradedTableFnDescent` is partial recursive. -/
+theorem partrec_gradedTableFnDescent :
     Nat.Partrec (fun a : ℕ => (gradedTableFnDescent a : ℕ)) :=
   _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_gradedTableFnDescent).partrec
 
@@ -3433,8 +3447,8 @@ private theorem candListDescent_length_le (hn : 0 < n) {z : ℕ} {κ : Fin n →
       rw [Finset.mem_coe] at hw1 hw2
       have h1 := hmem w1 hw1
       have h2 := hmem w2 hw2
-      have hfw1 : f w1 = ⟨candPerm n w1, candPerm_mem_descentSet hn h1.2⟩ := dif_pos h1.2
-      have hfw2 : f w2 = ⟨candPerm n w2, candPerm_mem_descentSet hn h2.2⟩ := dif_pos h2.2
+      have hfw1 : f w1 = ⟨candPerm n w1, candPerm_mem_descentSet hn h1.2⟩ := dite_eq_left h1.2
+      have hfw2 : f w2 = ⟨candPerm n w2, candPerm_mem_descentSet hn h2.2⟩ := dite_eq_left h2.2
       rw [hfw1, hfw2, Subtype.mk_eq_mk] at heq
       have hb1 : candBijBool n w1 = true := h1.2.1
       have hb2 : candBijBool n w2 = true := h2.2.1
@@ -3533,7 +3547,8 @@ The remark's two displays are `K(U) ≤ K(ℓ₀ ⊗ ℓ₁) + log₂ ∏ᵢ f�
 display's unit-coefficient length-conditional index field stays paper-level,
 exactly as it does at two separate frames. -/
 
-private theorem pair_lt_mul_self {a b k : ℕ} (ha : a < k) (hb : b < k) : Nat.pair a b < k * k := by
+/-- `Nat.pair a b < k * k` when both `a` and `b` are below `k`. -/
+theorem pair_lt_mul_self {a b k : ℕ} (ha : a < k) (hb : b < k) : Nat.pair a b < k * k := by
   rw [Nat.pair]
   split
   · next h => nlinarith
@@ -3628,7 +3643,7 @@ theorem zipLists_eq_lensTable (ℓ₀ ℓ₁ : Fin n → Fin m) :
 /-- **The zip builder's table function**: reads `p`'s two halves as encoded lists and returns their
 `Nat.pair`-zip, encoded — the fixed function `KE_lensCode_pairLens_le`'s builder runs on the two
 given frame codes. -/
-private def zipTableFn (p : ℕ) : ℕ :=
+def zipTableFn (p : ℕ) : ℕ :=
   Encodable.encode
     (zipLists ((Encodable.decode (α := List ℕ) p.unpair.1).getD [])
       ((Encodable.decode (α := List ℕ) p.unpair.2).getD []))
@@ -3655,7 +3670,8 @@ theorem zipTableFn_eq (ℓ₀ ℓ₁ : Fin n → Fin m) :
   rw [hd0, hd1, zipLists_eq_lensTable]
   rfl
 
-private theorem partrec_zipTableFn : Nat.Partrec (fun p : ℕ => (zipTableFn p : ℕ)) :=
+/-- `zipTableFn` is partial recursive. -/
+theorem partrec_zipTableFn : Nat.Partrec (fun p : ℕ => (zipTableFn p : ℕ)) :=
   _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_zipTableFn).partrec
 
 /-- **The fixed zip-builder code.** One program, independent of `n`, `m`, and the two lenses. -/
@@ -3703,7 +3719,7 @@ accumulated state. -/
 
 /-- Extracts the recursion index `n` from a `prec`-step input `Nat.pair a (Nat.pair n prev)` — the
 companion projection to `AdditiveComplexity.projIH` (which extracts `prev`). -/
-private def projIdx : Code := comp left right
+def projIdx : Code := comp left right
 
 private theorem eval_projIdx (a n prev : ℕ) :
     eval projIdx (Nat.pair a (Nat.pair n prev)) = Part.some n := by
@@ -3714,7 +3730,7 @@ private theorem elen_projIdx : elen projIdx = 9 := by decide
 
 /-- **The step function**: pairs the accumulator so far with `c` run at the current recursion index.
 `c` occurs exactly once, composed with `projIdx` rather than hardcoded to a clock value. -/
-private def pairStep (c : Code) : Code := pair projIH (comp c projIdx)
+def pairStep (c : Code) : Code := pair projIH (comp c projIdx)
 
 private theorem eval_pairStep {c : Code} {v : ℕ → ℕ} (hc : ∀ t, eval c t = Part.some (v t))
     (a n prev : ℕ) :
@@ -3733,7 +3749,7 @@ private theorem elen_pairStep (c : Code) : elen (pairStep c) = elen c + 24 := by
 /-- **The fixed two-step iterator**: primitive recursion with base `zero` and step `pairStep c`.
 `elen (pairFromCode c) = elen c + 30` (`elen_pairFromCode`) — a fixed constant plus `c`, paid once
 regardless of the two calls the recursion makes. -/
-private def pairFromCode (c : Code) : Code := prec Code.zero (pairStep c)
+def pairFromCode (c : Code) : Code := prec Code.zero (pairStep c)
 
 /-- The accumulator `pairFromCode` builds: `pairAcc v 0 = 0`,
 `pairAcc v (k+1) = (pairAcc v k, v k)`. Mirrors `Collector.orbitAcc`'s shape. -/
@@ -3760,7 +3776,7 @@ private theorem elen_pairFromCode (c : Code) : elen (pairFromCode c) = elen c + 
   omega
 
 /-- **Extraction**: unwinds `pairFromCode`'s two-step accumulator `((0, x), y)` into `(x, y)`. -/
-private def pairExtract : Code := pair (comp right left) right
+def pairExtract : Code := pair (comp right left) right
 
 private theorem eval_pairExtract (x y : ℕ) :
     eval pairExtract (Nat.pair (Nat.pair 0 x) y) = Part.some (Nat.pair x y) := by
@@ -3827,10 +3843,10 @@ theorem uniformBudget_pairLens_le {ℓ : ℕ → Fin n → Fin m} {b : ℕ} (h :
 /-! ### Remark 6.6's display: the frame term at one address -/
 
 /-- Recovering the first frame's table from a zipped one: `Nat.unpair` applied entrywise. -/
-private def unzipFst (T : List ℕ) : List ℕ := T.map fun e => (Nat.unpair e).1
+def unzipFst (T : List ℕ) : List ℕ := T.map fun e => (Nat.unpair e).1
 
 /-- Recovering the second frame's table from a zipped one. -/
-private def unzipSnd (T : List ℕ) : List ℕ := T.map fun e => (Nat.unpair e).2
+def unzipSnd (T : List ℕ) : List ℕ := T.map fun e => (Nat.unpair e).2
 
 private theorem primrec_unzipFst : Primrec unzipFst :=
   Primrec.list_map Primrec.id (Primrec.fst.comp (Primrec.unpair.comp Primrec.snd))
@@ -3859,7 +3875,7 @@ private theorem unzipSnd_lensTable_pairLens (ℓ₀ ℓ₁ : Fin n → Fin m) :
 the paired table back into the two frame tables and hand them to `gradedTableFn`'s own decoder — ONE
 fixed function reusing Theorem 6.4's decoder rather than duplicating it, so the frame term the
 resulting bound pays occurs exactly once. -/
-private def pairedGradedTableFn (a : ℕ) : ℕ :=
+def pairedGradedTableFn (a : ℕ) : ℕ :=
   gradedTableFn
     (Nat.pair a.unpair.1
       (Nat.pair
@@ -3909,7 +3925,8 @@ private theorem pairedGradedTableFn_eq (n idx : ℕ) {m : ℕ} (ℓ₀ ℓ₁ : 
   rw [hpc, unzipFst_lensTable_pairLens, unzipSnd_lensTable_pairLens]
   rfl
 
-private theorem partrec_pairedGradedTableFn :
+/-- `pairedGradedTableFn` is partial recursive. -/
+theorem partrec_pairedGradedTableFn :
     Nat.Partrec (fun a : ℕ => (pairedGradedTableFn a : ℕ)) :=
   _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_pairedGradedTableFn).partrec
 
@@ -4161,7 +4178,8 @@ private theorem primrec_ownTableFn : Primrec ownTableFn := by
   exact Primrec.encode.comp
     (primrec_ownIter.comp (Primrec.pair hdecP hdecL) hT)
 
-private theorem partrec_ownTableFn : Nat.Partrec (fun a : ℕ => (ownTableFn a : ℕ)) :=
+/-- `ownTableFn` is partial recursive. -/
+theorem partrec_ownTableFn : Nat.Partrec (fun a : ℕ => (ownTableFn a : ℕ)) :=
   _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_ownTableFn).partrec
 
 /-- **The fixed iterate-compose builder code.** One program, independent of the world, the reading,
@@ -4288,7 +4306,7 @@ noncomputable def lcgWorld (a m : ℕ) (h : Nat.Coprime a m) : Perm (Fin m) :=
 natural number, carrying no dependence on `a` or `m`: tabulate `i ↦ a · i mod m` over `List.range m`
 by plain digit arithmetic. This is the `markBuilder` idiom, and the source of the `O (1)` in the
 price below. -/
-private def lcgTableFn (p : ℕ) : ℕ :=
+def lcgTableFn (p : ℕ) : ℕ :=
   Encodable.encode ((List.range p.unpair.2).map fun i => p.unpair.1 * i % p.unpair.2)
 
 /-- **The builder is primitive recursive.** The table is a `List.map` of one multiplication and one
@@ -4313,7 +4331,8 @@ private theorem lcgTableFn_eq (a m : ℕ) (h : Nat.Coprime a m) :
   rw [← hfr, List.map_map]
   exact List.map_congr_left fun i _ => (lcgWorld_apply a m h i).symm
 
-private theorem partrec_lcgTableFn : Nat.Partrec (fun p : ℕ => (lcgTableFn p : ℕ)) :=
+/-- `lcgTableFn` is partial recursive. -/
+theorem partrec_lcgTableFn : Nat.Partrec (fun p : ℕ => (lcgTableFn p : ℕ)) :=
   _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_lcgTableFn).partrec
 
 /-- **The fixed congruential-world builder code.** One program, independent of `a` and `m`. -/
@@ -4520,7 +4539,8 @@ theorem CbHu_ge_of_uniform {U : Perm (Fin n)} {k b : ℕ} {ℓ : ℕ → Fin n �
     Nat.card ↥(orbit (Perm (Fin n)) (ℓ 0)) ≤ CbHu U b :=
   le_csSup (bddAbove_uniformBudgetedEntropies U b) ⟨k, ℓ, hcar, hbud, rfl⟩
 
-private theorem partrec_faithTableFn : Nat.Partrec (fun p : ℕ => (faithTableFn p : ℕ)) :=
+/-- `faithTableFn` is partial recursive. -/
+theorem partrec_faithTableFn : Nat.Partrec (fun p : ℕ => (faithTableFn p : ℕ)) :=
   _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_faithTableFn).partrec
 
 /-- **The fixed faithful-family builder code.** One program, independent of everything. -/

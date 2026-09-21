@@ -3,9 +3,11 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.GrowingWorld
-import ALT.AccretingWitness
-import ALT.PersistenceCapacity
+module
+
+public import ALT.GrowingWorld
+public import ALT.AccretingWitness
+public import ALT.PersistenceCapacity
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -64,6 +66,9 @@ witness's own `t + 1`) is a separate module, `GrowingCoreCrossing.lean`: it cons
 quotient built here.
 -/
 
+
+@[expose] public section
+
 namespace GrowingCore
 
 open Decoupling PersistenceCapacity AccretingWitness
@@ -115,7 +120,7 @@ abbrev mergeMk (U : X → X) (s : X) : MergeQuot U := Quotient.mk (mergesSetoid 
 
 /-- `U` respects eventual merging: stepping both sides by `U` preserves any common iterate one step
 later. What makes `mergeLaw` well-defined. -/
-private theorem mergeRespects (U : X → X) :
+theorem mergeRespects (U : X → X) :
     ∀ ⦃s s' : X⦄, Merges U s s' → Merges U (U s) (U s') := by
   rintro s s' ⟨k, hk⟩
   refine ⟨k, ?_⟩
@@ -267,7 +272,7 @@ private theorem bijOn_iterate {U : X → X} {s : Set X} (h : Set.BijOn U s s) (n
 exponent up to `max k (Nat.card X)`, then use that `U^[j]` is injective on the core
 (from `core_bijOn`) to bring the two core-landed points, `j` steps apart from that bound, back
 together. -/
-private theorem coreOf_welldef {U : X → X} [Finite X] {s s' : X} (h : Merges U s s') :
+theorem coreOf_welldef {U : X → X} [Finite X] {s s' : X} (h : Merges U s s') :
     U^[Nat.card X] s = U^[Nat.card X] s' := by
   obtain ⟨k, hk⟩ := h
   set N := Nat.card X with hNdef
@@ -291,7 +296,8 @@ noncomputable def coreOf (U : X → X) [Finite X] : MergeQuot U → ↥(core U) 
   Quotient.lift (fun s => (⟨U^[Nat.card X] s, iterate_mem_core U le_rfl s⟩ : ↥(core U)))
     (fun _ _ hab => Subtype.ext (coreOf_welldef hab))
 
-private theorem coreOf_injective (U : X → X) [Finite X] : Function.Injective (coreOf U) := by
+/-- `coreOf U` is injective. -/
+theorem coreOf_injective (U : X → X) [Finite X] : Function.Injective (coreOf U) := by
   intro x y
   induction x using Quotient.inductionOn with
   | _ s => induction y using Quotient.inductionOn with
@@ -299,7 +305,8 @@ private theorem coreOf_injective (U : X → X) [Finite X] : Function.Injective (
       intro hxy
       exact Quotient.sound ⟨Nat.card X, congrArg Subtype.val hxy⟩
 
-private theorem coreOf_surjective (U : X → X) [Finite X] : Function.Surjective (coreOf U) := by
+/-- `coreOf U` is surjective. -/
+theorem coreOf_surjective (U : X → X) [Finite X] : Function.Surjective (coreOf U) := by
   rintro ⟨c, hc⟩
   obtain ⟨s, hs, hsc⟩ := (bijOn_iterate (core_bijOn U) (Nat.card X)).surjOn hc
   exact ⟨mergeMk U s, Subtype.ext hsc⟩

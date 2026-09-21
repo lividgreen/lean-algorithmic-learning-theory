@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.SkewFiber
-import ALT.SurpriseBudget
+module
+
+public import ALT.SkewFiber
+public import ALT.SurpriseBudget
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -77,6 +79,9 @@ claimed machine-checked by this file; the port from [Inevitability] §6, Proposi
 setting is stated in each theorem's own docstring.
 -/
 
+
+@[expose] public section
+
 namespace EvoAbsorption
 
 open SkewFiber SurpriseBudget PersistenceCapacity Decoupling
@@ -111,8 +116,8 @@ private theorem hammingDist_pathPop_succ_le (p q : Pop P C) (k : ℕ) :
     apply hi
     change (if (i : ℕ) < k then q i else p i) = (if (i : ℕ) < k + 1 then q i else p i)
     rcases lt_or_gt_of_ne hne with hlt | hgt
-    · rw [if_pos hlt, if_pos (by omega)]
-    · rw [if_neg (by omega), if_neg (by omega)]
+    · rw [ite_eq_left hlt, ite_eq_left (by omega)]
+    · rw [ite_eq_right (by omega), ite_eq_right (by omega)]
   have hone : (Finset.univ.filter fun i : Fin P => (i : ℕ) = k).card ≤ 1 :=
     Finset.card_le_one.mpr (by
       intro a ha b hb
@@ -208,7 +213,7 @@ private theorem foldl_fittest_eq_of_ge (fit : Fin C → ℕ) (p : Pop P C) (l : 
   | nil => rfl
   | cons i l ih =>
       simp only [List.mem_cons] at hc
-      rw [List.foldl_cons, if_neg (not_lt.mpr (hc i (Or.inl rfl)))]
+      rw [List.foldl_cons, ite_eq_right (not_lt.mpr (hc i (Or.inl rfl)))]
       exact ih fun j hj => hc j (Or.inr hj)
 
 /-- **A population dominated by its own first slot returns that slot.** -/
@@ -389,10 +394,10 @@ private theorem fittest_correct_of_mem {p : Pop P C} {i : Fin P} (hi : dec (p i)
   have h2 : predFit S dec x (fittest (predFit S dec x) p) ≤ 1 := predFit_le_one S dec x _
   have hi1 : predFit S dec x (p i) = 1 := by
     change (if dec (p i) x = S x then 1 else 0) = 1
-    rw [if_pos hi]
+    rw [ite_eq_left hi]
   have hval0 : predFit S dec x (fittest (predFit S dec x) p) = 0 := by
     change (if dec (fittest (predFit S dec x) p) x = S x then 1 else 0) = 0
-    rw [if_neg hne]
+    rw [ite_eq_right hne]
   omega
 
 /-- **The basin is closed under one generation**, and the image lands in the fully-correct

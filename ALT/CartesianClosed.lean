@@ -3,9 +3,11 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.CategoryTheory.Monoidal.Closed.Types
-import Mathlib.Combinatorics.Quiver.ReflQuiver
-import Mathlib.Data.Finite.Prod
+module
+
+public import Mathlib.CategoryTheory.Monoidal.Closed.Types
+public import Mathlib.Combinatorics.Quiver.ReflQuiver
+public import Mathlib.Basic.Finite.Prod
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -60,6 +62,9 @@ Superseded as the genuine carrier by `RepFintype.lean` (the finite-set CCC, FV-1
 * Added / modeling: `Type u` as stand-in (objects not restricted to finite types, morphisms not
   restricted to `s_code`-computable functions); finite flavor only via the `Fin` instantiation.
 -/
+
+
+@[expose] public section
 
 namespace RepSCCC
 

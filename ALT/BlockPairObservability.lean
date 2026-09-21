@@ -3,7 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.BlockPairHost
+module
+
+public import ALT.BlockPairHost
+public import ALT.ParityWalk
 
 /-!
 # The certified block-pair host's own scheduled E1
@@ -34,6 +37,9 @@ Deliberately out of scope: the `𝒮_L` substrate and its membership statement, 
 the `𝒮_E` route-class — those are `BlockPairWitness.lean`'s and `BlockPairOverlap.lean`'s. The
 paper home is [Inevitability] §5 Theorem 5.8, row IN-37.
 -/
+
+
+@[expose] public section
 
 namespace BlockPairObservability
 
@@ -75,7 +81,7 @@ theorem chi_designObs (c : ZMod (2 * (2 * M) * 24)) :
 
 /-- The window fed to the noisy window chain's `obs`: the design itself below the horizon `8`, and
 the tape bit `hostTape` supplies above it. -/
-private def designTape (c : ZMod (2 * (2 * M) * 24)) : ℕ → Bool :=
+def designTape (c : ZMod (2 * (2 * M) * 24)) : ℕ → Bool :=
   fun t => if t < 8 then designObs M (c + t) else hostTape M (c + t)
 
 /-- **Tie (ii).** The host's own emitted process from phase `c` *is* the noisy window chain's own
@@ -90,12 +96,12 @@ theorem hostTraj_eq_obs (c : ZMod (2 * (2 * M) * 24)) :
     by_cases ht : t < 8
     · rw [NoisyWindowChain.obs_of_lt (designTape M c) ht]
       unfold designTape
-      rw [if_pos ht]
+      rw [ite_eq_left ht]
     · obtain ⟨s, hs⟩ : ∃ s, t = s + 8 := ⟨t - 8, by omega⟩
       have hih := ih s (by omega)
       have hdt : designTape M c (s + 8) = hostTape M (c + ((s + 8 : ℕ) : ZMod _)) := by
         unfold designTape
-        rw [if_neg (by omega : ¬ s + 8 < 8)]
+        rw [ite_eq_right (by omega : ¬ s + 8 < 8)]
       rw [hs, NoisyWindowChain.obs_add (by norm_num : (0 : ℕ) < 8) (designTape M c) s, hdt, ← hih]
       have hcast2 : hostTape M (c + ((s + 8 : ℕ) : ZMod _))
           = (designObs M (c + ((s + 8 : ℕ) : ZMod _)) == designObs M (c + (s : ZMod _))) := by
@@ -307,12 +313,12 @@ theorem mixingHoeffding_schedule (a : Fin 8) (ψ : Bool → Bool → ℝ) (hψ :
   apply mixingHoeffding_phaseLaw_of_forall_dirac M
   intro c
   by_cases ha0 : (a : ℕ) = 0
-  · rw [if_pos ha0, if_pos ha0]
+  · rw [ite_eq_left ha0, ite_eq_left ha0]
     refine mixingHoeffding_dirac_of_deviation_bound (hostTraj M c) (pairEnsemble ψ (a : ℕ) 8) _
       _ (by norm_num) (fun i => measurable_pairEnsemble ψ (a : ℕ) 8 i) (fun n hn => ?_)
     rw [ha0]
     exact deviation_bound_same M c ψ hψ hn
-  · rw [if_neg ha0, if_neg ha0]
+  · rw [ite_eq_right ha0, ite_eq_right ha0]
     refine mixingHoeffding_dirac_of_deviation_bound (hostTraj M c) (pairEnsemble ψ (a : ℕ) 8) _
       _ (by norm_num) (fun i => measurable_pairEnsemble ψ (a : ℕ) 8 i) (fun n hn => ?_)
     exact deviation_bound_cross M c ψ hψ (by omega) (by omega) hn

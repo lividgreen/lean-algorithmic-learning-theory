@@ -3,9 +3,11 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.ShiftedSpikeHost
-import ALT.BlockPairTower
-import ALT.AccretiveDecoupling
+module
+
+public import ALT.ShiftedSpikeHost
+public import ALT.BlockPairTower
+public import ALT.AccretiveDecoupling
 
 /-!
 # The second rung, and the differing-rules rung pair
@@ -53,6 +55,9 @@ the two rungs' towers into a single joint object beyond `literalStream`'s own tw
 — the two towers stay separate objects, sequenced only by the stream reading off their identified
 literals.
 -/
+
+
+@[expose] public section
 
 namespace ShiftedSpikeTower
 

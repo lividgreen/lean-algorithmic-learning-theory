@@ -5,7 +5,9 @@ Authors: Mykola Palamarchuk
 -/
 -- Targeted (non-umbrella) import, so this shared core stays light: the statements below need
 -- nothing beyond core Lean, and the import supplies the style-linter options this file opts out of.
-import Mathlib.Order.Basic
+module
+
+public import Mathlib.Order.Basic
 
 set_option linter.style.header false
 
@@ -29,6 +31,9 @@ Status: PROVED as pure logic (`#print axioms` → standard axioms only).
 
 -- "This file stays deliberately light (core Lean plus `Mathlib.Order.Basic`)", so that both the
 -- Mathlib side and the Foundation side can import it: neither side's weight is in scope here.
+
+@[expose] public section
+
 assert_not_exists FFL.FirstOrder.Arithmetic.exists_true_but_unprovable_sentence_of_sigma1sound
 assert_not_exists ParameterizedNNO.ParamNNO
 assert_not_exists Nat.Partrec.Code

@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.Tactic.IntervalCases
-import ALT.PolyTime
+module
+
+public import Mathlib.Tactic.IntervalCases
+public import ALT.PolyTime
 
 /-!
 # A native bit-logic gate library
@@ -30,6 +32,9 @@ nothing of the learners and arithmetic codes assembled from them.
 -/
 
 -- "deliberately a leaf … knows nothing of the learners … assembled from them"
+
+@[expose] public section
+
 assert_not_exists OneDL.solve_decides
 
 namespace OneDL

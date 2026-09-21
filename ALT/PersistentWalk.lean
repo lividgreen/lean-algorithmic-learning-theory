@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.Analysis.MeanInequalities
-import ALT.ParityWalk
+module
+
+public import Mathlib.Analysis.MeanInequalities
+public import ALT.ParityWalk
 
 /-!
 # The persistent walk: a single-orbit tail whose constant is an inverse spectral gap
@@ -44,6 +46,9 @@ Two devices do the work.
   the character through time `K·M + K` obeys an exponential tail with boundary allowance `4K` and
   variance proxy `K²·M`.
 -/
+
+
+@[expose] public section
 
 namespace PersistentWalk
 

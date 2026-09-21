@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.BirkhoffTool
-import Mathlib.Probability.Kernel.IonescuTulcea.Traj
+module
+
+public import ALT.BirkhoffTool
+public import Mathlib.Probability.Kernel.IonescuTulcea.Traj
 
 set_option linter.style.header false
 set_option linter.style.longLine false
@@ -50,6 +52,9 @@ as a named hypothesis; this module DERIVES it from a spectral gap on a finite-st
   genuine gap `lam ∈ [0, 1)` has an `IsChainMeasure` witness satisfying
   `BirkhoffTool.MixingHoeffding` at `cGap lam`, with no hypothesis left for a caller to discharge.
 -/
+
+
+@[expose] public section
 
 namespace MarkovHoeffding
 

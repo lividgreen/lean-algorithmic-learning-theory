@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.GradeTransport
-import ALT.GradedApplication
+module
+
+public import ALT.GradeTransport
+public import ALT.GradedApplication
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -64,6 +66,9 @@ claimed trackable — conjugation-as-code, the functor's action on realizers, is
 module stops at. No tightness is claimed for the constant `4 · max g b + 9`, and no host-side
 assembly map is built (the assembly induced by a hosting square is a separate construction).
 -/
+
+
+@[expose] public section
 
 namespace GradedConjugation
 

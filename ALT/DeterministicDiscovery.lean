@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.BayesRedundancy
+module
+
+public import ALT.BayesRedundancy
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -42,6 +44,9 @@ cumulative separation is `n·ε₀`, so `Lik i n ≤ exp(−2 n ε₀)`, and
 * **Discovery time:** `T_discover = (K(R)·ln 2 + ln(2/δ)) / (2 ε₀)`; `n ≥ T_discover ⇒ wpost ≥ 1 − δ/2`.
 -/
 
+
+@[expose] public section
+
 namespace DeterministicDiscovery
 
 open scoped BigOperators
@@ -68,7 +73,7 @@ theorem q_self_le_exp (hnn : ∀ i s x, 0 ≤ q i s x) (hpmf : ∀ i s, ∑ x, q
     _ = Real.exp (-2 * D) := by rw [← Real.exp_add]; congr 1; ring
 
 /-- **Competitor likelihood decay.** `Lik i n ≤ exp(−2 ∑_{t<n} D_H²_{i,t})` — the product of the
-per-step bounds (`Finset.prod_le_prod`, `Real.exp_sum`). No separation assumed yet. -/
+per-step bounds (`Finset.prod_le_prod₀`, `Real.exp_sum`). No separation assumed yet. -/
 theorem competitor_likelihood_decay (hnn : ∀ i s x, 0 ≤ q i s x) (hpmf : ∀ i s, ∑ x, q i s x = 1)
     (i : ι) (n : ℕ) :
     Lik q ω i n
@@ -78,7 +83,7 @@ theorem competitor_likelihood_decay (hnn : ∀ i s x, 0 ≤ q i s x) (hpmf : ∀
   calc ∏ s ∈ Finset.range n, q i s (ω s)
       ≤ ∏ s ∈ Finset.range n,
           Real.exp (-2 * sqHellinger (fun x => if x = ω s then 1 else 0) (q i s)) :=
-        Finset.prod_le_prod (fun s _ => hnn i s (ω s)) (fun s _ => q_self_le_exp hnn hpmf i s)
+        Finset.prod_le_prod₀ (fun s _ => hnn i s (ω s)) (fun s _ => q_self_le_exp hnn hpmf i s)
     _ = Real.exp (∑ s ∈ Finset.range n,
           -2 * sqHellinger (fun x => if x = ω s then 1 else 0) (q i s)) := (Real.exp_sum _ _).symm
     _ = Real.exp (-2 * ∑ t ∈ Finset.range n,

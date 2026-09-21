@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.Code.BitGates
+module
+
+public import ALT.Code.BitGates
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -34,6 +36,9 @@ native step model, so an addition built this way costs steps proportional to the
 that is a property of the cost model, not of these codes, and the workspace account — which is what
 consumes them — is unaffected.
 -/
+
+
+@[expose] public section
 
 namespace CodeArith
 
@@ -209,8 +214,8 @@ def cLe : Code := comp cNot cSub
 theorem val_cLe (x y : ℕ) : val cLe (Nat.pair x y) = if x ≤ y then 1 else 0 := by
   rw [cLe, val_comp, val_cSub, val_cNot]
   by_cases h : x ≤ y
-  · rw [if_pos (by omega), if_pos h]
-  · rw [if_neg (by omega), if_neg h]
+  · rw [ite_eq_left (by omega), ite_eq_left h]
+  · rw [ite_eq_right (by omega), ite_eq_right h]
 
 theorem rfindFree_cLe : RfindFree cLe := ⟨rfindFree_cNot, rfindFree_cSub⟩
 
@@ -222,9 +227,9 @@ theorem val_cEq (x y : ℕ) : val cEq (Nat.pair x y) = if x = y then 1 else 0 :=
   by_cases h : x = y
   · subst h; simp
   · by_cases h1 : x ≤ y
-    · rw [if_pos h1, if_neg (by omega : ¬ y ≤ x), if_neg h]
+    · rw [ite_eq_left h1, ite_eq_right (by omega : ¬ y ≤ x), ite_eq_right h]
       simp
-    · rw [if_neg h1, if_neg h]
+    · rw [ite_eq_right h1, ite_eq_right h]
       simp
 
 theorem rfindFree_cEq : RfindFree cEq :=
@@ -288,10 +293,10 @@ theorem val_sizeCore (n : ℕ) : ∀ m, val sizeCore (Nat.pair n m) = min (Nat.s
       rw [val_sizeStep, ih]
       by_cases h : Nat.size n ≤ j
       · have hmin : min (Nat.size n) j = Nat.size n := by omega
-        rw [hmin, if_neg (by have := Nat.lt_size_self n; omega)]
+        rw [hmin, ite_eq_right (by have := Nat.lt_size_self n; omega)]
         omega
       · have hmin : min (Nat.size n) j = j := by omega
-        rw [hmin, if_pos (Nat.lt_size.1 (by omega))]
+        rw [hmin, ite_eq_left (Nat.lt_size.1 (by omega))]
         omega
 
 /-- Bit-length as a one-argument code. -/
@@ -376,11 +381,11 @@ theorem val_divCore (n d : ℕ) : ∀ m,
             rintro ⟨-, hle⟩
             have := (Nat.le_div_iff_mul_le hd).2 hle
             omega
-          rw [hmin, if_neg hno]
+          rw [hmin, ite_eq_right hno]
           omega
         · have hmin : min (n / d) j = j := by omega
           have hlt : (j + 1) * d ≤ n := (Nat.le_div_iff_mul_le hd).1 (by omega)
-          rw [hmin, if_pos ⟨hd, hlt⟩]
+          rw [hmin, ite_eq_left ⟨hd, hlt⟩]
           omega
 
 /-- Division. -/

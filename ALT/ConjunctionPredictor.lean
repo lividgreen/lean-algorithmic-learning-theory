@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.ConjunctionSolver
+module
+
+public import ALT.ConjunctionSolver
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -41,6 +43,9 @@ the whole classification below is built ONLY from `Conj`'s public API
 `CLAUDE.md` T41 lesson: a private composition law forces an expensive re-derivation from the
 consumer side; here the composition law was public from the start).
 -/
+
+
+@[expose] public section
 
 namespace Conj
 
@@ -149,21 +154,27 @@ private theorem wfbits_extInst (inst x b : ℕ) (hw : WFBits inst) (hb : b ≤ 1
 `cX`/`cN` project the packed input `⟨inst, x⟩`; `cExtInstB b` builds `extInst inst (mkEx b x)` as a
 `Code`; `cD01` is the pair of extended decisions, `⟨inst,x⟩ ↦ ⟨dV inst x 0, dV inst x 1⟩`. -/
 
-private def cN : Code := left
-private def cX : Code := right
-private def cReadKP : Code := comp cReadK cN
-private def cReadMP : Code := comp cReadM cN
-private def cReadDataC : Code := comp right right
-private def cReadDataP : Code := comp cReadDataC cN
+/-- The instance, `left` of the packed input `⟨inst, x⟩`. -/
+def cN : Code := left
+/-- The input `x`, `right` of the packed input `⟨inst, x⟩`. -/
+def cX : Code := right
+/-- `readK`, applied to the packed input's instance. -/
+def cReadKP : Code := comp cReadK cN
+/-- `readM`, applied to the packed input's instance. -/
+def cReadMP : Code := comp cReadM cN
+/-- `readData`, as a `Code`, applied directly to an instance. -/
+def cReadDataC : Code := comp right right
+/-- `readData`, applied to the packed input's instance. -/
+def cReadDataP : Code := comp cReadDataC cN
 
 private theorem val_cN (n x : ℕ) : val cN (Nat.pair n x) = n := by simp [cN, val_left]
 private theorem val_cReadDataC (inst : ℕ) : val cReadDataC inst = readData inst := by
   simp [cReadDataC, val_comp, val_right, readData]
 
 /-- `mkEx b x`, from `⟨n, x⟩`, for a literal bit `b`. -/
-private def cMkExB (b : ℕ) : Code := pair (constCode b) cX
+def cMkExB (b : ℕ) : Code := pair (constCode b) cX
 /-- `extInst inst (mkEx b x)`, from `⟨n, x⟩`. -/
-private def cExtInstB (b : ℕ) : Code :=
+def cExtInstB (b : ℕ) : Code :=
   pair cReadKP (pair (comp succ cReadMP) (pair (constCode 1) (pair (cMkExB b) cReadDataP)))
 
 private theorem val_cExtInstB (b n x : ℕ) :
@@ -174,7 +185,7 @@ private theorem val_cExtInstB (b n x : ℕ) :
 
 /-- Both extended decisions, computed once each — via `cConjSolve` directly, since CJ-C's own
 output already IS the verdict bit (no `cDecide`-style scan needed on top of it). -/
-private def cD01 : Code := pair (comp cConjSolve (cExtInstB 0)) (comp cConjSolve (cExtInstB 1))
+def cD01 : Code := pair (comp cConjSolve (cExtInstB 0)) (comp cConjSolve (cExtInstB 1))
 
 private theorem val_cD01 (n x : ℕ) :
     val cD01 (Nat.pair n x)
@@ -183,15 +194,18 @@ private theorem val_cD01 (n x : ℕ) :
 
 /-! ### The forced-symbol read-off — pure `O(1)` bit logic on the two decisions -/
 
-private def cD0core : Code := left
-private def cD1core : Code := right
+/-- The first extended decision, `left` of `cD01`. -/
+def cD0core : Code := left
+/-- The second extended decision, `right` of `cD01`. -/
+def cD1core : Code := right
 /-- `d0 XOR d1`: exactly one of the two extended decisions succeeded. -/
-private def cFlagCore : Code :=
+def cFlagCore : Code :=
   comp cOr (pair (comp cAnd (pair cD0core (comp cNot cD1core)))
                  (comp cAnd (pair cD1core (comp cNot cD0core))))
 /-- The forced label, valid only when `cFlagCore ≠ 0`: `d1` itself. -/
-private def cLabelCore : Code := comp cAnd (pair cFlagCore cD1core)
-private def cForcedCore : Code := pair cFlagCore cLabelCore
+def cLabelCore : Code := comp cAnd (pair cFlagCore cD1core)
+/-- The forced flag paired with the forced label, as a `Code`. -/
+def cForcedCore : Code := pair cFlagCore cLabelCore
 
 /-- **`cForced`**: the two-consistency-call forced-symbol predictor, on the packed input `⟨inst,x⟩`. -/
 def cForced : Code := comp cForcedCore cD01
@@ -200,11 +214,15 @@ def cForced : Code := comp cForcedCore cD01
 label), `⟨0, 0⟩` otherwise (empty or split). -/
 def forcedVal (inst x : ℕ) : ℕ := val cForced (Nat.pair inst x)
 
-private def d0V (inst x : ℕ) : ℕ := conjDecideVal (extInst inst (mkEx 0 x))
-private def d1V (inst x : ℕ) : ℕ := conjDecideVal (extInst inst (mkEx 1 x))
-private def forcedFlagV (inst x : ℕ) : ℕ :=
+/-- The extended decision on literal `0`, at the packed input `⟨inst, x⟩`. -/
+def d0V (inst x : ℕ) : ℕ := conjDecideVal (extInst inst (mkEx 0 x))
+/-- The extended decision on literal `1`, at the packed input `⟨inst, x⟩`. -/
+def d1V (inst x : ℕ) : ℕ := conjDecideVal (extInst inst (mkEx 1 x))
+/-- `1` iff exactly one of `d0V`, `d1V` succeeds. -/
+def forcedFlagV (inst x : ℕ) : ℕ :=
   bitOr (bitAnd (d0V inst x) (bitNot (d1V inst x))) (bitAnd (d1V inst x) (bitNot (d0V inst x)))
-private def forcedLabelV (inst x : ℕ) : ℕ := bitAnd (forcedFlagV inst x) (d1V inst x)
+/-- The forced label, valid only when `forcedFlagV ≠ 0`. -/
+def forcedLabelV (inst x : ℕ) : ℕ := bitAnd (forcedFlagV inst x) (d1V inst x)
 
 theorem val_cForced (inst x : ℕ) :
     forcedVal inst x = Nat.pair (forcedFlagV inst x) (forcedLabelV inst x) := by

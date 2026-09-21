@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.CategoricalThreshold
-import ALT.PersistenceCapacity
+module
+
+public import ALT.CategoricalThreshold
+public import ALT.PersistenceCapacity
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -50,6 +52,9 @@ This synthesis is stated in **no** paper; **no numbered result is claimed machin
 module. Each constituent — `CategoricalThreshold.hostsAt_threshold`, `PersistenceCapacity.witness_world`,
 `CapacityLayer.FitsIn.mono` — is already axiom-clean; this module is the assembly.
 -/
+
+
+@[expose] public section
 
 namespace ExcessOrder
 

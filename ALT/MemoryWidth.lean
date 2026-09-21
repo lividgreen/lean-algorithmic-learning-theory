@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.GrowingCore
-import ALT.GrowingCoreCrossing
+module
+
+public import ALT.GrowingCore
+public import ALT.GrowingCoreCrossing
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -57,6 +59,9 @@ no one of which is a later version of another.
   silently `0`).
 * `memWidth_mono` — **monotone**, with no hypothesis on the world beyond `Advances`: `mergeLaw`'s
   bare injectivity carries an antichain to an antichain of the same size one stage later.
+* `memWidth_mono_of_subset` — **monotone in the stage family, at a single stage**: widening `Ω t`
+  alone can only widen the width there, with no hypothesis at all — `GrowingWidth.lean`'s reason to
+  consume it.
 * `memWidth_nat_succ_eq_one` — **the clock theorem**: the successor world's retained profile is a
   chain at any stage family, so its width is `1` throughout, at both a nested and a level
   stage schedule, while the profile itself is unbounded.
@@ -112,6 +117,9 @@ statement is claimed here: the order-theoretic content — a preorder generated 
 chain up-sets, and the maximum antichain of a finite such preorder is its minimal-class count — is
 elementary and unattributed.
 -/
+
+
+@[expose] public section
 
 namespace MemoryWidth
 
@@ -196,6 +204,21 @@ theorem memWidth_mono {U : X → X} {Ω : ℕ → Set X} (hadv : Advances U Ω) 
   rw [← himg]
   exact le_sSup ⟨mergeLaw U '' A, ⟨hsub, isAntichain_image_mergeLaw hAanti⟩, rfl⟩
 
+/-- **Monotone in the stage family, at a single stage**: widening the admitted states at stage `t`
+alone can only widen the width there — `mergeStage` is `mergeMk U`'s image of the state stage
+(`Set.image_mono`), and an antichain inside the narrower retained profile is still a subset of the
+wider one, so the supremum can only grow. `GrowingCore`/`GrowingWorld`'s own `Advances` plays no
+role here: unlike `memWidth_mono`, which moves `t` forward under one fixed `Ω`, this moves `Ω` at a
+FIXED `t`, and needs nothing beyond monotonicity of the image. `GrowingWidth.lean`'s
+`growingWidth_le_memWidth` is this lemma's reason to exist: that file restricts `Ω` by intersecting
+it with a further set, and this is the inequality that turns the restriction into a `≤` against the
+unrestricted width. -/
+theorem memWidth_mono_of_subset {U : X → X} {Ω Ω' : ℕ → Set X} {t : ℕ} (h : Ω t ⊆ Ω' t) :
+    memWidth U Ω t ≤ memWidth U Ω' t := by
+  apply sSup_le
+  rintro _ ⟨A, ⟨hAsub, hAanti⟩, rfl⟩
+  exact le_sSup ⟨A, ⟨hAsub.trans (Set.image_mono h), hAanti⟩, rfl⟩
+
 /-! ## A reusable fact: `mergeLaw` iterated is `mergeMk` of `U` iterated -/
 
 /-- `mergeLaw`'s iterate along a class is the class of `U`'s iterate along a representative — the
@@ -251,12 +274,12 @@ theorem memWidth_eq_encard_of_isRootAntichain {U : X → X} {Ω : ℕ → Set X}
     have hfR : ∀ a ∈ A, f a ∈ Q := by
       intro a ha
       rw [hf_def]
-      simp only [dif_pos (hex ha)]
+      simp only [dite_eq_left (hex ha)]
       exact (hex ha).choose_spec.1
     have hfReach : ∀ a ∈ A, Reaches U (f a) a := by
       intro a ha
       rw [hf_def]
-      simp only [dif_pos (hex ha)]
+      simp only [dite_eq_left (hex ha)]
       exact (hex ha).choose_spec.2
     have hfInj : Set.InjOn f A := by
       intro a ha b hb hab
@@ -800,6 +823,10 @@ set_option linter.style.longLine false
 /-- info: 'MemoryWidth.memWidth_mono' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms MemoryWidth.memWidth_mono
+
+/-- info: 'MemoryWidth.memWidth_mono_of_subset' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms MemoryWidth.memWidth_mono_of_subset
 
 /-- info: 'MemoryWidth.memWidth_nat_succ_eq_one' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in

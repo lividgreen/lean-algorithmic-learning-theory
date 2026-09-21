@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.BinaryKraft
-import ALT.Ville
+module
+
+public import ALT.BinaryKraft
+public import ALT.Ville
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -61,6 +63,9 @@ initial bound and the charge, formerly hypotheses, are now theorems of the model
 transfer of the pruned mass into regret ("`O(r)` pruned mass is absorbed into the `O(r)` regret",
 the Bayes-mixture argument of [Discovery]) is machine-checked separately in `SQPredictiveTransfer`.
 -/
+
+
+@[expose] public section
 
 namespace SQSearchPhaseMass
 
@@ -224,7 +229,7 @@ Kraft–McMillan (`BinaryKraft.indexed_tsum_pos`, `BinaryKraft.indexed_tsum_le_o
 initial-potential bound `Φ₀ ≤ ln2·ℓ(R)` is *derived*, with no assumed normalizer. -/
 theorem kraft_potential_init_of_code {ι : Type*} (code : ι → List Bool)
     (hinj : Function.Injective code)
-    (hUD : InformationTheory.UniquelyDecodable (Set.range code)) (R : ι) :
+    (hUD : InformationTheory.IsUniquelyDecodable (Set.range code)) (R : ι) :
     -Real.log ((1 / 2 : ℝ) ^ (code R).length / ∑' i, (1 / 2 : ℝ) ^ (code i).length)
       ≤ Real.log 2 * (code R).length :=
   kraft_potential_init _ _

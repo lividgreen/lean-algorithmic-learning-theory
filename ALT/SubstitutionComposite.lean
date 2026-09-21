@@ -3,9 +3,11 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.SubstitutionSchedule
-import ALT.SubstitutionClass
-import ALT.LearningWitness
+module
+
+public import ALT.SubstitutionSchedule
+public import ALT.SubstitutionClass
+public import ALT.LearningWitness
 
 /-!
 # The substitution source, self-fed: E1 with the periodic-trap route absent
@@ -69,6 +71,9 @@ why it is the packing `subObs_witness_substrateL_of_e1` uses rather than a fresh
 `compUpdate`'s pair type.
 -/
 
+
+@[expose] public section
+
 namespace SubstitutionComposite
 
 open ParityWalk Finset NoisyWindowChain SubstitutionSource BirkhoffTool
@@ -96,7 +101,7 @@ theorem obs_subNoise : NoisyWindowChain.obs 8 subNoise = subObs := by
       rw [hrec, ih t (by omega)]
       have hn : subNoise (t + 8) = !(xor (subObs t) (subObs (t + 8))) := by
         simp only [subNoise]
-        rw [if_neg (by omega : ¬ t + 8 < 8)]
+        rw [ite_eq_right (by omega : ¬ t + 8 < 8)]
         congr 2
       rw [hn]
       cases subObs t <;> cases subObs (t + 8) <;> simp
@@ -121,7 +126,7 @@ theorem compUpdate_window_eq (t : ℕ) :
   funext u
   by_cases hu : u < 8
   · simp [hu, compW0, subNoise]
-  · rw [dif_neg hu]
+  · rw [dite_eq_right hu]
     have huv : u - 8 + 1 + 7 = u := by omega
     rw [huv]
 

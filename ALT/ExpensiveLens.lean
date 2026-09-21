@@ -3,9 +3,11 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.GroupTheory.Perm.Cycle.Basic
-import Mathlib.GroupTheory.Perm.Fin
-import ALT.PersistenceCapacity
+module
+
+public import Mathlib.GroupTheory.Perm.Cycle.Basic
+public import Mathlib.GroupTheory.Perm.Fin
+public import ALT.PersistenceCapacity
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -63,6 +65,9 @@ boundary are deliberately not consumed. Cite `[Persistence] §8` at Propositions
 8.36(ii) with Remark 8.37.
 -/
 
+
+@[expose] public section
+
 namespace ExpensiveLens
 
 open Equiv Equiv.Perm AdditiveComplexity PersistenceCapacity Nat
@@ -83,13 +88,13 @@ private theorem finRotate_moves {N : ℕ} (hN : 2 ≤ N) : ∀ x : Fin N, (finRo
   have hv := coe_finRotate (n := M) x
   simp only [Nat.succ_eq_add_one] at hv
   rcases eq_or_ne x (Fin.last M) with hlast | hlast
-  · rw [if_pos hlast] at hv
+  · rw [ite_eq_left hlast] at hv
     have hval : (finRotate (M + 1) x).val = x.val := congrArg Fin.val hx
     rw [hval] at hv
     have hlv : (Fin.last M).val = M := rfl
     rw [hlast, hlv] at hv
     omega
-  · rw [if_neg hlast] at hv
+  · rw [ite_eq_right hlast] at hv
     have hval : (finRotate (M + 1) x).val = x.val := congrArg Fin.val hx
     omega
 

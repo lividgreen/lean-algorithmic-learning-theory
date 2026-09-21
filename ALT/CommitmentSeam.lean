@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.SQAlgorithm
+module
+
+public import ALT.SQAlgorithm
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -63,6 +65,9 @@ The threshold is stated in the non-strict form `1 − δ/2 ≤ p i`. That is wha
 delivers, and it is the *easier* trigger — it commits at least as often — so uniqueness, the
 load-bearing direction, is proved against the harder case.
 -/
+
+
+@[expose] public section
 
 namespace CommitmentSeam
 
@@ -133,7 +138,7 @@ theorem alive_mass_pos [Fintype ι] (pred : ι → (s : ℕ) → (Fin s → X) �
     simp only [L]
     exact Finset.prod_nonneg fun s _ => (detFactor_mem_Icc pred i s ω).1
   have hLiR : L (detFactor pred) iR n ω = 1 := by
-    rw [L_det_eq_indicator, if_pos fun s _ => hreal s]
+    rw [L_det_eq_indicator, ite_eq_left fun s _ => hreal s]
   refine Finset.sum_pos' (fun i _ => mul_nonneg (hw i) (hLnn i)) ⟨iR, ?_, ?_⟩
   · exact truth_survives pred stat oracleAns τ hτ sched Finset.univ ω iR (Finset.mem_univ iR)
       hreal hclose n

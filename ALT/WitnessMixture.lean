@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.FlooredMixture
-import ALT.LearningWitness
+module
+
+public import ALT.FlooredMixture
+public import ALT.LearningWitness
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -74,6 +76,9 @@ The drift-bound composition carries its own boundary. Its co-leadership hypothes
 the noise stream supplies at a general restart point — `witness_singleNoiseBit_not_coleader` fixes
 an instance where it fails — and it is discharged for free only at the run's own start.
 -/
+
+
+@[expose] public section
 
 namespace WitnessMixture
 
@@ -329,10 +334,10 @@ private def witExtend (k n : ℕ) (v : Fin n → Fin k → Bool) : ℕ → Fin k
 private lemma witExtend_witTuple (k n : ℕ) (ω : ℕ → Bool) {s : ℕ} (hs : s < n) :
     witExtend k n (witTuple k n ω) s = witMiss k ω s := by
   funext i
-  rw [witExtend, dif_pos hs, witTuple]
+  rw [witExtend, dite_eq_left hs, witTuple]
 
 private lemma measurable_witTuple [NeZero k] (n : ℕ) : Measurable (witTuple k n) :=
-  measurable_pi_lambda _ fun _ => measurable_pi_lambda _ fun _ => measurable_witMiss _ _
+  Measurable.of_eval fun _ => Measurable.of_eval fun _ => measurable_witMiss _ _
 
 /-- **The surprise count is measurable in the noise stream** — it is a cylinder function of the
 first `n` miss vectors, and the tuple space carrying them is discrete. -/

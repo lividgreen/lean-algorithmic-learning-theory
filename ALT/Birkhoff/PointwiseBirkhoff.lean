@@ -36,11 +36,23 @@ pinned Mathlib v4.31.0:
     syntactic `f 0` this proof's `simp` step needs.  Two tiny private shims
     (`add_partialSups'`, `partialSups_add_one_nat`) restore the original shapes.
   * The genuinely-missing helper lemmas are retained below verbatim.
+  * `Set.setOf_mem_eq` was renamed to `Set.ofPred_mem_eq` upstream; the one
+    call site uses the new name, with no change to the proof it closes.
 
 The `#print axioms` footprint is checked in `ALT/Birkhoff/AxiomAudit.lean`
 to carry only the standard `propext / Classical.choice / Quot.sound` triple.
+
+## Module-system form (2026-09-09)
+
+The file carries Lean's module header — `module`, `public import Mathlib`,
+`@[expose] public section` — and `backward.privateInPublic` (Lean's porting
+aid), because the section binder `(μ : Measure α := by volume_tac)` below
+otherwise exports every later signature as `autoParam … sorry`.  Form only:
+no statement, proof, import or visibility changed.
 -/
-import Mathlib
+module
+
+public import Mathlib
 
 set_option linter.style.header false
 set_option linter.style.longLine false
@@ -54,6 +66,11 @@ set_option linter.style.induction false
 set_option linter.style.whitespace false
 
 /-! ## Missing helper lemmas (not yet in Mathlib v4.31.0), retained from source. -/
+
+set_option backward.privateInPublic true
+set_option backward.privateInPublic.warn false
+
+@[expose] public section
 
 open scoped MeasureTheory
 
@@ -122,12 +139,12 @@ def birkhoffMax (f : α → α) (φ : α → ℝ) : ℕ →o (α → ℝ) :=
 lemma birkhoffMax_succ : birkhoffMax f φ n.succ x = φ x + 0 ⊔ birkhoffMax f φ n (f x) := by
   have : birkhoffSum f φ ∘ .succ = fun k ↦ φ + birkhoffSum f φ k ∘ f := by
     funext k x; dsimp
-    rw [add_comm k 1, birkhoffSum_add f φ 1, birkhoffSum_one];
+    rw [add_comm k 1, birkhoffSum_add_right_apply f φ 1, birkhoffSum_one_apply];
     rfl
   nth_rw 1 [birkhoffMax, this, add_partialSups']
   simp only [Pi.add_apply, add_right_inj]
   rw [partialSups_add_one_nat]
-  simp only [birkhoffSum_zero', Pi.zero_comp, Pi.sup_apply, Pi.zero_apply]
+  simp only [birkhoffSum_zero, Pi.zero_comp, Pi.sup_apply, Pi.zero_apply]
   simp_rw [Pi.partialSups_apply, Function.comp_apply, ← Pi.partialSups_apply]; rfl
 
 abbrev birkhoffMaxDiff (f : α → α) (φ : α → ℝ) (n : ℕ) (x : α) :=
@@ -190,7 +207,7 @@ lemma divergentSet_invariant : f x ∈ divergentSet f φ ↔ x ∈ divergentSet 
   case mp =>
     cases' hx ↑(- φ x + a) (EReal.coe_lt_top _) with N hN
     norm_cast at *
-    rw [neg_add_lt_iff_lt_add, ← birkhoffSum_succ'] at hN
+    rw [neg_add_lt_iff_lt_add, ← birkhoffSum_succ_apply'] at hN
     use N + 1
   case mpr =>
     cases' hx ↑(φ x + a) (EReal.coe_lt_top _) with N hN
@@ -198,7 +215,7 @@ lemma divergentSet_invariant : f x ∈ divergentSet f φ ↔ x ∈ divergentSet 
     conv =>
       congr
       intro i
-      rw [← add_lt_add_iff_left (φ x), ← birkhoffSum_succ']
+      rw [← add_lt_add_iff_left (φ x), ← birkhoffSum_succ_apply']
     cases' N with N
     · /- ugly case! :( -/
       cases' hx ↑(birkhoffSum f φ 1 x) (EReal.coe_lt_top _) with N hNN
@@ -383,7 +400,7 @@ lemma limsup_birkhoffAverage_nonpos_of_condexp_neg (hf : MeasurePreserving f μ 
     ∀ᵐ x ∂μ, Tendsto (birkhoffAverage ℝ f φ · x) atTop nonneg := by
   apply Eventually.mono _ fun _ ↦ birkhoffAverage_tendsto_nonpos_of_not_mem_divergentSet
   apply ae_iff.mpr
-  simp only [not_not, Set.setOf_mem_eq]
+  simp only [not_not, Set.ofPred_mem_eq]
   exact divergentSet_zero_meas_of_condexp_neg μ h hf hφ hφ'
 
 /-- The invariant conditional expectation `μ[φ | invariants f]`. -/

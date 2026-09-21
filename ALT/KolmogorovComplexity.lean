@@ -3,9 +3,11 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.Computability.PartrecCode
-import Mathlib.Data.Nat.SuccPred
-import Mathlib.Order.Lattice.Nat
+module
+
+public import Mathlib.Computability.PartrecCode
+public import Mathlib.Data.Nat.SuccPred
+public import Mathlib.Order.Lattice.Nat
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -68,6 +70,9 @@ computable and that `K` is unbounded), so they are faithful even though the valu
   least-**index** length measure; the input-`0` ("output from nothing") convention.
 -/
 
+
+@[expose] public section
+
 namespace KolmogorovComplexity
 
 open Nat.Partrec Nat.Partrec.Code
@@ -122,7 +127,7 @@ theorem setOf_K_le_finite (n : ℕ) : { x | K x ≤ n }.Finite := by
     rw [hlen]; exact hx
   · have hdom : (c.eval 0).Dom := by rw [hcomp]; exact trivial
     change (if h : (c.eval 0).Dom then (c.eval 0).get h else 0) = x
-    rw [dif_pos hdom]
+    rw [dite_eq_left hdom]
     exact Part.get_eq_iff_eq_some.mpr hcomp
 
 /-- `K` is unbounded: incompressible numbers of every complexity exist. -/

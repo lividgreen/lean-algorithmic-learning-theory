@@ -3,8 +3,11 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.BlockPairProfile
-import ALT.TapeHostSchedule
+module
+
+public import ALT.BlockPairProfile
+public import ALT.TapeHostSchedule
+public import ALT.ParityWalk
 
 /-!
 # A second certified design: literal `2`, spike lag `6`, identified from `817`
@@ -38,6 +41,9 @@ any tape/window host, the `𝒮_L`/`𝒮_E` substrate questions, and the tower r
 `ShiftedSpikeHost.lean`'s and `ShiftedSpikeTower.lean`'s. The paper home is [Inevitability] §6
 Remark 6.14's finite degeneracy clause.
 -/
+
+
+@[expose] public section
 
 namespace ShiftedSpikeCriterion
 
@@ -164,7 +170,7 @@ theorem designObs2_profile :
       ring
     simp_rw [ea, e8]
     by_cases ha2 : (a : ℕ) = 2
-    · rw [if_pos ha2, if_pos ha2, ha2]
+    · rw [ite_eq_left ha2, ite_eq_left ha2, ha2]
       rw [chiProd_eq_cyclicCorrWindow2 M c (by omega : (2 : ℕ) ≤ 8) n]
       have haperiodic : aperiodicCorr wordU2 6 + aperiodicCorr wordV2 6 = -32 := by decide
       have hb := cyclicCorrWindow_blockSeq_wordU2_wordV2_spike M (c.val + 2) n
@@ -180,7 +186,7 @@ theorem designObs2_profile :
       rw [heq2, abs_div]
       rw [show |(44 : ℝ)| = 44 from by norm_num, div_le_iff₀ (by norm_num : (0 : ℝ) < 44)]
       linarith [hbR]
-    · rw [if_neg ha2, if_neg ha2, mul_zero, sub_zero]
+    · rw [ite_eq_right ha2, ite_eq_right ha2, mul_zero, sub_zero]
       have ha8 : (a : ℕ) ≤ 8 := by omega
       rw [chiProd_eq_cyclicCorrWindow2 M c ha8 n, ← Int.cast_abs]
       have haLt := a.isLt
@@ -205,8 +211,8 @@ theorem shiftedSpike_identifies (c : ZMod (2 * (2 * M) * 22)) {n : ℕ} (hn : 81
   have hW : ∀ a : Fin 8, (if (a : ℕ) = 2 then (34 : ℝ) else 176) ≤ 176 := by
     intro a
     by_cases ha : (a : ℕ) = 2
-    · rw [if_pos ha]; norm_num
-    · rw [if_neg ha]
+    · rw [ite_eq_left ha]; norm_num
+    · rw [ite_eq_right ha]
   have hρj : (if (2 : ℕ) = 2 then (-8 / 11 : ℝ) else 0) = 2 * ((3 : ℝ) / 22) - 1 := by norm_num
   have hρ : ∀ a : Fin 8, a ≠ (2 : Fin 8) →
       |(if (a : ℕ) = 2 then (-8 / 11 : ℝ) else 0)| ≤ (0 : ℝ) := by

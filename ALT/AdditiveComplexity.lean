@@ -3,9 +3,11 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.Data.ENat.Lattice
-import ALT.BinaryKraft
-import ALT.KolmogorovComplexity
+module
+
+public import Mathlib.Data.ENat.Lattice
+public import ALT.BinaryKraft
+public import ALT.KolmogorovComplexity
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -45,6 +47,10 @@ program length is additive **by construction**: `|E (comp cf cg)| = 3 + |E cf| +
   `KE ≤ L`, because distinct values need distinct shortest programs, `E` is injective, and there
   are fewer than `2 ^ (L + 1)` bit-strings of length at most `L`. This is the incompressibility
   method's supply side, consumed by [Persistence] §7.
+* `summable_two_pow_neg_KE`, `finset_card_KE_le_two_pow`, `card_KE_le_two_pow`: the **sharp count**
+  — at most `2 ^ L` naturals have `KE ≤ L`, by Kraft's inequality for `KE` (`kraft_KE`) rather than
+  by counting bit-strings, the same three-line argument `PrefixMachine.finset_card_KB_le` runs for
+  `KB`. `card_KE_le` keeps its constant `2 ^ (L + 1)`.
 * `KE_t`, `KE_le_KE_t`, `KE_t_antitone`: time-bounded refinement (scaffold for [SQ] Prop 2.2),
   a one-symbol swap of the corpus `K_t` construction (`elen` for the index `codelen`).
 
@@ -60,6 +66,9 @@ program length is additive **by construction**: `|E (comp cf cg)| = 3 + |E cf| +
 * Added / modeling: one fixed machine (`Code.eval`); 3-bit Polish opcode; input-`0` convention
   (`Computes`) inherited from Slice 1.
 -/
+
+
+@[expose] public section
 
 namespace AdditiveComplexity
 
@@ -192,7 +201,8 @@ theorem E_injective : Function.Injective E := fun c d h =>
 
 Parse uniqueness says `E` is a prefix code, and a prefix code is uniquely decodable: a
 concatenation of serialized programs parses back to exactly one list of programs. Kraft's
-inequality (McMillan's counting argument, `InformationTheory.kraft_mcmillan_inequality`) then
+inequality (McMillan's counting argument,
+`InformationTheory.IsUniquelyDecodable.finsetSum_one_div_card_pow_length_le_one`) then
 prices the lengths — `∑ 2 ^ (-elen c) ≤ 1` over ALL programs at once. The counting bounds below
 are the finite shadow of this: a budget of `L` bits cannot be spent twice. -/
 
@@ -204,7 +214,7 @@ open InformationTheory in
 /-- **The serialization is uniquely decodable**: two lists of programs whose concatenations agree
 are the same list. Parse uniqueness (`E_append_inj`) peels one program off each side at a time —
 the head programs coincide and the tails still agree, so the induction closes. -/
-theorem uniquelyDecodable_range_E : UniquelyDecodable (Set.range E) := by
+theorem uniquelyDecodable_range_E : IsUniquelyDecodable (Set.range E) := by
   intro L₁
   induction L₁ with
   | nil =>
@@ -308,6 +318,17 @@ theorem minCode_E_injective : Function.Injective fun x => E (minCode x) := by
   rw [Computes] at hy
   exact Part.some_injective (hx.symm.trans hy)
 
+/-- **The Kraft series over `KE` is summable**: the object-indexed series `∑ 2 ^ (-KE x)` is the
+program-indexed series (summable by `BinaryKraft.indexed_summable` at the injective, uniquely
+decodable `E`) reindexed along `minCode`, an injection (`minCode_E_injective`), so its summability
+is that of a subseries. The summability `Summable.sum_le_tsum` needs in the sharp count
+`finset_card_KE_le_two_pow` ([Persistence] §7, FV-8), and the first step of `kraft_KE`. -/
+theorem summable_two_pow_neg_KE : Summable fun x : ℕ => (1 / 2 : ℝ) ^ KE x := by
+  have hminj : Function.Injective minCode := minCode_E_injective.of_comp
+  have hg : Summable fun c : Code => (1 / 2 : ℝ) ^ elen c := by
+    simpa [elen] using BinaryKraft.indexed_summable E E_injective uniquelyDecodable_range_E
+  simpa [Function.comp_def, elen_minCode] using hg.comp_injective hminj
+
 /-- **Kraft's inequality for `KE` itself**: `∑ 2 ^ (-KE x) ≤ 1`, over all naturals — the
 object-indexed semimeasure `kraft_KP_E` gives only for programs. Each `x` contributes the weight of
 its own shortest program (`elen_minCode`), and `x ↦ minCode x` is injective (`E ∘ minCode` is
@@ -317,8 +338,7 @@ theorem kraft_KE : ∑' x : ℕ, (1 / 2 : ℝ) ^ KE x ≤ 1 := by
   have hminj : Function.Injective minCode := minCode_E_injective.of_comp
   have hg : Summable fun c : Code => (1 / 2 : ℝ) ^ elen c := by
     simpa [elen] using BinaryKraft.indexed_summable E E_injective uniquelyDecodable_range_E
-  have hf : Summable fun x : ℕ => (1 / 2 : ℝ) ^ KE x := by
-    simpa [Function.comp_def, elen_minCode] using hg.comp_injective hminj
+  have hf : Summable fun x : ℕ => (1 / 2 : ℝ) ^ KE x := summable_two_pow_neg_KE
   have hle : ∑' x : ℕ, (1 / 2 : ℝ) ^ KE x ≤ ∑' c : Code, (1 / 2 : ℝ) ^ elen c :=
     Summable.tsum_le_tsum_of_inj minCode hminj (fun c _ => by positivity)
       (fun x => le_of_eq (by rw [elen_minCode])) hf hg
@@ -346,6 +366,45 @@ theorem card_KE_le (L : ℕ) : {x : ℕ | KE x ≤ L}.ncard ≤ 2 ^ (L + 1) := b
   have := card_bitLists L
   have hpos : 1 ≤ 2 ^ (L + 1) := Nat.one_le_two_pow
   omega
+
+/-- **The sharp counting bound on `KE`, `Finset` form**: at most `2 ^ L` naturals are describable
+within a budget of `L` bits, against the `2 ^ (L + 1)` of `card_KE_le`. Each member of `F` weighs at
+least `2 ^ (-L)` in the Kraft series (`pow_le_pow_of_le_one`), so `F.card` copies of that weight sit
+below the series' partial sum over `F` (`Finset.sum_le_sum`), below the full series
+(`Summable.sum_le_tsum`, at `summable_two_pow_neg_KE`), below one (`kraft_KE`). The count is
+`PrefixMachine.finset_card_KB_le`'s argument at `KE`, and needs no finiteness hypothesis. See
+[Persistence] §7 and FV-8, whose counting chain carries the string-counting constant. -/
+theorem finset_card_KE_le_two_pow (L : ℕ) (F : Finset ℕ) (hF : ∀ x ∈ F, KE x ≤ L) :
+    F.card ≤ 2 ^ L := by
+  have hpow : ∀ x ∈ F, (1 / 2 : ℝ) ^ L ≤ (1 / 2 : ℝ) ^ KE x := fun x hx =>
+    pow_le_pow_of_le_one (by norm_num) (by norm_num) (hF x hx)
+  have hsum1 : ∑ x ∈ F, (1 / 2 : ℝ) ^ L ≤ ∑ x ∈ F, (1 / 2 : ℝ) ^ KE x := Finset.sum_le_sum hpow
+  have hsum2 : ∑ x ∈ F, (1 / 2 : ℝ) ^ KE x ≤ ∑' x : ℕ, (1 / 2 : ℝ) ^ KE x :=
+    summable_two_pow_neg_KE.sum_le_tsum F (fun x _ => by positivity)
+  have hconst : ∑ x ∈ F, (1 / 2 : ℝ) ^ L = (F.card : ℝ) * (1 / 2 : ℝ) ^ L := by
+    rw [Finset.sum_const, nsmul_eq_mul]
+  have hfinal : (F.card : ℝ) * (1 / 2 : ℝ) ^ L ≤ 1 := by
+    rw [← hconst]; linarith [kraft_KE]
+  have h2 : ((2 ^ L : ℕ) : ℝ) * (1 / 2 : ℝ) ^ L = 1 := by
+    push_cast
+    rw [mul_comm, ← mul_pow]
+    norm_num
+  have hpos : (0 : ℝ) < (1 / 2 : ℝ) ^ L := by positivity
+  have hcard_le : (F.card : ℝ) ≤ ((2 ^ L : ℕ) : ℝ) := by
+    have heq : (F.card : ℝ) * (1 / 2 : ℝ) ^ L ≤ ((2 ^ L : ℕ) : ℝ) * (1 / 2 : ℝ) ^ L := by
+      rw [h2]; exact hfinal
+    exact le_of_mul_le_mul_right heq hpos
+  exact_mod_cast hcard_le
+
+/-- **The sharp counting bound on `KE`, `ncard` form**: `finset_card_KE_le_two_pow`'s corollary at
+the finiteness `finite_KE_le` supplies, over its own `Finite.toFinset`. Stated separately from the
+`Finset` form because `Set.ncard` of an infinite set is `0`, so this sentence alone could not fail;
+the `Finset` form is what shows the bound bites. Sharpens `card_KE_le`'s constant, which is kept
+as stated ([Persistence] §7, FV-8). -/
+theorem card_KE_le_two_pow (L : ℕ) : {x : ℕ | KE x ≤ L}.ncard ≤ 2 ^ L := by
+  have hfin := finite_KE_le L
+  rw [Set.ncard_eq_toFinset_card _ hfin]
+  exact finset_card_KE_le_two_pow L hfin.toFinset (fun x hx => hfin.mem_toFinset.mp hx)
 
 /-! ## Time-bounded refinement (scaffold for [SQ] Prop 2.2)
 

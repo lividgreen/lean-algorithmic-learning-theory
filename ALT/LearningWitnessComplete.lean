@@ -3,9 +3,11 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.LearningWitness
-import ALT.ExcessOrder
-import ALT.GodelComplete
+module
+
+public import ALT.LearningWitness
+public import ALT.ExcessOrder
+public import ALT.GodelComplete
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -79,6 +81,9 @@ design record's own escape hatch for exactly this mismatch.
 * This synthesis is stated in **no** paper; **no numbered result is claimed machine-checked** by it,
   per `ExcessOrderComplete`'s own precedent for a cross-module composition.
 -/
+
+
+@[expose] public section
 
 namespace LearningWitness
 

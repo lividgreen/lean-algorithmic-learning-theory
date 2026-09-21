@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.PrefixMachine
+module
+
+public import ALT.PrefixMachine
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -29,6 +31,9 @@ Extends `ALT/PrefixMachine.lean` (`bitsToNat`, `natToBits`, `foldStep`, `newlyHa
 * The algorithmic probability `QB`'s lower-semicomputability and the coding theorem itself are not
   attempted here.
 -/
+
+
+@[expose] public section
 
 namespace PrefixMachine
 

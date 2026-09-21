@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.CodingTheoremWeak
-import ALT.BitStringPrimrec
+module
+
+public import ALT.CodingTheoremWeak
+public import ALT.BitStringPrimrec
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -32,6 +34,9 @@ The online Kraft–Chaitin codeword assignment, effective and invariant-preservi
 The coding theorem this assignment serves — the `O(1)` form over a lower-semicomputable
 semimeasure's own request stream — is not attempted here.
 -/
+
+
+@[expose] public section
 
 namespace PrefixMachine
 

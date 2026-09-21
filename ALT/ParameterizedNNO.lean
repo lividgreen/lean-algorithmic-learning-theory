@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.Data.ZMod.Basic
-import Mathlib.Tactic.Ring
+module
+
+public import Mathlib.Data.ZMod.Basic
+public import Mathlib.Tactic.Ring
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -61,6 +63,9 @@ interest is `r ≪ K`, where `K − r` is the genuine working-bit count.
   the `K = r + (K−r)` split); the `ZMod (M+1)` minimal instance (not the Rule-30 CA). No constant
   strengthened.
 -/
+
+
+@[expose] public section
 
 namespace ParameterizedNNO
 

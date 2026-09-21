@@ -3,9 +3,11 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.TapeHost
-import ALT.BirkhoffTool
-import ALT.NoisyWindowChain
+module
+
+public import ALT.TapeHost
+public import ALT.BirkhoffTool
+public import ALT.NoisyWindowChain
 
 /-!
 # The finite autonomous host's E1, over an arbitrary window-deviation profile
@@ -36,6 +38,9 @@ Deliberately out of scope: the `𝒮_L` substrate and its membership statement, 
 the `𝒮_E` route-class — those are `TapeHostWitness.lean`'s and `TapeHostOverlap.lean`'s. The
 paper home is [Inevitability] §5 Theorem 5.8, row IN-37.
 -/
+
+
+@[expose] public section
 
 namespace TapeHostObservability
 

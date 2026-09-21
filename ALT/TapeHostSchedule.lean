@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.TapeHostObservability
-import ALT.LearningWitness
+module
+
+public import ALT.TapeHostObservability
+public import ALT.LearningWitness
 
 /-!
 # The affordable regime's worked example: a deterministic schedule oracle and identification
@@ -49,6 +51,9 @@ time, survival, or the bridge between the learning world's count and the guest w
 [Inevitability] §6 (the affordable-regime paragraph), §5 Proposition 5.9; [SQ] §3.1, §3.3; rows
 FV-M, IN-41.
 -/
+
+
+@[expose] public section
 
 namespace TapeHostSchedule
 
@@ -139,7 +144,7 @@ theorem schedSurvivors_eq_singleton (h : Profile o S ρ W) (Wm : ℝ) (hW : ∀ 
         exact ha0 (by ext; simpa using hcontra)
       have hlit : LearningWitness.singleLiteralAns a (0 : Fin 8) = 0 := by
         unfold LearningWitness.singleLiteralAns
-        rw [if_neg ha0]
+        rw [ite_eq_right ha0]
       rw [hlit, abs_le]
       obtain ⟨hεl, hεu⟩ := abs_le.mp (hε a)
       obtain ⟨hρl, hρu⟩ := abs_le.mp (hρ a hane)
@@ -231,7 +236,7 @@ theorem schedSurvivors_eq_singleton_at (j : Fin 8) (h : Profile o S ρ W) (Wm : 
       constructor <;> nlinarith [hεl, hεu, hρj, hη, hbudget, hεlt]
     · have hlit : LearningWitness.singleLiteralAns a j = 0 := by
         unfold LearningWitness.singleLiteralAns
-        rw [if_neg haj]
+        rw [ite_eq_right haj]
       rw [hlit, abs_le]
       obtain ⟨hεl, hεu⟩ := abs_le.mp (hε a)
       obtain ⟨hρl, hρu⟩ := abs_le.mp (hρ a haj)
@@ -341,7 +346,7 @@ theorem schedSurvivors_eq_singleton_sharp (h : Profile o S ρ W) (Wm : ℝ) (hW 
         exact ha0 (by ext; simpa using hcontra)
       have hlit : LearningWitness.singleLiteralAns a (0 : Fin 8) = 0 := by
         unfold LearningWitness.singleLiteralAns
-        rw [if_neg ha0]
+        rw [ite_eq_right ha0]
       rw [hlit, abs_le]
       obtain ⟨hεl, hεu⟩ := abs_le.mp (hε a)
       obtain ⟨hρl, hρu⟩ := abs_le.mp (hρ a hane)
@@ -465,7 +470,7 @@ theorem not_identifies_of_gt_quarter (h : Profile o S ρ W) (Wm : ℝ) (hW : ∀
     constructor <;> nlinarith [hεl, hεu, hρa, hεlt]
   · have hlit : LearningWitness.singleLiteralAns a j = 0 := by
       unfold LearningWitness.singleLiteralAns
-      rw [if_neg haj]
+      rw [ite_eq_right haj]
     rw [hlit, abs_le]
     by_cases ha0 : a = (0 : Fin 8)
     · subst ha0

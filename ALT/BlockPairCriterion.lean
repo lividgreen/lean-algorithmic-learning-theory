@@ -3,10 +3,12 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.BlockPairOverlap
-import ALT.TapeHostFiber
-import ALT.TapeHostOverlap
-import ALT.TapeHostSchedule
+module
+
+public import ALT.BlockPairOverlap
+public import ALT.TapeHostFiber
+public import ALT.TapeHostOverlap
+public import ALT.TapeHostSchedule
 
 /-!
 # The certified block-pair sequence instantiates the profile-class criterion
@@ -57,6 +59,9 @@ replacement for the registered result.
 Anchors: [Inevitability] §5 Theorem 5.8, rows IN-14, IN-37, IN-38.
 -/
 
+
+@[expose] public section
+
 namespace BlockPairCriterion
 
 open BlockPairProfile BlockPairHost BlockPairObservability
@@ -98,7 +103,7 @@ theorem designObs_profile (M : ℕ) [NeZero (2 * (2 * M))] :
       ring
     simp_rw [ea, e8]
     by_cases ha0 : (a : ℕ) = 0
-    · rw [if_pos ha0, if_pos ha0, ha0]
+    · rw [ite_eq_left ha0, ite_eq_left ha0, ha0]
       rw [BlockPairObservability.chiProd_eq_cyclicCorrWindow M c (by omega : (0 : ℕ) ≤ 8) n]
       have haperiodic : aperiodicCorr wordU 8 + aperiodicCorr wordV 8 = -32 := by decide
       have hb := cyclicCorrWindow_blockSeq_wordU_wordV_spike M (c.val + 0) n
@@ -114,7 +119,7 @@ theorem designObs_profile (M : ℕ) [NeZero (2 * (2 * M))] :
       rw [heq2, abs_div]
       rw [show |(48 : ℝ)| = 48 from by norm_num, div_le_iff₀ (by norm_num : (0 : ℝ) < 48)]
       linarith [hbR]
-    · rw [if_neg ha0, if_neg ha0, mul_zero, sub_zero]
+    · rw [ite_eq_right ha0, ite_eq_right ha0, mul_zero, sub_zero]
       have ha7 : (a : ℕ) ≤ 8 := by omega
       rw [BlockPairObservability.chiProd_eq_cyclicCorrWindow M c ha7 n, ← Int.cast_abs]
       exact_mod_cast cyclicCorrWindow_blockSeq_wordU_wordV_zone M
@@ -248,8 +253,8 @@ theorem blockPair_identifies (M : ℕ) [NeZero (2 * (2 * M))] (c : ZMod (2 * (2 
   have hW : ∀ a : Fin 8, (if (a : ℕ) = 0 then (46 : ℝ) else 192) ≤ 192 := by
     intro a
     by_cases ha : (a : ℕ) = 0
-    · rw [if_pos ha]; norm_num
-    · rw [if_neg ha]
+    · rw [ite_eq_left ha]; norm_num
+    · rw [ite_eq_right ha]
   have hρ0 : (if (0 : ℕ) = 0 then (-2 / 3 : ℝ) else 0) = 2 * (1 / 6 : ℝ) - 1 := by norm_num
   have hρ : ∀ a : Fin 8, (a : ℕ) ≠ 0 →
       |(if (a : ℕ) = 0 then (-2 / 3 : ℝ) else 0)| ≤ (0 : ℝ) := by
@@ -276,8 +281,8 @@ theorem blockPair_identifies_sharp (M : ℕ) [NeZero (2 * (2 * M))] (c : ZMod (2
   have hW : ∀ a : Fin 8, (if (a : ℕ) = 0 then (46 : ℝ) else 192) ≤ 192 := by
     intro a
     by_cases ha : (a : ℕ) = 0
-    · rw [if_pos ha]; norm_num
-    · rw [if_neg ha]
+    · rw [ite_eq_left ha]; norm_num
+    · rw [ite_eq_right ha]
   have hρ0 : (if (0 : ℕ) = 0 then (-2 / 3 : ℝ) else 0) = 2 * (1 / 6 : ℝ) - 1 := by norm_num
   have hρ : ∀ a : Fin 8, (a : ℕ) ≠ 0 →
       |(if (a : ℕ) = 0 then (-2 / 3 : ℝ) else 0)| ≤ (0 : ℝ) := by

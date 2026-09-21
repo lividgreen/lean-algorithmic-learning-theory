@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.GrowingWorld
-import ALT.PersistenceCapacity
+module
+
+public import ALT.GrowingWorld
+public import ALT.PersistenceCapacity
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -44,6 +46,9 @@ Same shared-memory algebra as `GrowingWorld.lean` and the same recursive-majorit
 and no internalization-threshold crossing ([Guests] §5, clause (iv)) — that needs a carrier bridge
 from list words to fixed-length words and is a separate target.
 -/
+
+
+@[expose] public section
 
 namespace AccretingWitness
 

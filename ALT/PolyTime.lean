@@ -3,11 +3,13 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.Code.SizeArith
-import ALT.TimeCost
-import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
-import Mathlib.Data.Nat.Size
-import Mathlib.Tactic.Positivity
+module
+
+public import ALT.Code.SizeArith
+public import ALT.TimeCost
+public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+public import Mathlib.Data.Nat.Size
+public import Mathlib.Tactic.Positivity
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -35,6 +37,9 @@ the VALUE `f n`) is false already for `succ` — `f n = n + 1` is exponential in
 `Nat.size (f n)` is the honest, composable choice (and it is what a downstream `comp`/`prec` cost proof
 actually threads — see `polyTime_comp`, `polyTime_prec`).
 -/
+
+
+@[expose] public section
 
 namespace TimeCost
 

@@ -42,12 +42,19 @@ machine and for every recursively enumerable consistent extension of 𝗥₀
 under consistency alone — to our knowledge the first in that setting, the one prior
 machine-checked treatment being an Agda formalization for a purpose-built
 machine and Basic Recursive Arithmetic.
+Its additive form is here too, on the prefix machine: one constant for every
+theory plus the theory's own prefix complexity — Chaitin's own constant under
+consistency alone, to our knowledge the first machine-checked additive form —
+and along a ladder of theories each placed at its own such threshold, the
+theory's prefix complexity grows by at least a bit per rung, so no computable
+family names that ladder uniformly.
 Levin's coding theorem is here too, over a universal prefix machine built from
 the serialized codes: every lower-semicomputable semimeasure lies within an
 additive constant of the ideal code length, and the machine's algorithmic
-probability is `2^{−K}` up to a constant factor — to our knowledge the first
-machine-checked proof of the coding theorem in any prover, on an online
-Kraft–Chaitin assignment verified with its invariant.
+probability is `2^{−K}` up to a constant factor and a universal
+lower-semicomputable semimeasure — to our knowledge the first machine-checked
+proof of the coding theorem in any prover, on an online Kraft–Chaitin
+assignment verified with its invariant.
 
 **Start here:** the [**API reference**](https://lividgreen.github.io/lean-algorithmic-learning-theory/)
 is generated from the source and is the best way in — every definition and
@@ -67,27 +74,32 @@ points:
 | [`GrowingHostWitness.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/GrowingHostWitness.html) | a growing world that emits its own learning oracle, membership proved from its own dynamics |
 | [`GrowingSeamWitness.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/GrowingSeamWitness.html) | a growing world in both route-classes at once — learning from its own emitted process, emergence from its own growth — at any envelope-profile source |
 | [`ChaitinIncompleteness.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/ChaitinIncompleteness.html) | Chaitin's incompleteness theorem over Mathlib's universal machine, for every recursively enumerable consistent extension of 𝗥₀ |
-| [`CodingTheorem.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/CodingTheorem.html) | Levin's coding theorem on a universal prefix machine — prefix complexity is `−log₂` of algorithmic probability up to an additive constant |
+| [`KBEnumerable.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/KBEnumerable.html) | Chaitin's theorem in its additive form on a prefix machine — the bound is one constant for every theory plus the theory's own prefix complexity |
+| [`ChaitinPrefixLadder.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/ChaitinPrefixLadder.html) | a ladder of theories each placed at its own Chaitin threshold, gaining at least one bit of prefix complexity per rung — no computable family names it uniformly |
+| [`CodingTheorem.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/CodingTheorem.html) | Levin's coding theorem on a universal prefix machine — prefix complexity is `−log₂` of algorithmic probability up to an additive constant, and that probability is a universal lower-semicomputable semimeasure |
 
 ## Verification standard
 
 - No `sorry`, `admit`, or `native_decide`; standard axioms only
   (`propext`, `Classical.choice`, `Quot.sound`) — several cores are
   choice-free, and the structural capstone depends on no axioms at all.
-- **Build-enforced axiom hygiene**: 1209 `#guard_msgs in #print axioms` guards
+- **Build-enforced axiom hygiene**: 1283 `#guard_msgs in #print axioms` guards
   assert each capstone's exact axiom set; `lake build` fails on any drift.
 - **CI-enforced whole-library audit**: every declaration under `ALT` — not only
-  the guarded capstones — is checked against the same allowlist by
-  [`axiom-audit`](https://github.com/leanprover-community/axiom-audit) on each
-  CI run, so a `sorry`, a `native_decide`, or a home-rolled axiom anywhere in
+  the guarded capstones — is checked against the same allowlist, the checked-in
+  `forgive.yml`, by [`forgive`](https://github.com/FormalizedFormalLogic/forgive)
+  on each CI run, so a `sorry`, a `native_decide`, or a home-rolled axiom anywhere in
   the library fails the build. The two are complementary: the guards pin each
   capstone's *exact* axiom set in source, where it renders into the API docs;
   the audit covers everything the guards do not name. Reproduce it locally with
-  `lake exe axiom-audit --root ALT` after a build.
+  `lake exe forgive ALT` after a build.
 - **Targeted imports throughout**: every module names exactly the Mathlib
   files it uses — no monolith `import Mathlib`, one vendored port excepted —
   so the dependency surface is explicit and the build/docs closure stays
   proportionate to what is actually used.
+- **Module-system code**: every file is a Lean `module` with explicit
+  `public import` lines and an exposed public section, so a consumer on the
+  module system imports it directly and a classic file imports it unchanged.
 - To *genuinely* re-verify (guards only re-run on true elaboration), delete
   the project's compiled artifacts first:
   `rm -rf .lake/build/lib/lean/ALT*` then `lake build`.
@@ -105,12 +117,18 @@ A declaration is public when something requires it to be —
 4. a public declaration's **statement** mentions it — otherwise you could not
    restate the theorem; or
 5. a public **definition** that is not `Code`-valued has it in its body —
-   otherwise you could not unfold what the definition means.
+   otherwise you could not unfold what the definition means; or
+6. Lean's module system requires it: every definition here is exposed
+   (`@[expose] public section`), so a name an exposed body reaches — a
+   `Code`-valued body, or a proof term inside a definition — must be public
+   for the file to compile at all.
 
 Rules 4 and 5 are a transitive closure, and rule 5 stops at
 `Nat.Partrec.Code`-valued definitions on purpose: the code constructions are
 meant to be opaque, characterized by their exported `val_*`/`tc_*` lemmas rather
-than by their syntax trees. One further reason is not mechanical: a declaration
+than by their syntax trees. Rule 6 is wider than that closure, which is why
+the ratchet below counts such names as over-keeps and the baseline records
+them as accepted rather than as defects. One further reason is not mechanical: a declaration
 a module's own docstring presents as a **main result** stays public even when
 nothing above consumes it — a paper's headline statement should be reachable
 whether or not another theorem happens to need it. What the machine does
@@ -381,12 +399,27 @@ replace them.
   "the bit-length complexity of `s` exceeds `n`" for no `n` at or above the
   bit-length of one fixed-point program (`chaitin_theorem`), so all but
   finitely many such true sentences are unprovable in it
-  (`chaitin_true_unprovable`), and both hold for every recursively
+  (`chaitin_true_unprovable`), the exceptions counted at `2^n` at the bound
+  `n` (`card_K_bitlen_le`, below), and both hold for every recursively
   enumerable such extension by Craig's trick (`chaitin_theorem_of_RE`,
   `chaitin_true_unprovable_of_RE`); the abstract Berry bound (`chaitin_bound`)
   holds for any computably enumerable relation asserting only true lower
   bounds, and the sentences are Foundation's own Σ₁ representation, negated.
   The constant is a Kleene fixed point's length, named rather than computed.
+  The additive form lands on the prefix machine `KB` (`ChaitinPrefix.lean`,
+  `SerializationParse.lean`, `KBEnumerable.lean`): one program `c₀` fixed for
+  every theory, and `n < elen c₀ + KB(⌜e⌝)` at any program `e` enumerating
+  the theory's provable sentences of this form — Chaitin's own constant, the
+  theory's prefix complexity, under consistency alone (`chaitin_theoremB`,
+  `chaitin_theoremB_RE`), with the true-and-unprovable family at that
+  constant (`chaitin_true_unprovableB`) and an enumerator exhibited for every
+  `Δ₁` theory (`exists_enumerator_chaitinB`); proved from two leaf
+  propositions, each in its own module — a primitive-recursive parser of the
+  serialization with its two-way specification (`eParserSpec`) and the
+  computable enumeration of "`KB(s) ≤ n`" (`rePred_kleB`) — and assembled
+  once both were proved, the hypotheses' joint satisfiability witnessed at
+  `𝗣𝗔⁻` (`chaitin_theoremB_nonvacuous`). Boundary: the enumerator is of the
+  theorems, not the axioms; the constant is named, not computed.
   The theorem then drives the deep ladder as a third rung selector at `𝗥₀`
   (`ChaitinLadder.lean`): a chain of theories each certifying a description
   length its predecessor could not.
@@ -417,11 +450,22 @@ replace them.
   schedule the theory at stage `n` is exactly the code held in the committing
   substrate's written region at the corresponding step, and stays held under
   every later one (`committedTheory_at_commitStep`,
-  `ladderTheory_subset_committedTheory`). Registered as *Inevitability*
-  Proposition 6.16 and Remark 6.17, rows IN-54…IN-56. Boundary: no rate of
-  the ladder is stated and no rung's Gödel number is computed; the two
-  coordinates are stated side by side at one step index, no product update
-  built; the commit stream is designed.
+  `ladderTheory_subset_committedTheory`). A fourth selector places Chaitin's
+  sentence at each theory's own additive threshold — *Decoupling*
+  Theorem 6.7's constant plus the theory's prefix complexity
+  (`ChaitinPrefixLadder.lean`, `prefixChaitinSelector`) — and along its
+  ladder the theory's enumerator gains at least one bit of prefix complexity
+  per rung (`KB_enumeratorB_lt_succ`, `KB_enumeratorB_ge`), so no computable
+  family names the ladder's theories uniformly
+  (`prefixChaitinLadder_not_uniform`, in `PrefixEliasKB.lean`), on two facts
+  about `KB` proved for the purpose: its invariance under computable maps,
+  through the universal prefix machine as a code (`PrefixInvarianceKB.lean`,
+  `univPrefix`, `KB_map_le`), and its Elias bound `KB n ≤ 2 · size n + c`
+  (`KB_le_two_mul_size`). Registered as *Inevitability* Proposition 6.16 and
+  Remarks 6.17 to 6.19, rows IN-54…IN-59. Boundary: the rate is in the prefix
+  currency, none is stated in the syntactic size of the rungs, and no rung's
+  Gödel number is computed; the two coordinates are stated side by side at
+  one step index, no product update built; the commit stream is designed.
 
 - **Levin's coding theorem on a universal prefix machine**
   (`PrefixMachine.lean`, `BitStringPrimrec.lean`,
@@ -445,9 +489,71 @@ replace them.
   Kraft–Chaitin assignment carrying its invariant (`kcRun_invariant`) is fed
   the semimeasure's request stream, made total by dummy requests at its
   silent steps at the price of one bit. Each constant is a code's length,
-  named rather than computed. Boundary: proved over one fixed universal
-  prefix machine; `QB`'s domination of every lower-semicomputable semimeasure
-  up to a constant is a one-line corollary stated as no declaration.
+  named rather than computed. Restated multiplicatively at a general
+  semimeasure (`coding_theorem_mul`), the theorem makes `QB` a universal
+  lower-semicomputable semimeasure — it dominates every one up to a constant
+  factor (`QB_universal`), the hypotheses' joint satisfiability witnessed at
+  the point mass (`QB_universal_nonvacuous`). Boundary: proved over one fixed
+  universal prefix machine, where the classical text fixes its universal
+  semimeasure as any maximal one — `QB` is *a* universal semimeasure, not a
+  unique object.
+
+- **The prefix machine's two textbook inequalities** (`PrefixPairKB.lean`,
+  `PrefixModelCost.lean`): subadditivity, `KB (pair x y) ≤ KB x + KB y + c`
+  (`KB_pair_le`) — one machine reads two descriptions back to back, the split
+  unique because the universal machine's halting domain is prefix-free, and
+  the pairing machine's own domain prefix-free in turn
+  (`prefixFree_pairMachine_dom`), so no length header is paid — and the model
+  cost, `KB x ≤ K_bitlen x + 2 · size (K_bitlen x) + c`
+  (`KB_le_K_bitlen_add_two_mul_size`): a plain description made
+  self-delimiting at the price of its own length written in the Elias code,
+  which is *Discovery* §1.1's model-cost term read on the machine that section
+  names. Boundary: constants are code lengths, named rather than computed; the
+  converse at a constant factor is the index-cost bullet below, and neither
+  additive form between the two currencies is settled.
+
+- **Counting bounds, and the prefix machine's own uncomputability**
+  (`PrefixCounting.lean`): a description budget of `L` bits buys at most
+  `2^L` naturals, in both currencies and for unrelated reasons — on the
+  prefix machine `KB` from its Kraft inequality, each member of the budgeted
+  set contributing at least `2^{−L}` to a series bounded by one
+  (`finset_card_KB_le`, `card_KB_le`), and on the bit-length measure
+  `K_bitlen`, where no Kraft inequality holds, from injectivity into the
+  indices below `2^L` (`finset_card_K_bitlen_le`, `card_K_bitlen_le`). Each
+  count is stated twice: the `Finset` form carries the bound unconditionally,
+  the `Set.ncard` form takes its content from the matching finiteness lemma,
+  `ncard` reading `0` on an infinite set. The counts quantify both Chaitin
+  theorems' "all but finitely many". And `KB` is uncomputable
+  (`KB_not_computable`) by Berry's argument through the already-landed
+  partial-map invariance rather than a Kleene fixed point: the search for an
+  `s` of complexity above `n` is a partial computable map, its domain
+  populated by `KB_unbounded`, priced by `KB_partial_map_le` and then by the
+  Elias bound. Boundary: uncomputable, not un-enumerable — the graph of
+  "`KB(s) ≤ n`" is computably enumerable (`rePred_kleB`); `2^L` is the best
+  the Kraft hypothesis gives, a flat semimeasure attaining it, and the strict
+  count `KB`'s own totality would buy is not stated; the two counts share
+  a constant and nothing else.
+
+- **The index cost of a description** (`IndexCost.lean`): the index
+  bit-length of the least program computing `x` is at most a constant factor
+  above its prefix complexity, `K_bitlen x ≤ 32 * KB x + c`
+  (`K_bitlen_le_32_mul_KB`), by a balanced `Code.pair` nest over a minimal
+  description's bits (`sizeLaw`, `nestSpec`) and one fixed decoder
+  (`decoderSpec`). With `KB_le_K_bitlen_add_two_mul_size` it puts the two
+  currencies within constant factors of each other; whether either additive
+  form holds is open, the first exactly when the plain Kraft weight is
+  summable (next bullet).
+
+- **Prefix-complexity minimality** (`KraftMinimality.lean`): an
+  upper-semicomputable `f` — `UpperSemicomputable`, a computable non-increasing
+  stage sequence attaining `f` — has `KB ≤ f + c` for some `c` exactly when
+  `∑ 2^(-f x)` is summable (`KB_le_add_iff_summable`), the coding theorem's
+  minimality reading; the plain bit-length is upper-semicomputable
+  (`upperSemicomputable_K_bitlen`), so the first additive form between the
+  currencies is exactly the plain Kraft weight's summability
+  (`KB_le_K_bitlen_add_iff_summable`), decided here in neither direction; the
+  computable witness `2 * Nat.size` re-derives the Elias bound
+  (`KB_le_two_mul_size'`).
 
 - **An expressiveness excess order** (`ExcessOrder.lean`,
   `ExcessOrderComplete.lean`): representational classes graded by work-bit
@@ -756,6 +862,29 @@ replace them.
   restatement; the permutivity-to-injectivity route is classical; the
   finite-world identification relates counts, not capacities; the derived
   cap says nothing about attainment beyond the tables named.
+- **The growing width: six catalogue rules accrete, the identity does not**
+  (`GrowingWidth.lean`, `LightConeWidth.lean`): the memory width restricted to
+  the states whose orbit has unbounded size (`GrowingPart`, `growingWidth`) —
+  the part invariant and merge-saturated (`growingPart_of_merge`), the
+  restricted family advancing (`advances_growingPart`), the width monotone and
+  below the plain one (`growingWidth_mono`, `growingWidth_le_memWidth`), and a
+  genuine restriction: `0` against `t + 1` at the identity
+  (`growingWidth_id_slowClock_eq_zero_memWidth_eq_succ`). Under the support
+  diameter (`diam`) and along the light cone of an `n`-cell window
+  (`lightCone`), an update with exact endpoint moves `(1, 1)` has the nonzero
+  states as its growing part (`growingPart_eq_ne_zero`), and with a trivial
+  kernel and injectivity its growing width is at least `2^(n+t−1)`
+  (`two_pow_le_growingWidth_lightCone`), hence unbounded
+  (`growingWidth_lightCone_unbounded`) — instantiated at tables `30`, `86`,
+  `90`, `150`, `154`, `210` (`growingWidth_lightCone_unbounded_rule30`, …),
+  jointly satisfiable at rule `90`, and `0` at the identity and both shifts
+  (`growingWidth_lightCone_id_eq_zero`,
+  `growingWidth_lightCone_rule170_eq_zero`). The plain width along the same
+  cone is unbounded even at the identity, so this is the quantity that sees
+  the rule. Registered as *Guests* Definition 7.22 and Proposition 7.23, rows
+  GV-30 and GV-31. Boundary: a lower bound, not the value; the rate is the
+  presentation's; the diameter is one reading of size; the part is not
+  decidable in general; a separation at a hypothesis class, not genericity.
 - **The pricing economy's growing form** (`GrowingPrice.lean`): the
   fixed-carrier Collapse Theorem does not transport — determination fails for
   a merely injective stage law (`exists_ne_frames_agreeing_on_range`) — while

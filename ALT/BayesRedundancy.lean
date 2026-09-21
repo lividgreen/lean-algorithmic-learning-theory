@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.Algebra.BigOperators.Field
-import Mathlib.Analysis.SpecialFunctions.Pow.Real
+module
+
+public import Mathlib.Algebra.BigOperators.Field
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -49,6 +51,9 @@ Everything here is elementary (Mathlib calculus + `Finset`); no `sorry`. The dee
 *not* used — this is the realizable-deterministic route that will let §3 drop `hrate`.
 -/
 
+
+@[expose] public section
+
 namespace BayesRedundancy
 
 open scoped BigOperators
@@ -87,11 +92,12 @@ theorem hellinger_point_mass {α : Type*} [Fintype α] [DecidableEq α] (q : α 
   have hrest : ∀ x ∈ Finset.univ.erase o,
       (Real.sqrt (if x = o then (1 : ℝ) else 0) - Real.sqrt (q x)) ^ 2 = q x := by
     intro x hx
-    rw [if_neg (Finset.ne_of_mem_erase hx), Real.sqrt_zero, zero_sub, neg_sq, Real.sq_sqrt (hq x)]
+    rw [ite_eq_right (Finset.ne_of_mem_erase hx), Real.sqrt_zero, zero_sub, neg_sq,
+      Real.sq_sqrt (hq x)]
   have hsumeq : ∑ x, (Real.sqrt (if x = o then (1 : ℝ) else 0) - Real.sqrt (q x)) ^ 2
       = 2 - 2 * Real.sqrt (q o) := by
     rw [← Finset.add_sum_erase _ _ (Finset.mem_univ o), Finset.sum_congr rfl hrest]
-    rw [if_pos rfl, Real.sqrt_one]
+    rw [ite_eq_left rfl, Real.sqrt_one]
     rw [Finset.sum_erase_eq_sub (Finset.mem_univ o), hsum]
     linear_combination Real.sq_sqrt (hq o)
   rw [hsumeq]; ring

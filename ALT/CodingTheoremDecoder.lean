@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.CodingTheoremBitwise
+module
+
+public import ALT.CodingTheoremBitwise
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -29,6 +31,9 @@ Provenance: [Discovery] §1.1 and FV-21, over the universal prefix machine `Pref
 
 * The `O(1)` coding theorem and the online Kraft–Chaitin invariant it needs are not attempted here.
 -/
+
+
+@[expose] public section
 
 namespace PrefixMachine
 
@@ -178,7 +183,7 @@ private theorem firesAt_count_least (k m i : ℕ) (_hfire : firesAt a k m = true
     ∀ m' < m, ¬ (firesAt a k m' = true ∧ firingCountBefore a k m' = i) := by
   rintro m' hm' ⟨hfire', hcount'⟩
   have h1 : firingCountBefore a k (m' + 1) = firingCountBefore a k m' + 1 := by
-    rw [firingCountBefore_succ, if_pos hfire']
+    rw [firingCountBefore_succ, ite_eq_left hfire']
   have h2 : firingCountBefore a k (m' + 1) ≤ firingCountBefore a k m :=
     firingCountBefore_mono a k (by omega)
   omega
@@ -210,7 +215,7 @@ private theorem firingCountBefore_lt_of_fires {μ : ℕ → ℝ}
     (hnn : ∀ x, 0 ≤ μ x) (hsum : ∀ F : Finset ℕ, ∑ x ∈ F, μ x ≤ 1) (k m : ℕ)
     (hfire : firesAt a k m = true) : firingCountBefore a k m < 2 ^ k := by
   have h1 : firingCountBefore a k (m + 1) = firingCountBefore a k m + 1 := by
-    rw [firingCountBefore_succ, if_pos hfire]
+    rw [firingCountBefore_succ, ite_eq_left hfire]
   have h2 : firingCountBefore a k (m + 1) < 2 ^ k := by
     rw [firingCountBefore_eq]
     exact card_firesAt_lt a ha_mono ha_le hnn hsum k m
@@ -438,7 +443,7 @@ theorem parseBits_gammaCode_bitsFixed (k i : ℕ) (hi : i < 2 ^ k) :
   unfold parseBits
   rw [hgc, takeWhile_not_replicate_true_append]
   simp only [List.length_replicate, ← hgc]
-  rw [hdrop1, htake1, bitsToNat_natToBits, if_pos hlen, hdrop2, ofBitsFixed_bitsFixed hi]
+  rw [hdrop1, htake1, bitsToNat_natToBits, ite_eq_left hlen, hdrop2, ofBitsFixed_bitsFixed hi]
 
 /-- The leading `false`-run of any bit-string, read back, is a run of `false`s whose length is its
 own — and either exhausts the string or is immediately followed by a `true`. -/
@@ -489,7 +494,7 @@ private theorem parseBits_eq_some (w : List Bool) (k i : ℕ) (h : parseBits w =
   set L := (w.takeWhile (fun b => !b)).length with hLdef
   set k' := bitsToNat ((w.drop (L + 1)).take L) with hk'def
   by_cases hcond : w.length = 2 * L + 1 + k'
-  · rw [if_pos hcond] at h
+  · rw [ite_eq_left hcond] at h
     simp only [Option.some.injEq, Prod.mk.injEq] at h
     obtain ⟨hk, hi⟩ := h
     obtain ⟨hTW, hrest⟩ := takeWhile_not_spec w
@@ -534,7 +539,7 @@ private theorem parseBits_eq_some (w : List Bool) (k i : ℕ) (h : parseBits w =
     rw [hbf, ← hklen]
     unfold gammaCode
     simp [List.append_assoc]
-  · rw [if_neg hcond] at h
+  · rw [ite_eq_right hcond] at h
     exact absurd h (by simp)
 
 /-- **The `gammaCode`/`bitsFixed` descriptions are prefix-free.** -/
@@ -561,7 +566,7 @@ private theorem prefixFree_gammaCode_bitsFixed :
     exact absurd this.1 hk
 
 /-- **The parser's domain is prefix-free.** -/
-private theorem prefixFree_parseBits_dom :
+theorem prefixFree_parseBits_dom :
     PrefixFree {w : List Bool | (parseBits w).isSome} := by
   intro w1 hw1 w2 hw2 hpre
   simp only [Set.mem_ofPred_eq] at hw1 hw2

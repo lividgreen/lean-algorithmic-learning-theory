@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.WeightedFiber
+module
+
+public import ALT.WeightedFiber
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -39,6 +41,9 @@ update is not non-expansive in total variation. A multi-step accumulation and a 
 miss-count-based rate (the rescale is free when candidates agree; the floor only bites on
 candidates already below one quantum) are both left open.
 -/
+
+
+@[expose] public section
 
 namespace WeightedFiber
 

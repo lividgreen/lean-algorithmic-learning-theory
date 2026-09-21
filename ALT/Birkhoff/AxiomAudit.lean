@@ -11,12 +11,17 @@ axiom set ever drifts from the standard `[propext, Classical.choice, Quot.sound]
 pins down that the vendored pointwise ergodic theorem and the trajectory-space Tool (i) / oracle
 corollaries carry NO `sorryAx` and NO custom axiom — the vendored dependency's footprint is clean.
 -/
-import ALT.BirkhoffTool
+module
+
+public import ALT.BirkhoffTool
 
 set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-! ## Vendored pointwise Birkhoff ergodic theorem (`ALT/Birkhoff/PointwiseBirkhoff.lean`) -/
+
+
+@[expose] public section
 
 /-- info: 'birkhoffErgodicTheorem' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in

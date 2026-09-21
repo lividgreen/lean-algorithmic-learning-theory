@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.BitStringPrimrec
-import ALT.CodingTheoremWeak
+module
+
+public import ALT.BitStringPrimrec
+public import ALT.CodingTheoremWeak
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -28,6 +30,9 @@ The coding theorem itself (`coding_theorem_weak`, `coding_theorem_weak_QB`) is e
 `ALT/CodingTheoremDecoder.lean`, over `QB_lsc` here. The `O(1)` coding theorem and the online
 Kraft–Chaitin invariant it needs are not attempted in either module.
 -/
+
+
+@[expose] public section
 
 namespace PrefixMachine
 
@@ -211,11 +216,11 @@ private theorem QBApproxTerm_double_le (t x k n : ℕ) :
     have hev' : evaln (t + 1) c n = some x := by
       have hmem : x ∈ evaln (t + 1) c n := evaln_mono (Nat.le_succ t) hev
       exact hmem
-    rw [if_pos ⟨hL, hacc, hev⟩, if_pos ⟨hL', hacc', hev'⟩]
+    rw [ite_eq_left ⟨hL, hacc, hev⟩, ite_eq_left ⟨hL', hacc', hev'⟩]
     rw [show t + 1 - (elen c + (natToBits n).length) = (t - (elen c + (natToBits n).length)) + 1
       from by omega, pow_succ]
     exact le_of_eq (by ring)
-  · rw [if_neg h]
+  · rw [ite_eq_right h]
     simp
 
 /-- **Monotonicity**: `QBApprox`'s dyadic value never decreases with the stage. -/
@@ -289,11 +294,11 @@ private theorem QBApproxTerm_le_term (t x k n : ℕ) :
   by_cases h : elen c + (natToBits n).length ≤ t ∧ n ∈ acceptedList c t ∧ evaln t c n = some x
   · obtain ⟨hL, hacc, hev⟩ := h
     have hx : x ∈ pfy c n := pfy_eq_of_evaln_stage hacc hev
-    rw [if_pos ⟨hL, hacc, hev⟩, if_pos hx]
+    rw [ite_eq_left ⟨hL, hacc, hev⟩, ite_eq_left hx]
     unfold kbWeight
     have hmemS : natToBits n ∈ natToBits '' (pfy c).Dom :=
       ⟨n, Part.dom_iff_mem.mpr ⟨x, hx⟩, rfl⟩
-    rw [if_pos hmemS]
+    rw [ite_eq_left hmemS]
     refine le_of_eq ?_
     push_cast
     rw [show ((1 : ℝ) / 2) ^ (elen c + (natToBits n).length)
@@ -301,7 +306,7 @@ private theorem QBApproxTerm_le_term (t x k n : ℕ) :
       from by rw [div_pow, one_pow]]
     rw [div_eq_div_iff (by positivity) (by positivity), one_mul, ← pow_add,
       Nat.sub_add_cancel hL]
-  · rw [if_neg h]
+  · rw [ite_eq_right h]
     split
     · simp only [Nat.cast_zero, zero_div]
       exact kbWeight_nonneg _
@@ -361,7 +366,7 @@ private theorem exists_stage_of_mem_pfy {c : Code} {n x : ℕ} (hx : x ∈ pfy c
   have hex : ∃ s, n ∈ acceptedList c s := (mem_pfy_dom_iff c n).mp hdom
   refine ⟨Nat.find hex, Nat.find_spec hex, ?_⟩
   unfold pfy at hx
-  rw [dif_pos hex, Part.mem_some_iff] at hx
+  rw [dite_eq_left hex, Part.mem_some_iff] at hx
   rw [hx]
   exact (Option.some_get _).symm
 
@@ -395,7 +400,7 @@ theorem QBApprox_lt (x : ℕ) (q : ℝ) (hq : q < QB x) :
     intro cp hcp hx
     have hspec := (exists_stage_of_mem_pfy hx).choose_spec
     have hstage_eq : stage cp = (exists_stage_of_mem_pfy hx).choose := by
-      rw [hstagedef]; exact dif_pos hx
+      rw [hstagedef]; exact dite_eq_left hx
     have hle : stage cp ≤ t := le_of_lt (hstage_lt cp hcp)
     rw [hstage_eq] at hle
     exact ⟨acceptedList_mono hle hspec.1, evaln_mono hle hspec.2⟩
@@ -403,25 +408,25 @@ theorem QBApprox_lt (x : ℕ) (q : ℝ) (hq : q < QB x) :
       = (QBApproxTerm t x (Encodable.encode cp.1) (bitsToNat cp.2) : ℝ) / 2 ^ t := by
     intro cp hcp
     by_cases hx : x ∈ pfy cp.1 (bitsToNat cp.2)
-    · rw [if_pos hx]
+    · rw [ite_eq_left hx]
       obtain ⟨hacc, hev⟩ := hacc_ev cp hcp hx
       unfold QBApproxTerm
       simp only [Denumerable.ofNat_encode, natToBits_bitsToNat]
-      rw [if_pos ⟨le_of_lt (hL_lt cp hcp), hacc, hev⟩]
+      rw [ite_eq_left ⟨le_of_lt (hL_lt cp hcp), hacc, hev⟩]
       unfold kbWeight
       have hmemS : cp.2 ∈ natToBits '' (pfy cp.1).Dom :=
         ⟨bitsToNat cp.2, Part.dom_iff_mem.mpr ⟨x, hx⟩, natToBits_bitsToNat cp.2⟩
-      rw [if_pos hmemS]
+      rw [ite_eq_left hmemS]
       refine Eq.symm ?_
       push_cast
       exact pow_sub_div_eq t (elen cp.1 + cp.2.length) (le_of_lt (hL_lt cp hcp))
-    · rw [if_neg hx]
+    · rw [ite_eq_right hx]
       unfold QBApproxTerm
       simp only [Denumerable.ofNat_encode, natToBits_bitsToNat]
       by_cases hcond : elen cp.1 + cp.2.length ≤ t ∧
           bitsToNat cp.2 ∈ acceptedList cp.1 t ∧ evaln t cp.1 (bitsToNat cp.2) = some x
       · exact absurd (pfy_eq_of_evaln_stage hcond.2.1 hcond.2.2) hx
-      · rw [if_neg hcond]; simp
+      · rw [ite_eq_right hcond]; simp
   have hpsi_inj : Function.Injective
       fun cp : Code × List Bool => (Encodable.encode cp.1, bitsToNat cp.2) := by
     rintro ⟨c, p⟩ ⟨c', p'⟩ heq

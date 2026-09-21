@@ -3,9 +3,11 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.CategoryTheory.Category.Basic
-import Mathlib.Computability.PartrecCode
-import Mathlib.Data.ZMod.Basic
+module
+
+public import Mathlib.CategoryTheory.Category.Basic
+public import Mathlib.Computability.PartrecCode
+public import Mathlib.Data.ZMod.Basic
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -53,6 +55,9 @@ faithful reading of §4.1's "objects as subsets of `{0,1}^{|s_work|}`". The Cart
 of this realizability category (exponentials as codes realizing morphisms — combinatory completeness
 via k/s) is the next increment; this file establishes the category and the functions-as-data layer.
 -/
+
+
+@[expose] public section
 
 namespace Realizability
 
@@ -151,7 +156,7 @@ theorem tableFn_eval {k v : ℕ} : ∀ l : List (ℕ × ℕ), (k, v) ∈ l →
       by_cases hk : k = k0
       · have hv : v0 = v := huniq k0 v0 List.mem_cons_self hk.symm
         change (if k = k0 then v0 else tableFn rest k) = v
-        rw [if_pos hk, hv]
+        rw [ite_eq_left hk, hv]
       · have hmem' : (k, v) ∈ rest := by
           rcases hmem with h | h
           · exact absurd (congrArg Prod.fst h) hk
@@ -159,7 +164,7 @@ theorem tableFn_eval {k v : ℕ} : ∀ l : List (ℕ × ℕ), (k, v) ∈ l →
         have hrec : tableFn rest k = v :=
           ih hmem' (fun k' v' hk'mem hk'eq => huniq k' v' (List.mem_cons_of_mem _ hk'mem) hk'eq)
         change (if k = k0 then v0 else tableFn rest k) = v
-        rw [if_neg hk, hrec]
+        rw [ite_eq_right hk, hrec]
 
 /-- **Every function between finite assemblies is realized** — a morphism of the realizability
 category. The §4.1 fact that finiteness makes every total function a morphism (functions-as-data: the

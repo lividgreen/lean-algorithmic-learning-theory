@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.Code.EvalLaws
-import ALT.TimeCost
+module
+
+public import ALT.Code.EvalLaws
+public import ALT.TimeCost
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -47,6 +49,9 @@ bound `tcP_rfind'_le` — if every probe costs at most `B`, a search with witnes
 and it is domain-restricted by construction: the witness `n` appears in the bound, because no bound
 uniform in the input exists for an unbounded search.
 -/
+
+
+@[expose] public section
 
 namespace TimeCost
 

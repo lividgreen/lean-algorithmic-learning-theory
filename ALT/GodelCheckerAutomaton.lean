@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.GodelChecker
+module
+
+public import ALT.GodelChecker
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -33,6 +35,9 @@ proof code (`step`/`workNext`). After `M_chk + 1` steps the read-out Boolean is 
 
 -- "The **categorical** Decoupling statements … stay on the Mathlib side" (above), and
 -- `code_fixed` is "proved locally, without the Mathlib-side Decoupling Lemma": not in scope here.
+
+@[expose] public section
+
 assert_not_exists Decoupling.decoupling_iff_persists_all
 
 namespace GodelCheckerAutomaton
@@ -132,7 +137,7 @@ theorem step_run_invariant (Ax : List S) (Mchk : ℕ) (φ : S) :
       = Sum.inr (j + 1, decide (∀ p, p < j + 1 → GodelChecker.Prf Ax φ p = false))
     rw [hcode, hwork]
     dsimp only [workNext]
-    rw [if_pos hjm, decide_and_not (GodelChecker.Prf Ax φ) j]
+    rw [ite_eq_left hjm, decide_and_not (GodelChecker.Prf Ax φ) j]
 
 /-- After `M_chk + 1` steps the read-out Boolean is the conjunction of `¬Prf(φ, p)` over the whole
 bounded range `p ≤ M_chk` (§6.3's decision, concretely). -/

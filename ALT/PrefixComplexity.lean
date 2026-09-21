@@ -3,9 +3,11 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
-import ALT.KolmogorovComplexity
-import ALT.KolmogorovBitlen
+module
+
+public import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
+public import ALT.KolmogorovComplexity
+public import ALT.KolmogorovBitlen
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -22,8 +24,10 @@ Provenance: extends `ALT/KolmogorovComplexity.lean` (Slice 1: `Computes`, `codel
 complexity. Connects to [Discovery] §1.1 (`K(R)`, program length in bits) and [SQ] §2.
 
 ## Why this is genuine content (not reusable from the existing measures)
-The plain bit-length complexity `K_bitlen` (`ALT/KolmogorovBitlen.lean`) is **not** a
-semimeasure: `∑ₓ 2⁻ᴷᵇⁱᵗˡᵉⁿ⁽ˣ⁾` diverges (there are `≈ 2ⁿ` strings of complexity `n`). The
+The plain bit-length complexity `K_bitlen` (`ALT/KolmogorovBitlen.lean`) carries no Kraft
+inequality: nothing here bounds `∑ₓ 2⁻ᴷᵇⁱᵗˡᵉⁿ⁽ˣ⁾`, and whether it converges is not settled — the
+classical divergence counts `≈ 2ⁿ` strings of complexity `n`, which needs a data embedding at
+constant cost that no code here supplies (`ALT/IndexCost.lean`'s costs a factor). The
 semimeasure bound holds only after paying the *prefix premium*: descriptions must be
 self-delimiting. We charge that premium with an Elias-γ-class length `plen m = 2 · Nat.size (m + 1)`
 on program indices, so that the description set is prefix-free and its Kraft sum is `≤ 1`.
@@ -52,6 +56,9 @@ on program indices, so that the description set is prefix-free and its Kraft sum
   as the concrete self-delimiting code; the input-`0` ("output from nothing") convention inherited
   from Slice 1.
 -/
+
+
+@[expose] public section
 
 namespace PrefixComplexity
 

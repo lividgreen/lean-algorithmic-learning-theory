@@ -3,9 +3,12 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.Probability.Moments.SubGaussian
-import ALT.SQObjects
-import ALT.SQVersionSpace
+module
+
+public import Mathlib.MeasureTheory.Order.Group.Lattice
+public import Mathlib.Probability.Moments.SubGaussian
+public import ALT.SQObjects
+public import ALT.SQVersionSpace
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -75,6 +78,9 @@ Mathlib's Hoeffding inequality for sub-Gaussian MGFs
   (`hindep`, `hmean`) rather than as a single `IdentDistrib` family — `hmean` only constrains the
   first moment, which is all Hoeffding needs.
 -/
+
+
+@[expose] public section
 
 namespace SQOracle
 

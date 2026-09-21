@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.BayesRedundancy
+module
+
+public import ALT.BayesRedundancy
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -49,6 +51,9 @@ eq. 4, are off the discovery critical path and are left in the finite file.)
 * the competitor tail is bounded termwise by `w_i · exp(−2 S)` and summed via `Summable.tsum_le_tsum`
   + `tsum_mul_right`, using `∑' w ≤ 1` — exactly the finite `Finset.sum_le_sum` chain with `∑'`.
 -/
+
+
+@[expose] public section
 
 namespace CountableDiscovery
 
@@ -97,7 +102,7 @@ theorem competitor_likelihood_decay (hnn : ∀ i s x, 0 ≤ q i s x) (hpmf : ∀
   calc ∏ s ∈ Finset.range n, q i s (ω s)
       ≤ ∏ s ∈ Finset.range n,
           Real.exp (-2 * sqHellinger (fun x => if x = ω s then 1 else 0) (q i s)) :=
-        Finset.prod_le_prod (fun s _ => hnn i s (ω s)) (fun s _ => q_self_le_exp hnn hpmf i s)
+        Finset.prod_le_prod₀ (fun s _ => hnn i s (ω s)) (fun s _ => q_self_le_exp hnn hpmf i s)
     _ = Real.exp (∑ s ∈ Finset.range n,
           -2 * sqHellinger (fun x => if x = ω s then 1 else 0) (q i s)) := (Real.exp_sum _ _).symm
     _ = Real.exp (-2 * ∑ t ∈ Finset.range n,
@@ -107,11 +112,11 @@ theorem competitor_likelihood_decay (hnn : ∀ i s x, 0 ≤ q i s x) (hpmf : ∀
 
 /-- **Each prefix likelihood is `≤ 1`.** Every factor `q_i(ω_s | ω_{<s})` is a pmf value, hence
 `≤ 1` (`Finset.single_le_sum` against `∑_x q = 1`); the product over `s < n` is therefore `≤ 1`
-(`Finset.prod_le_one`). This is the only new fact the countable comparison test needs. -/
+(`Finset.prod_le_one₀`). This is the only new fact the countable comparison test needs. -/
 theorem Lik_le_one (hnn : ∀ i s x, 0 ≤ q i s x) (hpmf : ∀ i s, ∑ x, q i s x = 1)
     (i : ι) (n : ℕ) : Lik q ω i n ≤ 1 := by
   unfold Lik
-  refine Finset.prod_le_one (fun s _ => hnn i s (ω s)) (fun s _ => ?_)
+  refine Finset.prod_le_one₀ (fun s _ => hnn i s (ω s)) (fun s _ => ?_)
   calc q i s (ω s) ≤ ∑ x, q i s x := Finset.single_le_sum (fun x _ => hnn i s x) (Finset.mem_univ _)
     _ = 1 := hpmf i s
 
@@ -152,11 +157,11 @@ theorem countable_posterior_lower_bound
   have hite_nonneg : ∀ i, 0 ≤ ite (i = R) 0 (w i * Lik q ω i n) := fun i => by
     by_cases hiR : i = R
     · simp [hiR]
-    · rw [if_neg hiR]; exact mul_nonneg (hw i) (lik_nonneg hnn i n)
+    · rw [ite_eq_right hiR]; exact mul_nonneg (hw i) (lik_nonneg hnn i n)
   have hite_le : ∀ i, ite (i = R) 0 (w i * Lik q ω i n) ≤ w i * Lik q ω i n := fun i => by
     by_cases hiR : i = R
-    · rw [if_pos hiR]; exact mul_nonneg (hw i) (lik_nonneg hnn i n)
-    · exact le_of_eq (if_neg hiR)
+    · rw [ite_eq_left hiR]; exact mul_nonneg (hw i) (lik_nonneg hnn i n)
+    · exact le_of_eq (ite_eq_right hiR)
   have hsumite : Summable (fun i => ite (i = R) 0 (w i * Lik q ω i n)) :=
     hsummable.of_nonneg_of_le hite_nonneg hite_le
   set N : ℝ := ∑' i, ite (i = R) 0 (w i * Lik q ω i n) with hN
@@ -179,8 +184,8 @@ theorem countable_posterior_lower_bound
         ≤ ∑' i, w i * Real.exp (-2 * S) := by
           refine Summable.tsum_le_tsum (fun i => ?_) hsumite (hsumw.mul_right _)
           by_cases hiR : i = R
-          · rw [if_pos hiR]; exact mul_nonneg (hw i) (Real.exp_pos _).le
-          · rw [if_neg hiR]
+          · rw [ite_eq_left hiR]; exact mul_nonneg (hw i) (Real.exp_pos _).le
+          · rw [ite_eq_right hiR]
             have hdecay : Lik q ω i n ≤ Real.exp (-2 * S) :=
               le_trans (competitor_likelihood_decay hnn hpmf i n)
                 (Real.exp_le_exp.mpr (by linarith [hsep i hiR]))

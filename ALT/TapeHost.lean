@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.BlockPairHost
+module
+
+public import ALT.BlockPairHost
 
 /-!
 # The finite autonomous host, over an arbitrary observation sequence
@@ -45,6 +47,9 @@ the host does with `o` once it is read as a tape: it reproduces it, and (at `8 �
 the machine is periodic.
 -/
 
+
+@[expose] public section
+
 namespace TapeHost
 
 open NoisyWindowChain
@@ -81,13 +86,13 @@ private theorem tapeUpdate_designWindow (c : ZMod N) :
     = o (c + 1 - 7 + ((i : ℕ) : ZMod N))
   rw [NoisyWindowChain.noisyStep, NoisyWindowChain.windowMap]
   by_cases h : (i : ℕ) + 1 < 8
-  · rw [if_pos h, dif_pos h]
+  · rw [ite_eq_left h, dite_eq_left h]
     change o (c - 7 + (((⟨(i : ℕ) + 1, h⟩ : Fin 8) : ℕ) : ZMod N))
       = o (c + 1 - 7 + ((i : ℕ) : ZMod N))
     congr 1
     push_cast
     ring
-  · rw [if_neg h, dif_neg h]
+  · rw [ite_eq_right h, dite_eq_right h]
     have hi7 : (i : ℕ) = 7 := by have := i.isLt; omega
     change xor (!(designWindow o c 0)) (tape o (c + 1))
       = o (c + 1 - 7 + ((i : ℕ) : ZMod N))

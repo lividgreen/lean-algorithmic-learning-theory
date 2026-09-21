@@ -3,8 +3,10 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.ExcessOrder
-import ALT.GodelComplete
+module
+
+public import ALT.ExcessOrder
+public import ALT.GodelComplete
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -53,6 +55,9 @@ Provenance: [Decoupling] §6.3/§6.4 + [Persistence] §5/§7. This synthesis is 
 `ExcessOrder.outgrows`, `GodelComplete.incompleteness_of_arith`, `PersistenceCapacity.witness_world`
 — is already axiom-clean; this module is the composition.
 -/
+
+
+@[expose] public section
 
 namespace ExcessOrder
 

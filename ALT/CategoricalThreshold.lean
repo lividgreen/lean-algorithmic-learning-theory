@@ -3,10 +3,12 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import ALT.RealizabilityRecursor
-import ALT.CapacityLayer
-import ALT.GodelInternalization
-import ALT.GodelThreshold
+module
+
+public import ALT.RealizabilityRecursor
+public import ALT.CapacityLayer
+public import ALT.GodelInternalization
+public import ALT.GodelThreshold
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -55,6 +57,9 @@ here. Gödel's first incompleteness theorem remains the imported black box
 per §4.3's demarcation — the Cartesian-closed shape is ambient, and what a finite budget can fail is
 *hosting*.
 -/
+
+
+@[expose] public section
 
 namespace CategoricalThreshold
 

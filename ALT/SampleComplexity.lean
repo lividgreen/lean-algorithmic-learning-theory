@@ -3,7 +3,9 @@ Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mykola Palamarchuk
 -/
-import Mathlib.Analysis.SpecialFunctions.Log.Basic
+module
+
+public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -51,6 +53,9 @@ Theorem 4.1: B1 multiplies an `O(r)` cost into an already-`O(r·log(1/δ))` wind
 
 `Real.log` is the natural logarithm, as in the companion files.
 -/
+
+
+@[expose] public section
 
 namespace SampleComplexity
 
