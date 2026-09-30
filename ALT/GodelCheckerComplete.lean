@@ -26,15 +26,16 @@ soundness-only verdict on `G` of `ALT/GodelChecker.lean`.
 `ALT/GodelChecker.lean` builds a *concrete Hilbert (ax+MP) checker* and proves it **sound**; its
 `Decide(G)=true` then rides on soundness + the imported Gödel unprovability. That is honest but
 weak: a sound-only checker cannot certify "no bounded proof EXISTS", only "this checker found none".
-The completeness direction was open because Foundation's `⊢` is a **Tait sequent calculus**, with no
-Hilbert↔Tait completeness theorem to make an `(ax, mp)` script checker complete.
+The completeness direction was open because Foundation's `⊢` on first-order theories is
+provability in a **Tait sequent calculus**, with no Hilbert↔Tait completeness theorem to make an
+`(ax, mp)` script checker complete.
 
 This file takes the faithful route: it uses Foundation's **own arithmetized proof relation**
 `Bootstrapping.Proof T d φ` ("`d` is the Gödel number of a `T`-derivation of `φ`"), which is by
 construction the *real* proof relation — hence **sound AND complete** for `T ⊢` (no metatheory to
 re-prove):
-* SOUND   — `Prf_sound`  : `Bootstrapping.Provable.sound` (`Coding.lean:392`), accept ⇒ `T ⊢ φ`;
-* COMPLETE — `Prf_complete`: `internalize_provability` (`D1.lean:24`), `T ⊢ φ` ⇒ accept at some code.
+* SOUND   — `Prf_sound`  : `Bootstrapping.Provable.sound`, accept ⇒ `T ⊢ φ`;
+* COMPLETE — `Prf_complete`: `internalize_provability`, `T ⊢ φ` ⇒ accept at some code.
 
 So the decision morphism `Decide T M φ = ⋀_{p ≤ M} ¬Prf(φ,p)` satisfies the GENUINE property
 `Decide T M φ = true ↔ no T-proof of φ has Gödel number ≤ M` (`decide_correct`): a *sound and
@@ -46,7 +47,7 @@ merely soundly approximates — bounded non-provability.
 ## Decidability / what `noncomputable` means here
 Foundation ships **no** `Decidable (Bootstrapping.Proof T d φ)` instance, so `Decide` is packaged classically
 (`open Classical`) — it carries only `Classical.choice`, already in the accepted axiom set. This is
-not a gap: `Theory.proof` is a `𝚫₁.Semisentence 2` (`Proof/Basic.lean`), i.e. the relation is `Δ₁`
+not a gap: `Theory.proof` is a `𝚫ᴬ₁.Semisentence 2` (`Proof/Basic.lean`), i.e. the relation is `Δ₁`
 (primitive recursive), so a genuine decision *algorithm* exists; the Lean term simply does not
 `#eval`. The morphism's EXISTENCE as a total Boolean function — all Rep(S) needs (§4.1) — is what is
 certified.
@@ -59,10 +60,11 @@ computable-and-complete bounded decider is **walled**; first probed against Foun
 precise gaps:
 
 * **(a) reflection over the arithmetized predicate.** `Bootstrapping.Proof T p (⌜φ⌝)` unfolds to
-  `DerivationOf`, a **`noncomputable` Δ₁ FIXPOINT** — `Derivation T := (construction T).Fixpoint ![]`
-  (`Bootstrapping/Syntax/Proof/Basic.lean:465`) — over coded one-sided-sequent (`𝐋𝐊¹`) derivations
+  `DerivationOf`, a **`noncomputable` Δ₁ FIXPOINT** —
+  `Derivation T := (construction T).Fixpoint ![]` —
+  over coded one-sided-sequent (`𝐋𝐊¹`) derivations
   (`fstIdx`, `^⋏`/`^⋎`/`^∀`/`^∃`, `free`, `setShift`, `substs1`, `IsTerm`, coded-set membership).
-  Foundation exposes it ONLY as a `𝚫₁-Relation[V]` (a defining `𝚫₁.Semisentence`); it ships **no**
+  Foundation exposes it ONLY as a `𝚫ᴬ₁-Relation[V]` (a defining `𝚫ᴬ₁.Semisentence`); it ships **no**
   `Decidable`/`Primrec`/`Computable`/`Bool` instance. Making `Decide` `#eval` would require a new
   executable `Bool` evaluator for that fixpoint + a proof it agrees with `DerivationOf` — i.e. porting
   Foundation's whole coded-derivation checker to executable Lean.
@@ -85,10 +87,11 @@ executable complete derivation checker, in Foundation; upstream-PR targets).
 `paMinus_complete_decides` at `T★ = 𝗣𝗔⁻` (`PeanoMinus`) — **fully axiom-clean** (`#print axioms` =
 `propext, Classical.choice, Quot.sound`); `Δ₁` via `Theory.Δ₁.ofFinite`. The parallel `𝗜𝚺₁` witness
 `isigma1_complete_decides` (the same statement at `𝗜𝚺₁`) is **also fully axiom-clean**: Foundation's
-`𝗜𝚺₁.Δ₁` definability is a *theorem* (an anonymous instance in its
-`Incompleteness/Definability.lean`, discharged upstream), so it carries
-no named axiom either. `𝗣𝗔⁻ ⊊ 𝗜𝚺₁`, so the `𝗣𝗔⁻` capstone is the weaker, more faithful (§5.3-class)
-statement, and the `𝗜𝚺₁` form is the parallel witness at Foundation's canonical Σ₁-induction theory.
+`𝗜𝚺₁.Δ₁` definability is a *theorem* (synthesized from `PeanoMinus.delta1`,
+`InductionScheme.delta1_strictHierarchy` and the union instance, discharged upstream), so it
+carries no named axiom either. `𝗣𝗔⁻ ⊊ 𝗜𝚺₁`, so the `𝗣𝗔⁻` capstone is the weaker, more faithful
+(§5.3-class) statement, and the `𝗜𝚺₁` form is the parallel witness at Foundation's canonical
+Σ₁-induction theory.
 -/
 
 
@@ -211,8 +214,8 @@ theorem paMinus_complete_decides (M : ℕ) :
 /-- **§6.3 Theorem 6.3, L2b — complete, for the real `𝗜𝚺₁` Gödel sentence.** The `𝗜𝚺₁` counterpart of
 `paMinus_complete_decides`: the real Gödel sentence `G` of `𝗜𝚺₁` (true in `ℕ`, unprovable in `𝗜𝚺₁`)
 is decided as bounded-non-provable by the **sound-and-complete** decision morphism, for every budget
-`M`. Foundation's `𝗜𝚺₁.Δ₁` instance is a *theorem* (an anonymous instance in its
-`Incompleteness/Definability.lean`, discharged upstream),
+`M`. Foundation's `𝗜𝚺₁.Δ₁` instance is a *theorem* (synthesized from `PeanoMinus.delta1`,
+`InductionScheme.delta1_strictHierarchy` and the union instance, discharged upstream),
 so this witness is **fully axiom-clean**: `#print axioms` = `propext, Classical.choice, Quot.sound`.
 `𝗣𝗔⁻ ⊊ 𝗜𝚺₁`, so `paMinus_complete_decides` above is the weaker, more faithful (§5.3-class)
 statement. -/

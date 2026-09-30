@@ -49,7 +49,9 @@ hence the undamaged composite's own reading — at any arrival pattern within th
 (`compPredFrame_eq_next_of_touch_bound`, `compPredFrame_damaged_eq_undamaged_of_touch_bound`). The
 touch bound is met whenever `P` exceeds the realizable event count times the per-event copy cost
 (`compPredFrame_eq_next_of_realizable_budget`), assembling Proposition 6.1's structural clause
-(iii) — the invariant-reading regime — from pieces this development has already proved.
+(iii) — the invariant-reading regime — from pieces this development has already proved. The touch
+bound's other side is a guard (`compRun_synchronized_guard`): a schedule that touches every copy
+defeats the reading however small its rate, since the copies recover only to be synchronized.
 
 ## Scope
 
@@ -1372,6 +1374,36 @@ theorem compPredFrame_eq_next_of_realizable_budget [NeZero C] [NeZero P] {hW : 2
     nlinarith [hcardH, hP, hθ0]
   exact lt_of_le_of_lt hunion (by exact_mod_cast hQ)
 
+/-! ### The touch bound's other side: a schedule that touches every copy -/
+
+/-- **The synchronizing miss matrix**: candidate `0` misses at steps `3`, `4` and `5` and nowhere
+else; candidate `1` never misses. -/
+def syncMiss : ℕ → Fin 2 → Bool := fun t i => decide (i = 0 ∧ (t = 3 ∨ t = 4 ∨ t = 5))
+
+/-- **The synchronizing schedule**: copy `0` is hit at step `0` and copy `1` at step `1`. -/
+def syncCol : ℕ → Finset (Fin 2) := fun t => if t = 0 then {0} else {1}
+
+/-- **The installed vector**: candidate `0` at the cap `4`, candidate `1` at the floor. -/
+def syncLand : ℕ → Fin 2 → WVec 2 4 := fun _ _ => ![4, 1]
+
+/-- **Guard: a copy's recovery does not rescue a fixed population against a rate**
+([Inevitability] Theorem 6.6(v), the touch bound's other side — IN-25). Two copies from the
+uniform start, hit one per step with the same wrong leader installed, on a stream where that
+leader then misses three steps running: at each of those steps every copy's heaviest candidate is
+the one that misses, so no copy verifies and the composite reads wrong; at the step after, every
+copy's heaviest candidate is the truth again — the recovery is real and buys nothing against
+synchronization, since the copies were made to fail together. The burst is three steps, one more
+than the budget's two doublings, because `argmax` keeps the incumbent at a tie. -/
+theorem compRun_synchronized_guard :
+    (∀ t, (t = 3 ∨ t = 4 ∨ t = 5) → ∀ i : Fin 2,
+        syncMiss t
+          (argmax (raw (compRun 4 syncMiss (fun _ _ => 1) {0, 1} syncCol syncLand t i))) = true) ∧
+      ∀ i : Fin 2,
+        argmax (raw (compRun 4 syncMiss (fun _ _ => 1) {0, 1} syncCol syncLand 6 i)) = 1 := by
+  refine ⟨fun t ht i => ?_, fun i => ?_⟩
+  · rcases ht with rfl | rfl | rfl <;> fin_cases i <;> decide
+  · fin_cases i <;> decide
+
 end Survival
 
 end WeightedFiber
@@ -1395,3 +1427,7 @@ end WeightedFiber
 /-- info: 'WeightedFiber.KE_compFrameFlat_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms WeightedFiber.KE_compFrameFlat_le
+
+/-- info: 'WeightedFiber.compRun_synchronized_guard' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.compRun_synchronized_guard

@@ -68,6 +68,8 @@ public import ALT.Decoupling
 public import ALT.DeepLadder
 public import ALT.DerivedStages
 public import ALT.DeterministicDiscovery
+public import ALT.DrivenColumns
+public import ALT.EndpointClasses
 public import ALT.EpsilonZeroBound
 public import ALT.EvoAbsorption
 public import ALT.ExcessOrder
@@ -101,7 +103,9 @@ public import ALT.GrowingSeamWitness
 public import ALT.GrowingWidth
 public import ALT.GrowingWorld
 public import ALT.GrunwaldMehtaDiscovery
+public import ALT.HaltingProbability
 public import ALT.HellingerBridge
+public import ALT.HindsightCount
 public import ALT.IndexCost
 public import ALT.KBEnumerable
 public import ALT.KReconnection
@@ -113,6 +117,7 @@ public import ALT.KraftMinimality
 public import ALT.LearningWitness
 public import ALT.LearningWitnessComplete
 public import ALT.LightConeWidth
+public import ALT.LocalMargin
 public import ALT.LogMassEvent
 public import ALT.MDLCoding
 public import ALT.MDLDominance
@@ -120,6 +125,7 @@ public import ALT.MarkovHoeffding
 public import ALT.MemoryWidth
 public import ALT.MinimalityWitness
 public import ALT.NoisyWindowChain
+public import ALT.ObservedColumn
 public import ALT.ParameterizedNNO
 public import ALT.ParityCounterexample
 public import ALT.ParityWalk
@@ -154,6 +160,7 @@ public import ALT.RedundantFiber
 public import ALT.Reflective
 public import ALT.ReflectiveAutomaton
 public import ALT.RegimeConsistency
+public import ALT.RegisterClass
 public import ALT.RepFintype
 public import ALT.RetentionOverhead
 public import ALT.RetentionUpperBound
@@ -193,6 +200,7 @@ public import ALT.TimeCost
 public import ALT.UniversalAt
 public import ALT.Ville
 public import ALT.WeightedFiber
+public import ALT.WindowCount
 public import ALT.WindowDeterminism
 public import ALT.WitnessMixture
 

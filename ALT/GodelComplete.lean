@@ -38,7 +38,8 @@ discharge into the Mathlib-side excess statement.
 `Classical.choice`, `Quot.sound`) — `Δ₁`/`𝗥₀ ⪯`/`ℕ↓[ℒₒᵣ] ⊧*` are HYPOTHESES, nothing concrete is
 synthesized. This is the faithful §5.3-class statement: it applies to ANY `T` with `[T.Δ₁] [𝗥₀ ⪯ T]`
 and `ℕ`-soundness (which covers §5.3's IΔ₀ abstractly). The two concrete `𝗜𝚺₁` witnesses below are
-axiom-clean too — Foundation's `𝗜𝚺₁.Δ₁` definability is a theorem (an anonymous instance) — so
+axiom-clean too — Foundation's `𝗜𝚺₁.Δ₁` definability is a theorem (an instance synthesized from
+`PeanoMinus.delta1`, `InductionScheme.delta1_strictHierarchy` and the union instance) — so
 this file, and with the `𝗣𝗔⁻`/`𝗜𝚺₁` capstones of `ALT/GodelChecker.lean` /
 `ALT/GodelCheckerComplete.lean` the whole Foundation side, carries **no named axioms**.
 
@@ -46,8 +47,8 @@ this file, and with the `𝗣𝗔⁻`/`𝗜𝚺₁` capstones of `ALT/GodelCheck
 This file also ships two concrete `𝗜𝚺₁` witnesses: `isigma1_represents_underivable_truth`, and a
 bounded-decision witness `isigma1_decides_bounded_nonprovability` over an abstract sound checker. Both
 instantiate `exists_true_but_unprovable_sentence_of_sigma1sound 𝗜𝚺₁`, whose `𝗜𝚺₁.Δ₁` requirement is met by
-Foundation's `Δ₁`-definability *theorem* (an anonymous instance in its own
-`Incompleteness/Definability.lean`, the `𝗜𝚺₁`/`𝗣𝗔` `Δ₁`-definability, discharged upstream), so both
+Foundation's `Δ₁`-definability *theorem* (an instance synthesized from `PeanoMinus.delta1`,
+`InductionScheme.delta1_strictHierarchy` and the union instance, discharged upstream), so both
 are **fully axiom-clean**
 (`#print axioms` = `propext, Classical.choice, Quot.sound`). They sit beside the `𝗣𝗔⁻` capstones
 (`GodelChecker.paMinus_decides_bounded_nonprovability`,
@@ -95,7 +96,8 @@ with NO remaining hypothesis. The depth `gTS + 1` equals
 `(ParameterizedNNO.cyclicParamNNO (gTS + 1)).depth`; the NNO-object form is
 `GodelThreshold.reflective_of_depth` on the Mathlib side, kept a separate term here (see the
 shared-symbol note above). Foundation's `𝗜𝚺₁.Δ₁` instance is a theorem
-(an anonymous instance in its `Incompleteness/Definability.lean`, discharged upstream), so this
+(synthesized from `PeanoMinus.delta1`, `InductionScheme.delta1_strictHierarchy` and the union
+instance, discharged upstream), so this
 witness is **fully axiom-clean**. -/
 theorem isigma1_represents_underivable_truth :
     ∃ gTS : ℕ, GodelThreshold.RepresentsUnderivableTruth (Encodable.encode : Sentence ℒₒᵣ → ℕ)
@@ -108,8 +110,8 @@ proof relation `Prf` on `Sentence ℒₒᵣ` (`sound`: accepts ⇒ `𝗜𝚺₁ 
 `G` (true in `ℕ`, unprovable in `𝗜𝚺₁`) is decided as bounded-non-provable — nothing within budget is
 accepted (NO `sorry`, NO degenerate always-`false` checker). `ALT/GodelChecker.lean` supplies a
 *concrete* computable `Prf` discharging the hypothesis (`isigma1_decides_bounded_nonprovability'`).
-Foundation's `𝗜𝚺₁.Δ₁` instance is a theorem (an anonymous instance in its
-`Incompleteness/Definability.lean`, discharged upstream), so this
+Foundation's `𝗜𝚺₁.Δ₁` instance is a theorem (synthesized from `PeanoMinus.delta1`,
+`InductionScheme.delta1_strictHierarchy` and the union instance, discharged upstream), so this
 witness is **fully axiom-clean**. -/
 theorem isigma1_decides_bounded_nonprovability
     (Prf : Sentence ℒₒᵣ → ℕ → Bool) (Mchk : ℕ)

@@ -77,13 +77,17 @@ points:
 | [`KBEnumerable.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/KBEnumerable.html) | Chaitin's theorem in its additive form on a prefix machine — the bound is one constant for every theory plus the theory's own prefix complexity |
 | [`ChaitinPrefixLadder.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/ChaitinPrefixLadder.html) | a ladder of theories each placed at its own Chaitin threshold, gaining at least one bit of prefix complexity per rung — no computable family names it uniformly |
 | [`CodingTheorem.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/CodingTheorem.html) | Levin's coding theorem on a universal prefix machine — prefix complexity is `−log₂` of algorithmic probability up to an additive constant, and that probability is a universal lower-semicomputable semimeasure |
+| [`HaltingProbability.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/HaltingProbability.html) | Chaitin's theorem on the machine's halting probability — a dyadic lower approximation within `2^(-n)` of it has, as the pair `(n, m)`, prefix complexity at least `n − c` |
+| [`EndpointClasses.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/EndpointClasses.html) | the whole radius-one rule space bracketed at its table bits — 52 tables accrete by one engine that needs no injectivity, 48 are provably zero, 28 stay undecided |
+| [`HindsightCount.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/HindsightCount.html) | the observer's bill: the fewest misses any law on the last `k` readings makes is bounded exactly when the watched column settles — bounded at every zero-class table, unbounded at rule `90`'s cell one |
+| [`RegisterClass.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/RegisterClass.html) | the bounded register's surprise bound over a class of learners — five properties of an update, the register's depth as the bill, two members and two non-members showing each property load-bearing |
 
 ## Verification standard
 
 - No `sorry`, `admit`, or `native_decide`; standard axioms only
   (`propext`, `Classical.choice`, `Quot.sound`) — several cores are
   choice-free, and the structural capstone depends on no axioms at all.
-- **Build-enforced axiom hygiene**: 1283 `#guard_msgs in #print axioms` guards
+- **Build-enforced axiom hygiene**: 1388 `#guard_msgs in #print axioms` guards
   assert each capstone's exact axiom set; `lake build` fails on any drift.
 - **CI-enforced whole-library audit**: every declaration under `ALT` — not only
   the guarded capstones — is checked against the same allowlist, the checked-in
@@ -555,6 +559,25 @@ replace them.
   computable witness `2 * Nat.size` re-derives the Elias bound
   (`KB_le_two_mul_size'`).
 
+- **The halting probability, and Chaitin's theorem on its approximations**
+  (`HaltingProbability.lean`): the total algorithmic probability
+  `haltingProb = ∑' x, QB x`, at most one (`haltingProb_le_one`), and the
+  theorem stated at a pair rather than a binary expansion — there is a `c`
+  such that whenever `m / 2 ^ n` is a lower approximation within `2 ^ (-n)`
+  of it, `n ≤ KB (Nat.pair n m) + c`
+  (`haltingProb_prefix_incompressible`), both hypotheses met at every `n`
+  by the floor (`haltingProb_prefix_incompressible_nonvacuous`). A
+  computable stage mass rising to the halting probability and a computable
+  list of the values each stage reveals (`stageMass`, `revealedList`) meet
+  two specifications (`HaltingMassSpec`, `HaltingRevealedSpec`), and the
+  parent over any pair meeting them (`haltingProb_prefix_incompressible_of`)
+  searches for the least stage past the *shifted* threshold
+  `m / 2 ^ n − 2 ^ (-n)`, takes the least value not yet revealed, and prices
+  it by `KB_partial_map_le`. Boundary: the pair, not a prefix of the
+  expansion; the constant existential; no randomness or irrationality
+  stated; the proof is Shen, Uspensky and Vereshchagin's Theorem 100, and no
+  first-ness is claimed.
+
 - **An expressiveness excess order** (`ExcessOrder.lean`,
   `ExcessOrderComplete.lean`): representational classes graded by work-bit
   budget, inclusions strict exactly as the budget grows, an internalization
@@ -598,17 +621,59 @@ replace them.
   against any reference candidate — with refuting families showing
   realizability is load-bearing — settling from every carrier vector, and, on
   the witness's own trajectory, the identity that the true rule's miss count
-  *is* the noise count (`witMiss_zero`). Survival under corruption is proved,
+  *is* the noise count (`witMiss_zero`). The register's depth is an exact
+  threshold (`LogMassEvent.lean`): from every power-of-two start inside the
+  register a lifetime-free surprise bound over every stream with a
+  never-missing candidate exists exactly when `C − 1 ≤ θ·(2^b + C − 1)`
+  (`floorSurpriseFrom_bounded_iff`, the uniform start's own
+  `floorSurprise_bounded_iff`), and from the uniform start it is then at most
+  `C·b` (`floorSurprise_card_le_capacity`) — registered as *Discovery*
+  Proposition 3.5, rows FV-37 and FV-38. Survival under corruption is proved,
   not assumed: `P` copies reading one stream leave one untouched under any
   schedule touching fewer than `P`, so the composite reads the base's own next
-  state (`RedundantFiber.lean`), and the composite's decode is priced with
-  `P` entering only through its numeral (`KE_compFrameFlat_le`). Boundary:
-  the damage model is a **named hypothesis of the companion paper, not a
-  theorem of this library** — `DamageGate.lean` states exactly what that
-  costs: a host-applicable gate is provably empty on a noise-free stream, the
-  eventually-quiet class (`QuietFrom`) closes host-checkable and
-  lifetime-free at once, and the containment itself rides the identification
+  state (`RedundantFiber.lean`), and the composite's decode is priced with `P`
+  entering only through its numeral (`KE_compFrameFlat_le`); the touch bound's
+  other side is a guard: two copies hit one per step with the same wrong
+  leader installed, on a stream where that leader then misses three steps
+  running, leave no verifying copy at those steps and are both recovered at
+  the step after (`compRun_synchronized_guard`), so a schedule that touches
+  every copy defeats the reading however small its rate. Boundary: the damage
+  model is a **named hypothesis of the companion paper, not a theorem of this
+  library** — `DamageGate.lean` states exactly what that costs: a
+  host-applicable gate is provably empty on a noise-free stream, the
+  eventually-quiet class (`QuietFrom`) closes host-checkable and lifetime-free
+  at once, and the containment itself rides the identification
   `noiseGated_iff_witMiss`, not the mere existence of a finitely-firing event.
+- **The register class: the capacity bound over every learner with its five
+  properties** (`RegisterClass.lean`): a step of a level vector capped at `b`
+  , driven by a miss vector with a truth that never misses, is in the class
+  (`RegisterClass`) when at a rescale — some hitting candidate at the cap —
+  the truth's level does not fall, no level rises and every missing candidate
+  above the floor loses a level, when off a rescale the truth rises by exactly
+  one and no level by more, and when the step keeps the run inside the
+  register; the four step properties alone are `RegisterCore` . Over every
+  member, every start inside the register, every stream on which the truth
+  never misses and every threshold meeting the floor condition
+  `C − 1 ≤ θ·(2^b + C − 1)` , the surprise count at every horizon plus `C`
+  times the truth's start is at most `C·b` plus the competitors' start
+  (`registerClass_card_add_le_capacity`, its hypotheses met at
+  `registerClass_card_add_le_capacity_nonvacuous` ). The floored mixture is a
+  member (`expStep_registerClass`), its run and surprise set the landed ones
+  (`stepRun_expStep`, `stepSurpriseSet_expStep` ), and so is a reset learner
+  whose missing candidates return to the floor at a rescale (`resetStep`,
+  `resetStep_registerClass` ). The guard pair: the saturating register, which
+  caps without a rescale, is not a member and its count is unbounded
+  (`saturateStep`, `saturateStep_not_registerClass` ); and a step with the
+  four properties that lifts a missing candidate out of the register is not a
+  member and its count is unbounded (`liftStep`,
+  `liftStep_registerCore_unbounded` ), so the fifth property is load-bearing.
+  Registered as *Discovery* Proposition 3.6, rows FV-39 and FV-40; it extends
+  *Discovery* Proposition 3.5(i) and *Inevitability* row IN-60 from one
+  architecture to the class, and *Inevitability* §7 records it as a class of
+  update rules at one bill, short of the class of architectures that section
+  asks for. Boundary: the mass of a level is two to the level, fixed; the
+  bound is not shown attained; nothing is stated of a truth that misses or of
+  the description-length side.
 - **A finite host certified into both route-classes, from its own dynamics**
   (`BlockPairProfile.lean`, `BlockPairHost.lean`,
   `BlockPairObservability.lean`, `BlockPairWitness.lean`,
@@ -885,6 +950,228 @@ replace them.
   GV-30 and GV-31. Boundary: a lower bound, not the value; the rate is the
   presentation's; the diameter is one reading of size; the part is not
   decidable in general; a separation at a hypothesis class, not genericity.
+- **The growing width over the whole radius-one rule space: an engine without
+  injectivity, and a bracket at the table bits** (`EndpointClasses.lean`): an
+  antichain of the retained profile is a set of states with pairwise disjoint
+  forward orbits, so at exact endpoint moves `(a, b)` with `a + b ≥ 1` on any
+  update-invariant set containing every translate of one state, the
+  translates in the light cone are pairwise orbit-disjoint and each is
+  growing — the growing width is at least `n + 2t + 1 − diam s₀`
+  (`linear_le_growingWidth_lightCone_of_invariant`), hence unbounded
+  (`growingWidth_lightCone_unbounded_of_invariant`), with the six hypotheses
+  jointly met at table `202` on the right end-word set
+  (`growingWidth_lightCone_unbounded_of_invariant_nonvacuous`). The moves are
+  read off a table's bits (`tableRule_min'_of_leftTap`,
+  `tableRule_max'_of_rightHold`, `tableRule_max'_of_endsOneOne`, …), every
+  quiescent table advances the cone (`advances_lightCone_tableRule`), and a
+  non-increasing diameter empties the growing part
+  (`growingPart_eq_empty_of_diam_le`). Two classes of tables, each a
+  disjunction of bit equations: `AccretesByEndpoints` — unbounded growing
+  width at every member (`growingWidth_lightCone_unbounded_of_accretesByEndpoints`),
+  `52` of the `128` quiescent tables (`card_accretesByEndpoints`,
+  `card_quiescent`) — and `ZeroByEndpoints` — width identically `0`
+  (`growingWidth_lightCone_eq_zero_of_zeroByEndpoints`), `48` tables
+  (`card_zeroByEndpoints`) — disjoint
+  (`accretesByEndpoints_zeroByEndpoints_disjoint`). Registered as *Guests*
+  Proposition 7.24, rows GV-32 and GV-33. Boundary: the bound is linear where
+  the six-table one is exponential; the `28` tables in neither class are not
+  decided in either direction; the counts are kernel decisions over the
+  256-element table type; the instances at rules `90` and `150` are at tables
+  written out here, with no stated identity to `rule90` and `rule150`.
+- **The observed column settles wherever the diameter never grows**
+  (`ObservedColumn.lean`): the column an observer reads at one cell along an
+  orbit (`observedColumn`) is eventually periodic at every quiescent table
+  whose diameter never grows (`eventuallyPeriodic_observedColumn_of_diam_le`)
+  — the pattern up to translation ranges over a finite set, so it recurs
+  with a drift, and the column is periodic at zero drift and eventually `0`
+  otherwise — hence at every zero-class table
+  (`eventuallyPeriodic_observedColumn_of_zeroByEndpoints`); contrapositively
+  a column that is not eventually periodic forces the diameter to grow at
+  some stage of that seed's own orbit
+  (`exists_diam_lt_iterate_of_not_eventuallyPeriodic`). The hypotheses are
+  met at the shift `170` with its center column written out
+  (`observedColumn_f170_single`), and the diameter hypothesis is load-bearing
+  at rule `30` (`diam_lt_tableRule_f30_single`). The converse fails at a
+  checked witness: rule `90` is in the accreting class and its single-seed
+  center column is `1` then `0` forever (`observedColumn_f90_single`).
+  The rational ray at speed `p/q` reads the cell `e + ⌊pt/q⌋` at step `t`
+  (`observedRationalRay`), the column at speed zero
+  (`observedRationalRay_zero`); at every quiescent table whose diameter never
+  grows every rational ray is eventually periodic
+  (`eventuallyPeriodic_observedRationalRay_of_diam_le`), reading one relative
+  cell of the drifting pattern for ever when its speed is the drift and zero
+  for ever otherwise, hence at every zero-class table
+  (`eventuallyPeriodic_observedRationalRay_of_zeroByEndpoints`), the
+  hypotheses met at the shift at speed one half
+  (`eventuallyPeriodic_observedRationalRay_of_diam_le_nonvacuous`). The
+  column's statements are registered as *Guests* Remark 7.25, rows GV-34 and
+  GV-35, the rational ray as *Guests* Proposition 7.28, row GV-40. Boundary:
+  existence of a
+  period only, no bound on it or on the onset; one column or ray, not the
+  configuration; beyond that one column of rule `90`, this module says nothing
+  about the column or any ray at a table whose diameter grows, rule `30`'s
+  included.
+- **Driven columns: what settles at every table, and a column that never
+  does** (`DrivenColumns.lean`): a sequence in a finite type whose next
+  value is, from some step on, a fixed function of its value and of an
+  eventually periodic input is eventually periodic
+  (`eventuallyPeriodic_of_driven`). Over the table rules this gives, at
+  every quiescent table and every finitely-supported state: a window of
+  adjacent cells is eventually periodic exactly when the columns at its two
+  end cells are (`eventuallyPeriodic_observedWindow_iff`), so the columns
+  between two settled columns settle
+  (`eventuallyPeriodic_observedColumn_between`); and the rays that move one
+  cell a step, in either direction and from every start cell, are
+  eventually periodic (`eventuallyPeriodic_observedRay_one`,
+  `eventuallyPeriodic_observedRay_neg_one`). At rule `90`, `2^j` steps of
+  the rule send a state `s` to `i ↦ s(i − 2^j) + s(i + 2^j)`
+  (`iterate_two_pow_f90`), and the single seed's column at cell `1` is not
+  eventually periodic
+  (`not_eventuallyPeriodic_observedColumn_f90_single_one`): it is live at
+  every step `2^(j+1) − 1` and dead strictly between
+  (`observedColumn_f90_single_one_live`,
+  `observedColumn_f90_single_one_dead_between`). One settled end does not
+  settle the cell beside it
+  (`eventuallyPeriodic_observedColumn_between_guard`), and the rays'
+  statement fails at velocity zero
+  (`not_eventuallyPeriodic_observedRay_zero_f90`). Registered as *Guests*
+  Proposition 7.26, rows GV-36 and GV-37. Its column at cell `1` is also
+  one equality, live exactly at the steps `t` with `t + 1 = 2^j` for some
+  `j ≥ 1` (`observedColumn_f90_single_one`), and the driven interior's
+  hypotheses are met together at the shift
+  (`eventuallyPeriodic_observedColumn_between_nonvacuous`). Boundary:
+  existence of a period only; velocities `1` and `−1` only; nothing about
+  any other column of rule `90`, any other seed, or any column of another
+  accreting table.
+- **The hindsight count: a law on the last readings, and what bounds its
+  misses** (`HindsightCount.lean`): a sequence is eventually exact at memory
+  `k` when one fixed function of its last `k` readings gives the next
+  reading from some step on (`EventuallyExact`). An eventually periodic
+  sequence is eventually exact at some memory
+  (`eventuallyExact_of_eventuallyPeriodic`), and over a finite alphabet the
+  converse holds (`eventuallyPeriodic_of_eventuallyExact`), the two together
+  one equivalence (`exists_eventuallyExact_iff_eventuallyPeriodic`); the
+  finite alphabet is load-bearing, the identity on the naturals being
+  eventually exact at memory one and not eventually periodic
+  (`eventuallyExact_nat_id_not_eventuallyPeriodic`). The hindsight count at
+  a horizon is the fewest misses any such function makes before it, the
+  minimum taken at each horizon separately (`lawMisses`, `hindsightCount`);
+  over a finite alphabet it is bounded in the horizon exactly when the
+  sequence is eventually exact at that memory
+  (`hindsightCount_bounded_iff_eventuallyExact`), and bounded at some memory
+  exactly when the sequence is eventually periodic
+  (`exists_hindsightCount_bounded_iff_eventuallyPeriodic`). At every
+  quiescent table and every finitely-supported state, a window of adjacent
+  cells meets either condition at some memory exactly when the columns at
+  its two end cells do, each at a memory of its own
+  (`exists_eventuallyExact_observedWindow_iff`,
+  `exists_hindsightCount_bounded_observedWindow_iff`). Over a finite family
+  of such functions at one memory, a bound on one member's misses bounds the
+  floored mixture's surprise count free of the horizon
+  (`floorSurprise_card_mul_le_of_lawMisses_le`, the bound
+  `floorSurprise_card_mul_le_missCount` at the family's miss matrix
+  `lawMissMatrix`; its two hypotheses are met together at
+  `floorSurprise_card_mul_le_of_lawMisses_le_nonvacuous`, over `nvX` and
+  `nvLs`). At rule `90` from the single seed the center column is eventually
+  exact at memory zero (`eventuallyExact_observedColumn_f90_single`) and the
+  column at cell `1` at no memory
+  (`not_exists_eventuallyExact_observedColumn_f90_single_one`), its
+  hindsight count unbounded at every memory
+  (`hindsightCount_observedColumn_f90_single_one_unbounded`). The two are the
+  two sides of one class statement: at every table of the zero class, from
+  every finitely-supported state and at every cell, some memory gives the
+  column's hindsight count a bound in the horizon
+  (`exists_hindsightCount_bounded_observedColumn_of_zeroByEndpoints`), and so
+  for every window of adjacent cells
+  (`exists_hindsightCount_bounded_observedWindow_of_zeroByEndpoints`), both
+  hypotheses met at the shift `170`
+  (`exists_hindsightCount_bounded_observedColumn_of_zeroByEndpoints_nonvacuous`);
+  and the class hypothesis is load-bearing, rule `90` lying in the accreting
+  class with its cell-one count unbounded
+  (`exists_hindsightCount_bounded_observedColumn_zero_class_guard`) — the
+  observer's bill read against the world's growth, bounded wherever the world
+  does not accrete. The two window statements are registered as *Guests*
+  Proposition 7.27(i), row GV-38; the rest is registered in no paper and
+  extends *Guests* Propositions 7.24 and 7.26 and the event bound of
+  *Inevitability* row IN-13. Boundary: the memories and the
+  bounds on the two sides of an equivalence are separate existentials, none
+  given in terms of another; no rate of the count is stated; the class
+  statement says nothing at the twenty-eight tables in neither class; the
+  mixture bound
+  is on the count times the threshold and says nothing at threshold zero.
+- **The margin a cell's reading allows** (`LocalMargin.lean`): a function of
+  a state reads only a finite set of cells when its value is fixed by them
+  (`ReadsOnly`), and holds within `e` at a state when every state differing
+  from it at no more than `e` cells gives the same value (`HoldsWithin`). If
+  a function reads only `N` and takes different values at two states, the
+  two margins at which those values hold sum to less than the number of
+  cells of `N` at which the states differ
+  (`margins_add_lt_card_of_readsOnly`), the packing inequality of *Guests*
+  Law 4 read at what one cell reads; the bound is met with equality on three
+  Boolean cells at margins one and one
+  (`margins_add_lt_card_of_readsOnly_nonvacuous`), and the inequality fails
+  at an instance meeting every hypothesis but that one, at margins one and
+  one against a set of one cell (`margins_add_lt_card_guard`). A radius-one
+  table's value at a cell after `τ` steps is fixed by the cells within `τ`
+  of it (`tableRule_iterate_apply_congr`), so on finitely-supported states
+  the margins at which its `τ`-step iterate erases (`ErasesAt`) sum to at
+  most `2τ` at two states with different successors
+  (`tableRule_margins_add_le_two_mul`, its hypotheses met together at
+  `tableRule_margins_add_le_two_mul_nonvacuous`). On all functions of the line
+  (`lineRule`, `ErasesWithin`), at a table fixing both constant states: at no
+  scale do both erase within two (`not_erasesWithin_two_const`), and at every
+  positive scale both erase within one exactly when the table is the majority
+  of its three cells (`erasesWithin_one_const_iff`, `majTable`,
+  `erasesWithin_one_const_majTable`); the zero state alone can erase within
+  two (`erasesWithin_two_const_zero_guard`). At scale one, at every table and
+  on all functions of the line, two states each erasing within two have the
+  same successor (`lineRule_eq_of_erasesWithin_two`), the two hypotheses met
+  at two different states of the constant-zero table
+  (`lineRule_eq_of_erasesWithin_two_nonvacuous`); at the majority table a
+  margin of one at both constant states leaves the successors different
+  (`lineRule_ne_of_erasesWithin_one_guard`). Registered in no paper; it
+  extends *Guests* §3's one-step erasure and Law 4. Boundary: the witnesses
+  and guards are existential statements, naming their margins and counts and
+  not the function, table or state that meets them; the scaled bound's witness
+  has one margin zero, so the bound `2τ` is not shown attained; beyond scale
+  one nothing is stated about two states that are not constant, and nothing at
+  any scale about a table of wider radius or more states, or about whether two
+  finitely-supported states can both hold a positive margin.
+- **A window's count against its ends'** (`WindowCount.lean`): the hindsight
+  count of a reading is the fewest misses, over the functions of the last
+  `k` states, in answering a fixed function of the next state
+  (`readingMisses`, `readingCount`); at the identity it is the hindsight
+  count (`readingCount_id`). A reading's count is at most the state's
+  (`readingCount_le_hindsightCount`), and at most the count of the read
+  sequence taken on its own (`readingCount_le_hindsightCount_comp`). At
+  every quiescent table, every finitely-supported state, every window, every
+  memory of at least one and every horizon, the window's hindsight count is
+  at most the sum of the counts of its two end cells read with the window as
+  context (`hindsightCount_observedWindow_le_add_readingCount`), hence at
+  most the sum of its two end columns' hindsight counts
+  (`hindsightCount_observedWindow_le_add_columns`); by the first comparison
+  it is at least each end reading's count. The memory is load-bearing: at
+  memory zero the bound fails at the table that sends everything to zero
+  (`hindsightCount_observedWindow_zero_memory_guard`). The end columns' own
+  counts give no lower bound: at the shift, a window of two cells has no
+  miss in three steps at memory one while the column at its first cell has
+  one (`hindsightCount_observedWindow_lt_column_f170`). The translating window
+  at a rational speed `p/q` of at most one, read with the phase `t mod q` of
+  its own schedule (`movingWindow`), has at every quiescent table, every
+  finitely-supported state, every start, every width of at least three, every
+  memory of at least one and every horizon a hindsight count at most the sum
+  of its two end readings' counts, the trailing end's the cell it sits on and
+  the leading end's the two cells it sits on and moves to
+  (`hindsightCount_movingWindow_le_add_readingCount`), the hypotheses met at
+  table `90` at speed one half
+  (`hindsightCount_movingWindow_le_add_readingCount_nonvacuous`) and the
+  memory load-bearing at the zero table, where a memory-zero law cannot follow
+  the phase (`hindsightCount_movingWindow_zero_memory_guard`). The window at
+  rest is registered as *Guests* Proposition 7.27(ii)–(iii), row GV-39; the
+  translating window is registered in no paper. Boundary: both sides of each
+  bound are at the same memory and horizon; no bound is stated at memory zero,
+  none for a window whose ends move at different speeds or at a speed above
+  one, and each guard is a single instance.
 - **The pricing economy's growing form** (`GrowingPrice.lean`): the
   fixed-carrier Collapse Theorem does not transport — determination fails for
   a merely injective stage law (`exists_ne_frames_agreeing_on_range`) — while

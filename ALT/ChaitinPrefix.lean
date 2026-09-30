@@ -104,7 +104,7 @@ theorem models_chaitinSentenceB_iff (hre : REPred kleB) (s n : ℕ) :
 variable (T : ArithmeticTheory) [T.Δ₁] [𝗥₀ ⪯ T] [FFL.Entailment.Consistent T]
 
 omit [𝗥₀ ⪯ T] [FFL.Entailment.Consistent T] in
-open FFL.Entailment Bootstrapping Bootstrapping.Arithmetic in
+open FFL.Entailment Bootstrapping Bootstrapping.Arithmetic FFL.FirstOrder.Bounding in
 /-- The provability predicate over `T` at the fixed formula `codeOfREPred kleB`, varied over
 the substituted numeral, is recursively enumerable — needs only `[T.Δ₁]`, exactly as
 `rePred_provable_chaitin`; no `REPred kleB` hypothesis is needed here either, since the
@@ -117,7 +117,7 @@ theorem rePred_provable_chaitinB :
     unfold chaitinSentenceB
     rw [Nat.pair_unpair a]
   rw [heq]
-  have hS1 : 𝚺₁-Predicate fun a : ℕ =>
+  have hS1 : 𝚺ᴬ₁-Predicate fun a : ℕ =>
       Provable T (neg ℒₒᵣ (subst ℒₒᵣ ?[numeral a]
         (⌜codeOfREPred kleB⌝ : ℕ))) := by
     definability
@@ -141,7 +141,8 @@ theorem chaitin_soundB (hre : REPred kleB) (s n : ℕ) (h : T ⊢ chaitinSentenc
         Matrix.constant_eq_singleton] using
         codeOfREPred_spec hre (x := Nat.pair s n)
     exact h1.mpr hkleB
-  have hsig : Hierarchy 𝚺 1 (((codeOfREPred kleB)/[Nat.pair s n] : ArithmeticSentence)) := by
+  have hsig : ℬ[<, ℒₒᵣ].Hierarchy 𝚺 1
+      (((codeOfREPred kleB)/[Nat.pair s n] : ArithmeticSentence)) := by
     simp [codeOfREPred, codeOfPartrec']
   have hpos : T ⊢ (codeOfREPred kleB)/[Nat.pair s n] :=
     sigma_one_completeness (σ := (codeOfREPred kleB)/[Nat.pair s n]) hsig hmod

@@ -499,7 +499,7 @@ theorem ladderTheory_subset_committedTheory (n k : ℕ) (hk : commitStep sel T�
 /-! ## The explicit ladder from `𝗜𝚺₁` itself -/
 
 /-- The explicit ladder started at `𝗜𝚺₁` with Foundation's own `Δ₁` data
-(its anonymous `𝗜𝚺₁.Δ₁` instance). -/
+(its synthesized `𝗜𝚺₁.Δ₁` instance). -/
 noncomputable abbrev explicitLadder (n : ℕ) : ArithmeticTheory :=
   ladderTheory explicitSelector 𝗜𝚺₁ inferInstance n
 

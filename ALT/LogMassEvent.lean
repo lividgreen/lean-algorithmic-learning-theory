@@ -55,11 +55,34 @@ under the generation, so the seeded run has a normal form through `FlooredMixtur
   `4(C−1)`.
 * `floorSurpriseFrom_card_mul_le_prior` — **the prior-shaped start**, `card · θ ≤ 5(r + ⌊log₂ C⌋)
   + 4` with the truth seeded `r` doublings below a pool at the ceiling.
+* `floorSurpriseFrom_card_add_le_capacity` — **the floored mixture's exact capacity threshold**,
+  a genuinely different (additive) reading from the log-mass bound above:
+  `card + C·e₀ iR ≤ C·b + ∑ (erase iR) e₀`, the seed's own capacity, under the floor condition
+  `C − 1 ≤ θ·(2^b + C − 1)` — weaker than the budget gate — and a realizable candidate.
+  `floorSurprise_card_le_capacity` is its uniform-start corollary (`card ≤ C·b`), and
+  `floorSurprise_bounded_iff` closes the window: at the uniform start a lifetime-free bound over
+  every stream with a never-missing candidate exists exactly when the floor condition holds —
+  when it fails, `floorSurprises_unbounded_below_budget`'s own family already refutes one.
+  `floorSurpriseFrom_allMiss_mem` / `floorSurpriseFrom_allMiss_card_ge` price the all-miss family's
+  own surprise steps from *any* seeded start, and `floorSurpriseFrom_deficit_card_ge` below is one
+  instance of them rather than a parallel development.
 * `floorSurpriseFrom_unbounded_below_gate` and `floorSurpriseFrom_unbounded_below_gate_witness` —
-  **the gate is load-bearing, and under realizability**. Below the gate the bound is not merely
-  unproved but false: on the all-miss family every step of every horizon is a surprise, with a
-  candidate that never misses present the whole time (`allMiss_realizable`). The witness pins it at
-  nine candidates, budget `2^3` and threshold `1/4`, where the gate reads `16 ≤ 2`.
+  **the gate is load-bearing, and under realizability**. The count is unbounded at its own
+  condition `θ·(2^b + C − 1) < C − 1` — strictly stronger than the landed gate's failure — where
+  the all-miss family makes every step of every horizon a surprise, with a candidate that never
+  misses present the whole time (`allMiss_realizable`). The witness pins it at nine candidates,
+  budget `2^3` and threshold `1/4`, where the gate reads `16 ≤ 2`. Read against
+  `floorSurpriseFrom_card_add_le_capacity` below, whose own condition is exactly this one negated,
+  the gate is a sufficient condition for the landed constants and not the boundary.
+* `floorSurpriseFrom_allMiss_card_eq`, `floorSurpriseFrom_allMiss_card_eq_nonvacuous` and
+  `floorSurpriseFrom_bounded_iff` — **the window closes from every start**. Below the floor
+  condition the all-miss family makes every step a surprise from *every* power-of-two start inside
+  the register, not only the zero seed: the truth's exponent never exceeds `b` and each competitor
+  holds at least one quantum, so the wrong mass is at least `(C − 1)/(2^b + C − 1)` at every step.
+  With the capacity bound this is the seeded form of the threshold — from every such start a
+  horizon-free bound over every stream with a never-missing candidate exists exactly when the
+  floor condition holds — of which `floorSurprise_bounded_iff` is the zero seed's case. The
+  witness pins the leaf at two candidates, budget `2`, the start `(1, 2)` and threshold `1/8`.
 * `floorSurpriseFrom_deficit_card_ge` and `floorSurpriseFrom_deficit_refutes_seed_free` — **the
   seed's deficit is necessary**. Two candidates, the truth seeded `r` doublings below a competitor
   that starts at the ceiling and misses at every step: while the truth climbs, no ceiling candidate
@@ -700,25 +723,294 @@ theorem floorSurpriseFrom_card_mul_le_prior (M : ℕ → Fin C → Bool) {iR : F
 
 end EventBound
 
+/-! ## The floored mixture's exact capacity threshold -/
+
+section CapacityBound
+
+variable {C : ℕ}
+
+/-- **The capacity potential**: `C` copies of the reference's own remaining headroom to the
+ceiling, plus the competitors' exponents outright. Additive by design, so it composes with the
+surprise count with no subtraction. -/
+private def capPot (b : ℕ) (iR : Fin C) (e : Fin C → ℕ) : ℕ :=
+  C * (b - e iR) + ∑ i ∈ Finset.univ.erase iR, e i
+
+/-- **Off a rescale the potential drops by exactly one.** The reference candidate hits and is not
+at the ceiling, so its headroom falls by one doubling — costing `capPot` a full `C` — while the
+`C − 1` competitors rise by at most one doubling each. -/
+private theorem capPot_expStep_add_one_le_of_not_rescale {b : ℕ} {m : Fin C → Bool} {e : Fin C → ℕ}
+    {iR : Fin C} (he : ∀ i, e i ≤ b) (hiR : m iR = false)
+    (hδ : ¬ ∃ j, e j = b ∧ m j = false) :
+    capPot b iR (expStep b m e) + 1 ≤ capPot b iR e := by
+  have heiRb : e iR < b := by
+    rcases lt_or_eq_of_le (he iR) with h | h
+    · exact h
+    · exact absurd ⟨iR, h, hiR⟩ hδ
+  have heiR' : expStep b m e iR = e iR + 1 := by
+    simp only [expStep, ite_eq_right hδ, ite_eq_right (by simp [hiR] : ¬ (m iR = true)),
+      Nat.sub_zero]
+  have hrest : ∀ j ∈ Finset.univ.erase iR, expStep b m e j ≤ e j + 1 := by
+    intro j _
+    simp only [expStep, ite_eq_right hδ, Nat.sub_zero]
+    split <;> omega
+  have hcard : (Finset.univ.erase iR).card = C - 1 := by
+    rw [Finset.card_erase_of_mem (Finset.mem_univ iR), Finset.card_univ, Fintype.card_fin]
+  have hsum : ∑ j ∈ Finset.univ.erase iR, expStep b m e j
+      ≤ ∑ j ∈ Finset.univ.erase iR, e j + (C - 1) := by
+    calc ∑ j ∈ Finset.univ.erase iR, expStep b m e j
+        ≤ ∑ j ∈ Finset.univ.erase iR, (e j + 1) := Finset.sum_le_sum hrest
+      _ = ∑ j ∈ Finset.univ.erase iR, e j + (Finset.univ.erase iR).card := by
+          rw [Finset.sum_add_distrib, Finset.sum_const, smul_eq_mul, mul_one]
+      _ = ∑ j ∈ Finset.univ.erase iR, e j + (C - 1) := by rw [hcard]
+  have hbC : C * (b - (e iR + 1)) + C = C * (b - e iR) := by
+    have hd : b - e iR = (b - (e iR + 1)) + 1 := by omega
+    rw [hd]; ring
+  have hCpos : 0 < C := iR.pos
+  rw [capPot, capPot, heiR']
+  clear heiR' hrest hcard he hδ heiRb
+  revert hbC hsum hCpos
+  generalize C * (b - (e iR + 1)) = A1
+  generalize C * (b - e iR) = A2
+  generalize ∑ i ∈ Finset.univ.erase iR, expStep b m e i = S1
+  generalize ∑ i ∈ Finset.univ.erase iR, e i = S2
+  intro hbC hsum hCpos
+  omega
+
+/-- **At a rescale the potential never rises.** The reference is frozen at the ceiling and no
+competitor's exponent can increase. -/
+private theorem capPot_expStep_le_of_rescale {b : ℕ} {m : Fin C → Bool} {e : Fin C → ℕ}
+    {iR : Fin C} (hiR : m iR = false) (hδ : ∃ j, e j = b ∧ m j = false) :
+    capPot b iR (expStep b m e) ≤ capPot b iR e := by
+  have heiR' : expStep b m e iR = e iR := by
+    simp only [expStep, ite_eq_left hδ, ite_eq_right (by simp [hiR] : ¬ (m iR = true))]
+    omega
+  have hrest : ∀ j ∈ Finset.univ.erase iR, expStep b m e j ≤ e j := by
+    intro j _
+    simp only [expStep, ite_eq_left hδ]
+    split <;> omega
+  rw [capPot, capPot, heiR']
+  exact Nat.add_le_add_left (Finset.sum_le_sum hrest) _
+
+/-- **The potential never rises**, combining the two branches of `expStep`. -/
+private theorem capPot_expStep_le {b : ℕ} {m : Fin C → Bool} {e : Fin C → ℕ} {iR : Fin C}
+    (he : ∀ i, e i ≤ b) (hiR : m iR = false) :
+    capPot b iR (expStep b m e) ≤ capPot b iR e := by
+  by_cases hδ : ∃ j, e j = b ∧ m j = false
+  · exact capPot_expStep_le_of_rescale hiR hδ
+  · have h := capPot_expStep_add_one_le_of_not_rescale he hiR hδ
+    omega
+
+/-- **A surprise costs the potential at least one.** At a rescale, the budget floor `hfloor` forces
+some missing candidate off the floor — otherwise the missing mass could not exceed `θ` of a total
+that already carries a ceiling term — and that candidate alone drops the competitors' sum by one;
+off a rescale the potential falls by one regardless (`capPot_expStep_le`'s own case). -/
+private theorem capPot_expStep_add_one_le_of_surprise {b : ℕ} {m : Fin C → Bool} {e : Fin C → ℕ}
+    {iR : Fin C} (he : ∀ i, e i ≤ b) (hiR : m iR = false) {θ : ℚ}
+    (hfloor : (C : ℚ) - 1 ≤ θ * ((2 : ℚ) ^ b + ((C : ℚ) - 1)))
+    (hs : θ < expMiss e m / expTotal e) :
+    capPot b iR (expStep b m e) + 1 ≤ capPot b iR e := by
+  by_cases hδ : ∃ j, e j = b ∧ m j = false
+  · obtain ⟨j₀, hj₀e, hj₀m⟩ := hδ
+    have hδ' : ∃ j, e j = b ∧ m j = false := ⟨j₀, hj₀e, hj₀m⟩
+    have heiR' : expStep b m e iR = e iR := by
+      simp only [expStep, ite_eq_left hδ', ite_eq_right (by simp [hiR] : ¬ (m iR = true))]
+      omega
+    have hT : (0 : ℚ) < expTotal e := expTotal_pos e iR
+    have hcardj0 : ((Finset.univ.erase j₀).card : ℚ) = (C : ℚ) - 1 := by
+      rw [Finset.card_erase_of_mem (Finset.mem_univ j₀), Finset.card_univ, Fintype.card_fin,
+        Nat.cast_sub j₀.pos, Nat.cast_one]
+    have hTge : (2 : ℚ) ^ b + ((C : ℚ) - 1) ≤ expTotal e := by
+      have hone : ∀ j ∈ Finset.univ.erase j₀, (1 : ℚ) ≤ (2 : ℚ) ^ e j := fun j _ =>
+        one_le_pow₀ (by norm_num)
+      calc (2 : ℚ) ^ b + ((C : ℚ) - 1)
+          = (2 : ℚ) ^ e j₀ + ∑ _j ∈ Finset.univ.erase j₀, (1 : ℚ) := by
+            rw [hj₀e, Finset.sum_const, nsmul_eq_mul, mul_one, hcardj0]
+        _ ≤ (2 : ℚ) ^ e j₀ + ∑ j ∈ Finset.univ.erase j₀, (2 : ℚ) ^ e j := by
+            gcongr with j hj
+            exact hone j hj
+        _ = expTotal e := by
+            rw [expTotal, ← Finset.sum_erase_add _ _ (Finset.mem_univ j₀)]; ring
+    have hCQ : (0 : ℚ) ≤ (C : ℚ) - 1 := by
+      have : (1 : ℚ) ≤ (C : ℚ) := by exact_mod_cast iR.pos
+      linarith
+    have hpos2 : (0 : ℚ) < (2 : ℚ) ^ b + ((C : ℚ) - 1) := by
+      have h2 : (0 : ℚ) < (2 : ℚ) ^ b := by positivity
+      linarith
+    have hθ0 : 0 ≤ θ := by
+      by_contra hneg
+      push Not at hneg
+      have : θ * ((2 : ℚ) ^ b + ((C : ℚ) - 1)) < 0 := mul_neg_of_neg_of_pos hneg hpos2
+      linarith [hfloor, hCQ]
+    have hnotall0 : ∃ j, m j = true ∧ 0 < e j := by
+      by_contra hcon
+      push Not at hcon
+      have hcardIR : ((Finset.univ.erase iR).card : ℚ) = (C : ℚ) - 1 := by
+        rw [Finset.card_erase_of_mem (Finset.mem_univ iR), Finset.card_univ, Fintype.card_fin,
+          Nat.cast_sub iR.pos, Nat.cast_one]
+      have hM0 : expMiss e m ≤ (C : ℚ) - 1 := by
+        rw [expMiss]
+        calc ∑ j, (if m j = true then (2 : ℚ) ^ e j else 0)
+            ≤ ∑ j ∈ Finset.univ.erase iR, (if m j = true then (2 : ℚ) ^ e j else 0) := by
+              rw [← Finset.sum_erase_add _ _ (Finset.mem_univ iR),
+                ite_eq_right (by simp [hiR] : ¬ (m iR = true))]
+              linarith [Finset.sum_nonneg (fun j (_ : j ∈ Finset.univ.erase iR) =>
+                show (0:ℚ) ≤ if m j = true then (2:ℚ)^e j else 0 by split <;> positivity)]
+          _ ≤ ∑ _j ∈ Finset.univ.erase iR, (1 : ℚ) := by
+              refine Finset.sum_le_sum fun j _ => ?_
+              by_cases hm : m j = true
+              · rw [ite_eq_left hm, Nat.le_zero.mp (hcon j hm), pow_zero]
+              · rw [ite_eq_right hm]; norm_num
+          _ = (C : ℚ) - 1 := by rw [Finset.sum_const, nsmul_eq_mul, mul_one, hcardIR]
+      have : expMiss e m / expTotal e ≤ θ := by
+        rw [div_le_iff₀ hT]
+        calc expMiss e m ≤ (C : ℚ) - 1 := hM0
+          _ ≤ θ * ((2 : ℚ) ^ b + ((C : ℚ) - 1)) := hfloor
+          _ ≤ θ * expTotal e := mul_le_mul_of_nonneg_left hTge hθ0
+      linarith [hs]
+    obtain ⟨j₁, hj₁m, hj₁pos⟩ := hnotall0
+    have hj₁ne : j₁ ≠ iR := by
+      rintro rfl
+      rw [hiR] at hj₁m
+      exact Bool.noConfusion hj₁m
+    have hj₁mem : j₁ ∈ Finset.univ.erase iR := Finset.mem_erase.mpr ⟨hj₁ne, Finset.mem_univ j₁⟩
+    have hj₁step : expStep b m e j₁ < e j₁ := by
+      simp only [expStep, ite_eq_left hδ', ite_eq_left hj₁m]
+      omega
+    have hrest : ∀ j ∈ Finset.univ.erase iR, expStep b m e j ≤ e j := by
+      intro j _
+      simp only [expStep, ite_eq_left hδ']
+      split <;> omega
+    have hlt : ∑ j ∈ Finset.univ.erase iR, expStep b m e j
+        < ∑ j ∈ Finset.univ.erase iR, e j :=
+      Finset.sum_lt_sum hrest ⟨j₁, hj₁mem, hj₁step⟩
+    rw [capPot, capPot, heiR']
+    clear hrest hj₁step hj₁mem hj₁ne hj₁m hj₁pos hTge hcardj0 hT heiR' hδ' hj₀e hj₀m
+      hfloor hs he
+    revert hlt
+    generalize ∑ i ∈ Finset.univ.erase iR, expStep b m e i = S1
+    generalize ∑ i ∈ Finset.univ.erase iR, e i = S2
+    omega
+  · exact capPot_expStep_add_one_le_of_not_rescale he hiR hδ
+
+/-- **The count accumulates against the seed's own potential.** Every surprise costs `capPot` at
+least one and it never rises otherwise, so after any horizon the count plus what remains of the
+potential is still bounded by where it started. -/
+private theorem capPot_run_le {e₀ : Fin C → ℕ} {b : ℕ} (he₀ : ∀ i, e₀ i ≤ b)
+    (M : ℕ → Fin C → Bool) {iR : Fin C} (hR : ∀ t, M t iR = false) {θ : ℚ}
+    (hfloor : (C : ℚ) - 1 ≤ θ * ((2 : ℚ) ^ b + ((C : ℚ) - 1))) (n : ℕ) :
+    (floorSurpriseSetFrom e₀ M b θ n).card + capPot b iR (expRunFrom e₀ M b n)
+      ≤ capPot b iR e₀ := by
+  induction n with
+  | zero => simp [floorSurpriseSetFrom, expRunFrom]
+  | succ n ih =>
+      rw [floorSurpriseSetFrom_card_succ]
+      have hen : ∀ i, expRunFrom e₀ M b n i ≤ b := fun i => expRunFrom_le he₀ M n i
+      have heq : expRunFrom e₀ M b (n + 1) = expStep b (M n) (expRunFrom e₀ M b n) := rfl
+      rw [heq]
+      by_cases h : θ < wrongMassFrom e₀ M b n
+      · rw [ite_eq_left h]
+        have hs : θ < expMiss (expRunFrom e₀ M b n) (M n) / expTotal (expRunFrom e₀ M b n) := by
+          rwa [wrongMassFrom_eq_div he₀] at h
+        have hstep := capPot_expStep_add_one_le_of_surprise hen (hR n) hfloor hs
+        omega
+      · rw [ite_eq_right h, Nat.add_zero]
+        have hstep := capPot_expStep_le hen (hR n)
+        omega
+
+/-- **The floored mixture's exact capacity threshold** ([Discovery] Proposition 3.5(i), row FV-37;
+[Inevitability] §6, [Inevitability] §7).
+
+Under the floor condition `C − 1 ≤ θ·(2^b + C − 1)`, which is weaker than
+`floorSurpriseFrom_card_mul_le`'s budget gate, and with a candidate `iR` that never
+misses, the surprise count over any horizon is bounded by the seed's own capacity: `C` copies of
+how far below the ceiling the truth started, plus the competitors' starting exponents outright.
+The mechanism is the additive potential `capPot` — `C` times the reference's remaining headroom to
+the ceiling, plus the competitors' exponents — which a surprise costs at least one and which never
+rises otherwise: the reference is frozen at a rescale and no competitor's exponent can increase
+there, while off a rescale the reference's headroom drops by one doubling (costing `C`) against the
+competitors rising by at most `C − 1` doublings between them, and at a rescale that is a surprise
+the floor condition forces some missing candidate off the floor, costing the competitors' sum at
+least one on its own.
+
+This is a genuinely different reading from `floorSurpriseFrom_card_mul_le`'s multiplicative one: it
+is exact where that one is not (`floorSurpriseFrom_card_add_le_capacity_nonvacuous` exhibits an
+instance below that bound's own gate where this one still has content), and it is the threshold the
+window of [Inevitability] §7 stands on — the repair total is bounded at every realizable task once
+the floor condition holds, by the seed's own capacity, and unbounded at a task when it fails
+(`floorSurprise_bounded_iff`, at the uniform start). -/
+theorem floorSurpriseFrom_card_add_le_capacity {e₀ : Fin C → ℕ} {b : ℕ} (he₀ : ∀ i, e₀ i ≤ b)
+    (M : ℕ → Fin C → Bool) {iR : Fin C} (hR : ∀ t, M t iR = false) (θ : ℚ)
+    (hfloor : (C : ℚ) - 1 ≤ θ * ((2 : ℚ) ^ b + ((C : ℚ) - 1))) (n : ℕ) :
+    (floorSurpriseSetFrom e₀ M b θ n).card + C * e₀ iR
+      ≤ C * b + ∑ i ∈ Finset.univ.erase iR, e₀ i := by
+  have h := capPot_run_le he₀ M hR hfloor n
+  have hiRb := he₀ iR
+  have hCeq : C * (b - e₀ iR) + C * e₀ iR = C * b := by
+    rw [← Nat.mul_add]
+    congr 1
+    omega
+  rw [capPot, capPot] at h
+  omega
+
+/-- **The uniform start** ([Discovery] Proposition 3.5(i), row FV-37). At the fiber's own all-ones
+prior the seed's headroom is `C` copies of the whole budget and the competitors start at nothing,
+so the capacity bound reads `card ≤ C·b`. -/
+theorem floorSurprise_card_le_capacity (M : ℕ → Fin C → Bool) {iR : Fin C}
+    (hR : ∀ t, M t iR = false) (b : ℕ) (θ : ℚ)
+    (hfloor : (C : ℚ) - 1 ≤ θ * ((2 : ℚ) ^ b + ((C : ℚ) - 1))) (n : ℕ) :
+    (floorSurpriseSet M b θ n).card ≤ C * b := by
+  have h := floorSurpriseFrom_card_add_le_capacity (e₀ := fun _ => 0) (fun _ => Nat.zero_le b)
+    M hR θ hfloor n
+  rw [floorSurpriseSetFrom_zero] at h
+  simpa using h
+
+/-- **The window closes** ([Discovery] Proposition 3.5(ii), row FV-37). At the uniform start, a
+lifetime-free bound on the surprise count over every stream with a never-missing candidate exists
+exactly when the floor condition
+`C − 1 ≤ θ·(2^b + C − 1)` holds: sufficiency is `floorSurprise_card_le_capacity`'s bound at
+`N = C·b`, and necessity is the all-miss family's own unbounded growth
+(`floorSurprises_unbounded_below_budget`), realizable by `allMiss_realizable`. Between the two
+[Inevitability] §7's window vanishes: when the condition fails there is no bound at all, and when
+it holds the capacity bound already supplies one. -/
+theorem floorSurprise_bounded_iff {iR : Fin C} (b : ℕ) (θ : ℚ) :
+    (∃ N, ∀ M : ℕ → Fin C → Bool, (∀ t, M t iR = false) →
+        ∀ n, (floorSurpriseSet M b θ n).card ≤ N)
+      ↔ (C : ℚ) - 1 ≤ θ * ((2 : ℚ) ^ b + ((C : ℚ) - 1)) := by
+  constructor
+  · rintro ⟨N, hN⟩
+    by_contra hcon
+    have hunb := floorSurprises_unbounded_below_budget (iR := iR) b θ (not_le.mp hcon) (N + 1)
+    have hbound := hN (allMiss iR) (fun t => by simp [allMiss]) (N + 1)
+    omega
+  · intro hfloor
+    exact ⟨C * b, fun M hR n => floorSurprise_card_le_capacity M hR b θ hfloor n⟩
+
+end CapacityBound
+
 /-! ## The guards -/
 
 section Guards
 
 /-! ### The budget gate is load-bearing, with a never-missing candidate present
 
-The bound above buys its logarithm with the gate, and below the gate it is *false* rather than
-unproved — even under realizability, which is what separates this guard from the landed
+The bound above buys its logarithm with the gate, and at its OWN condition —
+`θ·(2^b + C − 1) < C − 1`, strictly stronger than the gate's failure — it is *false* rather than
+unproved, even under realizability, which is what separates this guard from the landed
 realizability families. The all-miss family already refutes it: the floor alone keeps the reading
-wrong at every step, so the count grows with the horizon while the right side does not. -/
+wrong at every step, so the count grows with the horizon while the right side does not.
+`floorSurpriseFrom_card_add_le_capacity` reads the SAME condition negated as its own hypothesis, so
+the gate above is a sufficient condition for both landed bounds' constants and not the boundary of
+either. -/
 
 /-- The all-miss family's own never-missing candidate: the guard below drops the gate and keeps
 every other hypothesis of the bound, realizability included. -/
 theorem allMiss_realizable {C : ℕ} (iR : Fin C) (t : ℕ) : allMiss iR t iR = false := by
   simp [allMiss]
 
-/-- **Below the gate there is no bound at all**, seeded or not. Read at the uniform start, where
-the seed's deficit vanishes and the log-mass bound reads `5⌊log₂ C⌋ + 4`, the count is the whole
-horizon. -/
+/-- **Below its own condition there is no bound at all**, seeded or not — a condition strictly
+stronger than the gate's mere failure (`floorSurpriseFrom_card_add_le_capacity`'s own hypothesis is
+this one negated). Read at the uniform start, where the seed's deficit vanishes and the log-mass
+bound reads `5⌊log₂ C⌋ + 4`, the count is the whole horizon. -/
 theorem floorSurpriseFrom_unbounded_below_gate {C : ℕ} {iR : Fin C} (b : ℕ) (θ : ℚ)
     (hθ : θ * ((2 : ℚ) ^ b + ((C : ℚ) - 1)) < (C : ℚ) - 1) (n : ℕ) :
     (floorSurpriseSetFrom (fun _ => 0) (allMiss iR) b θ n).card = n := by
@@ -732,6 +1024,204 @@ theorem floorSurpriseFrom_unbounded_below_gate_witness (n : ℕ) :
     ¬ (2 * ((9 : ℚ) - 1) ≤ (1 / 4 : ℚ) * 2 ^ 3) ∧
       (floorSurpriseSetFrom (fun _ => 0) (allMiss (0 : Fin 9)) 3 (1 / 4) n).card = n :=
   ⟨by norm_num, floorSurpriseFrom_unbounded_below_gate 3 (1 / 4) (by norm_num) n⟩
+
+/-! ### The window closes from every start
+
+The gate guard above refutes a lifetime-free bound at the zero seed. Below the floor condition the
+all-miss family refutes one from *every* power-of-two start inside the register — the truth's
+exponent never exceeds `b` and each competitor holds at least one quantum, so the wrong mass sits
+above `θ` at every step no matter where the run began — and with the capacity bound this closes
+the seeded window: from every such start a horizon-free bound exists exactly when the floor
+condition holds. -/
+
+/-- **Below the floor condition every step of the all-miss stream is a surprise, from every
+power-of-two start inside the register.** The truth's exponent never exceeds `b` and every
+competitor's is at least `0`, so the wrong mass at every step is at least
+`(C − 1)/(2^b + C − 1)`, which the condition's failure puts above `θ`. The landed
+`floorSurpriseFrom_unbounded_below_gate` is this at the zero seed. -/
+theorem floorSurpriseFrom_allMiss_card_eq {e₀ : Fin C → ℕ} {b : ℕ} (he₀ : ∀ i, e₀ i ≤ b)
+    {iR : Fin C} (θ : ℚ) (hθ : θ * ((2 : ℚ) ^ b + ((C : ℚ) - 1)) < (C : ℚ) - 1) (n : ℕ) :
+    (floorSurpriseSetFrom e₀ (allMiss iR) b θ n).card = n := by
+  have hC1 : 1 ≤ C := iR.pos
+  have hCq : (0 : ℚ) ≤ (C : ℚ) - 1 := by
+    have : (1 : ℚ) ≤ (C : ℚ) := by exact_mod_cast hC1
+    linarith
+  have hsurp : ∀ t, θ < wrongMassFrom e₀ (allMiss iR) b t := by
+    intro t
+    set e_t := expRunFrom e₀ (allMiss iR) b t with he_t_def
+    set St := ∑ i ∈ Finset.univ.erase iR, (2 : ℚ) ^ e_t i with hSt_def
+    have hMissEq : expMiss e_t (allMiss iR t) = St := by
+      rw [expMiss, ← Finset.sum_erase_add _ _ (Finset.mem_univ iR),
+        show (if allMiss iR t iR = true then ((2 : ℚ)) ^ e_t iR else 0) = 0 by simp [allMiss],
+        add_zero, hSt_def]
+      refine Finset.sum_congr rfl fun j hj => ?_
+      rw [ite_eq_left (show allMiss iR t j = true by simp [allMiss, (Finset.mem_erase.mp hj).1])]
+    have hTotEq : expTotal e_t = (2 : ℚ) ^ e_t iR + St := by
+      rw [expTotal, ← Finset.sum_erase_add _ _ (Finset.mem_univ iR), hSt_def, add_comm]
+    have hP : (2 : ℚ) ^ e_t iR ≤ (2 : ℚ) ^ b :=
+      pow_le_pow_right₀ (by norm_num) (expRunFrom_le he₀ (allMiss iR) t iR)
+    have hPpos : (0 : ℚ) < (2 : ℚ) ^ e_t iR := by positivity
+    have hcard : ((Finset.univ.erase iR).card : ℚ) = (C : ℚ) - 1 := by
+      rw [Finset.card_erase_of_mem (Finset.mem_univ iR), Finset.card_univ, Fintype.card_fin,
+        Nat.cast_sub hC1, Nat.cast_one]
+    have hSt : (C : ℚ) - 1 ≤ St := by
+      rw [← hcard, Finset.card_eq_sum_ones, Nat.cast_sum, hSt_def]
+      push_cast
+      exact Finset.sum_le_sum fun i _ => one_le_pow₀ (by norm_num)
+    have hθ1 : θ ≤ 1 := by
+      by_contra h
+      push Not at h
+      have h2b : (0 : ℚ) < (2 : ℚ) ^ b + ((C : ℚ) - 1) := by positivity
+      nlinarith
+    rw [wrongMassFrom_eq_div he₀, hMissEq, hTotEq, lt_div_iff₀ (by linarith)]
+    rcases lt_or_ge θ 0 with hneg | hθ0
+    · nlinarith
+    · nlinarith [mul_le_mul_of_nonneg_left hP hθ0,
+        mul_le_mul_of_nonneg_right hSt (sub_nonneg.mpr hθ1)]
+  rw [floorSurpriseSetFrom, Finset.filter_true_of_mem fun t _ => hsurp t, Finset.card_range]
+
+/-- The hypotheses of `floorSurpriseFrom_allMiss_card_eq` hold at once at named parameters: two
+candidates, budget `2`, the start `(1, 2)` with the truth first, threshold `1/8`; every step is a
+surprise there. -/
+theorem floorSurpriseFrom_allMiss_card_eq_nonvacuous (n : ℕ) :
+    (∀ i, (![1, 2] : Fin 2 → ℕ) i ≤ 2) ∧
+      (1 / 8 : ℚ) * ((2 : ℚ) ^ 2 + ((2 : ℚ) - 1)) < (2 : ℚ) - 1 ∧
+      (floorSurpriseSetFrom ![1, 2] (allMiss (0 : Fin 2)) 2 (1 / 8) n).card = n :=
+  ⟨by decide, by norm_num, floorSurpriseFrom_allMiss_card_eq (by decide) (1 / 8) (by norm_num) n⟩
+
+/-- **The window closes from every start** ([Discovery] Proposition 3.5(ii), past the uniform
+start). From every power-of-two start inside the register, a horizon-free bound on the surprise
+count over every stream with a never-missing candidate exists exactly when the floor condition
+holds: sufficiency is `floorSurpriseFrom_card_add_le_capacity` at `N = C·b + Σ_{i ≠ iR} e₀ i`,
+necessity is `floorSurpriseFrom_allMiss_card_eq` at horizon `N + 1`;
+`floorSurprise_bounded_iff` is the zero seed's case. -/
+theorem floorSurpriseFrom_bounded_iff {e₀ : Fin C → ℕ} {b : ℕ} (he₀ : ∀ i, e₀ i ≤ b)
+    {iR : Fin C} (θ : ℚ) :
+    (∃ N, ∀ M : ℕ → Fin C → Bool, (∀ t, M t iR = false) →
+        ∀ n, (floorSurpriseSetFrom e₀ M b θ n).card ≤ N)
+      ↔ (C : ℚ) - 1 ≤ θ * ((2 : ℚ) ^ b + ((C : ℚ) - 1)) := by
+  constructor
+  · rintro ⟨N, hN⟩
+    by_contra hcon
+    have hunb := floorSurpriseFrom_allMiss_card_eq he₀ (iR := iR) θ (not_le.mp hcon) (N + 1)
+    have hbound := hN (allMiss iR) (allMiss_realizable iR) (N + 1)
+    omega
+  · intro hfloor
+    refine ⟨C * b + ∑ i ∈ Finset.univ.erase iR, e₀ i, fun M hR n => ?_⟩
+    have h := floorSurpriseFrom_card_add_le_capacity he₀ M hR θ hfloor n
+    omega
+
+/-! ### The all-miss family's surprise steps, from any start
+
+The guard above shows the all-miss family refutes a lifetime-free bound at its own condition, at
+the zero seed. This prices its surprise steps precisely from *any* seeded start, in the currency the
+capacity bound above uses — and it is what lets the deficit family below be read as one instance
+of this family rather than a parallel development. -/
+
+/-- **The headroom invariant.** Along the all-miss family the truth's exponent plus every
+competitor's own exponent can only trade in the truth's favour: at any step, a competitor's seed
+exponent is bounded by its own current exponent plus how far the truth has pulled ahead of its
+seed. Off a rescale the truth gains one and no competitor moves; at a rescale the truth is frozen
+and a competitor's exponent falls by at most one — either way the inequality is preserved. -/
+private theorem allMiss_headroom_invariant {e₀ : Fin C → ℕ} {b : ℕ} {iR : Fin C} (t : ℕ)
+    (j : Fin C) (hj : j ≠ iR) :
+    e₀ j + expRunFrom e₀ (allMiss iR) b t iR
+      ≤ e₀ iR + t + expRunFrom e₀ (allMiss iR) b t j := by
+  induction t with
+  | zero => simp only [expRunFrom]; omega
+  | succ t ih =>
+      have heq : expRunFrom e₀ (allMiss iR) b (t + 1)
+          = expStep b (allMiss iR t) (expRunFrom e₀ (allMiss iR) b t) := rfl
+      rw [heq]
+      set e := expRunFrom e₀ (allMiss iR) b t with he_def
+      have hcompM : allMiss iR t j = true := by simp [allMiss, hj]
+      have hIRnotM : ¬ (allMiss iR t iR = true) := by simp [allMiss]
+      by_cases hδ : ∃ k, e k = b ∧ allMiss iR t k = false
+      · have heiR' : expStep b (allMiss iR t) e iR = e iR := by
+          simp only [expStep, ite_eq_left hδ, ite_eq_right hIRnotM]
+          omega
+        have hej' : expStep b (allMiss iR t) e j = e j - 1 := by
+          simp only [expStep, ite_eq_left hδ, ite_eq_left hcompM, Nat.add_zero]
+        rw [heiR', hej']
+        omega
+      · have heiR' : expStep b (allMiss iR t) e iR = e iR + 1 := by
+          simp only [expStep, ite_eq_right hδ, ite_eq_right hIRnotM, Nat.sub_zero]
+        have hej' : expStep b (allMiss iR t) e j = e j := by
+          simp only [expStep, ite_eq_right hδ, ite_eq_left hcompM, Nat.add_zero, Nat.sub_zero]
+        rw [heiR', hej']
+        omega
+
+/-- **A surprise step of the all-miss family, from any start** ([Discovery] Proposition 3.5(iii),
+row FV-37). Once the seed's own headroom is spent — the competitors' initial mass exceeds `2`
+raised to the sum of the truth's own seed exponent and the elapsed time — the step is a surprise,
+at any threshold up to `1/2`. The mechanism
+is `allMiss_headroom_invariant` read as a mass inequality: the competitors' current mass, scaled by
+the truth's own current share, dominates the seed's competitor mass scaled by the truth's *seed*
+share, so the competitors cannot have decayed faster than the hypothesis rules out. -/
+theorem floorSurpriseFrom_allMiss_mem {e₀ : Fin C → ℕ} {b : ℕ} (he₀ : ∀ i, e₀ i ≤ b)
+    {iR : Fin C} {θ : ℚ} (hθ : θ ≤ 1 / 2) {t n : ℕ} (ht : t < n)
+    (hlt : 2 ^ (e₀ iR + t) < ∑ i ∈ Finset.univ.erase iR, 2 ^ e₀ i) :
+    t ∈ floorSurpriseSetFrom e₀ (allMiss iR) b θ n := by
+  set e_t := expRunFrom e₀ (allMiss iR) b t with he_t_def
+  set S0 := ∑ i ∈ Finset.univ.erase iR, 2 ^ e₀ i with hS0_def
+  set St := ∑ i ∈ Finset.univ.erase iR, 2 ^ e_t i with hSt_def
+  have hkey : 2 ^ e_t iR * S0 ≤ 2 ^ (e₀ iR + t) * St := by
+    rw [hS0_def, hSt_def, Finset.mul_sum, Finset.mul_sum]
+    refine Finset.sum_le_sum fun j hj => ?_
+    have hjne : j ≠ iR := (Finset.mem_erase.mp hj).1
+    have hinv := allMiss_headroom_invariant (e₀ := e₀) (b := b) (iR := iR) t j hjne
+    calc 2 ^ e_t iR * 2 ^ e₀ j = 2 ^ (e₀ j + e_t iR) := by rw [← pow_add]; ring_nf
+      _ ≤ 2 ^ (e₀ iR + t + e_t j) := Nat.pow_le_pow_right (by norm_num) hinv
+      _ = 2 ^ (e₀ iR + t) * 2 ^ e_t j := by rw [pow_add]
+  have hStgt : 2 ^ e_t iR < St := by
+    by_contra hcon
+    push Not at hcon
+    have h2 : 2 ^ (e₀ iR + t) * St ≤ 2 ^ (e₀ iR + t) * 2 ^ e_t iR := Nat.mul_le_mul_left _ hcon
+    have h3 : 2 ^ e_t iR * S0 ≤ 2 ^ e_t iR * 2 ^ (e₀ iR + t) := by
+      rw [mul_comm (2 ^ e_t iR) (2 ^ (e₀ iR + t))]
+      exact le_trans hkey h2
+    have h4 : S0 ≤ 2 ^ (e₀ iR + t) :=
+      Nat.le_of_mul_le_mul_left h3 (pow_pos (by norm_num) _)
+    omega
+  have hStgt' : (2 : ℚ) ^ e_t iR < (St : ℚ) := by exact_mod_cast hStgt
+  have hStpos : (0 : ℚ) ≤ (2 : ℚ) ^ e_t iR := by positivity
+  have hMissEq : expMiss e_t (allMiss iR t) = (St : ℚ) := by
+    rw [expMiss, ← Finset.sum_erase_add _ _ (Finset.mem_univ iR),
+      show (if allMiss iR t iR = true then ((2 : ℚ)) ^ e_t iR else 0) = 0 by simp [allMiss],
+      add_zero, hSt_def]
+    push_cast
+    refine Finset.sum_congr rfl fun j hj => ?_
+    rw [ite_eq_left (show allMiss iR t j = true by simp [allMiss, (Finset.mem_erase.mp hj).1])]
+  have hTotEq : expTotal e_t = (2 : ℚ) ^ e_t iR + (St : ℚ) := by
+    rw [expTotal, ← Finset.sum_erase_add _ _ (Finset.mem_univ iR), hSt_def]
+    push_cast
+    ring
+  rw [floorSurpriseSetFrom, Finset.mem_filter]
+  refine ⟨Finset.mem_range.mpr ht, ?_⟩
+  rw [wrongMassFrom_eq_div he₀, hMissEq, hTotEq, lt_div_iff₀ (by linarith)]
+  nlinarith [mul_le_mul_of_nonneg_right hθ (by linarith : (0 : ℚ) ≤ (2 : ℚ) ^ e_t iR + St)]
+
+/-- **The count is at least `k` once the seed's headroom is spent by `k`** ([Discovery] Proposition
+3.5(iii), row FV-37). The mem lemma applies at every step below `k`, since the power on the left
+only shrinks as `t` does. -/
+theorem floorSurpriseFrom_allMiss_card_ge {e₀ : Fin C → ℕ} {b : ℕ} (he₀ : ∀ i, e₀ i ≤ b)
+    {iR : Fin C} {θ : ℚ} (hθ : θ ≤ 1 / 2) {k n : ℕ} (hk : k ≤ n)
+    (hle : 2 ^ (e₀ iR + k) ≤ ∑ i ∈ Finset.univ.erase iR, 2 ^ e₀ i) :
+    k ≤ (floorSurpriseSetFrom e₀ (allMiss iR) b θ n).card := by
+  have hsub : Finset.range k ⊆ floorSurpriseSetFrom e₀ (allMiss iR) b θ n := by
+    intro t htmem
+    have ht : t < k := Finset.mem_range.mp htmem
+    have hlt : 2 ^ (e₀ iR + t) < ∑ i ∈ Finset.univ.erase iR, 2 ^ e₀ i :=
+      lt_of_lt_of_le (Nat.pow_lt_pow_right (by norm_num) (by omega)) hle
+    exact floorSurpriseFrom_allMiss_mem he₀ hθ (by omega) hlt
+  calc k = (Finset.range k).card := (Finset.card_range k).symm
+    _ ≤ _ := Finset.card_le_card hsub
+
+/-- **Non-vacuity.** Three candidates, the zero seed, threshold `1/2`: the seed's headroom is spent
+immediately (`1 < 2`), so stage `0` is already a surprise. -/
+theorem floorSurpriseFrom_allMiss_mem_nonvacuous :
+    (0 : ℕ) ∈ floorSurpriseSetFrom (fun _ : Fin 3 => 0) (allMiss (0 : Fin 3)) 0 (1 / 2 : ℚ) 1 :=
+  floorSurpriseFrom_allMiss_mem (fun _ => le_refl 0) (le_refl _) (by norm_num) (by decide)
 
 /-! ### The seed's deficit is necessary: the count grows with it
 
@@ -753,65 +1243,43 @@ def deficitSeed (b r : ℕ) : Fin 2 → ℕ := ![b - r, b]
 private theorem deficitSeed_le (b r : ℕ) (i : Fin 2) : deficitSeed b r i ≤ b := by
   fin_cases i <;> simp [deficitSeed]
 
-/-- **The climbing phase in closed form.** The competitor sits at the ceiling but misses, so it
-never triggers the rescale; the truth hits at every step and climbs one doubling at a time. -/
-private theorem expRunFrom_deficit {b r : ℕ} (hr : r ≤ b) :
-    ∀ t, t ≤ r → expRunFrom (deficitSeed b r) deficitMiss b t = ![b - r + t, b] := by
-  intro t
-  induction t with
-  | zero =>
-      intro _
-      funext i
-      fin_cases i <;> simp [expRunFrom, deficitSeed]
-  | succ t ih =>
-      intro ht
-      have ihe := ih (by omega)
-      change expStep b (deficitMiss t) (expRunFrom (deficitSeed b r) deficitMiss b t) = _
-      rw [ihe]
-      have hδ : ¬ ∃ j, (![b - r + t, b] : Fin 2 → ℕ) j = b ∧ deficitMiss t j = false := by
-        rintro ⟨j, hj1, hj2⟩
-        fin_cases j
-        · simp at hj1
-          omega
-        · simp [deficitMiss] at hj2
-      funext i
-      rw [expStep, ite_eq_right hδ]
-      fin_cases i <;> simp [deficitMiss]
-      all_goals omega
-
-/-- The wrong mass through the climbing phase: the competitor's ceiling against the truth's own
-partial climb. -/
-private theorem wrongMassFrom_deficit {b r : ℕ} (hr : r ≤ b) {t : ℕ} (ht : t ≤ r) :
-    wrongMassFrom (deficitSeed b r) deficitMiss b t
-      = (2 : ℚ) ^ b / ((2 : ℚ) ^ (b - r + t) + (2 : ℚ) ^ b) := by
-  rw [wrongMassFrom_eq_div (deficitSeed_le b r), expRunFrom_deficit hr t ht, expMiss, expTotal,
-    Fin.sum_univ_two, Fin.sum_univ_two]
-  simp [deficitMiss]
-
-/-- Every step of the climbing phase is a surprise, at any threshold the gate can hold. -/
-private theorem deficit_surprise {b r : ℕ} (hr : r ≤ b) {θ : ℚ} (hθ : θ ≤ 1 / 2) {t : ℕ}
-    (ht : t < r) : θ < wrongMassFrom (deficitSeed b r) deficitMiss b t := by
-  rw [wrongMassFrom_deficit hr (by omega)]
-  have h1 : (2 : ℚ) ^ (b - r + t) < (2 : ℚ) ^ b :=
-    pow_lt_pow_right₀ (by norm_num) (by omega)
-  have h2 : (0 : ℚ) < (2 : ℚ) ^ (b - r + t) := by positivity
-  rw [lt_div_iff₀ (by positivity)]
-  nlinarith
-
-/-- **The count is at least the seed's deficit.** -/
+/-- **The count is at least the seed's deficit** ([Discovery] Proposition 3.5(iii), row FV-37) —
+one instance of `floorSurpriseFrom_allMiss_card_ge` at two candidates: `deficitMiss` is `allMiss 0`
+and `deficitSeed b r`'s competitor sum is exactly `2 ^ b`, so the seed's headroom is spent by
+exactly `r`. -/
 theorem floorSurpriseFrom_deficit_card_ge {b r : ℕ} (hr : r ≤ b) {θ : ℚ} (hθ : θ ≤ 1 / 2)
     {n : ℕ} (hn : r ≤ n) :
     r ≤ (floorSurpriseSetFrom (deficitSeed b r) deficitMiss b θ n).card := by
-  have hsub : Finset.range r ⊆ floorSurpriseSetFrom (deficitSeed b r) deficitMiss b θ n := by
-    intro t htmem
-    have ht : t < r := Finset.mem_range.mp htmem
-    rw [floorSurpriseSetFrom, Finset.mem_filter]
-    exact ⟨Finset.mem_range.mpr (by omega), deficit_surprise hr hθ ht⟩
-  calc r = (Finset.range r).card := (Finset.card_range r).symm
-    _ ≤ _ := Finset.card_le_card hsub
+  have hMiss : deficitMiss = allMiss (0 : Fin 2) := by
+    funext t i
+    fin_cases i <;> simp [deficitMiss, allMiss]
+  have herase : (Finset.univ.erase (0 : Fin 2)) = {1} := by decide
+  have hle : 2 ^ (deficitSeed b r 0 + r)
+      ≤ ∑ i ∈ Finset.univ.erase (0 : Fin 2), 2 ^ deficitSeed b r i := by
+    rw [herase, Finset.sum_singleton, show deficitSeed b r 0 = b - r by simp [deficitSeed],
+      show deficitSeed b r 1 = b by simp [deficitSeed], show b - r + r = b from by omega]
+  rw [hMiss]
+  exact floorSurpriseFrom_allMiss_card_ge (deficitSeed_le b r) hθ hn hle
 
-/-- **No bound free of the start exists**, so the seed's deficit in `floorSurpriseFrom_card_mul_le`
-is necessary and not an artefact of the potential. At two candidates and a fixed threshold, with
+/-- **Non-vacuity, against the landed gate** — for `floorSurpriseFrom_card_add_le_capacity`. Two
+candidates, budget `2 ^ 2`, threshold `1/4`, the truth seeded two doublings below a competitor at
+the ceiling: `hfloor` holds while the landed multiplicative bound's own gate `2(C−1) ≤ θ·2^b` fails
+(`4 ≤ 1` is false), and the count is nonetheless positive — `floorSurpriseFrom_deficit_card_ge`
+already forces it to at least `2`, comfortably inside this piece's own bound of `2·2 + 2 = 6` — so
+the capacity bound has content exactly where the landed one has none. -/
+theorem floorSurpriseFrom_card_add_le_capacity_nonvacuous :
+    (∀ i, deficitSeed 2 2 i ≤ 2) ∧ (∀ t, deficitMiss t (0 : Fin 2) = false) ∧
+      ((2 : ℚ) - 1 ≤ (1 / 4 : ℚ) * ((2 : ℚ) ^ 2 + ((2 : ℚ) - 1))) ∧
+      ¬ (2 * ((2 : ℚ) - 1) ≤ (1 / 4 : ℚ) * 2 ^ 2) ∧
+      0 < (floorSurpriseSetFrom (deficitSeed 2 2) deficitMiss 2 (1 / 4) 2).card :=
+  ⟨deficitSeed_le 2 2, deficitMiss_realizable, by norm_num, by norm_num,
+    lt_of_lt_of_le (by norm_num)
+      (floorSurpriseFrom_deficit_card_ge (b := 2) (r := 2) (θ := 1 / 4) (n := 2)
+        (by norm_num) (by norm_num) (le_refl 2))⟩
+
+/-- **No bound free of the start exists** ([Discovery] Proposition 3.5(iii), row FV-37), so the
+seed's deficit in `floorSurpriseFrom_card_mul_le` is necessary and not an artefact of the
+potential. At two candidates and a fixed threshold, with
 the budget gate satisfied and a candidate that never misses, any proposed constant is already
 exceeded once the seed's deficit exceeds it — and the deficit is free, bounded only by the budget
 exponent. Read against the bound's own right side, this brackets the deficit's coefficient from
@@ -854,3 +1322,35 @@ end WeightedFiber
 /-- info: 'WeightedFiber.floorSurpriseFrom_deficit_refutes_seed_free' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms WeightedFiber.floorSurpriseFrom_deficit_refutes_seed_free
+
+/-- info: 'WeightedFiber.floorSurpriseFrom_card_add_le_capacity' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.floorSurpriseFrom_card_add_le_capacity
+
+/-- info: 'WeightedFiber.floorSurprise_card_le_capacity' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.floorSurprise_card_le_capacity
+
+/-- info: 'WeightedFiber.floorSurprise_bounded_iff' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.floorSurprise_bounded_iff
+
+/-- info: 'WeightedFiber.floorSurpriseFrom_allMiss_mem_nonvacuous' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.floorSurpriseFrom_allMiss_mem_nonvacuous
+
+/-- info: 'WeightedFiber.floorSurpriseFrom_card_add_le_capacity_nonvacuous' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.floorSurpriseFrom_card_add_le_capacity_nonvacuous
+
+/-- info: 'WeightedFiber.floorSurpriseFrom_allMiss_card_eq' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.floorSurpriseFrom_allMiss_card_eq
+
+/-- info: 'WeightedFiber.floorSurpriseFrom_allMiss_card_eq_nonvacuous' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.floorSurpriseFrom_allMiss_card_eq_nonvacuous
+
+/-- info: 'WeightedFiber.floorSurpriseFrom_bounded_iff' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms WeightedFiber.floorSurpriseFrom_bounded_iff

@@ -70,11 +70,14 @@ predictions are all abstracted into `M`, so the results hold of any instantiatio
   misses, whose miss count is `0` at every horizon, the bound above becomes `card · θ ≤ 4(C−1)` over
   the whole run, `n` occurring only inside the surprise set. This is the form [Inevitability] §6
   consumes.
-* `floorSurprises_unbounded_below_budget` — **the budget guard, proved first**. Below the budget
-  threshold the bound above is not merely unproved but *false*: on the all-miss family every step is
-  a surprise, so the count grows with the horizon without limit.
-  `floorSurprises_unbounded_witness` is a concrete instance. The budget hypothesis is therefore
-  load-bearing, and `floorSurprise_vacuous_at_badW_budget` marks the other edge — at the
+* `floorSurprises_unbounded_below_budget` — **the budget guard, proved first**. At its own
+  condition `θ·(2^b + C − 1) < C − 1` the bound above is not merely unproved but *false*: on the
+  all-miss family every step is a surprise, so the count grows with the horizon without limit.
+  `floorSurprises_unbounded_witness` is a concrete instance. That condition is therefore
+  load-bearing — `floorSurpriseFrom_card_add_le_capacity` (in `LogMassEvent.lean`) reads it negated
+  as its own hypothesis and is bounded wherever this guard is not, so the budget threshold
+  `2(C-1) ≤ θ·2^b` used above is a sufficient condition for both bounds' constants and not the
+  boundary of either — and `floorSurprise_vacuous_at_badW_budget` marks the other edge — at the
   annihilating instance's own `C = W = 2` the hypothesis already forces `θ ≥ 1`, where
   `wrongMass_lt_one` leaves the surprise set empty.
 * `floorSurprises_unbounded_everyMiss` and `floorSurprises_unbounded_altMiss` — **the realizability
@@ -1130,7 +1133,12 @@ private theorem sum_unsatCharge_le (M : ℕ → Fin C → Bool) (b : ℕ) (i₀ 
         have hn := leadPot_nonneg M b i₀ i n
         linarith
 
-/-! ### The guard: below the budget threshold there is no `n`-free bound -/
+/-! ### The guard: below its own condition there is no `n`-free bound
+
+The all-miss family's refutation runs at `θ·(2^b + C − 1) < C − 1`, strictly stronger than the
+budget threshold's mere failure — `LogMassEvent.lean`'s `floorSurpriseFrom_card_add_le_capacity`
+is bounded at exactly this condition negated, so the threshold used above is a sufficient
+condition for both bounds' constants and not the boundary of either. -/
 
 /-- **The all-miss family**: every candidate but `iR` misses at every step. -/
 def allMiss (iR : Fin C) : ℕ → Fin C → Bool := fun _ i => decide (i ≠ iR)
@@ -1190,10 +1198,13 @@ private theorem wrongMass_allMiss (iR : Fin C) (b t : ℕ) :
     Finset.sum_congr rfl (fun j hj => ite_eq_right (Finset.ne_of_mem_erase hj)),
     Finset.sum_const, nsmul_eq_mul, hcard, mul_one_div]
 
-/-- **The guard.** Below the budget threshold the `n`-free bound is *false*: on the all-miss family
-every single step is a surprise, so the surprise count grows without bound. This is what makes
+/-- **The guard.** At its own condition `θ·(2^b + C − 1) < C − 1` — strictly stronger than the
+budget threshold's mere failure — the `n`-free bound is *false*: on the all-miss family every
+single step is a surprise, so the surprise count grows without bound. This is what makes
 `floorSurprise_card_mul_le`'s budget hypothesis load-bearing rather than decorative — delete it and
-this family refutes what remains. -/
+this family refutes what remains; and it is exactly `floorSurpriseFrom_card_add_le_capacity`'s own
+hypothesis negated, so the budget threshold is a sufficient condition for both bounds' constants
+and not the boundary of either. -/
 theorem floorSurprises_unbounded_below_budget {iR : Fin C} (b : ℕ) (θ : ℚ)
     (hθ : θ * ((2 : ℚ) ^ b + ((C : ℚ) - 1)) < (C : ℚ) - 1) (n : ℕ) :
     (floorSurpriseSet (allMiss iR) b θ n).card = n := by

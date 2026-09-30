@@ -52,7 +52,8 @@ for `𝗥₀`/`𝗤`, both infinite via the `𝗘𝗤` schema) is sidestepped be
 
 A parallel `𝗜𝚺₁` witness (`isigma1_decides_bounded_nonprovability'`, the same statement at `T = 𝗜𝚺₁`)
 is **also fully axiom-clean**: Foundation's `𝗜𝚺₁`/`𝗣𝗔` `Δ₁`-definability is a *theorem*
-(an anonymous instance in its `Incompleteness/Definability.lean`), so
+(an instance synthesized from `PeanoMinus.delta1`,
+`InductionScheme.delta1_strictHierarchy` and the union instance), so
 `exists_true_but_unprovable_sentence_of_sigma1sound 𝗜𝚺₁` carries no named axiom and
 `#print axioms` of the witness shows only `propext, Classical.choice, Quot.sound`. `𝗣𝗔⁻ ⊊ 𝗜𝚺₁`, so
 the `𝗣𝗔⁻` capstone is the weaker, more faithful (§5.3-class) statement, and the `𝗜𝚺₁` form is the
@@ -213,7 +214,7 @@ theorem Prf_accepts (Ax : List S) (steps : List Step) (φ : S) (proven : List S)
 /-- **§6.3 Theorem 6.3, L2b — concrete, FULLY axiom-clean.** With witness theory `T★ = 𝗣𝗔⁻`
 (`PeanoMinus`). Because `𝗣𝗔⁻` is a *finite* theory (`PeanoMinus.finite`), its `Δ₁`-definability
 is obtained constructively from `Theory.Δ₁.ofFinite`, needing no appeal to Foundation's
-`𝗜𝚺₁`/`𝗣𝗔` `Δ₁`-definability result (its anonymous `𝗜𝚺₁.Δ₁` instance) at all (the parallel `𝗜𝚺₁`
+`𝗜𝚺₁`/`𝗣𝗔` `Δ₁`-definability result (its synthesized `𝗜𝚺₁.Δ₁` instance) at all (the parallel `𝗜𝚺₁`
 witness `isigma1_decides_bounded_nonprovability'` below does route through it — now discharged
 upstream, so it too is axiom-clean). So the **actual** Gödel sentence `G` of `𝗣𝗔⁻` (true in `ℕ`,
 unprovable in `𝗣𝗔⁻`) is decided as bounded-non-provable for the concrete sound checker over any
@@ -237,9 +238,10 @@ theorem paMinus_decides_bounded_nonprovability
 `paMinus_decides_bounded_nonprovability` at Foundation's canonical Σ₁-induction theory `T = 𝗜𝚺₁`: the
 **actual** Gödel sentence `G` of `𝗜𝚺₁` (true in `ℕ`, unprovable in `𝗜𝚺₁`) is decided as
 bounded-non-provable for the concrete sound checker over any provable axiom `Ax`. Foundation's
-`𝗜𝚺₁.Δ₁` instance is a *theorem* (an anonymous instance in Foundation's own
-`Incompleteness/Definability.lean`, the `𝗜𝚺₁`/`𝗣𝗔` `Δ₁`-definability
-obligation discharged upstream), so this witness is **fully axiom-clean**: `#print axioms` shows only
+`𝗜𝚺₁.Δ₁` instance is a *theorem* (synthesized from `PeanoMinus.delta1`,
+`InductionScheme.delta1_strictHierarchy` and the union instance, the `𝗜𝚺₁`/`𝗣𝗔`
+`Δ₁`-definability obligation discharged upstream), so this witness is **fully axiom-clean**:
+`#print axioms` shows only
 `propext, Classical.choice, Quot.sound`. `𝗣𝗔⁻ ⊊ 𝗜𝚺₁`, so `paMinus_decides_bounded_nonprovability`
 above is the weaker, more faithful (§5.3-class) statement. -/
 theorem isigma1_decides_bounded_nonprovability'

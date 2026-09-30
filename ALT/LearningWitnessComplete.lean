@@ -96,7 +96,7 @@ variable {k : ℕ}
 /-! ## Stage A: Definition 2.1's four conditions, genuinely instantiated at `𝗣𝗔⁻` -/
 
 /-- Definition 2.1's `Δ₁`-axiomatized condition at `𝗣𝗔⁻`. `Theory.Δ₁` is a Type-valued Foundation
-class (it packages a CHOSEN `𝚫₁.Semisentence` witnessing the theory's definability, not a bare
+class (it packages a CHOSEN `𝚫ᴬ₁.Semisentence` witnessing the theory's definability, not a bare
 proposition), so it is carried as the `Prop` it certifies: `Nonempty`. -/
 def PAMinusDelta1 : Prop := Nonempty (𝗣𝗔⁻ : ArithmeticTheory).Δ₁
 
