@@ -7,8 +7,8 @@ Authors: Mykola Palamarchuk
 # Birkhoff Tool: single-orbit SQ oracle from the pointwise ergodic theorem
 
 This module restates the vendored pointwise Birkhoff ergodic theorem
-(`ALT/Birkhoff/PointwiseBirkhoff.lean`) in the trajectory-space vocabulary of the
-statistical-query (SQ) development (`ALT/SQOracle.lean`, `ALT/SQMixtureSupermartingale.lean`)
+(`ErgodicTheory/Birkhoff/PointwiseBirkhoff.lean`) in the trajectory-space vocabulary of the
+statistical-query (SQ) development (`Learning/SQOracle.lean`, `ALT/SQMixtureSupermartingale.lean`)
 and connects it to the FV-E oracle interface.
 
 ## What is proved here (all machine-checked, axioms = the standard triple)
@@ -27,11 +27,11 @@ and connects it to the FV-E oracle interface.
 
 * `MixingHoeffding` — the FJS-shaped (Fan–Jiang–Sun, JMLR 22(139), 2021, Thm 1) *quantitative*
   single-orbit Hoeffding tail with the variance proxy inflated by a spectral-gap constant `c ≥ 1`.
-  `ALT.MarkovHoeffding.mixingHoeffding_of_gap` DERIVES it, for a finite-state chain, from an
+  `ErgodicTheory.MarkovHoeffding.mixingHoeffding_of_gap` DERIVES it, for a finite-state chain, from an
   operator-norm spectral gap (`GapContraction`) and a chain trajectory law (`IsChainMeasure`), at
   an explicit constant `cGap lam`; here it stays a named premise, exactly as the qualitative
   Tool (i) does not by itself give a rate.  The derivation's own `IsChainMeasure` hypothesis is
-  now discharged unconditionally too: `ALT.MarkovHoeffding.exists_mixingHoeffding_of_gap` supplies
+  now discharged unconditionally too: `ErgodicTheory.MarkovHoeffding.exists_mixingHoeffding_of_gap` supplies
   a chain measure for every `Stochastic`/`GapContraction` pair, via Mathlib's Ionescu-Tulcea
   construction.  At `c = 1` (`λ = 0`, i.i.d.) it is exactly `SQOracle.sq_oracle_concentration`.
 * `mixing_oracle_sample_complexity`, `mixing_oracle_tail` — the oracle-error corollaries derived
@@ -44,8 +44,9 @@ module
 
 public import Mathlib.Dynamics.BirkhoffSum.Average
 public import Mathlib.Dynamics.Ergodic.Ergodic
-public import ALT.Birkhoff.PointwiseBirkhoff
-public import ALT.SQOracle
+public import ErgodicTheory.Birkhoff.PointwiseBirkhoff
+public import Learning.SQOracle
+public import ErgodicTheory.MixingHoeffding
 
 set_option linter.style.header false
 set_option linter.style.longLine false
@@ -123,24 +124,6 @@ theorem timeAverage_tendsto_expectation
 The qualitative Tool (i) above gives no *rate*.  The single-orbit rate is supplied by one named
 hypothesis in the citable spectral-gap Hoeffding shape, from which the FV-E oracle-error interface
 is reached by the same real-analysis as `SQOracle.sq_oracle_sample_complexity`. -/
-
-/-- **FJS-shaped mixing Hoeffding hypothesis** (Fan–Jiang–Sun, JMLR 22(139), 2021, Thm 1).
-For a stationary Markov trajectory law with absolute spectral gap `1 − λ ∈ (0, 1]` — where
-`λ = ‖P − Π‖` is the operator norm of the transition operator on the mean-zero subspace of `L²(π)`,
-so that reversibility is NOT required — the single-orbit empirical mean of a bounded query-ensemble
-`Z` concentrates around its stationary mean `predZ` with the Hoeffding variance proxy inflated by
-the mixing constant `c = (1 + λ)/(1 − λ) ≥ 1`.  (For a query bounded in `[a, b]` the constant is
-`((b − a)²/4)·(1 + λ)/(1 − λ)`; the `[−1, 1]` normalization used throughout here makes the leading
-factor `1`.)
-
-This is the single-orbit analogue of `SQOracle.sq_oracle_concentration`; at `c = 1` (`λ = 0`,
-the i.i.d. case) the two coincide.  It is stated as a *hypothesis*: `ALT.MarkovHoeffding.
-mixingHoeffding_of_gap` derives it, for a finite-state chain, from an operator-norm spectral gap
-and a chain trajectory law, at an explicit (non-sharp) constant `cGap lam`; `ALT.MarkovHoeffding.
-exists_mixingHoeffding_of_gap` supplies that chain trajectory law too, unconditionally. -/
-def MixingHoeffding (μ : Measure (ℕ → X)) (Z : ℕ → (ℕ → X) → ℝ) (predZ c : ℝ) : Prop :=
-  ∀ (n : ℕ) (τ : ℝ), 1 ≤ n → 0 ≤ τ →
-    μ.real {ω | τ ≤ |empiricalMean Z n ω - predZ|} ≤ 2 * Real.exp (-(n : ℝ) * τ ^ 2 / (2 * c))
 
 /-- **`MixingHoeffding` at `c = 1` is the i.i.d. case, genuinely** ([SQ] §3.2, Tool (i); FV-M).
 The FJS-shaped hypothesis above is exactly `SQOracle.sq_oracle_concentration`'s conclusion once
@@ -299,34 +282,6 @@ is available verbatim for a run whose sample size clears its own bound inside th
 three oracle corollaries below now carry exactly that bounded twin (`mixing_oracle_tail_to`,
 `mixing_oracle_sample_complexity_to`, `mixing_oracle_truth_survives_noisy_to`), each unbounded form
 recovered from its own twin at `N := n`. -/
-
-/-- **`MixingHoeffding` bounded to a finite horizon `N`.**  `MixingHoeffding` with its `∀ n`
-quantifier restricted to `n ≤ N`, and nothing else moved: the reference answer stays the declared
-stationary `predZ`, not the orbit's own cycle average — against the cycle average the predicate
-would hold trivially at any horizon past the period while delivering nothing a consumer uses — and
-the constant keeps the FJS shape and the `[−1, 1]` normalization, so every consumer of
-`MixingHoeffding` above applies verbatim at `n ≤ N`.
-`mixingHoeffding_iff_forall_mixingHoeffdingTo` recovers `MixingHoeffding` as the quantifier over
-every horizon. -/
-def MixingHoeffdingTo (N : ℕ) (μ : Measure (ℕ → X)) (Z : ℕ → (ℕ → X) → ℝ) (predZ c : ℝ) : Prop :=
-  ∀ (n : ℕ) (τ : ℝ), 1 ≤ n → n ≤ N → 0 ≤ τ →
-    μ.real {ω | τ ≤ |empiricalMean Z n ω - predZ|} ≤ 2 * Real.exp (-(n : ℝ) * τ ^ 2 / (2 * c))
-
-/-- The unbounded hypothesis implies the bounded one at every horizon: dropping `n ≤ N` only widens
-the universal it must satisfy. -/
-theorem mixingHoeffdingTo_of_mixingHoeffding (N : ℕ) (μ : Measure (ℕ → X))
-    (Z : ℕ → (ℕ → X) → ℝ) (predZ c : ℝ) (h : MixingHoeffding μ Z predZ c) :
-    MixingHoeffdingTo N μ Z predZ c :=
-  fun n τ hn _ hτ => h n τ hn hτ
-
-/-- **`MixingHoeffding` is the bounded predicate at every horizon.**  The unbounded hypothesis holds
-iff the bounded one holds at every `N`: the forward direction drops `n ≤ N`
-(`mixingHoeffdingTo_of_mixingHoeffding`), and the converse instantiates at `N := n` via `le_rfl`. -/
-theorem mixingHoeffding_iff_forall_mixingHoeffdingTo (μ : Measure (ℕ → X))
-    (Z : ℕ → (ℕ → X) → ℝ) (predZ c : ℝ) :
-    MixingHoeffding μ Z predZ c ↔ ∀ N, MixingHoeffdingTo N μ Z predZ c :=
-  ⟨fun h N => mixingHoeffdingTo_of_mixingHoeffding N μ Z predZ c h,
-    fun h n τ hn hτ => h n n τ hn le_rfl hτ⟩
 
 /-- **The vacuity floor for `MixingHoeffdingTo`.**  Below the horizon `N ≤ c·log 2 / 2`, every
 `[−1, 1]`-normalized law satisfies the predicate — the finite-horizon sibling of

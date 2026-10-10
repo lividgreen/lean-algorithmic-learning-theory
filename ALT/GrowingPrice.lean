@@ -7,8 +7,7 @@ module
 
 public import Mathlib.Data.Fintype.CardEmbedding
 public import ALT.Persistence.Counting
-public import ALT.MemoryWidth
-
+public import CellularAutomata.MemoryWidth
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
 
@@ -18,7 +17,7 @@ set_option linter.style.header false
 `ALT.Persistence.Counting` prices a description-bounded observer of a FIXED carrier — the graded
 ledger (Theorem 6.4) and the Collapse Theorem (Theorem 7.3) are both stated over permutations of a
 fixed `n`-state core. `[Guests]` §7 gives the corpus its growing carrier (the merge quotient's
-retained profile, `ALT.GrowingCore.mergeStage`) but no priced economy over it: Proposition 7.4 there
+retained profile, `GrowingCore.mergeStage`) but no priced economy over it: Proposition 7.4 there
 disclaims carrying over its finite branch's pricing and ownership clauses for a guest, and
 `[Persistence]`'s fixed-carrier economy has no growing counterpart at all.
 The two fixed-carrier theorems transport by two different routes, because they rest on two different
@@ -85,8 +84,8 @@ empty — the property the deleted hypothesis-form bound never had.
   frame pair consistent with a candidate, capped outside a `2^{-d}` fraction at `2b + d + 2` —
   proved, like `collapse_union_staged`, at a fixed label count rather than by a union over every
   count.
-* `stageLawEmb` — **the stage law, transported**: `ALT.GrowingCore.advances_mergeStage` and
-  `ALT.GrowingCore.mergeStage_injOn` assembled, at a chosen enumeration of the two retained
+* `stageLawEmb` — **the stage law, transported**: `GrowingCore.advances_mergeStage` and
+  `GrowingCore.mergeStage_injOn` assembled, at a chosen enumeration of the two retained
   profiles, into the embedding the numerals below need.
 * `collapse_union_growing` — **the collapse, at a growing world**: `collapse_union_staged` read at
   `stageLawEmb`'s own domain and codomain, together with the fact that the growing world's own
@@ -103,7 +102,7 @@ empty — the property the deleted hypothesis-form bound never had.
   holds every affordable pair to that bound, one line from `CbHs_collapse` at `d = 1`.
 * `collapse_union_growing_natSucc_slowClock` — **the guard**: `collapse_union_growing` instantiated
   at the successor world's initial-segment stages, an already-landed world, with `t + 1` and `t + 2`
-  falling straight out of `ALT.MemoryWidth.mergeStage_nat_succ_slowClock_encard`.
+  falling straight out of `MemoryWidth.mergeStage_nat_succ_slowClock_encard`.
 * `telescopeU`, `telescopeΩ`, `advances_telescopeU`, `mergeStage_telescope_finite`,
   `mergeStage_telescope_ncard`, `telescope_realizes_lawSequence` — **the telescope**: the
   construction [Guests] §7 Theorem 7.11's boundary paragraph names but the artifact did not build —
@@ -119,11 +118,11 @@ place of `PersistenceCapacity`'s permutation numeral, machinery on the scale of
 `ALT.Persistence.Counting`'s own graded-ledger section rather than an addition to it.
 
 The bridge from a particular growing world's stages (`ALT.GrowingWorld.Advances`,
-`ALT.GrowingCore.mergeStage`) to the bare numerals this module counts IS taken, by `stageLawEmb` and
+`GrowingCore.mergeStage`) to the bare numerals this module counts IS taken, by `stageLawEmb` and
 `collapse_union_growing` below. The stage-to-stage injection a growing world's own law supplies is
-already exactly `ALT.GrowingCore.mergeStage_injOn` composed with
-`ALT.GrowingCore.advances_mergeStage`, and building the embedding from it needs nothing further — an
-earlier note here predicted `ALT.MemoryWidth.reaches_mergeLaw` would be the one further fact a
+already exactly `GrowingCore.mergeStage_injOn` composed with
+`GrowingCore.advances_mergeStage`, and building the embedding from it needs nothing further — an
+earlier note here predicted `MemoryWidth.reaches_mergeLaw` would be the one further fact a
 growing carrier needs, but the landed bridge does not consume it: reachability under the INDUCED
 law is a different question from the one stage-to-stage step this bridge transports. The transported
 statement is relative to a CHOSEN enumeration of the two retained profiles (`Set.Finite.toFinset`) —
@@ -1238,7 +1237,7 @@ theorem CbHs_collapse_uniform_growing {X : Type*} {U : X → X} {Ω : ℕ → Se
 /-! ## The guard: a real growing world reaches the bridge -/
 
 /-- The successor world's initial-segment stages advance: `s ≤ t` gives `s + 1 ≤ t + 1`. The
-cheapest already-landed instance for `collapse_union_growing`'s guard — `ALT.MemoryWidth` computes
+cheapest already-landed instance for `collapse_union_growing`'s guard — `MemoryWidth.lean` computes
 this world's retained profile already. -/
 private theorem advances_natSucc_slowClock : Advances Nat.succ (fun t => Set.Iic t) :=
   fun _t _s hs => Nat.succ_le_succ (Set.mem_Iic.mp hs)
@@ -1259,7 +1258,7 @@ private theorem card_finite_mergeStage_natSucc_slowClock (t : ℕ) :
   exact_mod_cast h
 
 /-- **The guard** ([Guests] §7 Theorem 7.11(vi)): `collapse_union_growing` instantiated at the
-successor world's initial-segment stages, an already-landed world (`ALT.MemoryWidth`'s
+successor world's initial-segment stages, an already-landed world (`MemoryWidth.lean`'s
 `mergeStage_nat_succ_slowClock_encard`), with `n = t + 1` and `m = t + 2` falling straight out of
 that world's own retained-profile count — some real growing world reaches the transported collapse,
 not merely types against it. -/

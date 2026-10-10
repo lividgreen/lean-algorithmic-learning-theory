@@ -5,7 +5,7 @@ Authors: Mykola Palamarchuk
 -/
 module
 
-public import ALT.BayesRedundancy
+public import Learning.BayesRedundancy
 public import ALT.PersistenceCapacity
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
@@ -131,25 +131,25 @@ section Debt
 
 variable {ι V : Type*} [Fintype ι] [DecidableEq V]
 
-/-- A **damage model** ([Inevitability] §6, the (D1)/(D2) hypotheses). The guest's memory is
+/-- A **damage model** ([Inevitability] §6, the (DM1)/(DM2) hypotheses). The guest's memory is
 perturbed only at the steps in `surprises`, and each such perturbation moves at most `radius` cells.
 
 Both clauses are hypotheses. The corpus prices repair but does not derive how misprediction couples
 to corruption, so nothing below claims a particular host and guest satisfy this. -/
 structure Damage (ι V : Type*) [Fintype ι] [DecidableEq V] where
-  /-- (D1) the steps at which the guest's memory is perturbed. -/
+  /-- (DM1) the steps at which the guest's memory is perturbed. -/
   surprises : Finset ℕ
-  /-- (D2) the per-event perturbation radius, in cells. -/
+  /-- (DM2) the per-event perturbation radius, in cells. -/
   radius : ℕ
   /-- The perturbation applied across the step from time `t` to time `t + 1`. -/
   perturb : ℕ → Mem ι V → Mem ι V
-  /-- (D1) a step that is not a surprise does not perturb. -/
+  /-- (DM1) a step that is not a surprise does not perturb. -/
   quiet : ∀ t ∉ surprises, ∀ x, perturb t x = x
-  /-- (D2) a perturbation moves at most `radius` cells. -/
+  /-- (DM2) a perturbation moves at most `radius` cells. -/
   bounded : ∀ t x, hammingDist x (perturb t x) ≤ radius
 
 /-- **The debt is a constant** ([Inevitability] §6, Proposition 6.1(i)). Taking the damage model's
-surprise set to be exactly [Discovery]'s `ε`-surprise set — which is what (D1) says — the total
+surprise set to be exactly [Discovery]'s `ε`-surprise set — which is what (DM1) says — the total
 number of cells the guest is ever perturbed in is at most `radius · K(R)·ln 2 / (2ε)`: independent
 of the horizon `n`, of the guest's lifetime, and of the host's state count.
 

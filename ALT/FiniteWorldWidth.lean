@@ -5,7 +5,7 @@ Authors: Mykola Palamarchuk
 -/
 module
 
-public import ALT.MemoryWidth
+public import CellularAutomata.MemoryWidth
 public import ALT.Persistence.Core
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.

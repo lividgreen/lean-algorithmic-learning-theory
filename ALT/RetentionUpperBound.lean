@@ -18,7 +18,7 @@ set_option linter.style.longLine false
 
 Provenance: [Discovery] §4.1–§4.4. Cheng's Theorem 4 (the *necessity* /
 lower-bound side: context capacity is needed to avoid catastrophic forgetting) is machine-checked in
-`ALT/ChengCCC.lean`. Its lower bound is **vacuous** once `C_ctx ≥ H(T)`
+`ShannonInfo/ChengCCC.lean`. Its lower bound is **vacuous** once `C_ctx ≥ H(T)`
 (`ChengCCC.cccLower_vacuous`), so it cannot supply the *upper* bound — that the discovered rule
 actually persists. That upper bound is an **architectural** fact about [Discovery]'s
 conditional-regeneration design, previously stated only in prose; we machine-check it here by reusing

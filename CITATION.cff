@@ -6,9 +6,8 @@ message: >-
   added here when they exist.
 title: >-
   lean-algorithmic-learning-theory: machine-checked algorithmic learning
-  theory in Lean 4 (statistical queries, MDL discovery, Ville's inequality,
-  a verified poly-step learner, realizability categories, bounded Gödel
-  decisions)
+  theory in Lean 4 (persistence capacity, MDL discovery, reflective
+  subsystems, bounded Gödel decisions, growing worlds)
 type: software
 authors:
   - family-names: Palamarchuk
@@ -19,22 +18,23 @@ authors:
 repository-code: https://github.com/lividgreen/lean-algorithmic-learning-theory
 url: https://lividgreen.github.io/lean-algorithmic-learning-theory/
 abstract: >-
-  A Lean 4 + Mathlib development machine-checking the query-model,
-  information-theoretic and computational side of algorithmic learning
-  theory: Ville's inequality for non-negative supermartingales; a
-  statistical-query framework with the version-space envelope and parity's
-  exponential SQ dimension; a native step-and-workspace cost model over
-  Mathlib's partial recursive functions, carrying a decision-list learner
-  verified both correct and polynomial-step; resource-bounded persistence
-  capacity, where a model a system holds of itself survives the system
-  running only if the update is read-only on its region, with the exact
-  price of evading that with time-dependent decoders; a realizability
-  category over Kleene's first algebra with a capacity-bounded recursor; a
-  bounded Gödel decision over an existing formalization of the first
-  incompleteness theorem; and an explicitly constructed learner meeting the
-  prerequisites those results identify, whose reading survives damage.
-  No sorry, no native_decide, standard axioms only, with every capstone's
-  axiom footprint asserted by a build-enforced guard.
+  A Lean 4 + Mathlib development machine-checking the research side of
+  algorithmic learning theory for a bounded observer inside a deterministic
+  system: resource-bounded persistence capacity, where a model a system holds
+  of itself survives the system running only if the update is read-only on its
+  region, with the exact price of evading that with time-dependent decoders;
+  prequential-MDL rule discovery over the statistical-query model; a
+  capacity-graded realizability development with a bounded recursor; a bounded
+  Gödel decision over an existing formalization of the first incompleteness
+  theorem, and ladders of theories along which incompleteness recurs; an
+  explicitly constructed learner meeting the prerequisites those results
+  identify; and growing worlds that emit their own learning oracle. The
+  classical results it stands on are a separate package,
+  lean-classical-upstream, and the radius-one rule space with the growing
+  world's basic objects a third, lean-elementary-cellular-automata; it
+  requires both. No
+  sorry, no native_decide, standard axioms only, with every capstone's axiom
+  footprint asserted by a build-enforced guard.
 license: Apache-2.0
 doi: 10.5281/zenodo.21284775
 # Deliberately only the concept DOI (decision 2026-07-28). Per-version DOIs are
@@ -56,9 +56,8 @@ keywords:
   - Mathlib
   - formal verification
   - algorithmic learning theory
-  - statistical queries
   - minimum description length
-  - Ville's inequality
+  - persistence capacity
   - realizability
-  - Kolmogorov complexity
   - Gödel incompleteness
+  - cellular automata

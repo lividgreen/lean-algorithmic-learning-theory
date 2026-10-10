@@ -6,10 +6,10 @@ Authors: Mykola Palamarchuk
 module
 
 public import Mathlib.Basic.Finite.Sum
-public import ALT.RealizabilityCCC
+public import Realizability.RealizabilityCCC
 public import ALT.RealizabilityRecursor
-public import ALT.RealizabilityCoproduct
-public import ALT.RealizabilitySubobject
+public import Realizability.RealizabilityCoproduct
+public import Realizability.RealizabilitySubobject
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false

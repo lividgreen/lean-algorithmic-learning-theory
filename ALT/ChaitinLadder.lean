@@ -5,18 +5,18 @@ Authors: Mykola Palamarchuk
 -/
 module
 
-public import ALT.ChaitinIncompleteness
-public import ALT.DeepLadder
+public import ChaitinIncompleteness.ChaitinIncompleteness
+public import ChaitinIncompleteness.SelectorLadder
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-!
-# Chaitin's incompleteness theorem as a deep-ladder rung selector ([Inevitability] §6 Proposition 6.16)
+# Chaitin's incompleteness theorem as a rung selector ([Inevitability] §6 Proposition 6.16)
 
-Provenance: instantiates `DeepLadder.RungSelector` (`ALT/DeepLadder.lean`) at base `𝗥₀`, using
-`KolmogorovComplexity.chaitin_theorem` (`ALT/ChaitinIncompleteness.lean`) as the rung-picking
+Provenance: instantiates `DeepLadder.RungSelector` (`ChaitinIncompleteness/SelectorLadder.lean`) at base `𝗥₀`, using
+`KolmogorovComplexity.chaitin_theorem` (`ChaitinIncompleteness/ChaitinIncompleteness.lean`) as the rung-picking
 principle, in the shape of the module's `hiddenSelector` — chosen via `Classical.epsilon`, since
 `RungSelector.pick` receives neither `𝗥₀ ⪯ T` nor truth in `ℕ` (those hypotheses arrive only in
 `true_pick`/`unprovable_pick`).
@@ -28,8 +28,9 @@ principle, in the shape of the module's `hiddenSelector` — chosen via `Classic
 * `chaitinSelector` — the rung selector at base `𝗥₀`: at every theory `T` extending `𝗥₀` and true in
   `ℕ`, `chaitinPick T` is the Chaitin sentence "the bit-length complexity of `chaitinWitness T`
   exceeds `codelen' (chaitinCode T)`" — true in `ℕ` and unprovable in `T`.
-* `DeepLadder.accreting_ladder` / `DeepLadder.ladderTheory_lt_succ` at `chaitinSelector` — the deep
-  ladder's crossing recurrence and strict ascent, restated at this selector.
+* `chaitinLadder` / `chaitinRung`, with `chaitin_rung_true`, `chaitin_rung_unprovable` and
+  `chaitin_ladderTheory_lt_succ` — the chain builder's behavior (every rung true and unprovable in
+  its predecessor, strict ascent) restated at this selector.
 -/
 
 
@@ -37,8 +38,6 @@ principle, in the shape of the module's `hiddenSelector` — chosen via `Classic
 
 namespace DeepLadder
 
-open ExcessOrder
-open RealizabilityCCC RealizabilityRecursor
 open Nat.Partrec Nat.Partrec.Code
 open FFL.FirstOrder FFL.FirstOrder.Arithmetic KolmogorovComplexity
 
@@ -88,7 +87,7 @@ noncomputable def chaitinSelector : RungSelector (𝗥₀ : ArithmeticTheory) wh
     exact absurd (chaitinCode_spec (chaitinWitness T) (codelen' (chaitinCode T)) hprov)
       (_root_.lt_irrefl _)
 
-/-! ## The recurrence and strict ascent, restated at `chaitinSelector` -/
+/-! ## The ladder and its basic behavior, restated at `chaitinSelector` -/
 
 variable (T₀ : ArithmeticTheory) (d₀ : T₀.Δ₁) [(𝗥₀ : ArithmeticTheory) ⪯ T₀]
   [ℕ↓[ℒₒᵣ] ⊧* T₀]
@@ -115,19 +114,5 @@ theorem chaitin_rung_unprovable (n : ℕ) : chaitinLadder T₀ d₀ n ⊬ chaiti
 theorem chaitin_ladderTheory_lt_succ (n : ℕ) :
     chaitinLadder T₀ d₀ n ⪱ chaitinLadder T₀ d₀ (n + 1) :=
   ladderTheory_lt_succ chaitinSelector T₀ d₀ n
-
-/-- The crossing recurrence at the Chaitin ladder from `T₀`, at every rung
-([Inevitability] §6 Proposition 6.16). -/
-theorem chaitin_accreting_ladder (n : ℕ) :
-    (∃ t₀, ∀ t, t₀ ≤ t →
-        CategoricalThreshold.hostsAt (t + 1) (Encodable.encode (chaitinRung T₀ d₀ n))) ∧
-      ∀ t Mchk, CategoricalThreshold.hostsAt (t + 1) (Encodable.encode (chaitinRung T₀ d₀ n)) →
-        Encodable.encode (chaitinRung T₀ d₀ n) < Mchk →
-        Mchk ≤ (Encodable.encode (chaitinRung T₀ d₀ n)) ^ 2 →
-        ∃ R : ReflectiveAsm (Encodable.encode (chaitinRung T₀ d₀ n)), R.depth = Mchk ∧
-          CapacityLayer.FitsIn (recursorAsm R.depth) (t + 1) ∧
-          ∃ M, GodelThreshold.RepresentsUnderivableTruth (Encodable.encode : Sentence ℒₒᵣ → ℕ)
-            (fun δ => chaitinLadder T₀ d₀ n ⊢ δ) (fun δ => ℕ↓[ℒₒᵣ] ⊧ δ) M :=
-  accreting_ladder chaitinSelector T₀ d₀ n
 
 end DeepLadder

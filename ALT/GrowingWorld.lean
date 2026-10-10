@@ -5,6 +5,7 @@ Authors: Mykola Palamarchuk
 -/
 module
 
+public import CellularAutomata.MergeQuotient
 public import ALT.AccretiveDecoupling
 public import ALT.PersistenceCapacity
 
@@ -59,6 +60,9 @@ stage-indexed hypotheses and the tape instance, and `PersistenceCapacity.Intertw
 constant-family coherence theorem. No description-length pricing, no ownership, no claim that any
 guest here is *owned* in `[Guests]` §2's sense — this file is the factor-closure skeleton the
 priced notion sits on, not the priced notion itself.
+`Advances`, `StagedSquare`, `guestStage` and `advances_guestStage` are stated in
+`MergeQuotient.lean`, which imports nothing of this development, under the namespace
+`GrowingWorld`.
 -/
 
 
@@ -68,43 +72,11 @@ namespace GrowingWorld
 
 variable {X M : Type*}
 
-/-! ## The staged hypotheses, at an arbitrary carrier -/
-
-/-- One update advances the stage: a state admitted at stage `t` is carried into stage `t + 1`.
-The general-carrier form of `Decoupling.Advances` (`AccretiveDecoupling.lean`), which is this
-definition specialized to `X = Mem ι V`; `advances_iff` below is the coherence theorem. -/
-def Advances (U : X → X) (Ω : ℕ → Set X) : Prop :=
-  ∀ t, ∀ s ∈ Ω t, U s ∈ Ω (t + 1)
-
-/-- **The staged square** ([Guests] §2 over [Inevitability] §6; [Guests] §7 Definition 7.3): one
-host step, read one stage later, is one step of the guest's own law `F` applied to the current
-reading. Same orientation as `PersistenceCapacity.Intertwines`, restricted at each `t` to the stage
-`Ω t` the host admits there — `stagedSquare_const_iff` below makes that restriction precise at the
-constant family. -/
-def StagedSquare (U : X → X) (F : M → M) (ℓ : ℕ → X → M) (Ω : ℕ → Set X) : Prop :=
-  ∀ t, ∀ s ∈ Ω t, ℓ (t + 1) (U s) = F (ℓ t s)
-
-/-- The guest's stage-`t` extent: the image of the host's stage `t` under the reading. Staged
-surjectivity onto this set is definitional, not a further clause. -/
-def guestStage (ℓ : ℕ → X → M) (Ω : ℕ → Set X) (t : ℕ) : Set M := ℓ t '' Ω t
-
 /-- **Coherence**: at the shared-memory carrier `Mem ι V`, the root-namespace `Decoupling.Advances`
 (`AccretiveDecoupling.lean`) and this file's general-carrier `Advances` are the same hypothesis,
 definitionally. -/
 theorem advances_iff {ι V : Type*} (U : Decoupling.Mem ι V → Decoupling.Mem ι V)
     (Ω : ℕ → Set (Decoupling.Mem ι V)) : Decoupling.Advances U Ω ↔ Advances U Ω := Iff.rfl
-
-/-! ## Factor closure -/
-
-/-- **Factor closure**, the module's reason to exist: a guest of a growing world is itself a
-growing world, its own stages — the images of the host's — advancing under the guest's law `F`. One
-line from the square: a point of the image steps, via `F`, to the image of the host's stepped
-point. -/
-theorem advances_guestStage {U : X → X} {F : M → M} {ℓ : ℕ → X → M} {Ω : ℕ → Set X}
-    (hadv : Advances U Ω) (hsq : StagedSquare U F ℓ Ω) :
-    Advances F (guestStage ℓ Ω) := by
-  rintro t _ ⟨s, hs, rfl⟩
-  exact ⟨U s, hadv t s hs, hsq t s hs⟩
 
 /-! ## The constant case: coherence with `Intertwines` -/
 

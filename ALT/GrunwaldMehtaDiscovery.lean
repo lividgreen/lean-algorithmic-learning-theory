@@ -26,7 +26,7 @@ hypothesis** (`hrate`) and do NOT reprove it.
 setting of [Discovery]'s Sub-problem B — Theorem 3.1 is proved **fully unconditionally** in
 `ALT/DeterministicDiscovery.lean` (`deterministic_discovery`): a direct
 competitor-likelihood-decay argument over the prequential Bayes mixture of
-`ALT/BayesRedundancy.lean`, with **no** GM Thm 22, **no** Markov step, and **no**
+`Learning/BayesRedundancy.lean`, with **no** GM Thm 22, **no** Markov step, and **no**
 posterior-of-close hypothesis. The GM-conditional development below is the general-stochastic
 generalization; `hrate` is its one genuine import, eliminated in the deterministic case.
 (N.B. the two are different quantities: `hrate` here bounds `E[D_H²(P̄ₙ, P_R)]` — the Hellinger of the

@@ -5,8 +5,9 @@ Authors: Mykola Palamarchuk
 -/
 module
 
-public import ALT.KolmogorovComplexity
-public import ALT.KolmogorovTimeBounded
+public import AIT.KolmogorovComplexity
+public import AIT.PrefixModelCost
+public import AIT.KolmogorovTimeBounded
 public import ALT.CapacityThreshold
 public import ALT.MDLDominance
 public import ALT.RegimeConsistency
@@ -21,7 +22,7 @@ set_option linter.style.header false
 
 Provenance: [Discovery], §1.1 (`r = K(R)`, "program length in bits"). Ties
 the abstract `r : ℝ` of the MDL-corpus theorems to the genuine bit-length Kolmogorov complexity
-(`ALT/KolmogorovTimeBounded.lean`, `K_bitlen`/`K_bitlen_eq`) of a concrete rule `R`.
+(`AIT/KolmogorovTimeBounded.lean`, `K_bitlen`/`K_bitlen_eq`) of a concrete rule `R`.
 
 Status: PROVED. **Deliberately THIN — instantiation, not new math.** Each corollary is the
 already-proved abstract theorem applied at `r := ↑(ruleComplexity R)`.
@@ -114,3 +115,27 @@ theorem polytime_accounting (R : Nat.Partrec.Code) (Tsearch cstep a b δ : ℝ)
     hT hc ha _hb hr _hT0 hc0 hδ0 hδ1
 
 end KReconnection
+
+namespace PrefixMachine
+
+open Nat.Partrec Nat.Partrec.Code KolmogorovComplexity PrefixComplexity KReconnection
+
+/-- **`KB` at `ruleComplexity`.** `KB_le_K_bitlen_add_two_mul_size_of` at `x := Encodable.encode R`,
+since `ruleComplexity R = K_bitlen (Encodable.encode R)` by definition. -/
+theorem KB_le_ruleComplexity_add_two_mul_size_of
+    (hinv : ∀ f : ℕ →. ℕ, Partrec f → ∃ c, ∀ x y, y ∈ f x → KB y ≤ KB x + c)
+    (helias : ∃ c, ∀ n, KB n ≤ Nat.size n + 2 * Nat.size (Nat.size n) + c) :
+    ∃ c, ∀ R : Nat.Partrec.Code,
+      KB (Encodable.encode R) ≤ ruleComplexity R + 2 * Nat.size (ruleComplexity R) + c := by
+  obtain ⟨c, hc⟩ := KB_le_K_bitlen_add_two_mul_size_of hinv helias
+  exact ⟨c, fun R => hc (Encodable.encode R)⟩
+
+/-- **`KB` at `ruleComplexity`, unconditionally.** `KB_le_ruleComplexity_add_two_mul_size_of`'s
+`hinv` and `helias` discharged the same way as `KB_le_K_bitlen_add_two_mul_size`. -/
+theorem KB_le_ruleComplexity_add_two_mul_size :
+    ∃ c, ∀ R : Nat.Partrec.Code,
+      KB (Encodable.encode R) ≤ ruleComplexity R + 2 * Nat.size (ruleComplexity R) + c :=
+  KB_le_ruleComplexity_add_two_mul_size_of (fun f hf => KB_partial_map_le f hf)
+    KB_le_size_add_two_mul_size_size
+
+end PrefixMachine

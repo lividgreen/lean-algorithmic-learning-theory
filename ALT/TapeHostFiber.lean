@@ -58,7 +58,7 @@ the module reads through.
 
 This module states nothing lifetime-free: `tapeStream_fires_forever` is the reason (v)/(v″)'s
 quiet-stream gates are not on offer at a positive-density profile, not a route around that absence.
-Nothing here derives the damage model — (D1)/(D2) stay named exactly as Theorem 6.6 states them,
+Nothing here derives the damage model — (DM1)/(DM2) stay named exactly as Theorem 6.6 states them,
 and the noise gate's being a function of the host's own state is a fact about where the firing set
 lives, not a coupling of damage to misprediction. Nothing here settles the fiber: the composite's
 convergence is `FlooredMixture.lean`/`BasinSettling.lean`'s own business, untouched. And this is one

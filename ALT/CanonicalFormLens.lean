@@ -7,7 +7,7 @@ module
 
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
 public import Mathlib.GroupTheory.Perm.Fin
-public import ALT.AdditiveComplexity
+public import CodeLayer.AdditiveComplexity
 public import ALT.PersistenceCapacity
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.

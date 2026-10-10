@@ -9,7 +9,7 @@ public import Batteries.Tactic.OpenPrivate
 public import Mathlib.Data.Finite.Perm
 public import Mathlib.Data.Nat.Choose.Multinomial
 public import Mathlib.Tactic.Group
-public import ALT.BinaryConstant
+public import CodeLayer.BinaryConstant
 public import ALT.Collector
 public import ALT.Persistence.MovingLens
 import all ALT.Persistence.MovingLens

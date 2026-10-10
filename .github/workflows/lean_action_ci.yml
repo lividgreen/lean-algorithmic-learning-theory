@@ -40,6 +40,34 @@ jobs:
             /opt/hostedtoolcache/CodeQL /usr/local/.ghcup /usr/share/swift
           sudo docker image prune --all --force > /dev/null
           df -h /
+      # The dependencies Mathlib's cache does not cover — Foundation, forgive and
+      # doc-gen4 with their own dependencies, and the sibling package(s) this one requires —
+      # otherwise compile from source on every run (eighteen of the first run's
+      # nineteen build minutes, 2026-10-09). Restore their package directories,
+      # `.git` included, so Lake finds each at the manifest's revision and its
+      # traces decide what to rebuild; save them right after the audit and before
+      # the docs step, so a docs failure keeps the build cache. Mathlib is NOT
+      # here: its oleans come from `lake exe cache get`, and it would multiply the
+      # entry several times over. lean-action's own `.lake` cache (below, off) is
+      # the whole directory, Mathlib included, which is why it stays off.
+      - name: Restore source-built dependencies
+        id: deps-cache-restore
+        uses: actions/cache/restore@v6
+        with:
+          path: |
+            .lake/packages/Foundation
+            .lake/packages/Forgive
+            .lake/packages/doc-gen4
+            .lake/packages/Cli
+            .lake/packages/leansqlite
+            .lake/packages/UnicodeBasic
+            .lake/packages/BibtexQuery
+            .lake/packages/MD4Lean
+            .lake/packages/classical_upstream
+            .lake/packages/elementary_cellular_automata
+          key: deps-${{ runner.os }}-${{ hashFiles('lean-toolchain') }}-${{ hashFiles('lake-manifest.json') }}
+          restore-keys: |
+            deps-${{ runner.os }}-${{ hashFiles('lean-toolchain') }}-
       - uses: leanprover/lean-action@v1
         with:
           use-github-cache: false
@@ -58,6 +86,22 @@ jobs:
       # is not a green that never tested anything.
       - name: Axiom audit (whole library)
         run: ~/.elan/bin/lake exe forgive ALT
+      - name: Save source-built dependencies
+        if: steps.deps-cache-restore.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            .lake/packages/Foundation
+            .lake/packages/Forgive
+            .lake/packages/doc-gen4
+            .lake/packages/Cli
+            .lake/packages/leansqlite
+            .lake/packages/UnicodeBasic
+            .lake/packages/BibtexQuery
+            .lake/packages/MD4Lean
+            .lake/packages/classical_upstream
+            .lake/packages/elementary_cellular_automata
+          key: ${{ steps.deps-cache-restore.outputs.cache-primary-key }}
       # Docs for the closure are heavy; a killed run must not start over.
       # Restore prior progress, cap the step below GitHub's 6 h job kill, and
       # save progress EVEN ON FAILURE — successive runs then converge instead

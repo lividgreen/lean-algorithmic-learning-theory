@@ -5,8 +5,8 @@ Authors: Mykola Palamarchuk
 -/
 module
 
-public import ALT.TimeCost
-public import ALT.PolyTime
+public import CodeLayer.TimeCost
+public import CodeLayer.PolyTime
 public import ALT.GodelInternalization
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
@@ -23,7 +23,8 @@ Two accounts meet here.
 hosts the enumerating recursor in `capacity n = 2n` work bits, and `proofcode_workspace_bound` fits
 each candidate proof code `p ≤ M_chk` in the same `2n` — both stated as bit-lengths in the form
 `Nat.clog 2 (· + 1)`.
-`ALT/TimeCost.lean` supplies a native *workspace* measure `spaceCost` on the rfind'-free fragment of
+`CodeLayer/TimeCost.lean` supplies a native *workspace* measure `spaceCost` on the
+rfind'-free fragment of
 `Nat.Partrec.Code`, whose bounded-recursion bound `spaceCost_prec_le` is a `max` — independent of
 the iteration count, where the time bound `tc_prec_le'` is a sum linear in it.
 

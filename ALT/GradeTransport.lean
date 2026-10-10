@@ -6,8 +6,8 @@ Authors: Mykola Palamarchuk
 module
 
 public import ALT.CapacityBoundedEval
-public import ALT.AdditiveComplexity
-public import ALT.Realizability
+public import CodeLayer.AdditiveComplexity
+public import Realizability.Realizability
 public import ALT.RealizerLength
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.

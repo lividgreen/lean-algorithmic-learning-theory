@@ -6,13 +6,23 @@ Authors: Mykola Palamarchuk
 import Lean
 
 /-!
-# Declaration manifest for the `ALT` package
+# Declaration manifest for the `alt`, `classical_upstream` and automata packages
 
 Walks the compiled environment and records, for every declaration whose defining
-module belongs to this package, the declaration's full name and that module.
+module belongs to the selected package, the declaration's full name and that module.
 
-    lake build                                  # the manifest reads .olean files
-    lake env lean --run DeclManifest.lean [OUT] # default OUT: ../scripts/alt-decls.txt
+    lake build                                          # the manifest reads .olean files
+    lake env lean --run DeclManifest.lean alt [OUT]       # default OUT: ../scripts/alt-decls.txt
+    lake env lean --run DeclManifest.lean classical [OUT] # default OUT: ../scripts/classical-decls.txt
+    lake env lean --run DeclManifest.lean automata [OUT]  # default OUT: ../scripts/automata-decls.txt
+
+The argument selects the package: `alt` is the module `ALT` and everything under it;
+`classical` is everything under the eight library roots of `classical_upstream`
+(`classicalRoots` below); `automata` is the module `CellularAutomata` and everything under it
+(package `elementary_cellular_automata`).  One process serves one package, because of the single
+extension-loading import per process (next section).  The named-condition test of the
+hypothesis section recognizes a Prop-valued definition of ANY of the three packages as "our own",
+so a row does not depend on which package's run produced it.
 
 This file is deliberately NOT part of the `ALT` library (it lives at the
 workspace root, outside the `ALT.*` glob), so it is never imported by the
@@ -178,15 +188,29 @@ data.
 
 open Lean
 
-/-- Root module of the package being measured. -/
-def packageRoot : Name := `ALT
+/-- Library roots of the package `alt`. -/
+def altRoots : List Name := [`ALT]
 
-/-- Default output path (the manifest is consumed outside this workspace). -/
-def defaultOutput : System.FilePath := ".." / "scripts" / "alt-decls.txt"
+/-- Library roots of the package `classical_upstream`, by field. -/
+def classicalRoots : List Name :=
+  [`CodeLayer, `AIT, `ChaitinIncompleteness, `Learning, `AnytimeValid, `ErgodicTheory,
+   `Realizability, `ShannonInfo]
 
-/-- A module belongs to the package iff it is the root `ALT` or lies under it. -/
-def isPackageModule (m : Name) : Bool :=
-  m == packageRoot || packageRoot.isPrefixOf m
+/-- Library roots of the package `elementary_cellular_automata`. -/
+def automataRoots : List Name := [`CellularAutomata]
+
+/-- Default output path of a package (the manifests are consumed outside this workspace). -/
+def defaultOutput (pkg : String) : System.FilePath :=
+  ".." / "scripts" /
+    (if pkg == "classical" then "classical-decls.txt"
+     else if pkg == "automata" then "automata-decls.txt" else "alt-decls.txt")
+
+/-- A module belongs to a package iff it is one of its library roots or lies under one. -/
+def inRoots (roots : List Name) (m : Name) : Bool :=
+  roots.any fun r => m == r || r.isPrefixOf m
+
+/-- A module of any of the three packages: the test for "our own" Prop-valued definitions. -/
+def isOurModule (m : Name) : Bool := inRoots (altRoots ++ classicalRoots ++ automataRoots) m
 
 /-- Helper names Lean reserves for an inductive type or a constructor.  These are
 dropped only when the parent really *is* an inductive or a constructor, which is
@@ -299,7 +323,7 @@ def namedConditionArity? (env : Environment) (n : Name) : Option Nat :=
       | some idx =>
           match env.header.moduleNames[idx]? with
           | some m =>
-              if isPackageModule m then
+              if isOurModule m then
                 let (result, arity) := stripAllForalls info.type
                 if isPropSort result then some arity else none
               else none
@@ -358,7 +382,7 @@ of 0); every `(module, theorem, condition)` triple a PUBLIC theorem's
 binders carry (see "the hypothesis section"); and every `(module, theorem,
 class)` triple a PUBLIC theorem's instance binders carry (see "the instance
 section"). -/
-def packagePairs (env : Environment) :
+def packagePairs (isPackageModule : Name → Bool) (env : Environment) :
     Array (Name × Name) × Array (Name × Name) × Array (Name × Name) × Array Name ×
       Array (Name × Name × Name) × Array (Name × Name × Name) := Id.run do
   let mods := env.header.moduleNames
@@ -404,26 +428,34 @@ def sortedNub (xs : Array String) : Array String := Id.run do
 `isAuxRecursor` and `isNoConfusion` read environment extensions, and an
 environment imported without them answers `false` to all three — the filter
 would silently stop filtering rather than fail. -/
-unsafe def scanRoots (roots : Array Name) :
+unsafe def scanRoots (isPackageModule : Name → Bool) (roots : Array Name) :
     IO (Array (Name × Name) × Array (Name × Name) × Array (Name × Name) × Array Name ×
       Array (Name × Name × Name) × Array (Name × Name × Name)) := do
   enableInitializersExecution
   let env ← importModules (roots.map ({ module := · })) {} (loadExts := true)
-  return packagePairs env
+  return packagePairs isPackageModule env
 
 unsafe def main (args : List String) : IO Unit := do
   initSearchPath (← findSysroot)
 
+  let (pkg, rest) ← match args with
+    | pkg :: rest =>
+        if pkg == "alt" || pkg == "classical" || pkg == "automata" then pure (pkg, rest)
+        else throw <| IO.userError s!"unknown package {pkg}: expected `alt`, `classical`, `automata`"
+    | [] => throw <| IO.userError "usage: lake env lean --run DeclManifest.lean (alt|classical|automata) [OUT]"
+  let roots :=
+    if pkg == "classical" then classicalRoots
+    else if pkg == "automata" then automataRoots else altRoots
   let out : System.FilePath :=
-    match args with
+    match rest with
     | path :: _ => path
-    | [] => defaultOutput
+    | [] => defaultOutput pkg
   if let some dir := out.parent then
     unless ← dir.pathExists do
       throw <| IO.userError s!"output directory does not exist: {dir}\n\
-        pass an output path: lake env lean --run DeclManifest.lean OUT"
+        pass an output path: lake env lean --run DeclManifest.lean PKG OUT"
 
-  let (pubPairs, privPairs, fields, mods, hyps, insts) ← scanRoots #[packageRoot]
+  let (pubPairs, privPairs, fields, mods, hyps, insts) ← scanRoots (inRoots roots) roots.toArray
 
   let pubDeclLines := sortedNub <| pubPairs.map fun (m, n) => s!"{m} {n}"
   let privDeclLines := sortedNub <| privPairs.map fun (m, n) => s!"{m} {n}"

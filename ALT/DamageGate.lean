@@ -14,7 +14,7 @@ set_option linter.style.header false
 /-!
 # A noise-gated damage schedule, and the absorption it buys ([Inevitability] §6, IN-25)
 
-Proposition 6.1's damage model (D1) says the guest's code is perturbed only where its predictor is
+Proposition 6.1's damage model (DM1) says the guest's code is perturbed only where its predictor is
 `ε`-surprised. Read literally on this construction, that condition names the *damaged* run's own
 surprise set, and `RedundantFiber.lean` records why that reading fails to be a budget at all — a
 schedule can land on every one of its own surprises, at every length. This file states a different,
@@ -80,11 +80,11 @@ the class is witnessed rather than merely named.
 
 ## Scope
 
-None of this moves Theorem 6.6's own hypothesis. The theorem still names (D1)/(D2) as stated, and
+None of this moves Theorem 6.6's own hypothesis. The theorem still names (DM1)/(DM2) as stated, and
 whether a host's damage in fact takes the noise-gated shape is not a question this file answers —
 it is a further, and strictly narrower, reading than the paper's own. What this file supplies is a
 gate stated on the noise stream itself, its count, and the precise sense in which it is weaker than
-what (D1) buys: `noiseGated_eq_empty_of_quiet` shows the gate has no content on the very branch the
+what (DM1) buys: `noiseGated_eq_empty_of_quiet` shows the gate has no content on the very branch the
 lifetime-free bound covers, so this is a variant repair, not a strengthening, of Theorem 6.6(v).
 `compPredFrame_eq_next_of_noiseGated` inherits that same boundary: it is a parallel route to the
 theorem's own conclusion, honestly per-horizon rather than lifetime-free, not a replacement for the

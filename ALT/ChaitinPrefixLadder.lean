@@ -5,8 +5,10 @@ Authors: Mykola Palamarchuk
 -/
 module
 
-public import ALT.ChaitinLadder
-public import ALT.KBEnumerable
+public import ChaitinIncompleteness.ChaitinIncompleteness
+public import ChaitinIncompleteness.KBEnumerable
+public import ChaitinIncompleteness.SelectorLadder
+public import AIT.PrefixCounting
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -52,17 +54,6 @@ namespace DeepLadder
 open Nat.Partrec Nat.Partrec.Code
 open FFL.FirstOrder FFL.FirstOrder.Arithmetic KolmogorovComplexity AdditiveComplexity PrefixMachine
 
-/-! ## `KB` is unbounded -/
-
-/-- `KB` is unbounded: incompressible numbers of every prefix complexity exist — the twin of
-`KolmogorovComplexity.K_unbounded` at `KB` in place of `K`. -/
-theorem KB_unbounded (m : ℕ) : ∃ s, m < KB s := by
-  by_contra h
-  have hall : ∀ s, KB s ≤ m := fun s => by
-    by_contra hs; exact h ⟨s, not_le.mp hs⟩
-  exact Set.infinite_univ ((setOf_KB_le_finite m).subset (fun s _ => hall s))
-
-/-! ## The selector's ingredients -/
 
 /-- An enumerator of `T`'s provable sentences of this form, epsilon-chosen from
 `exists_enumerator_chaitinB`. `T`'s `Δ₁` data is taken EXPLICITLY (mirroring `ladderDelta1`

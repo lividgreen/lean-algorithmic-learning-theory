@@ -6,7 +6,7 @@ Authors: Mykola Palamarchuk
 module
 
 public import Mathlib.Data.Nat.Size
-public import ALT.AdditiveComplexity
+public import CodeLayer.AdditiveComplexity
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -15,7 +15,8 @@ set_option linter.style.header false
 # The data rate of the additive complexity `KE` is bounded away from one bit per bit
 
 Provenance: [Discovery] §1.1 (the `2^{−K}` prior over a fixed reference machine). Extends
-`ALT/AdditiveComplexity.lean` (`E`, `elen`, `KE`, `minCode`, `card_KE_le`) with a node-counted
+`CodeLayer/AdditiveComplexity.lean` (`E`, `elen`, `KE`, `minCode`, `card_KE_le`) with a
+node-counted
 refinement of the counting bound.
 
 ## What this establishes

@@ -11,7 +11,8 @@ rules of that system — and what does it cost to hold on to what it works out?*
 
 That question has a surprising amount of mathematics behind it, drawn from
 learning theory, algorithmic information theory, computability and categorical
-logic. This library machine-checks that mathematics in Lean 4, end to end: the
+logic. This library and the two packages it requires machine-check that mathematics
+in Lean 4, end to end: the
 probabilistic tail bounds a bounded learner reasons with, the query model that
 says what it can learn at all, a cost model that says what it can afford to
 compute, and the representational limits it hits when it tries to model the
@@ -27,34 +28,32 @@ so the real witness's named fields are what carry the content.
 
 ## Highlights
 
-Three pieces of this development we have not found formalized anywhere else,
-in any proof assistant: the **statistical-query model** of learning, **Ville's
-inequality**, and a **cost semantics attached to Mathlib's own model of partial
-recursive functions** — the last being what lets a learning algorithm be
-verified for correctness and running time in the same breath, rather than in a
-program logic separate from the mathematics. On top of them sit results we
-believe are firsts of their kind: a learner verified **correct and
-polynomial-step at once**, a finite machine proved to satisfy a learning
-theory's prerequisites **from its own dynamics**, and a growing world whose
-own emitted history provably serves as its internal learner's oracle.
-Chaitin's incompleteness theorem is here as well, over Mathlib's universal
-machine and for every recursively enumerable consistent extension of 𝗥₀
-under consistency alone — to our knowledge the first in that setting, the one prior
-machine-checked treatment being an Agda formalization for a purpose-built
-machine and Basic Recursive Arithmetic.
-Its additive form is here too, on the prefix machine: one constant for every
-theory plus the theory's own prefix complexity — Chaitin's own constant under
-consistency alone, to our knowledge the first machine-checked additive form —
-and along a ladder of theories each placed at its own such threshold, the
-theory's prefix complexity grows by at least a bit per rung, so no computable
-family names that ladder uniformly.
-Levin's coding theorem is here too, over a universal prefix machine built from
-the serialized codes: every lower-semicomputable semimeasure lies within an
-additive constant of the ideal code length, and the machine's algorithmic
-probability is `2^{−K}` up to a constant factor and a universal
-lower-semicomputable semimeasure — to our knowledge the first machine-checked
-proof of the coding theorem in any prover, on an online Kraft–Chaitin
-assignment verified with its invariant.
+Two results we believe are firsts of their kind: a finite machine proved to
+satisfy a learning theory's prerequisites **from its own dynamics**, and a
+growing world whose own emitted history provably serves as its internal
+learner's oracle. Around them: when a model a system holds of itself survives
+the system running, and what memory costs in a world that overwrites
+everything, with exact constants; a ladder of theories each placed at its own
+Chaitin threshold, along which the theory's prefix complexity grows by at
+least a bit per rung, so no computable family names that ladder uniformly;
+and, in the automata package it requires, every quiescent radius-one table
+decided for whether its growing width is unbounded.
+
+**Three repositories.** The classical results this library stands on — the
+statistical-query model, a cost semantics on Mathlib's own partial recursive
+functions with learners verified correct and polynomial-step at once, Ville's
+inequality, Chaitin's incompleteness theorem in its plain and additive forms,
+Levin's coding theorem, assemblies over Kleene's first algebra — are in
+[lean-classical-upstream](https://github.com/lividgreen/lean-classical-upstream)
+(concept DOI [10.5281/zenodo.23257423](https://doi.org/10.5281/zenodo.23257423)),
+with their proofs. This package requires it, and it labels each result by its
+standing in Lean: first formalized there, ported, or duplicating a proof
+elsewhere. The radius-one rule space, with the growing world's basic objects
+— the merge quotient, the memory width, the growing width — is in
+[lean-elementary-cellular-automata](https://github.com/lividgreen/lean-elementary-cellular-automata)
+(concept DOI [10.5281/zenodo.23275249](https://doi.org/10.5281/zenodo.23275249)),
+which this package also requires. What is
+here is what nobody had stated before, however small.
 
 **Start here:** the [**API reference**](https://lividgreen.github.io/lean-algorithmic-learning-theory/)
 is generated from the source and is the best way in — every definition and
@@ -63,23 +62,13 @@ points:
 
 | | |
 |---|---|
-| [`Ville.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/Ville.html) | Ville's inequality — the anytime-valid tail bound Mathlib does not carry |
-| [`SQEnvelope.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/SQEnvelope.html) | statistical-query learning, to our knowledge the first such formalization in any prover |
-| [`DecisionListSolver.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/DecisionListSolver.html) | a learner verified **correct *and* polynomial-step**, against a cost model built here |
-| [`DecisionListPredictor.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/DecisionListPredictor.html) | asking that learner twice decides what the surviving candidates agree on — or that they do not |
 | [`Decoupling.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/Decoupling.html) | when a model a system holds of itself survives the system running |
 | [`PersistenceCapacity.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/PersistenceCapacity.html) | what memory costs in a world that overwrites everything — the priced decoder, with exact constants |
 | [`GodelThreshold.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/GodelThreshold.html) | the capacity threshold at which self-representation turns into incompleteness |
 | [`LearningWitness.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/LearningWitness.html) | an explicit system that meets those prerequisites — built, not assumed to exist |
 | [`GrowingHostWitness.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/GrowingHostWitness.html) | a growing world that emits its own learning oracle, membership proved from its own dynamics |
 | [`GrowingSeamWitness.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/GrowingSeamWitness.html) | a growing world in both route-classes at once — learning from its own emitted process, emergence from its own growth — at any envelope-profile source |
-| [`ChaitinIncompleteness.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/ChaitinIncompleteness.html) | Chaitin's incompleteness theorem over Mathlib's universal machine, for every recursively enumerable consistent extension of 𝗥₀ |
-| [`KBEnumerable.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/KBEnumerable.html) | Chaitin's theorem in its additive form on a prefix machine — the bound is one constant for every theory plus the theory's own prefix complexity |
 | [`ChaitinPrefixLadder.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/ChaitinPrefixLadder.html) | a ladder of theories each placed at its own Chaitin threshold, gaining at least one bit of prefix complexity per rung — no computable family names it uniformly |
-| [`CodingTheorem.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/CodingTheorem.html) | Levin's coding theorem on a universal prefix machine — prefix complexity is `−log₂` of algorithmic probability up to an additive constant, and that probability is a universal lower-semicomputable semimeasure |
-| [`HaltingProbability.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/HaltingProbability.html) | Chaitin's theorem on the machine's halting probability — a dyadic lower approximation within `2^(-n)` of it has, as the pair `(n, m)`, prefix complexity at least `n − c` |
-| [`EndpointClasses.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/EndpointClasses.html) | the whole radius-one rule space bracketed at its table bits — 52 tables accrete by one engine that needs no injectivity, 48 are provably zero, 28 stay undecided |
-| [`HindsightCount.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/HindsightCount.html) | the observer's bill: the fewest misses any law on the last `k` readings makes is bounded exactly when the watched column settles — bounded at every zero-class table, unbounded at rule `90`'s cell one |
 | [`RegisterClass.lean`](https://lividgreen.github.io/lean-algorithmic-learning-theory/docs/ALT/RegisterClass.html) | the bounded register's surprise bound over a class of learners — five properties of an update, the register's depth as the bill, two members and two non-members showing each property load-bearing |
 
 ## Verification standard
@@ -87,8 +76,10 @@ points:
 - No `sorry`, `admit`, or `native_decide`; standard axioms only
   (`propext`, `Classical.choice`, `Quot.sound`) — several cores are
   choice-free, and the structural capstone depends on no axioms at all.
-- **Build-enforced axiom hygiene**: 1388 `#guard_msgs in #print axioms` guards
-  assert each capstone's exact axiom set; `lake build` fails on any drift.
+- **Build-enforced axiom hygiene**: 1010 `#guard_msgs in #print axioms` guards
+  assert each capstone's exact axiom set; `lake build` fails on any drift. The
+  two packages this one requires carry their own guards and their own
+  audits, in their own repositories.
 - **CI-enforced whole-library audit**: every declaration under `ALT` — not only
   the guarded capstones — is checked against the same allowlist, the checked-in
   `forgive.yml`, by [`forgive`](https://github.com/FormalizedFormalLogic/forgive)
@@ -98,7 +89,7 @@ points:
   the audit covers everything the guards do not name. Reproduce it locally with
   `lake exe forgive ALT` after a build.
 - **Targeted imports throughout**: every module names exactly the Mathlib
-  files it uses — no monolith `import Mathlib`, one vendored port excepted —
+  files it uses — no monolith `import Mathlib` —
   so the dependency surface is explicit and the build/docs closure stays
   proportionate to what is actually used.
 - **Module-system code**: every file is a Lean `module` with explicit
@@ -152,12 +143,9 @@ is a good issue to open: a real consumer is a reason to keep something public
 that the closure cannot compute.
 
 **If you are looking for reusable pieces** rather than a paper's machine-checked
-core, these are the library-shaped modules: `ALT/Code/EvalLaws.lean` (the
-`Nat.Partrec.Code` evaluation laws Mathlib omits for `comp`, `left`, `right` and
-`pair`), `ALT/Code/SizeArith.lean` (`Nat.size` and pairing arithmetic),
-`ALT/Code/BitGates.lean` (Boolean gates as codes), and above them
-`ALT/PolyTime.lean`, `ALT/TimeCost.lean` and `ALT/AdditiveComplexity.lean` (the
-native cost model over `Nat.Partrec.Code`). These are leaves by construction.
+core, they are in lean-classical-upstream: the `Nat.Partrec.Code` evaluation
+laws Mathlib omits, `Nat.size` and pairing arithmetic, Boolean gates as codes,
+and the native cost model over `Nat.Partrec.Code`, built there as leaves.
 
 Names follow the papers rather than local readability: where a paper writes
 `C_b^{H,u}` or `tc(·)`, the Lean spells it `CbHu` and `tc`, because the
@@ -174,8 +162,9 @@ lake exe cache get   # fetch the Mathlib cache
 lake build           # several minutes of project elaboration on top of the cache
 ```
 
-The library is `lake`-consumable as a dependency (package name `alt`,
-library `ALT`):
+`lake` fetches lean-elementary-cellular-automata and lean-classical-upstream,
+the two packages this one requires, at the tags `lakefile.toml` pins. The library is `lake`-consumable
+as a dependency (package name `alt`, library `ALT`):
 
 ```toml
 [[require]]
@@ -191,33 +180,11 @@ carries the full statement of what it proves and — just as deliberately — wh
 it does not; the boundary notes below compress those to a line rather than
 replace them.
 
-### Tail bounds, information and ergodic tools
+### Rule discovery over the statistical-query model
 
-- **Ville's inequality** for non-negative supermartingales (`Ville.lean`) —
-  the all-time tail bound anytime-valid inference is built on; absent from
-  Mathlib (whose Doob maximal inequality is submartingale-only).
-- **Finite-case information theory and coding bounds**: the data-processing
-  inequality and Fano's inequality on finite types (`FiniteInfoTheory.lean`),
-  a prefix-complexity semimeasure (`∑ 2^{−KP} ≤ 1`), an additive
-  self-delimiting program-length measure with a length-efficient binary
-  constant, and binary index-form Kraft–McMillan bridges (`BinaryKraft.lean`).
-- An integrated port of the **pointwise Birkhoff ergodic theorem** (from
-  [lua-vr/pointwise-birkhoff](https://github.com/lua-vr/pointwise-birkhoff),
-  Apache-2.0 — see NOTICE).
-
-### Statistical-query learning and rule discovery
-
-- **Statistical-query learning** — to our knowledge the first SQ formalization
-  in any proof assistant (`SQObjects.lean`, `SQEnvelope.lean`, …): the
-  statistical query dimension with its separated-subfamily characterization
-  definitional, a survivor pigeonhole, a *linear* version-space envelope under
-  2τ-identifiability (Szörényi's maximality argument) with that hypothesis
-  proved load-bearing by a near-duplicate guard family, an identifiability-free
-  net envelope (`versionSpace_net_envelope`), and parity's `2^n` SQ-dimension
-  lower bound derived from character orthogonality.
-- **A prequential-MDL discovery chain** (`BayesRedundancy.lean`,
-  `DeterministicDiscovery.lean`, `ExtensionalDiscovery.lean`,
-  `SQAlgorithm.lean`, …): posterior concentration for realizable deterministic
+- **A prequential-MDL discovery chain** (`DeterministicDiscovery.lean`,
+  `ExtensionalDiscovery.lean`, `SQAlgorithm.lean`, …, over the SQ model and
+  the Bayes-mixture bounds of lean-classical-upstream): posterior concentration for realizable deterministic
   prediction, qualitative concentration on the on-trajectory equivalence class
   (rate provably uncomputable), pruning soundness, exact predictive-transfer
   bounds, and the pruned-algorithm discovery theorem — with the commitment
@@ -230,13 +197,9 @@ replace them.
   periodic, choice-free. The `MixingHoeffding` rate hypothesis is pinned at
   both ends — a *theorem* at the i.i.d. end, a vacuity guard at non-positive
   constants, and genuine refutability at every positive constant, the
-  constant being where the hypothesis's content lives — and now **derived
-  outright at finite state** (`MarkovHoeffding.lean`): every finite-state
-  Markov chain with an operator-norm spectral gap has a machine-checked
-  trajectory law and satisfies the tail at it, at an explicit constant
-  (`exists_mixingHoeffding_of_gap`, via the transfer-operator induction
-  `transferIter_invariant`) — dependent-process concentration of a kind
-  Mathlib itself does not yet carry. A horizon-bounded twin
+  constant being where the hypothesis's content lives — and **derived
+  outright at finite state** in lean-classical-upstream (`MarkovHoeffding.lean`,
+  `exists_mixingHoeffding_of_gap`). A horizon-bounded twin
   (`MixingHoeffdingTo N`, what a learner reading one orbit segment actually
   consumes) carries its own vacuity floor and refutations; on it, the oracle
   over a whole scheduled query class is derived from a single orbit segment
@@ -249,11 +212,12 @@ replace them.
   Boundary: multi-coordinate queries see a genuinely noise-dependent constant,
   not bounded here; the general spectral-gap theorem stays unproved.
 
-### A cost model on Mathlib's computability, and learners verified against it
+### Resources on Mathlib's computability
 
 - **A two-currency cost model** for `Nat.Partrec.Code` — Mathlib's
-  fuel-indexed `evaln` bounds values, not resources. Sequential steps and
-  workspace bit-width (`TimeCost.lean`), extended to unbounded search by
+  fuel-indexed `evaln` bounds values, not resources. The step-counting layer
+  (`TimeCost.lean`) is in lean-classical-upstream, with the learners verified
+  against it; here it is extended by workspace bit-width and to unbounded search by
   genuinely partial evaluators whose domain is exactly `eval`'s
   (`SearchCost.lean`, `SearchSpace.lean`), with per-constructor workspace
   bound laws — recursion and search enter as a `max` over their steps, never a
@@ -261,19 +225,6 @@ replace them.
   independent of the enumeration's length (`CheckerWorkspace.lean`).
   Boundary: time is unit-cost AST steps (arithmetic is value-linear), space is
   value bit-width.
-- **A learner verified correct and polynomial-step at once**
-  (`DecisionListSolver.lean`): the step model carries a greedy decision-list
-  learner verified **both correct and `poly(m,k)`-step** — we believe the
-  first learning algorithm mechanically verified for correctness and
-  complexity together. Built over it, a **version-space read-off**
-  (`DecisionListPredictor.lean`): extending the instance by the query point
-  labelled each way and asking the verified solver twice *classifies* the
-  surviving candidates — none consistent, all agreeing at the query (the
-  answer is forced and returned), or two disagreeing — with its own explicit
-  step bound. A **second class** carries both theorems
-  (`ConjunctionSolver.lean`, `ConjunctionPredictor.lean`), built in a separate
-  module against the solver's public API alone, so the transfer between
-  classes is exercised rather than asserted.
 - **A priced universal interpreter** (`BoundedInterp.lean`, `CodeArith.lean`,
   `CodePacking.lean`, `UniversalAt.lean`): a small-step interpreter for
   `Nat.Partrec.Code` on configuration numerals, proved sound *and* complete
@@ -282,17 +233,6 @@ replace them.
   configuration width* (`UniversalAt`). Universality with a constructor
   skeleton, where the usual universal witness is a bare existence statement
   nothing can price.
-- **Kolmogorov complexity at two measures, and the load-bearing one is bits**
-  (`KolmogorovComplexity.lean`, `KolmogorovBitlen.lean`,
-  `KReconnection.lean`, …): the least-index measure `K` is uncomputable by the
-  recursion theorem — and so, separately, is the **bit-length** measure
-  `Nat.size ∘ encode`, the one the description-length results are stated at
-  (`K_bitlen_not_computable`); the second proof re-runs the argument from
-  scratch because `Nat.size` is not injective and the reduction genuinely
-  fails. The load-bearing MDL theorems are instantiated at the bit-length
-  complexity of a concrete rule (`ruleComplexity`). Boundary: two-machine
-  invariance is deferred with a documented obstruction — Mathlib exposes a
-  single fixed universal machine, and the classical bound needs two.
 - **The additive carrier's data rate** (`CodeDataRate.lean`): the
   self-delimiting serialization spends exactly three bits per syntax node
   (`elen_eq_three_mul_nodes`), yet the codes of `n` nodes number at most
@@ -302,7 +242,7 @@ replace them.
   `500·KE x > 501·size x + 500·c` (`KE_data_rate`). Read at the computable
   measure `μ(x) ∝ 2^{−(1 + 1/500)·size x}`, no constant makes `KE` an ideal
   code for it — the coding theorem cannot live on the additive carrier, which
-  is why it is proved on the prefix machine `KB` below. Boundary: the witness
+  is why lean-classical-upstream proves it on the prefix machine `KB`. Boundary: the witness
   is existential, no crossing size named; the exact growth constant
   `1 + 4√3 ≈ 7.928` is prose, the artifact carrying the rational bound.
 
@@ -368,10 +308,10 @@ replace them.
 
 ### Realizability, self-representation and incompleteness
 
-- **A realizability (assembly) category over Kleene's first algebra**
-  (`Realizability*.lean`, `CapacityLayer.lean`, `RealizerLength.lean`, …):
-  Cartesian closed with finite coproducts, a subobject classifier and
-  equalizers on the finite fragment (`RealizabilitySubobject.lean`), a
+- **Capacity over the assembly category of Kleene's first algebra**
+  (`CapacityLayer.lean`, `RealizerLength.lean`, …, over the assemblies of
+  lean-classical-upstream — Cartesian closed with finite coproducts, a
+  subobject classifier and equalizers on the finite fragment): a
   depth-bounded recursor as an object, a capacity filtration with non-closure
   in both cardinality and realizer length, and an initial-algebra
   characterization of the bounded recursor under which **Lambek's lemma
@@ -397,40 +337,10 @@ replace them.
   sentence under test persists by the Decoupling Lemma while the work cell
   drives to the Gödel verdict (`ReflectiveAutomaton.lean`,
   `GodelCheckerAutomaton.lean`).
-- **Chaitin's incompleteness theorem over bit-length complexity**
-  (`ChaitinIncompleteness.lean`): for every `Δ₁`-axiomatized consistent
-  extension of `𝗥₀` — consistency alone, no soundness — the theory proves
-  "the bit-length complexity of `s` exceeds `n`" for no `n` at or above the
-  bit-length of one fixed-point program (`chaitin_theorem`), so all but
-  finitely many such true sentences are unprovable in it
-  (`chaitin_true_unprovable`), the exceptions counted at `2^n` at the bound
-  `n` (`card_K_bitlen_le`, below), and both hold for every recursively
-  enumerable such extension by Craig's trick (`chaitin_theorem_of_RE`,
-  `chaitin_true_unprovable_of_RE`); the abstract Berry bound (`chaitin_bound`)
-  holds for any computably enumerable relation asserting only true lower
-  bounds, and the sentences are Foundation's own Σ₁ representation, negated.
-  The constant is a Kleene fixed point's length, named rather than computed.
-  The additive form lands on the prefix machine `KB` (`ChaitinPrefix.lean`,
-  `SerializationParse.lean`, `KBEnumerable.lean`): one program `c₀` fixed for
-  every theory, and `n < elen c₀ + KB(⌜e⌝)` at any program `e` enumerating
-  the theory's provable sentences of this form — Chaitin's own constant, the
-  theory's prefix complexity, under consistency alone (`chaitin_theoremB`,
-  `chaitin_theoremB_RE`), with the true-and-unprovable family at that
-  constant (`chaitin_true_unprovableB`) and an enumerator exhibited for every
-  `Δ₁` theory (`exists_enumerator_chaitinB`); proved from two leaf
-  propositions, each in its own module — a primitive-recursive parser of the
-  serialization with its two-way specification (`eParserSpec`) and the
-  computable enumeration of "`KB(s) ≤ n`" (`rePred_kleB`) — and assembled
-  once both were proved, the hypotheses' joint satisfiability witnessed at
-  `𝗣𝗔⁻` (`chaitin_theoremB_nonvacuous`). Boundary: the enumerator is of the
-  theorems, not the axioms; the constant is named, not computed.
-  The theorem then drives the deep ladder as a third rung selector at `𝗥₀`
-  (`ChaitinLadder.lean`): a chain of theories each certifying a description
-  length its predecessor could not.
-
 - **The deep ladder: the crossing recurs over each enlarged theory**
-  (`DeepLadder.lean`, `ChaitinLadder.lean`): a chain builder parametric in a
-  **rung selector** — a rule picking, at each theory in the chain, a sentence
+  (`DeepLadder.lean`, `ChaitinLadder.lean`, on the chain builder
+  `SelectorLadder.lean` of lean-classical-upstream): a chain builder parametric in a **rung selector** — a rule picking, at each theory
+  in the chain, a sentence
   true in `ℕ` and unprovable in it — with the theory appending that sentence
   and the rung itself at every stage (`RungSelector`, `ladderTheory`, `rung`).
   Every rung is true and unprovable in the theory it extends (`rung_true`,
@@ -462,81 +372,14 @@ replace them.
   per rung (`KB_enumeratorB_lt_succ`, `KB_enumeratorB_ge`), so no computable
   family names the ladder's theories uniformly
   (`prefixChaitinLadder_not_uniform`, in `PrefixEliasKB.lean`), on two facts
-  about `KB` proved for the purpose: its invariance under computable maps,
+  about `KB` proved for the purpose and now in lean-classical-upstream: its invariance under computable maps,
   through the universal prefix machine as a code (`PrefixInvarianceKB.lean`,
   `univPrefix`, `KB_map_le`), and its Elias bound `KB n ≤ 2 · size n + c`
-  (`KB_le_two_mul_size`). Registered as *Inevitability* Proposition 6.16 and
+  (`EliasBound.lean`, `KB_le_two_mul_size`). Registered as *Inevitability* Proposition 6.16 and
   Remarks 6.17 to 6.19, rows IN-54…IN-59. Boundary: the rate is in the prefix
   currency, none is stated in the syntactic size of the rungs, and no rung's
   Gödel number is computed; the two coordinates are stated side by side at
   one step index, no product update built; the commit stream is designed.
-
-- **Levin's coding theorem on a universal prefix machine**
-  (`PrefixMachine.lean`, `BitStringPrimrec.lean`,
-  `AlgorithmicProbability.lean`, `CodingTheoremWeak.lean`,
-  `CodingTheoremBitwise.lean`, `CodingTheoremDecoder.lean`,
-  `KraftChaitin.lean`, `CodingTheorem.lean`): a description is a machine
-  serialized by the self-delimiting `E` followed by a binary argument, the
-  machine made prefix-free by stages (`pfy` — partial recursive uniformly in
-  the machine, `pfy_partrec`, over a bit-string layer proved primitive
-  recursive); the prefix complexity `KB` is Kraft-summable and below the
-  additive `KE` by a constant; its algorithmic probability `QB` is
-  lower-semicomputable (`QB_lsc`, a computable dyadic approximation rising to
-  it). The theorem comes in two forms. With a logarithmic loss,
-  `KB x ≤ k + 2·size k + C` whenever `2^{−k} < μ(x)`, for every
-  lower-semicomputable semimeasure `μ` (`coding_theorem_weak`) — a
-  self-delimiting header code (`gammaCode`), Markov's bound
-  (`card_exceeds_lt`) and a partial recursive decoder with a prefix-free
-  domain (`decodeFn`, `prefixFree_decodeFn_dom`), needing no online
-  assignment. In Levin's `O(1)` form, `KB x ≤ k + C` (`coding_theorem`), with
-  `2^{−KB} ≤ QB ≤ 2^C · 2^{−KB}` (`QB_le_two_pow_mul`): an online
-  Kraft–Chaitin assignment carrying its invariant (`kcRun_invariant`) is fed
-  the semimeasure's request stream, made total by dummy requests at its
-  silent steps at the price of one bit. Each constant is a code's length,
-  named rather than computed. Restated multiplicatively at a general
-  semimeasure (`coding_theorem_mul`), the theorem makes `QB` a universal
-  lower-semicomputable semimeasure — it dominates every one up to a constant
-  factor (`QB_universal`), the hypotheses' joint satisfiability witnessed at
-  the point mass (`QB_universal_nonvacuous`). Boundary: proved over one fixed
-  universal prefix machine, where the classical text fixes its universal
-  semimeasure as any maximal one — `QB` is *a* universal semimeasure, not a
-  unique object.
-
-- **The prefix machine's two textbook inequalities** (`PrefixPairKB.lean`,
-  `PrefixModelCost.lean`): subadditivity, `KB (pair x y) ≤ KB x + KB y + c`
-  (`KB_pair_le`) — one machine reads two descriptions back to back, the split
-  unique because the universal machine's halting domain is prefix-free, and
-  the pairing machine's own domain prefix-free in turn
-  (`prefixFree_pairMachine_dom`), so no length header is paid — and the model
-  cost, `KB x ≤ K_bitlen x + 2 · size (K_bitlen x) + c`
-  (`KB_le_K_bitlen_add_two_mul_size`): a plain description made
-  self-delimiting at the price of its own length written in the Elias code,
-  which is *Discovery* §1.1's model-cost term read on the machine that section
-  names. Boundary: constants are code lengths, named rather than computed; the
-  converse at a constant factor is the index-cost bullet below, and neither
-  additive form between the two currencies is settled.
-
-- **Counting bounds, and the prefix machine's own uncomputability**
-  (`PrefixCounting.lean`): a description budget of `L` bits buys at most
-  `2^L` naturals, in both currencies and for unrelated reasons — on the
-  prefix machine `KB` from its Kraft inequality, each member of the budgeted
-  set contributing at least `2^{−L}` to a series bounded by one
-  (`finset_card_KB_le`, `card_KB_le`), and on the bit-length measure
-  `K_bitlen`, where no Kraft inequality holds, from injectivity into the
-  indices below `2^L` (`finset_card_K_bitlen_le`, `card_K_bitlen_le`). Each
-  count is stated twice: the `Finset` form carries the bound unconditionally,
-  the `Set.ncard` form takes its content from the matching finiteness lemma,
-  `ncard` reading `0` on an infinite set. The counts quantify both Chaitin
-  theorems' "all but finitely many". And `KB` is uncomputable
-  (`KB_not_computable`) by Berry's argument through the already-landed
-  partial-map invariance rather than a Kleene fixed point: the search for an
-  `s` of complexity above `n` is a partial computable map, its domain
-  populated by `KB_unbounded`, priced by `KB_partial_map_le` and then by the
-  Elias bound. Boundary: uncomputable, not un-enumerable — the graph of
-  "`KB(s) ≤ n`" is computably enumerable (`rePred_kleB`); `2^L` is the best
-  the Kraft hypothesis gives, a flat semimeasure attaining it, and the strict
-  count `KB`'s own totality would buy is not stated; the two counts share
-  a constant and nothing else.
 
 - **The index cost of a description** (`IndexCost.lean`): the index
   bit-length of the least program computing `x` is at most a constant factor
@@ -546,37 +389,7 @@ replace them.
   (`decoderSpec`). With `KB_le_K_bitlen_add_two_mul_size` it puts the two
   currencies within constant factors of each other; whether either additive
   form holds is open, the first exactly when the plain Kraft weight is
-  summable (next bullet).
-
-- **Prefix-complexity minimality** (`KraftMinimality.lean`): an
-  upper-semicomputable `f` — `UpperSemicomputable`, a computable non-increasing
-  stage sequence attaining `f` — has `KB ≤ f + c` for some `c` exactly when
-  `∑ 2^(-f x)` is summable (`KB_le_add_iff_summable`), the coding theorem's
-  minimality reading; the plain bit-length is upper-semicomputable
-  (`upperSemicomputable_K_bitlen`), so the first additive form between the
-  currencies is exactly the plain Kraft weight's summability
-  (`KB_le_K_bitlen_add_iff_summable`), decided here in neither direction; the
-  computable witness `2 * Nat.size` re-derives the Elias bound
-  (`KB_le_two_mul_size'`).
-
-- **The halting probability, and Chaitin's theorem on its approximations**
-  (`HaltingProbability.lean`): the total algorithmic probability
-  `haltingProb = ∑' x, QB x`, at most one (`haltingProb_le_one`), and the
-  theorem stated at a pair rather than a binary expansion — there is a `c`
-  such that whenever `m / 2 ^ n` is a lower approximation within `2 ^ (-n)`
-  of it, `n ≤ KB (Nat.pair n m) + c`
-  (`haltingProb_prefix_incompressible`), both hypotheses met at every `n`
-  by the floor (`haltingProb_prefix_incompressible_nonvacuous`). A
-  computable stage mass rising to the halting probability and a computable
-  list of the values each stage reveals (`stageMass`, `revealedList`) meet
-  two specifications (`HaltingMassSpec`, `HaltingRevealedSpec`), and the
-  parent over any pair meeting them (`haltingProb_prefix_incompressible_of`)
-  searches for the least stage past the *shifted* threshold
-  `m / 2 ^ n − 2 ^ (-n)`, takes the least value not yet revealed, and prices
-  it by `KB_partial_map_le`. Boundary: the pair, not a prefix of the
-  expansion; the constant existential; no randomness or irrationality
-  stated; the proof is Shen, Uspensky and Vereshchagin's Theorem 100, and no
-  first-ness is claimed.
+  summable (`KB_le_K_bitlen_add_iff_summable`, in lean-classical-upstream).
 
 - **An expressiveness excess order** (`ExcessOrder.lean`,
   `ExcessOrderComplete.lean`): representational classes graded by work-bit
@@ -637,7 +450,19 @@ replace them.
   leader installed, on a stream where that leader then misses three steps
   running, leave no verifying copy at those steps and are both recovered at
   the step after (`compRun_synchronized_guard`), so a schedule that touches
-  every copy defeats the reading however small its rate. Boundary: the damage
+  every copy defeats the reading however small its rate. A population that
+  instead spawns one copy a step outlasts every rate below one: if `b` times
+  the number of distinct copies touched before each step is at most `a·t + c`
+  with `a < b`, the reading over the active copies is the base's next state
+  from some step on, for any landed vectors and with no settling hypothesis,
+  one settling time serving every copy since the base is finite
+  (`spawnPredFrame_eq_next_of_rate`, `SpawningFiber.lean`, with its witness;
+  registered as *Inevitability* Proposition 6.20, row IN-61);
+  at rate one, a schedule landing the wrong leader on every copy each step
+  leaves only the newborn copy and reads wrong at every step
+  (`spawnPredFrame_rate_one_guard`); and the undamaged population is the
+  orbit of a growing world that appends a copy a step
+  (`spawnUpdate_iterate`). Boundary: the damage
   model is a **named hypothesis of the companion paper, not a theorem of this
   library** — `DamageGate.lean` states exactly what that costs: a
   host-applicable gate is provably empty on a noise-free stream, the
@@ -764,7 +589,8 @@ replace them.
 ### Growing worlds: observability from the world's own growth
 
 - **Growing worlds, and an accreting witness with one sentence standing
-  still** (`GrowingWorld.lean`, `AccretingWitness.lean`,
+  still** (`GrowingWorld.lean`, over `MergeQuotient.lean` of
+  lean-elementary-cellular-automata, `AccretingWitness.lean`,
   `AccretingExcess.lean`): stage-indexed worlds whose updates advance finite
   stages, closed under lawful factors (`advances_guestStage`), with the
   fixed-carrier theory recovered at constant stages. That a reading of a
@@ -843,7 +669,9 @@ replace them.
   region is read-only by construction but carries no computational role — it
   exists because the class asks for a code/work split.
 - **The growing core: the merge quotient as the canonical conservation
-  guest** (`GrowingCore.lean`, `GrowingCoreCrossing.lean`): two states of a
+  guest** (`GrowingCore.lean`, `GrowingCoreCrossing.lean`, over
+  `MergeQuotient.lean` of lean-elementary-cellular-automata):
+  two states of a
   growing world eventually merge when some iterate identifies them, and the
   quotient carries an induced law that is injective with no hypothesis at all
   (`mergeLaw_injective`) and closes the staged square at every stage family
@@ -859,319 +687,27 @@ replace them.
   an affordable canonical-representative selector stays a named hypothesis at
   paper level, and identifying a guest's stage budget with its bit count is
   the interpretive step owed there.
-- **The memory width: a clock is not a memory** (`MemoryWidth.lean`): the
-  antichain width of the retained profile under the induced law's
-  reachability (`memWidth`, `ℕ∞`-valued), monotone with no hypothesis beyond
-  `Advances` (`memWidth_mono`). The successor world's retained profile is
-  unbounded while its width stays at one (`memWidth_nat_succ_eq_one`), and a
-  fast counter meets the flag hypothesis read at set level — its profile in
-  bijection with `Bool^t` — with the same width
-  (`mergeStage_nat_succ_fastClock_encard`): the raw class count decides
-  nothing. The accreting witness's width is at least `2^(t+1)` in any
-  environment (`memWidth_accreting_ge`), exact at a trivial one
+- **The accreting witness's memory width** (`MemoryWidthWitness.lean`, over
+  `MemoryWidth.lean` of lean-elementary-cellular-automata): the accreting
+  witness's width is at least `2^(t+1)` in any environment
+  (`memWidth_accreting_ge`), exact at a trivial one
   (`memWidth_accreting_eq_of_trivialEnv`), and the crossing composes from the
-  width (`eventually_hosts_uniform_of_accreting_memWidth`). The width is
-  read off a **root set**: a subset of a stage that is already an antichain
-  and which every stage class reaches names the width exactly, with no
-  hypothesis on the update (`memWidth_eq_encard_of_isRootAntichain`; at a
-  state-level root set, `memWidth_eq_encard_of_rootSet`); a root antichain
-  always exists at a finite stage (`exists_isRootAntichain_of_finite_stage`,
-  classically), and under antisymmetry it is exactly the stage classes no
-  other stage class reaches (`memWidth_eq_encard_canonical_of_antisymmOn`),
-  each hypothesis pinned by a guard — the canonical set is empty at a finite
-  world whose width is positive (`exists_canonicalSet_empty_pos_memWidth`),
-  and the successor world on `ℤ` has positive width and no root antichain at
-  all (`pos_memWidth_not_exists_isRootAntichain_intSucc`). Boundary: a
-  separation, not a dichotomy — an antichain-shaped conservation guest can
-  exceed the width (`exists_conservationGuest_extent_gt_memWidth`).
-- **Derived worlds, and the width computed exactly at elementary cellular
-  automata** (`DerivedStages.lean`, `ExtremeTapWidth.lean`,
-  `FiniteWorldWidth.lean`): a world grown from a start region as its iterated
-  images (`derivedStages`) has its retained profile, hence its memory width,
-  capped by the region's own cardinality at every stage
-  (`memWidth_derivedStages_le`), so a finite seed never supplies the
-  certificate's crossing. On the finitely-supported configurations of the
-  line, the extreme-tap linear rules — elementary tables `90` and `150`
-  (`rule90`, `rule150`) — are additive and injective (`rule90_injective`),
-  spread their support by exactly one cell per step at each end, and every
-  nonzero orbit eventually leaves any fixed finite region
-  (`rule90_region_exit`); on the world derived from an `n`-cell region, read
-  at the region itself, their width is at least `2^(n−1)`
-  (`memWidth_rule90_derived_ge`) and exactly the size of the **root set**, the
-  region-supported states with no nonzero region-supported predecessor
-  (`rootSet`, `memWidth_rule90_derived_eq`), a count that closes in addition
-  form, `(rootSet rule90 n).encard + 2^(n−2) = 2^n + 1` at `2 ≤ n`
-  (`rootSet_encard_add`). Both facts are generic in the update and in two
-  endpoint-move constants (`memWidth_derived_eq_encard_rootSet`,
-  `rootSet_encard_add_of_hyps`), the identity update the guard that separates
-  them (`guard_id_rootSet_load_bearing`); a local table with a quiescent zero
-  becomes a radius-one rule (`tableRule`), one-sided permutivity in solved
-  form gives injectivity on that carrier
-  (`tableRule_injective_of_leftPermutive`,
-  `tableRule_injective_of_rightPermutive`), and four non-additive tables —
-  `30`, `86`, `154`, `210` — meet the hypotheses and share the exact width,
-  rule `30`'s equal to rule `90`'s (`memWidth_rule30_derived_eq_rule90`); the
-  two shifts, tables `170` and `240`, carry their own width and count at their
-  true endpoint moves (`memWidth_rule170_derived_eq`,
-  `rootSet_encard_add_rule170`, `memWidth_rule240_derived_eq`), and a guard
-  shows quiescence and permutivity alone do not pin the class-level spread
-  (`guard_rule170_max'_spread_load_bearing`). At a finite carrier under the
-  constant stage family the width is *Persistence*'s component count: the
-  induced law is a bijection of the merge quotient (`mergeLaw_bijective`),
-  reachability is symmetric (`reaches_symm`), and
-  `memWidth_eq_nat_card_orbitSetoid` identifies the two counts — while the
-  two-state swap shows the merge quotient is not the component quotient
-  (`exists_finiteWorld_component_ne_merge_card`). Registered as *Guests*
-  Propositions 7.14–7.21, rows GV-22…GV-29. Boundary: the counts are additive
-  (`ℕ∞` subtraction is truncated), the closed forms being the paper's
-  restatement; the permutivity-to-injectivity route is classical; the
-  finite-world identification relates counts, not capacities; the derived
-  cap says nothing about attainment beyond the tables named.
-- **The growing width: six catalogue rules accrete, the identity does not**
-  (`GrowingWidth.lean`, `LightConeWidth.lean`): the memory width restricted to
-  the states whose orbit has unbounded size (`GrowingPart`, `growingWidth`) —
-  the part invariant and merge-saturated (`growingPart_of_merge`), the
-  restricted family advancing (`advances_growingPart`), the width monotone and
-  below the plain one (`growingWidth_mono`, `growingWidth_le_memWidth`), and a
-  genuine restriction: `0` against `t + 1` at the identity
-  (`growingWidth_id_slowClock_eq_zero_memWidth_eq_succ`). Under the support
-  diameter (`diam`) and along the light cone of an `n`-cell window
-  (`lightCone`), an update with exact endpoint moves `(1, 1)` has the nonzero
-  states as its growing part (`growingPart_eq_ne_zero`), and with a trivial
-  kernel and injectivity its growing width is at least `2^(n+t−1)`
-  (`two_pow_le_growingWidth_lightCone`), hence unbounded
-  (`growingWidth_lightCone_unbounded`) — instantiated at tables `30`, `86`,
-  `90`, `150`, `154`, `210` (`growingWidth_lightCone_unbounded_rule30`, …),
-  jointly satisfiable at rule `90`, and `0` at the identity and both shifts
-  (`growingWidth_lightCone_id_eq_zero`,
-  `growingWidth_lightCone_rule170_eq_zero`). The plain width along the same
-  cone is unbounded even at the identity, so this is the quantity that sees
-  the rule. Registered as *Guests* Definition 7.22 and Proposition 7.23, rows
-  GV-30 and GV-31. Boundary: a lower bound, not the value; the rate is the
-  presentation's; the diameter is one reading of size; the part is not
-  decidable in general; a separation at a hypothesis class, not genericity.
-- **The growing width over the whole radius-one rule space: an engine without
-  injectivity, and a bracket at the table bits** (`EndpointClasses.lean`): an
-  antichain of the retained profile is a set of states with pairwise disjoint
-  forward orbits, so at exact endpoint moves `(a, b)` with `a + b ≥ 1` on any
-  update-invariant set containing every translate of one state, the
-  translates in the light cone are pairwise orbit-disjoint and each is
-  growing — the growing width is at least `n + 2t + 1 − diam s₀`
-  (`linear_le_growingWidth_lightCone_of_invariant`), hence unbounded
-  (`growingWidth_lightCone_unbounded_of_invariant`), with the six hypotheses
-  jointly met at table `202` on the right end-word set
-  (`growingWidth_lightCone_unbounded_of_invariant_nonvacuous`). The moves are
-  read off a table's bits (`tableRule_min'_of_leftTap`,
-  `tableRule_max'_of_rightHold`, `tableRule_max'_of_endsOneOne`, …), every
-  quiescent table advances the cone (`advances_lightCone_tableRule`), and a
-  non-increasing diameter empties the growing part
-  (`growingPart_eq_empty_of_diam_le`). Two classes of tables, each a
-  disjunction of bit equations: `AccretesByEndpoints` — unbounded growing
-  width at every member (`growingWidth_lightCone_unbounded_of_accretesByEndpoints`),
-  `52` of the `128` quiescent tables (`card_accretesByEndpoints`,
-  `card_quiescent`) — and `ZeroByEndpoints` — width identically `0`
-  (`growingWidth_lightCone_eq_zero_of_zeroByEndpoints`), `48` tables
-  (`card_zeroByEndpoints`) — disjoint
-  (`accretesByEndpoints_zeroByEndpoints_disjoint`). Registered as *Guests*
-  Proposition 7.24, rows GV-32 and GV-33. Boundary: the bound is linear where
-  the six-table one is exponential; the `28` tables in neither class are not
-  decided in either direction; the counts are kernel decisions over the
-  256-element table type; the instances at rules `90` and `150` are at tables
-  written out here, with no stated identity to `rule90` and `rule150`.
-- **The observed column settles wherever the diameter never grows**
-  (`ObservedColumn.lean`): the column an observer reads at one cell along an
-  orbit (`observedColumn`) is eventually periodic at every quiescent table
-  whose diameter never grows (`eventuallyPeriodic_observedColumn_of_diam_le`)
-  — the pattern up to translation ranges over a finite set, so it recurs
-  with a drift, and the column is periodic at zero drift and eventually `0`
-  otherwise — hence at every zero-class table
-  (`eventuallyPeriodic_observedColumn_of_zeroByEndpoints`); contrapositively
-  a column that is not eventually periodic forces the diameter to grow at
-  some stage of that seed's own orbit
-  (`exists_diam_lt_iterate_of_not_eventuallyPeriodic`). The hypotheses are
-  met at the shift `170` with its center column written out
-  (`observedColumn_f170_single`), and the diameter hypothesis is load-bearing
-  at rule `30` (`diam_lt_tableRule_f30_single`). The converse fails at a
-  checked witness: rule `90` is in the accreting class and its single-seed
-  center column is `1` then `0` forever (`observedColumn_f90_single`).
-  The rational ray at speed `p/q` reads the cell `e + ⌊pt/q⌋` at step `t`
-  (`observedRationalRay`), the column at speed zero
-  (`observedRationalRay_zero`); at every quiescent table whose diameter never
-  grows every rational ray is eventually periodic
-  (`eventuallyPeriodic_observedRationalRay_of_diam_le`), reading one relative
-  cell of the drifting pattern for ever when its speed is the drift and zero
-  for ever otherwise, hence at every zero-class table
-  (`eventuallyPeriodic_observedRationalRay_of_zeroByEndpoints`), the
-  hypotheses met at the shift at speed one half
-  (`eventuallyPeriodic_observedRationalRay_of_diam_le_nonvacuous`). The
-  column's statements are registered as *Guests* Remark 7.25, rows GV-34 and
-  GV-35, the rational ray as *Guests* Proposition 7.28, row GV-40. Boundary:
-  existence of a
-  period only, no bound on it or on the onset; one column or ray, not the
-  configuration; beyond that one column of rule `90`, this module says nothing
-  about the column or any ray at a table whose diameter grows, rule `30`'s
-  included.
-- **Driven columns: what settles at every table, and a column that never
-  does** (`DrivenColumns.lean`): a sequence in a finite type whose next
-  value is, from some step on, a fixed function of its value and of an
-  eventually periodic input is eventually periodic
-  (`eventuallyPeriodic_of_driven`). Over the table rules this gives, at
-  every quiescent table and every finitely-supported state: a window of
-  adjacent cells is eventually periodic exactly when the columns at its two
-  end cells are (`eventuallyPeriodic_observedWindow_iff`), so the columns
-  between two settled columns settle
-  (`eventuallyPeriodic_observedColumn_between`); and the rays that move one
-  cell a step, in either direction and from every start cell, are
-  eventually periodic (`eventuallyPeriodic_observedRay_one`,
-  `eventuallyPeriodic_observedRay_neg_one`). At rule `90`, `2^j` steps of
-  the rule send a state `s` to `i ↦ s(i − 2^j) + s(i + 2^j)`
-  (`iterate_two_pow_f90`), and the single seed's column at cell `1` is not
-  eventually periodic
-  (`not_eventuallyPeriodic_observedColumn_f90_single_one`): it is live at
-  every step `2^(j+1) − 1` and dead strictly between
-  (`observedColumn_f90_single_one_live`,
-  `observedColumn_f90_single_one_dead_between`). One settled end does not
-  settle the cell beside it
-  (`eventuallyPeriodic_observedColumn_between_guard`), and the rays'
-  statement fails at velocity zero
-  (`not_eventuallyPeriodic_observedRay_zero_f90`). Registered as *Guests*
-  Proposition 7.26, rows GV-36 and GV-37. Its column at cell `1` is also
-  one equality, live exactly at the steps `t` with `t + 1 = 2^j` for some
-  `j ≥ 1` (`observedColumn_f90_single_one`), and the driven interior's
-  hypotheses are met together at the shift
-  (`eventuallyPeriodic_observedColumn_between_nonvacuous`). Boundary:
-  existence of a period only; velocities `1` and `−1` only; nothing about
-  any other column of rule `90`, any other seed, or any column of another
-  accreting table.
-- **The hindsight count: a law on the last readings, and what bounds its
-  misses** (`HindsightCount.lean`): a sequence is eventually exact at memory
-  `k` when one fixed function of its last `k` readings gives the next
-  reading from some step on (`EventuallyExact`). An eventually periodic
-  sequence is eventually exact at some memory
-  (`eventuallyExact_of_eventuallyPeriodic`), and over a finite alphabet the
-  converse holds (`eventuallyPeriodic_of_eventuallyExact`), the two together
-  one equivalence (`exists_eventuallyExact_iff_eventuallyPeriodic`); the
-  finite alphabet is load-bearing, the identity on the naturals being
-  eventually exact at memory one and not eventually periodic
-  (`eventuallyExact_nat_id_not_eventuallyPeriodic`). The hindsight count at
-  a horizon is the fewest misses any such function makes before it, the
-  minimum taken at each horizon separately (`lawMisses`, `hindsightCount`);
-  over a finite alphabet it is bounded in the horizon exactly when the
-  sequence is eventually exact at that memory
-  (`hindsightCount_bounded_iff_eventuallyExact`), and bounded at some memory
-  exactly when the sequence is eventually periodic
-  (`exists_hindsightCount_bounded_iff_eventuallyPeriodic`). At every
-  quiescent table and every finitely-supported state, a window of adjacent
-  cells meets either condition at some memory exactly when the columns at
-  its two end cells do, each at a memory of its own
-  (`exists_eventuallyExact_observedWindow_iff`,
-  `exists_hindsightCount_bounded_observedWindow_iff`). Over a finite family
-  of such functions at one memory, a bound on one member's misses bounds the
-  floored mixture's surprise count free of the horizon
+  width (`eventually_hosts_uniform_of_accreting_memWidth`).
+- **The floored mixture against a law's misses** (`HindsightMixture.lean`, over
+  `HindsightCount.lean` of lean-elementary-cellular-automata): over a finite
+  family of laws on the last `k` readings, a bound on one member's misses
+  bounds the floored mixture's surprise count free of the horizon
   (`floorSurprise_card_mul_le_of_lawMisses_le`, the bound
   `floorSurprise_card_mul_le_missCount` at the family's miss matrix
   `lawMissMatrix`; its two hypotheses are met together at
   `floorSurprise_card_mul_le_of_lawMisses_le_nonvacuous`, over `nvX` and
-  `nvLs`). At rule `90` from the single seed the center column is eventually
-  exact at memory zero (`eventuallyExact_observedColumn_f90_single`) and the
-  column at cell `1` at no memory
-  (`not_exists_eventuallyExact_observedColumn_f90_single_one`), its
-  hindsight count unbounded at every memory
-  (`hindsightCount_observedColumn_f90_single_one_unbounded`). The two are the
-  two sides of one class statement: at every table of the zero class, from
-  every finitely-supported state and at every cell, some memory gives the
-  column's hindsight count a bound in the horizon
-  (`exists_hindsightCount_bounded_observedColumn_of_zeroByEndpoints`), and so
-  for every window of adjacent cells
-  (`exists_hindsightCount_bounded_observedWindow_of_zeroByEndpoints`), both
-  hypotheses met at the shift `170`
-  (`exists_hindsightCount_bounded_observedColumn_of_zeroByEndpoints_nonvacuous`);
-  and the class hypothesis is load-bearing, rule `90` lying in the accreting
-  class with its cell-one count unbounded
-  (`exists_hindsightCount_bounded_observedColumn_zero_class_guard`) — the
-  observer's bill read against the world's growth, bounded wherever the world
-  does not accrete. The two window statements are registered as *Guests*
-  Proposition 7.27(i), row GV-38; the rest is registered in no paper and
-  extends *Guests* Propositions 7.24 and 7.26 and the event bound of
-  *Inevitability* row IN-13. Boundary: the memories and the
-  bounds on the two sides of an equivalence are separate existentials, none
-  given in terms of another; no rate of the count is stated; the class
-  statement says nothing at the twenty-eight tables in neither class; the
-  mixture bound
-  is on the count times the threshold and says nothing at threshold zero.
-- **The margin a cell's reading allows** (`LocalMargin.lean`): a function of
-  a state reads only a finite set of cells when its value is fixed by them
-  (`ReadsOnly`), and holds within `e` at a state when every state differing
-  from it at no more than `e` cells gives the same value (`HoldsWithin`). If
-  a function reads only `N` and takes different values at two states, the
-  two margins at which those values hold sum to less than the number of
-  cells of `N` at which the states differ
-  (`margins_add_lt_card_of_readsOnly`), the packing inequality of *Guests*
-  Law 4 read at what one cell reads; the bound is met with equality on three
-  Boolean cells at margins one and one
-  (`margins_add_lt_card_of_readsOnly_nonvacuous`), and the inequality fails
-  at an instance meeting every hypothesis but that one, at margins one and
-  one against a set of one cell (`margins_add_lt_card_guard`). A radius-one
-  table's value at a cell after `τ` steps is fixed by the cells within `τ`
-  of it (`tableRule_iterate_apply_congr`), so on finitely-supported states
-  the margins at which its `τ`-step iterate erases (`ErasesAt`) sum to at
-  most `2τ` at two states with different successors
-  (`tableRule_margins_add_le_two_mul`, its hypotheses met together at
-  `tableRule_margins_add_le_two_mul_nonvacuous`). On all functions of the line
-  (`lineRule`, `ErasesWithin`), at a table fixing both constant states: at no
-  scale do both erase within two (`not_erasesWithin_two_const`), and at every
-  positive scale both erase within one exactly when the table is the majority
-  of its three cells (`erasesWithin_one_const_iff`, `majTable`,
-  `erasesWithin_one_const_majTable`); the zero state alone can erase within
-  two (`erasesWithin_two_const_zero_guard`). At scale one, at every table and
-  on all functions of the line, two states each erasing within two have the
-  same successor (`lineRule_eq_of_erasesWithin_two`), the two hypotheses met
-  at two different states of the constant-zero table
-  (`lineRule_eq_of_erasesWithin_two_nonvacuous`); at the majority table a
-  margin of one at both constant states leaves the successors different
-  (`lineRule_ne_of_erasesWithin_one_guard`). Registered in no paper; it
-  extends *Guests* §3's one-step erasure and Law 4. Boundary: the witnesses
-  and guards are existential statements, naming their margins and counts and
-  not the function, table or state that meets them; the scaled bound's witness
-  has one margin zero, so the bound `2τ` is not shown attained; beyond scale
-  one nothing is stated about two states that are not constant, and nothing at
-  any scale about a table of wider radius or more states, or about whether two
-  finitely-supported states can both hold a positive margin.
-- **A window's count against its ends'** (`WindowCount.lean`): the hindsight
-  count of a reading is the fewest misses, over the functions of the last
-  `k` states, in answering a fixed function of the next state
-  (`readingMisses`, `readingCount`); at the identity it is the hindsight
-  count (`readingCount_id`). A reading's count is at most the state's
-  (`readingCount_le_hindsightCount`), and at most the count of the read
-  sequence taken on its own (`readingCount_le_hindsightCount_comp`). At
-  every quiescent table, every finitely-supported state, every window, every
-  memory of at least one and every horizon, the window's hindsight count is
-  at most the sum of the counts of its two end cells read with the window as
-  context (`hindsightCount_observedWindow_le_add_readingCount`), hence at
-  most the sum of its two end columns' hindsight counts
-  (`hindsightCount_observedWindow_le_add_columns`); by the first comparison
-  it is at least each end reading's count. The memory is load-bearing: at
-  memory zero the bound fails at the table that sends everything to zero
-  (`hindsightCount_observedWindow_zero_memory_guard`). The end columns' own
-  counts give no lower bound: at the shift, a window of two cells has no
-  miss in three steps at memory one while the column at its first cell has
-  one (`hindsightCount_observedWindow_lt_column_f170`). The translating window
-  at a rational speed `p/q` of at most one, read with the phase `t mod q` of
-  its own schedule (`movingWindow`), has at every quiescent table, every
-  finitely-supported state, every start, every width of at least three, every
-  memory of at least one and every horizon a hindsight count at most the sum
-  of its two end readings' counts, the trailing end's the cell it sits on and
-  the leading end's the two cells it sits on and moves to
-  (`hindsightCount_movingWindow_le_add_readingCount`), the hypotheses met at
-  table `90` at speed one half
-  (`hindsightCount_movingWindow_le_add_readingCount_nonvacuous`) and the
-  memory load-bearing at the zero table, where a memory-zero law cannot follow
-  the phase (`hindsightCount_movingWindow_zero_memory_guard`). The window at
-  rest is registered as *Guests* Proposition 7.27(ii)–(iii), row GV-39; the
-  translating window is registered in no paper. Boundary: both sides of each
-  bound are at the same memory and horizon; no bound is stated at memory zero,
-  none for a window whose ends move at different speeds or at a speed above
-  one, and each guard is a single instance.
+  `nvLs`). Boundary: the bound is on the count times the threshold and says
+  nothing at threshold zero.
+- **The radius-one rule space** is in
+  `lean-elementary-cellular-automata`, which this library requires: the
+  growing world's objects and its widths, accretion decided at every quiescent
+  table, columns, windows and rays, robustness to two cells and replication,
+  each module described in that repository's README.
 - **The pricing economy's growing form** (`GrowingPrice.lean`): the
   fixed-carrier Collapse Theorem does not transport — determination fails for
   a merely injective stage law (`exists_ne_frames_agreeing_on_range`) — while
@@ -1230,7 +766,10 @@ convergence under statistical queries), **[Persistence]** (resource-bounded
 persistence capacity: the priced decoder), **[Guests]** (a description-length
 theory of systems running inside finite and growing dynamical systems: priced
 factors, the Witness World, emergence, and growing worlds with their growing
-core, memory width and staged collapse), **[Growth]** (endogenous
+core, memory width and staged collapse), **[RuleSpace]** (accretion, rays
+and robustness over the radius-one rule space: the growing width decided at
+every quiescent elementary cellular automaton, the rays of table 90 from the
+single seed, and robustness to two cells at every scale), **[Growth]** (endogenous
 observability on growing hosts: statistical-query learning from substitution
 sources at explicit horizons), and **[Inevitability]** (the
 realization-synthesis capstone: two independent routes to a reflective
@@ -1259,11 +798,10 @@ been machine-checked for decision stumps in Lean 3 (arXiv:1911.00385), and Coq
 developments certify concrete generalization guarantees (Bagnall–Stewart, AAAI
 2019) and reinforcement-learning convergence (CertRL, Vajjha et al. 2021).
 
-What we have not found formalized anywhere, and therefore built here: the
-statistical-query model, Ville's inequality, and a cost semantics attached to
-Mathlib's own model of partial recursive functions — the last being what lets a
-learning algorithm be verified for correctness and running time in the same
-breath, rather than in a program logic separate from the mathematics.
+The classical side of that scope — the statistical-query model, Ville's
+inequality, and a cost semantics attached to Mathlib's own model of partial
+recursive functions, none of which we had found formalized when it was built —
+is in lean-classical-upstream, labelled there by its standing in Lean.
 
 ## How this repository is maintained
 
@@ -1280,8 +818,8 @@ Practical consequences, if you want to engage with it:
 - **Pull requests are awkward** rather than unwelcome: a patch here has to be
   replayed by hand into the private tree, so for anything larger than a typo an
   issue first will save you effort. Upstreamable pieces are a different matter —
-  several modules are built as leaves precisely so they can go to Mathlib, and
-  help with that is genuinely wanted.
+  they are collected in lean-classical-upstream precisely so they can go to
+  Mathlib and its neighbours, and help with that is genuinely wanted.
 - **The build is the specification.** If CI is green, every theorem stated here
   is proved from the axioms named above; if you find that untrue, that is the
   most valuable issue you could open.

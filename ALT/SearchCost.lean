@@ -5,8 +5,8 @@ Authors: Mykola Palamarchuk
 -/
 module
 
-public import ALT.Code.EvalLaws
-public import ALT.TimeCost
+public import CodeLayer.Code.EvalLaws
+public import CodeLayer.TimeCost
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -14,7 +14,8 @@ set_option linter.style.header false
 /-!
 # The search cost: the native cost model extended to all of `Nat.Partrec.Code`
 
-`ALT/TimeCost.lean` builds a TOTAL paired evaluator `evalT : Code → ℕ → ℕ × ℕ` whose step laws are
+`CodeLayer/TimeCost.lean` builds a TOTAL paired evaluator `evalT : Code → ℕ → ℕ × ℕ` whose
+step laws are
 unconditional, at the price of leaving `rfind'` a placeholder: its value-agreement theorem
 `eval_eq_val` is stated only on the `RfindFree` fragment. This file supplies the missing case — the
 cost of an unbounded search — and so closes the cost model over the whole of `Nat.Partrec.Code`.

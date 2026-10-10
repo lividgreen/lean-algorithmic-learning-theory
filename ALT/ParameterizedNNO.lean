@@ -53,7 +53,7 @@ interest is `r ≪ K`, where `K − r` is the genuine working-bit count.
 * NOT the Gödel threshold (§5.3 / Def 6.1 / Thm 6.2: `M > g(T_S)`, depth-suffices-for-Gödel) —
   that is `ALT/GodelThreshold.lean` + the Foundation port. NOT Curry–Howard–Lambek.
 * `K` here is the §3 **capacity bit-count**, NOT Kolmogorov complexity
-  (`ALT/KolmogorovComplexity.lean`);
+  (`AIT/KolmogorovComplexity.lean`);
   `r, K` stay abstract `ℕ`.
 
 ## Hypotheses: paper-stated vs added

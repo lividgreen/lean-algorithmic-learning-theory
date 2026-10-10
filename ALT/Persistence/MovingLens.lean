@@ -7,8 +7,8 @@ module
 
 public import Batteries.Tactic.OpenPrivate
 public import Mathlib.Data.List.GetD
-public import ALT.AdditiveComplexity
-public import ALT.Code.EvalLaws
+public import CodeLayer.AdditiveComplexity
+public import CodeLayer.Code.EvalLaws
 public import ALT.Persistence.Core
 import all ALT.Persistence.Core
 

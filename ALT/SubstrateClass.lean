@@ -10,7 +10,7 @@ public import ALT.RegimeConsistency
 public import ALT.GodelInternalization
 public import ALT.CategoricalThreshold
 public import ALT.Decoupling
-public import ALT.SQObjects
+public import Learning.SQObjects
 public import ALT.ParityCounterexample
 public import ALT.BirkhoffTool
 
@@ -43,7 +43,7 @@ file gave [Inevitability]'s own Definitions 2.1–2.3 a Lean counterpart.
   companion `incompleteness_not_unconditionally_satisfiable` is the vacuity guard this forces —
   `Incompleteness` itself, not any capacity/substrate hypothesis, is the thing that can fail.
 * `Substrate` (Definition 2.2, `𝒮`): a three-field structure — (S1) `Decoupling.Fixes` on a
-  code region, (S2) the [Discovery] §1.2 regime with depth (`RegimeConsistency`'s own hypothesis
+  code region, (S2) the [Discovery] §1.2 capacity regime (`RegimeConsistency`'s own hypothesis
   shape, reused verbatim), (S3) the reflective-capacity inequality plus the SAME theory
   conditions as `ReachesThreshold`.
 * `SubstrateE`/`SubstrateL` (Definition 2.3): the two route-classes extending `Substrate`.
@@ -345,7 +345,7 @@ abbrev DecoupledSubstrate {ι V : Type*} (U : Decoupling.Mem ι V → Decoupling
     (R : Set ι) : Prop :=
   Decoupling.Fixes U R
 
-/-- **(S2) regularity with depth.** [Discovery] §1.2's explicit-constant regime `r ≪ K ≪ L`,
+/-- **(S2) the capacity regime.** [Discovery] §1.2's explicit-constant regime `r ≪ K ≪ L`,
 in EXACTLY the hypothesis shape `RegimeConsistency.regime_strict_ordering` consumes: C1
 (`K ≥ c₀·r·log(r/δ)`), C2 (`L ≥ c₁·K`, `c₁ > 1`), C3 (`r ≥ c₂`), and the named constant
 conditions (`c₀ ≥ 1`, `c₂ ≥ 3`, `δ ∈ (0,1)`) that make the strict ordering `r < K < L` provable. -/

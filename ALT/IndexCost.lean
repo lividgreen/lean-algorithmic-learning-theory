@@ -5,10 +5,10 @@ Authors: Mykola Palamarchuk
 -/
 module
 
-public import ALT.KolmogorovBitlen
-public import ALT.PrefixInvarianceKB
-public import ALT.BitStringPrimrec
-public import ALT.Code.SizeArith
+public import AIT.KolmogorovBitlen
+public import AIT.PrefixInvarianceKB
+public import CodeLayer.BitStringPrimrec
+public import CodeLayer.Code.SizeArith
 public import Mathlib.Data.Nat.Log
 public import Mathlib.Data.List.Forall2
 
@@ -22,8 +22,8 @@ Provenance: [Discovery] §1.1 (the reference machine) and [Decoupling] Theorem 6
 currencies, index-length vs. description-length). Registered in [Discovery] §1.1's formalization
 note as FV row FV-33.
 
-`K_bitlen` prices a program by its Gödel INDEX's bit-length (`codelen'`, `ALT.KolmogorovBitlen`),
-while `KB` prices a description by its LENGTH (`ALT.PrefixMachine`). Mathlib's `encodeCode` sends
+`K_bitlen` prices a program by its Gödel INDEX's bit-length (`codelen'`, `AIT.KolmogorovBitlen`),
+while `KB` prices a description by its LENGTH (`AIT.PrefixMachine`). Mathlib's `encodeCode` sends
 `pair a b`/`comp a b` to `4 * Nat.pair (ea) (eb) + O(1)`, so an index's bit-length DOUBLES at each
 node of a code's tree: an arithmetic literal of chain depth `size w` costs about `2 ^ size w`,
 which is why no arithmetic literal of the description may appear in a `K_bitlen`-vs-`KB` bound. A
@@ -40,7 +40,8 @@ construction here is that tree.
 * `SizeLaw`, `NestSpec`, `DecoderSpec`: three specifications — `codelen'`'s growth law at
   `pair`/`comp`, the nest's own evaluation/size/round-trip facts, and a decoder reading the padded
   nest back through `PrefixMachine.univPrefix`. All three are proved. `SizeLaw` is proved
-  (`sizeLaw`, from `encodeCode`'s own clauses and `ALT.Code.SizeArith`'s bit-length arithmetic);
+  (`sizeLaw`, from `encodeCode`'s own clauses and `CodeLayer.Code.SizeArith`'s bit-length
+  arithmetic);
   `NestSpec` is proved (`nestSpec`, from `sizeLaw` alone: the fold's own evaluation law by
   well-founded recursion over a `Forall₂` witness on its leaves, its size law by induction on the
   depth against `sizeLaw`, and its round-trip law by induction on the depth, splitting the bit

@@ -176,7 +176,7 @@ at a finite horizon.
 
 ## Scope
 
-`KE` is the additive Kolmogorov complexity of `ALT.AdditiveComplexity` (program length under a
+`KE` is the additive Kolmogorov complexity of `CodeLayer.AdditiveComplexity` (program length under a
 fixed self-delimiting encoding of `Nat.Partrec.Code`), and the finite objects enter it through an
 explicit tabulation (`frameTable`, `worldTable`, `coreTable`, `lensTable`) along a chosen
 enumeration of the core and of the model.

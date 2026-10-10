@@ -5,10 +5,10 @@ Authors: Mykola Palamarchuk
 -/
 module
 
-public import ALT.RealizabilityCCC
+public import Realizability.RealizabilityCCC
 public import ALT.RealizerLength
 public import ALT.UniversalAt
-public import ALT.PolyTime
+public import CodeLayer.PolyTime
 public import ALT.CapacityLayer
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.

@@ -5,7 +5,7 @@ Authors: Mykola Palamarchuk
 -/
 module
 
-public import ALT.TimeCost
+public import CodeLayer.TimeCost
 public import ALT.SearchSpace
 public import ALT.CheckerWorkspace
 

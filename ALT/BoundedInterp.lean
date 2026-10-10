@@ -5,7 +5,7 @@ Authors: Mykola Palamarchuk
 -/
 module
 
-public import ALT.TimeCost
+public import CodeLayer.TimeCost
 public import Mathlib.Data.Nat.Size
 public import Mathlib.Tactic.NormNum
 public import Mathlib.Tactic.Positivity

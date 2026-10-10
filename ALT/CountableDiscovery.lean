@@ -5,7 +5,7 @@ Authors: Mykola Palamarchuk
 -/
 module
 
-public import ALT.BayesRedundancy
+public import Learning.BayesRedundancy
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -28,7 +28,7 @@ stays genuinely finite (`[Fintype A]`).
 ## What carries over and what is re-proved
 The mathematics is the finite argument with `∑'` for `∑` over `ι`; the finite `deterministic_discovery`
 is untouched and still builds (this file is strictly additive). The genuinely index-free ingredient
-`Lik` (`ALT/BayesRedundancy.lean`) and the alphabet-only facts `sqHellinger`,
+`Lik` (`Learning/BayesRedundancy.lean`) and the alphabet-only facts `sqHellinger`,
 `hellinger_point_mass` are reused as-is. The small per-hypothesis facts (`lik_nonneg`,
 `lik_realizable`, `q_self_le_exp`, `competitor_likelihood_decay`) are **re-proved here verbatim**:
 their finite-file counterparts sit under that file's `[Fintype ι]` section variable, which Lean's

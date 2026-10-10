@@ -5,8 +5,8 @@ Authors: Mykola Palamarchuk
 -/
 module
 
-public import ALT.BinaryConstant
-public import ALT.TimeCost
+public import CodeLayer.BinaryConstant
+public import CodeLayer.TimeCost
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -16,8 +16,8 @@ set_option linter.style.longLine false
 # The orbit collector `collector cR` — discharging Prop 2.2's modeled premise
 
 Provenance: [SQ] §2.2 / Prop 2.2 (~lines 107–119), the FV-AC row.
-Extends `ALT/AdditiveComplexity.lean` (`E`, `elen`, `KE`, `KE_t`, `E_len_comp`) and
-`ALT/BinaryConstant.lean` (`bconst`, `eval_bconst`, `elen_bconst_le`, `prop_2_2_core`).
+Extends `CodeLayer/AdditiveComplexity.lean` (`E`, `elen`, `KE`, `KE_t`, `E_len_comp`) and
+`CodeLayer/BinaryConstant.lean` (`bconst`, `eval_bconst`, `elen_bconst_le`, `prop_2_2_core`).
 
 Status: PROVED (eval level). Target B (an explicit `evaln` budget) is a documented WALL; Target C
 (`H_T`) is a declared model boundary. See the boundary note below.
@@ -246,7 +246,7 @@ theorem prop_2_2_t_exists {cR : Code} {rs : ℕ → ℕ} (hcR : ∀ x, eval cR x
 
 `prop_2_2_t_exists` above ships an EXISTENTIAL `evaln` budget because `evaln`'s fuel caps intermediate
 VALUES (`evaln_bound`), so no explicit polynomial budget exists for this value-growing iterator. The
-native step count `TimeCost.tc` (see `ALT/TimeCost.lean`) instead charges each `prec`/`comp`
+native step count `TimeCost.tc` (see `CodeLayer/TimeCost.lean`) instead charges each `prec`/`comp`
 unfolding `O(1)` regardless of value magnitude, so it DOES admit an explicit linear bound. The
 projection/stepWrap cost lemmas below feed the generic `TimeCost.tc_prec_le` engine. -/
 

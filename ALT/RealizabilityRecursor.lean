@@ -5,8 +5,8 @@ Authors: Mykola Palamarchuk
 -/
 module
 
-public import ALT.Realizability
-public import ALT.RealizabilityCCC
+public import Realizability.Realizability
+public import Realizability.RealizabilityCCC
 public import ALT.ParameterizedNNO
 public import ALT.GodelThreshold
 
@@ -28,7 +28,7 @@ mismatch" the earlier formalizations recorded:
   existing recursor — not one categorical object carrying both.
 
 Here both live on the **same** category: the genuine Cartesian-closed realizability category `Asm`
-of `ALT/RealizabilityCCC.lean` (FV-12: terminal, products, exponential with the transpose
+of `Realizability/RealizabilityCCC.lean` (FV-12: terminal, products, exponential with the transpose
 universal property `exp_universal`, over Kleene's first PCA on `Nat.Partrec.Code`). The bounded
 recursor of §5 is exhibited as an **object** `recursorAsm M : Asm` (carrier `ZMod (M+1)`), with its
 `zero`/`succ` genuine `Asm`-**morphisms** (`zeroMor`/`succMor`, realized by codes — functions as

@@ -27,7 +27,7 @@ theorems that neither cite nor import each other: `BirkhoffTool.empirical_isSQOr
 (the finite-horizon mixing oracle over a schedule, off an event of measure `≤ δ`) and
 `SQAlgorithm.algorithm_discovery` (Theorem 4.1(i) for the pruned algorithm, assembled from
 [Discovery]'s discovery theorem by posterior monotonicity under the schedule's own oracle-closeness
-hypothesis `hclose`). `ALT/BirkhoffTool.lean` imports `ALT.SQOracle`; `ALT/SQAlgorithm.lean` imports
+hypothesis `hclose`). `ALT/BirkhoffTool.lean` imports `Learning.SQOracle`; `ALT/SQAlgorithm.lean` imports
 the discovery/supermartingale stack; neither is upstream of the other, so the composition is a new,
 third module rather than an addition to either parent.
 

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.Nat.Digits.Lemmas
 public import ALT.MDLDominance
-public import ALT.KolmogorovComplexity
+public import AIT.KolmogorovComplexity
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -478,7 +478,7 @@ theorem mdl_dominance_codes (p : List Bool) (s : Fin n → A)
 /-! ## Decode-correctness: linking the program to the generated sequence (eq.(1) residual 2)
 
 The program field of `ruleCode` is the binary index of a `Code` (Mathlib's universal machine
-`Nat.Partrec.Code`, via `ALT/KolmogorovComplexity.lean`). "The rule `c` generates the output `x`"
+`Nat.Partrec.Code`, via `AIT/KolmogorovComplexity.lean`). "The rule `c` generates the output `x`"
 is `KolmogorovComplexity.Computes c x` (`c.eval 0 = Part.some x`) — the paper's modelling premise
 (imported, taken as a hypothesis, *not* re-derived: Mathlib has the universal machine but we do not
 re-execute it). With the two-part losslessness (`twoPart_injective`) and injectivity of the binary

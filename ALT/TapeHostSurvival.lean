@@ -69,8 +69,8 @@ margin entering anywhere.
 **Survival here is the redundancy route, not the margin.** No margin is claimed, so *Guests* Law 4
 does not enter, whether or not the composite's update is reversible. What is claimed is
 [Inevitability] §6 Theorem 6.6(v′), its absorption half — an untouched copy exists and its reading
-is the single undamaged floored fiber's — at a horizon, with the host-side gate in place of (D1),
-(D2) unchanged, the gate endogenous — confined to the tape's own firing (`DamageGate.NoiseGated`) —
+is the single undamaged floored fiber's — at a horizon, with the host-side gate in place of (DM1),
+(DM2) unchanged, the gate endogenous — confined to the tape's own firing (`DamageGate.NoiseGated`) —
 not lifetime-free: the tape fires past every horizon at a positive-density profile
 (`TapeHostFiber.tapeStream_fires_forever`), so (v)/(v″)'s quiet-stream gates are not on offer here,
 exactly as they are not for `TapeHostFiber` itself. Nor is the decode-level conclusion — the
@@ -414,7 +414,7 @@ theorem comp_carries_survival {S : ℝ} {ρ Wp : Fin 8 → ℝ}
 [Inevitability] §5 Theorem 5.8's boundary paragraph, sharpened: a permutation host cannot carry
 the MARGIN form of survival (*Guests* Law 4), but the composite here is not a permutation, and it
 carries the REDUNDANCY form (Proposition 6.1(iii)'s third condition) at the coupled `(K, gTS)` that
-also puts it in `𝒮_E ∩ 𝒮_L`. Conditional on the damage model (D1)/(D2), the gate confined to the
+also puts it in `𝒮_E ∩ 𝒮_L`. Conditional on the damage model (DM1)/(DM2), the gate confined to the
 base's own firing — not lifetime-free (`TapeHostFiber.tapeStream_fires_forever`). One witness; the
 class-level question stays. -/
 theorem tapeHost_carries_survival :

@@ -5,6 +5,7 @@ Authors: Mykola Palamarchuk
 -/
 module
 
+public import ALT.BirkhoffTool
 public import ALT.Decoupling
 public import ALT.PersistenceCapacity
 public import ALT.DecoupledSimulation
@@ -12,59 +13,60 @@ public import ALT.ParameterizedNNO
 public import ALT.GodelInternalization
 public import ALT.RepFintype
 public import ALT.RecursorAlgebra
-public import ALT.Realizability
-public import ALT.RealizabilityCCC
+public import Realizability.Realizability
+public import Realizability.RealizabilityCCC
 public import ALT.RealizabilityRecursor
-public import ALT.RealizabilityCoproduct
-public import ALT.RealizabilitySubobject
+public import Realizability.RealizabilityCoproduct
+public import ALT.RecursorCoproductAlgebra
+public import Realizability.RealizabilitySubobject
 public import ALT.CapacityLayer
 public import ALT.RealizerLength
 public import ALT.CategoricalThreshold
 public import ALT.ReflectiveAutomaton
-public import ALT.ChengCCC
-public import ALT.FiniteInfoTheory
+public import ShannonInfo.ChengCCC
+public import ShannonInfo.FiniteInfoTheory
 public import ALT.Reflective
 public import ALT.CounterLearner
 public import ALT.MDLCoding
 public import ALT.GrunwaldMehtaDiscovery
 public import ALT.RetentionUpperBound
-public import ALT.BayesRedundancy
+public import Learning.BayesRedundancy
 public import ALT.DeterministicDiscovery
 public import ALT.CountableDiscovery
 public import ALT.ExtensionalDiscovery
 public import ALT.HellingerBridge
-public import ALT.KolmogorovTimeBounded
+public import AIT.KolmogorovTimeBounded
 public import ALT.PolyTimeAccounting
 public import ALT.ParityCounterexample
 public import ALT.SQVersionSpace
 public import ALT.SampleComplexity
 public import ALT.SQAlgorithm
 public import ALT.CommitmentSeam
-public import ALT.SQEnvelope
-public import ALT.SQOracle
+public import Learning.SQEnvelope
+public import Learning.SQOracle
 public import ALT.SQPredictiveTransfer
 public import ALT.SQPrunedMass
 public import ALT.SQMixtureSupermartingale
-public import ALT.SQObjects
+public import Learning.SQObjects
 public import ALT.SQSearchPhaseMass
-public import ALT.Ville
-public import ALT.PrefixComplexity
-public import ALT.AdditiveComplexity
-public import ALT.BinaryConstant
-public import ALT.PrefixInvariance
+public import AnytimeValid.Ville
+public import AIT.PrefixComplexity
+public import CodeLayer.AdditiveComplexity
+public import CodeLayer.BinaryConstant
+public import CodeLayer.PrefixInvariance
 public import ALT.CodeDataRate
-public import ALT.PrefixMachine
-public import ALT.BitStringPrimrec
-public import ALT.AlgorithmicProbability
-public import ALT.CodingTheoremDecoder
-public import ALT.KraftChaitin
-public import ALT.CodingTheorem
-public import ALT.KraftMinimality
-public import ALT.StructureFunction
+public import AIT.PrefixMachine
+public import CodeLayer.BitStringPrimrec
+public import AIT.AlgorithmicProbability
+public import AIT.CodingTheoremDecoder
+public import AIT.KraftChaitin
+public import AIT.CodingTheorem
+public import AIT.KraftMinimality
+public import AIT.StructureFunction
 public import ALT.SearchCost
 public import ALT.SearchSpace
-public import ALT.TimeCost
-public import ALT.PolyTime
+public import CodeLayer.TimeCost
+public import CodeLayer.PolyTime
 public import ALT.CheckerWorkspace
 public import ALT.CapacityBoundedEval
 public import ALT.BoundedInterp
@@ -75,8 +77,8 @@ public import ALT.GradedApplication
 public import ALT.GradedConjugation
 public import ALT.GradedSimulation
 public import ALT.Collector
-public import ALT.DecisionListData
-public import ALT.DecisionListSolver
+public import Learning.DecisionListData
+public import Learning.DecisionListSolver
 -- Guard-gap closure: pre-`#guard_msgs` modules (capstones guarded in the appended section below).
 public import ALT.CartesianClosed
 public import ALT.GodelThreshold
@@ -84,17 +86,18 @@ public import ALT.RegimeConsistency
 public import ALT.CapacityThreshold
 public import ALT.MDLDominance
 public import ALT.RetentionOverhead
-public import ALT.PriorNormalization
+public import CodeLayer.PriorNormalization
 public import ALT.EpsilonZeroBound
 public import ALT.KReconnection
-public import ALT.KolmogorovComplexity
-public import ALT.KolmogorovBitlen
+public import AIT.KolmogorovComplexity
+public import AIT.KolmogorovBitlen
 public import ALT.ChainDependencyAudit
 public import ALT.ExcessOrder
 public import ALT.SkewFiber
 public import ALT.AccretingWitness
 public import ALT.AccretiveDecoupling
 public import ALT.GrowingWorld
+public import CellularAutomata.MergeQuotient
 public import ALT.GrowingCore
 public import ALT.SurpriseBudget
 public import ALT.WeightedFiber
@@ -225,34 +228,9 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms AccretingWitness.ncard_guestStage_accRead
 
--- The growing core (`ALT/GrowingCore.lean`): the merge quotient manufactures a conservation guest
--- from any update alone, with no hypothesis; every injective-law staged-square reading factors
--- through it (universality); at a finite carrier it is in bijection with the recurrent core; and
--- the accreting healer world's decode reading is one concrete consumer.
-/-- info: 'GrowingCore.mergeLaw_injective' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms GrowingCore.mergeLaw_injective
-
-/-- info: 'GrowingCore.stagedSquare_merge' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms GrowingCore.stagedSquare_merge
-
-/-- info: 'GrowingCore.merges_invariant_of_stagedSquare' depends on axioms: [propext, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms GrowingCore.merges_invariant_of_stagedSquare
-
-/-- info: 'GrowingCore.exists_mergeMk_injective' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms GrowingCore.exists_mergeMk_injective
-
-/-- info: 'GrowingCore.advances_mergeStage' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms GrowingCore.advances_mergeStage
-
-/-- info: 'GrowingCore.mergeStage_injOn' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms GrowingCore.mergeStage_injOn
-
+-- The growing core (`ALT/GrowingCore.lean`): the merge quotient's universality is guarded in
+-- `CellularAutomata/AxiomAudit.lean`; at a finite carrier it is in bijection with the recurrent
+-- core; and the accreting healer world's decode reading is one concrete consumer.
 /-- info: 'GrowingCore.nat_card_mergeQuot_eq_core' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms GrowingCore.nat_card_mergeQuot_eq_core
@@ -755,38 +733,6 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms PersistenceCapacity.eventual_decoupling_iff
 
--- The serialization of a program is a prefix code: it parses uniquely, so distinct programs have
--- distinct bit-strings. Pure structural induction on the AST — no choice, and no `Quot.sound`.
-/-- info: 'AdditiveComplexity.E_injective' depends on axioms: [propext] -/
-#guard_msgs (whitespace := lax) in
-#print axioms AdditiveComplexity.E_injective
-
--- Prefix codes are uniquely decodable, so McMillan's counting argument prices the program
--- lengths: the weights `2 ^ (-elen c)` sum to at most one over ALL programs at once.
-/-- info: 'AdditiveComplexity.kraft_KP_E' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms AdditiveComplexity.kraft_KP_E
-
--- The object-indexed semimeasure: reindexing `kraft_KP_E` along `x ↦ minCode x` (each value's own
--- shortest program) turns the program-indexed Kraft sum into one over the naturals themselves.
-/-- info: 'AdditiveComplexity.kraft_KE' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms AdditiveComplexity.kraft_KE
-
--- The supply side of the incompressibility method: a budget of `L` bits describes at most
--- `2 ^ (L + 1)` naturals, because distinct values need distinct shortest programs and there are
--- fewer than `2 ^ (L + 1)` bit-strings of length at most `L`. Choosing a shortest program per value
--- is the classical step.
-/-- info: 'AdditiveComplexity.card_KE_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms AdditiveComplexity.card_KE_le
-
--- The same count at `2 ^ L`, by Kraft's inequality for `KE` (`kraft_KE`) instead of by counting
--- bit-strings: each value weighs at least `2 ^ (-L)` in a series bounded by one.
-/-- info: 'AdditiveComplexity.card_KE_le_two_pow' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms AdditiveComplexity.card_KE_le_two_pow
-
 -- The serialization's codes grow at `1 + 4√3 ≈ 7.928` per node, below the `8` its three bits
 -- could carry: a node-counted refinement of `card_KE_le`, via a truncated-Cauchy-square bound on
 -- the counting generating function's singularity.
@@ -800,53 +746,6 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 /-- info: 'CodeDataRate.KE_data_rate' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms CodeDataRate.KE_data_rate
-
--- The local prefix-freeness predicate on bit-strings is Mathlib's `IsPrefixFree` at the binary
--- alphabet: the bridge through which the two Kraft-layer theorems are Mathlib's.
-/-- info: 'PrefixMachine.prefixFree_iff_isPrefixFree' does not depend on any axioms -/
-#guard_msgs (whitespace := lax) in
-#print axioms PrefixMachine.prefixFree_iff_isPrefixFree
-
--- The prefix-free-ification `pfy`'s domain, read as bit-strings, contains no member a proper
--- prefix of another: the standard greedy-by-stage construction of a prefix machine.
-/-- info: 'PrefixMachine.pfy_prefixFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms PrefixMachine.pfy_prefixFree
-
--- The prefix complexity `KB` (over the universal prefix machine `pfy`) is additively below the
--- additive complexity `KE`: hardcode a datum-free guard, halting on input `0` alone.
-/-- info: 'PrefixMachine.KB_le_KE' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms PrefixMachine.KB_le_KE
-
--- `KB` is a semimeasure: `∑ₓ 2⁻ᴷᴮ⁽ˣ⁾ ≤ 1`, the double sum over machines and their prefix-free
--- arguments bounded by `kraft_KP_E` and by Kraft over each prefix-free domain.
-/-- info: 'PrefixMachine.kraft_KB' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms PrefixMachine.kraft_KB
-
--- The algorithmic probability `QB`: the shortest description is one term of its Kraft sum, so
--- `2⁻ᴷᴮ⁽ˣ⁾ ≤ QB x`.
-/-- info: 'PrefixMachine.two_pow_neg_KB_le_QB' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms PrefixMachine.two_pow_neg_KB_le_QB
-
--- `QB` is a semimeasure: `∑ₓ QB x ≤ 1`.
-/-- info: 'PrefixMachine.tsum_QB_le_one' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms PrefixMachine.tsum_QB_le_one
-
--- `pfy` is partial recursive, uniformly in the machine: a bit-string layer over `natToBits`,
--- `foldStep`, `newlyHalting` and `acceptedList`, closing the boundary `pfy`'s own definition flags.
-/-- info: 'PrefixMachine.pfy_partrec' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms PrefixMachine.pfy_partrec
-
--- `QB` is lower-semicomputable: a computable, monotone dyadic approximation rising to it from
--- below, over the bit-string layer's computability.
-/-- info: 'PrefixMachine.QB_lsc' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms PrefixMachine.QB_lsc
 
 -- [Persistence] §4, the static stratum. A lens with `ℓ ∘ U = ℓ` is exactly a function constant on
 -- the components of the transition graph — an equivalence between a dynamical condition and a
@@ -2124,26 +2023,6 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms RecursorAlgebra.boundedAlg_str_not_injective
 
--- §4.1 realizability category (FV-11)
-/-- info: 'Realizability.universal_evaluator' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms Realizability.universal_evaluator
-
-/-- info: 'Realizability.counter_step_realizes' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms Realizability.counter_step_realizes
-
--- §4.1 / §4.5: every function between FINITE assemblies is a morphism (so `Prf`/`Decide` are
--- morphisms of Rep(S), not merely total Boolean functions).
-/-- info: 'Realizability.realizes_of_finite' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms Realizability.realizes_of_finite
-
--- §4.3 realizability CCC (FV-12)
-/-- info: 'RealizabilityCCC.exp_universal' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms RealizabilityCCC.exp_universal
-
 -- §4 / §6.1 unified CCC ∧ recursor on ONE carrier (FV-13)
 /-- info: 'RealizabilityRecursor.reflectiveAsm_satisfiable' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
@@ -2215,23 +2094,6 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms ReflectiveAutomaton.automaton_decides_godel
 
--- §4 FINITE COPRODUCTS in the realizability category `Asm` (upstreamable):
--- the initial object (`initialAsm_isInitial`) and the binary coproduct's copairing universal property
--- (`coprod_universal` — existence AND uniqueness of the mediating realized morphism), plus the
--- finite-domain trackability lemma (`trackable_of_finDom`) that makes maps out of a finite assembly
--- genuine morphisms. New realizability infrastructure, absent from Mathlib.
-/-- info: 'RealizabilityCoproduct.initialAsm_isInitial' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms RealizabilityCoproduct.initialAsm_isInitial
-
-/-- info: 'RealizabilityCoproduct.coprod_universal' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms RealizabilityCoproduct.coprod_universal
-
-/-- info: 'RealizabilityCoproduct.trackable_of_finDom' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms RealizabilityCoproduct.trackable_of_finDom
-
 -- §5 FV-18 ON THE GENUINE CARRIER ([Decoupling] §5.5): the endofunctor `X ↦ 𝟙 ⊕ X` on `Asm` (which
 -- exists precisely because coproducts now do), and the discriminating initial `𝟙 ⊕ (·)`-algebra of
 -- the saturating subcategory — the FV-18 headline restated on the SAME carrier `Asm` as the CCC and
@@ -2267,26 +2129,6 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 /-- info: 'CapacityLayer.coprodAsm_fitsIn' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms CapacityLayer.coprodAsm_fitsIn
-
--- §4.2 THE SUBOBJECT CLASSIFIER OF THE FINITE FRAGMENT (FV-21): the comprehension subobject
--- `subAsm A P`, the one-bit classifier `Bool = 𝟙 ⊕ 𝟙`, and its pullback universal property.
--- `classifier_universal` — the classifying square is a pullback: `u` factors through the
--- comprehension subobject iff `χ_P ∘ u` is constantly `true` (no finiteness on the domain `C`);
--- `chi_unique` — `χ_P` is the unique classifying map, global elements separating the finite carrier.
--- The classification is of comprehension subobjects (the finite fragment); every function out of the
--- classified object being a morphism is the §4.1 property `AllTrackable`, which `finAsm` witnesses.
-/-- info: 'RealizabilitySubobject.classifier_universal' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms RealizabilitySubobject.classifier_universal
-
-/-- info: 'RealizabilitySubobject.chi_unique' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms RealizabilitySubobject.chi_unique
-
--- §4.2 equalizers as comprehension subobjects, with their fork universal property.
-/-- info: 'RealizabilitySubobject.equalizer_universal' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms RealizabilitySubobject.equalizer_universal
 
 -- §4.2 capacity accounting of the classifier inventory: comprehension subobjects cost no capacity
 -- (`subAsm_fitsIn`), the classifier is one bit (`boolAsm_fitsIn`), and the power object `[T ⇒ Bool]`
@@ -2354,68 +2196,6 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 /-- info: 'CounterLearner.nno_orbit' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms CounterLearner.nno_orbit
-
--- [Discovery] §4 — Cheng (2026) Theorem 4 re-checked: necessity core + the necessary-not-sufficient
--- point (refuting Prop 4.2's earlier misuse), and the finite info-theory foundation (FV-9).
-/-- info: 'ChengCCC.cccLower_vacuous' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms ChengCCC.cccLower_vacuous
-
-/-- info: 'ChengCCC.misid_lower_bound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms ChengCCC.misid_lower_bound
-
-/-- info: 'ChengCCC.forgetting_lower_bound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms ChengCCC.forgetting_lower_bound
-
-/-- info: 'FiniteInfoTheory.entropy_nonneg' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms FiniteInfoTheory.entropy_nonneg
-
--- FV-9 (cont.): mutual information of a joint pmf and its nonnegativity (finite Gibbs) — the first
--- discharged brick of the DPI/Fano interface that `ChengCCC` still carries as named hypotheses.
-/-- info: 'FiniteInfoTheory.mutualInfo_nonneg' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms FiniteInfoTheory.mutualInfo_nonneg
-
--- FV-9 (cont.): entropy form of MI `I(X;Y) = H(X) − H(X|Y)` — discharges the `hCond` identity.
-/-- info: 'FiniteInfoTheory.mutualInfo_eq_sub_condEntropy' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms FiniteInfoTheory.mutualInfo_eq_sub_condEntropy
-
--- FV-9 (cont.): conditional mutual information nonnegativity `I(X;Z|Y) ≥ 0` (per-slice finite Gibbs).
-/-- info: 'FiniteInfoTheory.condMutualInfo_nonneg' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms FiniteInfoTheory.condMutualInfo_nonneg
-
--- FV-9 (cont.): the data-processing inequality `I(X;Z) ≤ I(X;Y)` for a Markov chain `X → Y → Z` —
--- the rigorous content discharging `hDPI` at the chain `T → c → θ`.
-/-- info: 'FiniteInfoTheory.dataProcessing' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms FiniteInfoTheory.dataProcessing
-
--- FV-9 (cont.): Fano's inequality `(condEntropy μ − 1)/log(K−1) ≤ Pe` — discharges `hFano`.
-/-- info: 'FiniteInfoTheory.fano'' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms FiniteInfoTheory.fano'
-
--- FV-9 (cont.): the other DPI direction `I(X;Z) ≤ I(Y;Z)` — gives `I(T;θ) ≤ I(c;θ) ≤ C_ctx`.
-/-- info: 'FiniteInfoTheory.dataProcessing'' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms FiniteInfoTheory.dataProcessing'
-
--- FV-9 capstone: Cheng's misidentification bound with DPI / identity / Fano all DISCHARGED —
--- only the modelling setup (joint ν + MarkovCI, decoder g, capacity bound, K ≥ 3) remains.
-/-- info: 'ChengCCC.cheng_misid_bound_discharged' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms ChengCCC.cheng_misid_bound_discharged
-
--- FV-9 capstone (cont.): the forgetting lower bound with DPI / identity / Fano all DISCHARGED —
--- only the modelling setup plus Cheng's informal Step-4 link `hConn` remain.
-/-- info: 'ChengCCC.cheng_forgetting_bound_discharged' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms ChengCCC.cheng_forgetting_bound_discharged
 
 -- [Discovery] Theorem 2.1 eq. (2): the lookup-table coding lower bound, content-checking
 -- `MDLDominance.Ltable = L`. Pigeonhole bound on ANY lossless code (`exists_long_codeword`), the
@@ -2513,55 +2293,6 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms RetentionUpperBound.expected_forgetting_zero
 
--- [Discovery] §3 Sub-problem B (Bayes-mixture redundancy, realizable-deterministic route toward dropping
--- `hrate`): the step-(3) calculus inequality (`log_le_hellinger`) + point-mass identity
--- (`hellinger_point_mass`), and the step-(1) mixture regret (`mixture_regret_log`). All elementary.
-/-- info: 'BayesRedundancy.log_le_hellinger' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms BayesRedundancy.log_le_hellinger
-
-/-- info: 'BayesRedundancy.hellinger_point_mass' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms BayesRedundancy.hellinger_point_mass
-
-/-- info: 'BayesRedundancy.mixture_regret_log' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms BayesRedundancy.mixture_regret_log
-
--- §3 Sub-problem B (cont.): the prequential telescope (step 2) and the assembled rate (step 4) —
--- `−log P̄(n) = ∑ₜ −log condₜ`, then `∑ₜ D_H²ₜ ≤ K(R)·ln2/2` and the per-step average ≤ K(R)·ln2/(2n).
--- This is the Bayes-mixture redundancy rate (eq. 3) PROVED (realizable-deterministic), not assumed via `hrate`.
-/-- info: 'BayesRedundancy.telescope' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms BayesRedundancy.telescope
-
-/-- info: 'BayesRedundancy.cumulative_hellinger' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms BayesRedundancy.cumulative_hellinger
-
-/-- info: 'BayesRedundancy.average_hellinger_rate' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms BayesRedundancy.average_hellinger_rate
-
--- [Discovery] §3.3 Proposition 3.3 (bounded surprise): pigeonhole on the cumulative bound — the steps
--- whose one-step squared Hellinger error exceeds ε number fewer than K(R)·ln2/(2ε), uniformly in n.
--- Carries no separation hypothesis: the surprises are budgeted, but not scheduled.
-/-- info: 'BayesRedundancy.sqHellinger_nonneg' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms BayesRedundancy.sqHellinger_nonneg
-
-/-- info: 'BayesRedundancy.surprise_card_mul_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms BayesRedundancy.surprise_card_mul_le
-
-/-- info: 'BayesRedundancy.surprise_card_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms BayesRedundancy.surprise_card_le
-
-/-- info: 'BayesRedundancy.surprise_card_lt' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms BayesRedundancy.surprise_card_lt
-
 -- §3 Theorem 3.1 UNCONDITIONAL (realizable-deterministic): competitor-likelihood decay gives
 -- posterior concentration with NO Grünwald–Mehta / Markov / posterior-of-close hypothesis — only the
 -- model (pmf q, prior w R = 2^{−K R}, ∑ w ≤ 1), realizability, and per-step separation.
@@ -2655,22 +2386,6 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms HellingerBridge.separates_of_sqHellinger
 
--- [SQ] §2 time-bounded Kolmogorov complexity (FV-Kt): on Mathlib's `Code`, the resource
--- hierarchy `K ≤ K_t` (`K_le_K_t`), `K_t` antitone in the time budget (`K_t_antitone`), and
--- `K_t = K` for all sufficiently large budgets (`K_t_eventually`). These live in `namespace
--- KolmogorovComplexity` (the file is `KolmogorovTimeBounded.lean`).
-/-- info: 'KolmogorovComplexity.K_le_K_t' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms KolmogorovComplexity.K_le_K_t
-
-/-- info: 'KolmogorovComplexity.K_t_antitone' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms KolmogorovComplexity.K_t_antitone
-
-/-- info: 'KolmogorovComplexity.K_t_eventually' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms KolmogorovComplexity.K_t_eventually
-
 -- [SQ] §4 Theorem 4.1 step-(c) total-work accounting (FV-B1): an `O(r·log(1/δ))` search window
 -- times an `O(r)` per-step cost gives total work `O(r²·log(1/δ))` — thin product bookkeeping.
 /-- info: 'PolyTimeAccounting.polytime_accounting' depends on axioms: [propext, Classical.choice, Quot.sound] -/
@@ -2688,29 +2403,9 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms ParityCounterexample.dSQ_not_polyBounded
 
--- [SQ] §4 / App. A SQ version-space pruning (FV-A4): the candidate set stays poly-bounded under a
--- poly-bounded `d_SQ` (`candidates_polyBounded`), the truth is never pruned (`truth_survives_pruning`),
--- and a `> 3τ`-separated impostor IS pruned (`separated_impostor_pruned`) — soundness of SQ pruning.
-/-- info: 'SQVersionSpace.candidates_polyBounded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms SQVersionSpace.candidates_polyBounded
-
-/-- info: 'SQVersionSpace.truth_survives_pruning' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms SQVersionSpace.truth_survives_pruning
-
 /-- info: 'SQVersionSpace.separated_impostor_pruned' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms SQVersionSpace.separated_impostor_pruned
-
--- [SQ] §3.1 window-noise refinement of the FV-A4 pruning geometry: window sufficiency (W) is the
--- DETERMINISM of the one-step predictor `f_R`; it weakens to the window-noise rate
--- `η := μ(o_{t+1} ≠ f_R(w_t))` (W is `η = 0`). The truth survives the UNCHANGED `2τ`-rule when the
--- budget `2η ≤ τ` holds (`truth_survives_pruning_noisy`), and a `> 3τ + 2η`-separated impostor is
--- still pruned (`separated_impostor_pruned_noisy`) — both recovering the noiseless siblings at `η = 0`.
-/-- info: 'SQVersionSpace.truth_survives_pruning_noisy' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms SQVersionSpace.truth_survives_pruning_noisy
 
 /-- info: 'SQVersionSpace.separated_impostor_pruned_noisy' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
@@ -2722,56 +2417,6 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 /-- info: 'SampleComplexity.sample_complexity_r2' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms SampleComplexity.sample_complexity_r2
-
--- [SQ] §3 ensemble SQ oracle, Tool (ii) (FV-E): Hoeffding concentration of the empirical SQ
--- answer (`sq_oracle_concentration`), the `n ≥ (2/τ²)·log(2/δ)` sample complexity
--- (`sq_oracle_sample_complexity`), and the §3→FV-A4 wiring that discharges the truth-survives
--- hypothesis with probability `≥ 1−δ` (`sq_oracle_truth_survives`).
-/-- info: 'SQOracle.sq_oracle_concentration' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms SQOracle.sq_oracle_concentration
-
-/-- info: 'SQOracle.sq_oracle_sample_complexity' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms SQOracle.sq_oracle_sample_complexity
-
-/-- info: 'SQOracle.sq_oracle_truth_survives' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms SQOracle.sq_oracle_truth_survives
-
--- [SQ] §3.1 the window-noise budget half, genuine content + wiring. A1 (`noise_gap_integral`): two
--- `[−1,1]`-valued measurable observables agreeing off a measurable event `E` differ in integral by
--- `≤ 2·μ(E)`, so a query answer is distorted by at most `2η`, `η := μ(E)` (integrability discharged
--- from boundedness on the probability measure). A3 (`sq_oracle_truth_survives_noisy`): threading the
--- gap through the arithmetic siblings and the `n ≥ (2/τ²)·log(2/δ)` sample complexity, the
--- deterministic truth `predR` survives the `2τ`-rule w.p. `≥ 1−δ` when `2η ≤ τ` — the empirical
--- mean's target `a = 𝔼φ` kept distinct from the truth `predR`.
-/-- info: 'SQOracle.noise_gap_integral' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms SQOracle.noise_gap_integral
-
-/-- info: 'SQOracle.sq_oracle_truth_survives_noisy' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms SQOracle.sq_oracle_truth_survives_noisy
-
--- FV-E → FV-J glue: the finite-query union bound carrying per-query concentration to FV-J's
--- oracle object. `sq_oracle_uniform_tail` — if each of `Qs` fails tolerance `τ` w.p. `≤ δ`, then SOME
--- query fails w.p. `≤ |Qs|·δ` (`measure_biUnion_finset_le`). `empirical_isSQOracle` — off that event
--- (w.p. `≥ 1 − |Qs|·δ`) the `Qs`-restricted empirical answers satisfy `SQObjects.IsSQOracle`.
-/-- info: 'SQOracle.sq_oracle_uniform_tail' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms SQOracle.sq_oracle_uniform_tail
-
-/-- info: 'SQOracle.empirical_isSQOracle' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms SQOracle.empirical_isSQOracle
-
--- The per-query i.i.d. instantiation discharging the union bound's
--- `htail` from `sq_oracle_concentration` — `n ≥ (2/τ²)·log(2|Qs|/δ)` samples per query ⇒ the
--- empirical answers fail `IsSQOracle` on `↥Qs` w.p. `≤ δ`.
-/-- info: 'SQOracle.empirical_isSQOracle_of_iid' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms SQOracle.empirical_isSQOracle_of_iid
 
 -- [SQ] App. A Claim 2, post-discovery half (FV-F): geometric decay kills the `2^K` prefactor
 -- past `T_discover` (`prefactor_le`), so the accumulated post-discovery pruned mass is `≤ δ/2` by
@@ -2822,20 +2467,6 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 /-- info: 'SQSearchPhaseMass.pruned_mass_le_budget' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms SQSearchPhaseMass.pruned_mass_le_budget
-
--- FV-G hardening (`ALT/Ville.lean`): the excursion control `hcharge` used to import is now a
--- PROVED theorem. `ville_inequality` — Ville's inequality for a non-negative supermartingale `Z`
--- (`𝔼[Z 0] < ∞`): `μ{∃ n, λ ≤ Z_n} ≤ 𝔼[Z 0]/λ`, proved via optional stopping on `-Z`
--- (`Submartingale.expected_stoppedValue_mono`) + the hitting lower bound + continuity from below —
--- NOT via `maximal_ineq` (submartingale-locked). `ville_potential_budget` — the `λ = 1/δ` corollary
--- `μ{∃ n, 1/δ ≤ Z_n} ≤ δ` under `𝔼[Z 0] ≤ 1`, the search-phase excursion budget of Appendix A Claim 2.
-/-- info: 'Ville.ville_inequality' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms Ville.ville_inequality
-
-/-- info: 'Ville.ville_potential_budget' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms Ville.ville_potential_budget
 
 -- FV-G CHAINED: `search_phase_mass_ville_chain` wires the two cores together — the
 -- accumulated pruned mass exceeds `C + ln(1/δ)` only on the Ville excursion event, so
@@ -2907,57 +2538,6 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms SQMixtureSupermartingale.Z_det_supermartingale
 
--- FV-J: the SQ objects made GENUINE (`ALT/SQObjects.lean`). The statistical
--- dimension `sqDim = (M.powerset.filter (SepFam …)).sup card` (§3.4) with its DEFINITIONAL
--- characterization `sepFam_card_le_sqDim` (every τ-separated subfamily has card ≤ sqDim) and survivor
--- pigeonhole `survivors_card_le_sqDim`; BQ1 distribution-specificity `sqDim_mono_queries` (fewer
--- separating queries ⇒ smaller-or-equal dimension); the poly-bound reuse of FV-A4's envelope
--- `survivors_polyBounded_of_separated`. The parity headline: exact character orthogonality
--- `ansPar_eq` (`= 1` iff `S = φ`, else `0`), the dimension theorem `sqDim_parity_ge : 2^n ≤ sqDim`
--- for `τ < 1`, and the FV-A3 bridge `parity_dSQ_ge_exp` promoting the previously-MODELED
--- `d_SQ = 2^Ω(n)` premise to a proof (`dSQ (log 2) n = 2^n ≤ sqDim`).
-/-- info: 'SQObjects.sepFam_card_le_sqDim' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms SQObjects.sepFam_card_le_sqDim
-
-/-- info: 'SQObjects.survivors_card_le_sqDim' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms SQObjects.survivors_card_le_sqDim
-
-/-- info: 'SQObjects.sqDim_mono_queries' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms SQObjects.sqDim_mono_queries
-
-/-- info: 'SQObjects.survivors_polyBounded_of_separated' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms SQObjects.survivors_polyBounded_of_separated
-
-/-- info: 'SQObjects.ansPar_eq' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms SQObjects.ansPar_eq
-
-/-- info: 'SQObjects.sqDim_parity_ge' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms SQObjects.sqDim_parity_ge
-
-/-- info: 'SQObjects.parity_dSQ_ge_exp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms SQObjects.parity_dSQ_ge_exp
-
--- FV-L, identifiability-free: the version-space envelope WITHOUT the `2τ`-identifiability hypothesis
--- (the BFJKMR clustering argument), on the FV-J layer (`ALT/SQObjects.lean`). `sqDim_antitone_tol`
--- (antitone in the tolerance) + `exists_maximal_sepFam` (a maximal `2τ`-net exists) + `sepNet_covers`
--- (maximality ⇒ every survivor is `2τ`-close to a net point) + `merge_answer_close` (the mass-merge
--- averaging bound) assemble into `versionSpace_net_envelope`: for ANY version space `V ⊆ M`, a net of
--- card ≤ sqDim with a `2τ`-close retraction — no pairwise-separation hypothesis on the survivors.
-/-- info: 'SQObjects.merge_answer_close' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms SQObjects.merge_answer_close
-
-/-- info: 'SQObjects.versionSpace_net_envelope' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms SQObjects.versionSpace_net_envelope
-
 -- FV-K: the prequential-MDL-with-SQ-pruning ALGORITHM as a Finset object
 -- (`ALT/SQAlgorithm.lean`), with the identification theorems tying the standing FV artifacts to it.
 -- `alive_mass_eq_Z_det` — the unpruned Bayes-consistent mass IS FV-I's mixture `Z cands w (detFactor
@@ -3024,118 +2604,6 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms CommitmentSeam.commitment_seam
 
--- FV-L: the BFJKMR version-space envelope over FV-J's
--- GENUINE `sqDim`, via Szörényi's elementary maximality + packing (`ALT/SQEnvelope.lean`).
--- `close_on_of_prune` (App-A Prop-1 analogue) — survivors of the `2τ`-pruning rule are pairwise
--- `4τ`-close on the schedule (triangle inequality; the version space need NOT be pairwise separated).
--- `exists_sqNet` (Szörényi maximality) — every finite class has a MAXIMAL `τ`-separated subfamily
--- with `card = sqDim` that COVERS `M` (the "query schedule exists" residue FV-J/FV-K left open).
--- `subset_card_le_sqDim_of_ident` (the envelope) — under class-level identifiability at scale `2τ`,
--- the covering map is injective, so ANY subfamily (the version space) has `card ≤ sqDim M τ ans`.
--- `version_space_card_le` — the assembled App-A bound. `fvA4_envelope_discharged` — discharges FV-A4's
--- modeled premise `candidates ≤ A·d_SQ^m` with `A = m = 1`, the literal `PolyBounded` chain, closing
--- the residue with class-level identifiability replacing FV-J's survivor-set separation hypothesis.
-/-- info: 'SQEnvelope.pairwise_close_on_of_oracle' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms SQEnvelope.pairwise_close_on_of_oracle
-
-/-- info: 'SQEnvelope.close_on_of_prune' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms SQEnvelope.close_on_of_prune
-
-/-- info: 'SQEnvelope.exists_sqNet' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms SQEnvelope.exists_sqNet
-
-/-- info: 'SQEnvelope.subset_card_le_sqDim_of_ident' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms SQEnvelope.subset_card_le_sqDim_of_ident
-
-/-- info: 'SQEnvelope.version_space_card_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms SQEnvelope.version_space_card_le
-
-/-- info: 'SQEnvelope.fvA4_envelope_discharged' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms SQEnvelope.fvA4_envelope_discharged
-
--- `hident_load_bearing` — the negative-results-as-guards practice: a near-duplicate witness
--- (a constant answer functional over `Fin N`) proving `subset_card_le_sqDim_of_ident`'s `hident`
--- load-bearing, per `/design` §4.172's finding that the direct `|V|` bound is FALSE without it.
-/-- info: 'SQEnvelope.hident_load_bearing' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms SQEnvelope.hident_load_bearing
-
--- [SQ] §2 prefix-free Kolmogorov complexity `KP` is a SEMIMEASURE (FV-KP): the universal
--- a-priori / Solomonoff–Levin bound `∑ₓ 2⁻ᴷᴾ⁽ˣ⁾ ≤ 1` (`kraft_KP`, via Mathlib's Kraft route +
--- the injective least-index `K`), and the [Discovery] prior `w(R') = 2⁻ᴷᴾ⁽ᵉⁿᶜᵒᵈᵉ ᴿ'⁾` as a
--- semimeasure over any encodable rule class (`kraft_prior`).
-/-- info: 'PrefixComplexity.kraft_KP' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms PrefixComplexity.kraft_KP
-
-/-- info: 'PrefixComplexity.kraft_prior' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms PrefixComplexity.kraft_prior
-
--- FV-KP (cont.): uncomputability of `KP` — the Kleene-`fixed_point₂` Berry argument (mirrors
--- `K_bitlen_not_computable`); a sanity follow-on to the semimeasure headline.
-/-- info: 'PrefixComplexity.KP_not_computable' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms PrefixComplexity.KP_not_computable
-
--- [SQ] additive AST complexity `KE` (two-machine-invariance core, FV-KE): the additive
--- program-length laws the `encodeCode` index measure cannot give — subadditivity
--- `KE (Nat.pair x y) ≤ KE x + KE y + 3` (`KE_subadditive`), the composition bound (`KE_comp_le`),
--- and the time-bounded resource step `KE ≤ KE_t` (`KE_le_KE_t`, the Prop 2.2 scaffold).
-/-- info: 'AdditiveComplexity.KE_subadditive' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms AdditiveComplexity.KE_subadditive
-
-/-- info: 'AdditiveComplexity.KE_comp_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms AdditiveComplexity.KE_comp_le
-
-/-- info: 'AdditiveComplexity.KE_le_KE_t' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms AdditiveComplexity.KE_le_KE_t
-
--- The Prop 2.2 gate (FV-KE cont.): the length-efficient binary constant `bconst`
--- correct (`eval_bconst`) with additive length `O(Nat.size n)` (`elen_bconst_le`) — the
--- `Θ(n)`-vs-`O(log)` fix over `Code.const`. `Classical.choice` is genuinely used (the doubling code
--- `dbl` is extracted from universality via `Classical.choose`).
-/-- info: 'AdditiveComplexity.eval_bconst' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms AdditiveComplexity.eval_bconst
-
-/-- info: 'AdditiveComplexity.elen_bconst_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms AdditiveComplexity.elen_bconst_le
-
--- FV-KE payoffs: [SQ] Prop 2.2 `|P|`-component (`S_T ≤ r + O(log n)` via the binary `bconst`,
--- `prop_2_2_core`) and the multiplicative-optimality model-bridge (`KE x ≤ elen d +
--- O(log p) + c`, `invariance_general`).
-/-- info: 'AdditiveComplexity.prop_2_2_core' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms AdditiveComplexity.prop_2_2_core
-
-/-- info: 'AdditiveComplexity.invariance_general' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms AdditiveComplexity.invariance_general
-
--- FV-AC ported to [Discovery] §1.1: two-machine invariance of the additive prior measure.
--- `KE_interp_le` — the ADDITIVE compose-method bound `KE (I⟦x⟧) ≤ KE x + elen I + 3` (the index
--- measure `KP` is walled by `encodeCode`'s quadratic pairing; the general-method case is the
--- κ-multiplicative `invariance_general` above). `prior_weight_machine_indep_compose` — §1.1's
--- machine-independence of the `2^{−KE}` prior weight up to a fixed `2^{−O(1)}` factor.
-/-- info: 'PrefixInvariance.KE_interp_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms PrefixInvariance.KE_interp_le
-
-/-- info: 'PrefixInvariance.prior_weight_machine_indep_compose' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms PrefixInvariance.prior_weight_machine_indep_compose
-
 -- FV-AC hardening: the collector CONSTRUCTED (`ALT/Collector.lean`), so Prop
 -- 2.2's "modeled premise" (an arbitrary `coll` assumed to halt) is DISCHARGED at the eval level.
 -- `collector cR := prec zero (stepWrap cR)` is a fixed iterator template with the rule plugged in
@@ -3173,32 +2641,6 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 /-- info: 'AdditiveComplexity.prop_2_2_t_exists' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms AdditiveComplexity.prop_2_2_t_exists
-
--- The native sequential-time cost (`ALT/TimeCost.lean`) and its collector payoff.
--- `eval_eq_val`: value-agreement — on the rfind'-free fragment the cost's value component IS `eval`,
--- so the cost carries NO value cap (the contrast with `evaln`). `tc_prec_le`: the generic engine — a
--- uniform per-step bound `B` gives `prec` a LINEAR, magnitude-independent step count. `prop_2_2_t_poly`
--- (in `Collector.lean`): the payoff — the collector's native cost on `Nat.pair a n` is `≤ (K+19)·n+19`,
--- with the explicit constant `C = 19`, NEVER referencing the super-exponential accumulator values.
--- This is the value-cap wall behind `prop_2_2_t_exists`'s ∃-budget discharged for the collector.
-/-- info: 'TimeCost.eval_eq_val' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms TimeCost.eval_eq_val
-
-/-- info: 'TimeCost.tc_prec_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms TimeCost.tc_prec_le
-
--- The native SPACE cost — the maximum intermediate bitlength (`Nat.size`), companion to `tc`.
--- `spaceCost_prec_le`: the Capacity-Bounded Evaluation crux — where `tc_prec_le` is a SUM linear in the
--- iteration count, the space bound is a `max` INDEPENDENT of it. Under a per-step workspace bound `S`
--- taken relative to a small accumulator (the satisfiable form — a literal `∀ x, spaceCost cg x ≤ S`
--- cannot hold, space grows with input bitlength) and an accumulator-bitlength bound `S`, the whole
--- `prec` stays `≤ max (spaceCost cf a) S`. This is the poly-space-workspace regime a bounded checker
--- lives in — the same loop on which `tc` is astronomically large.
-/-- info: 'TimeCost.spaceCost_prec_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms TimeCost.spaceCost_prec_le
 
 -- The search cost (`ALT/SearchCost.lean`) — the cost model extended from the rfind'-free fragment to
 -- ALL of `Nat.Partrec.Code`. `eval_eq_valP`: value-agreement UNRESTRICTED — the extended evaluator's
@@ -3497,184 +2939,6 @@ version-space pruning, and the sample-complexity ε₀-absorption).
 #guard_msgs (whitespace := lax) in
 #print axioms AdditiveComplexity.prop_2_2_t_poly
 
--- The `PolyTime` predicate and its closure toolkit (`ALT/PolyTime.lean`), downstream
--- infra for bounding a concrete algorithm's native `tc`. `PolyTime` bundles an rfind'-free witness,
--- a poly-in-input-bit-length step count, and a poly output bit-length (the last clause is required for
--- composition to close). `polyTime_comp` — closure under composition (its proof genuinely consumes the
--- inner map's output-size clause, since the outer code's cost is measured against the inner OUTPUT
--- bit-length). `polyTime_prec` — the bounded-recursion / loop-cost closure via `tc_prec_le'`, with the
--- accumulator-poly and iteration-count premises explicit. `PolyTime` (a def) is even choice-free.
-/-- info: 'TimeCost.PolyTime' depends on axioms: [propext, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms TimeCost.PolyTime
-
-/-- info: 'TimeCost.polyTime_comp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms TimeCost.polyTime_comp
-
-/-- info: 'TimeCost.polyTime_prec' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms TimeCost.polyTime_prec
-
--- `PolyTime` validation — the `polyTime_prec` `hiter` blocker, the repaired loop closure, and a
--- fully-discharged worked example (`ALT/PolyTime.lean`). `unpair_snd_not_polyBounded` — a raw
--- second-projection slot is NOT poly-bounded in the input bit-length (exponential family
--- `⟨0, 2^j⟩`), so `polyTime_prec`'s `hiter` cannot be discharged for a genuine loop. `polyTime_loop`
--- — the usable bounded-recursion closure where the iteration COUNT is a poly-bit VALUE function of the
--- ACTUAL input (`hCval : PolyBounded count`), not a raw slot; realized as `comp (prec cf cg) shaper`
--- and bounded via `tc_prec_le'`. `polyTime_loop_worked_example` — a 3-iteration loop with a
--- genuinely non-constant per-step cost (nested inner loop over the index, so only `tc_prec_le'`
--- applies) and a scaling poly-bit accumulator, PolyTime with every premise discharged concretely.
-/-- info: 'TimeCost.unpair_snd_not_polyBounded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms TimeCost.unpair_snd_not_polyBounded
-
-/-- info: 'TimeCost.polyTime_loop' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms TimeCost.polyTime_loop
-
-/-- info: 'TimeCost.polyTime_loop_worked_example' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms TimeCost.polyTime_loop_worked_example
-
--- The data layer for the 1-DL consistency solver (`ALT/DecisionListData.lean`).
--- `polyTime_readK`/`polyTime_readM` — the flat `#features`/`#examples` accessors (`left`,
--- `comp left right`) are `PolyTime` with `tc = O(1)`. `readM_le_size`/`readK_le_size` — THE
--- load-bearing size bound (I2): on a well-formed instance (`WF`: the stored counts are backed by
--- genuine length-`m`/length-`k` flag-cons lists) the counts are poly-bit VALUES,
--- `readM/readK inst ≤ Nat.size inst`, discharging `polyTime_loop`'s `hCval` for the solver's
--- scan/peel loops. Proof route: each flag-cons cell strictly grows `Nat.size` (`size_cons_gt`), so
--- a length-`m` list has `Nat.size ≥ m` (`isList_len_le_size`), and the list is a sub-term of `inst`.
-/-- info: 'OneDL.polyTime_readK' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms OneDL.polyTime_readK
-
-/-- info: 'OneDL.polyTime_readM' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms OneDL.polyTime_readM
-
-/-- info: 'OneDL.readM_le_size' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms OneDL.readM_le_size
-
-/-- info: 'OneDL.readK_le_size' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms OneDL.readK_le_size
-
--- The decode-cost verdict, the flag-cons pivot, and the indexed accessors.
--- `cPred_tc_not_polyBounded` — the smallest rfind'-free predecessor is value-linear (`n ≤ tc cPred n`),
--- NOT poly-bounded, so an offset-cons (predecessor-based) decode fails; hence the flag-cons pivot
--- (`cons e r = Nat.pair 1 (Nat.pair e r)`, decoded by pure `unpair`, `tc = O(1)`). `polyTime_peel` —
--- the peel loop `n ↦ peel (A n) (C n)` is `PolyTime` given a poly-bit index `C` (a `polyTime_loop`
--- instance: `hCval` from `C`, `hacc` from the suffix `≤ A n`, constant step cost via `tc_prec_le'`).
--- `polyTime_getExample` — the `i`-th example accessor, `headL ∘ peel`. `getExample_encode` — List-model
--- correctness: `headL (peel (encodeList xs) i) = xs[i]` (via `peel`-is-`drop`).
-/-- info: 'OneDL.cPred_tc_not_polyBounded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms OneDL.cPred_tc_not_polyBounded
-
-/-- info: 'OneDL.polyTime_peel' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms OneDL.polyTime_peel
-
-/-- info: 'OneDL.polyTime_getExample' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms OneDL.polyTime_getExample
-
-/-- info: 'OneDL.getExample_encode' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms OneDL.getExample_encode
-
--- The inner scan primitives of the greedy 1-DL consistency solver
--- (`ALT/DecisionListSolver.lean`). THE FINDING: the native `tc` makes value-arithmetic (general `=`,
--- `isZero`, `add`) value-linear, so the scan must use a BIT-LOGIC gate library (binary features/labels)
--- and avoid label equality (track `sawZero`/`sawOne` bits instead). `val_cAnd`/`val_cEqBit` — the gate
--- semantics; each gate is bit-closed and `O(1)`-`tc` on bits. `val_cPurity` — the purity primitive `val`
--- law (loop = iterated carried-suffix step). `purity_correct` — the scan realises the covered-label
--- fold over `zip msks exs`. `purity_isPure_iff`/`purity_commonLabel`/`purity_sawAny` — the 3-field
--- verdict `⟨isPure, ⟨commonLabel, sawAny⟩⟩` reads out as "isPure iff not both a covered 0-label and
--- covered 1-label", "commonLabel = sawOne", and "sawAny ≠ 0 iff the literal covers ≥1 remaining
--- example" (the covering bit that stops a vacuous pure literal stalling greedy).
--- `polyTime_cScan` — the scan loop is `PolyTime` via `polyTime_loop`: `rfind'`-freeness, the shaper
--- `PolyTime`s, the base cost, and the accumulator-size bound (`polyBounded_acc`) are all discharged;
--- the WF/bit residuals (count poly-bit `hCval` from `readM_le_size`; the per-visited-step cost bound)
--- are threaded as premises exactly as `polyTime_peel` threads its index bound.
-/-- info: 'OneDL.val_cAnd' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms OneDL.val_cAnd
-
-/-- info: 'OneDL.val_cEqBit' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms OneDL.val_cEqBit
-
-/-- info: 'OneDL.val_cPurity' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms OneDL.val_cPurity
-
-/-- info: 'OneDL.purity_correct' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms OneDL.purity_correct
-
-/-- info: 'OneDL.purity_isPure_iff' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms OneDL.purity_isPure_iff
-
-/-- info: 'OneDL.polyTime_cScan' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms OneDL.polyTime_cScan
-
--- The per-step cost bound is discharged, so purity is a self-contained
--- `PolyTime` on an honest well-formed domain. `WFBits inst` — the binary well-formedness (WF plus every
--- feature bit and label `≤ 1`); `MaskValid mask m` — the working set is a length-`m` flag-cons list of
--- bits. `visited_bits` — over the visited states `i < readM inst`, the three operands the step reads
--- (mask head, feature at `j`, label) are all `≤ 1` (features/labels from `WFBits`, mask bit from
--- `MaskValid`, the `sawZero`/`sawOne` accumulators from the flag invariants), so `tc cStep ≤ 16·jOf n +
--- 5700`. `polyTime_purity` — packaged as `PolyTimeOn PurityWF purityVal`: the raw `(Bstep+1)·m` cost is
--- poly-bit via `jOf n ≤ readK ≤ size n` and `readM ≤ size n`, and the verdict is three bits. The ONLY
--- residual hypotheses are the WF-conditional ones (the `PurityWF` domain); no `PolyBounded` premises.
-/-- info: 'OneDL.polyTime_purity' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms OneDL.polyTime_purity
-
--- The greedy outer loop `solve` (`readM inst` rounds of covering-pure-literal
--- selection + mask refinement, output built by prepend then one final `cReverse`). `polyTime_solve` —
--- packaged as `PolyTimeOn SolveWF solveVal`: `O(m²·k²)` native cost (`k` rounds × one `findLit` `O(m·k²)`
--- + one `maskUpdate` `O(m·k)`), and — the crux — the exponential flag-cons OUTPUT stays poly-bit because
--- the instance already pays (exponentially) for its `m` examples: `two_pow_readM_le` gives
--- `2^(readM) ≤ size n + 1`, so `svCnt ≤ readM` rules cost `≤ (size n+1)²·O(size n)` bits (cubic).
--- `maskValid_solve` — the working mask stays a valid length-`m` bit-list every round (`maskValid_svAcc`
--- invariant); `dlModel_svAcc` — the output `svDL` is the flag-`cons` encoding of a genuine `List` of
--- `svCnt` rule-triples (the `List` model that lets `cReverse`/`size_encodeList_le` bound the output).
--- Greedy CORRECTNESS (finalMask all-zero iff a consistent 1-DL exists) is guarded below.
-/-- info: 'OneDL.polyTime_solve' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms OneDL.polyTime_solve
-
-/-- info: 'OneDL.maskValid_solve' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms OneDL.maskValid_solve
-
-/-- info: 'OneDL.findLit_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms OneDL.findLit_sound
-
--- Greedy CORRECTNESS. `progress` (Engine Lemma 1: a consistent 1-DL forces a covering-pure literal
--- while any example is active — default-monochromatic vs first-firing-rule cases); `output_consistent`
--- (Engine Lemma 2: an emptied mask means the emitted forward DL is consistent for ALL examples); and the
--- capstone `solve_decides` — finalMask all-zero **iff** a consistent 1-DL over valid literals exists (⇐ by
--- the `activeCount` monovariant, ⇒ by Engine Lemma 2).
-/-- info: 'OneDL.progress' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms OneDL.progress
-
-/-- info: 'OneDL.output_consistent' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms OneDL.output_consistent
-
-/-- info: 'OneDL.solve_decides' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms OneDL.solve_decides
-
 /-! ## Guard-gap closure — modules predating the `#guard_msgs` discipline
 
 The capstones below (each module docstring's "What this DOES establish" list) were built before the
@@ -3745,25 +3009,9 @@ strict subset the guard pins verbatim. -/
 #guard_msgs (whitespace := lax) in
 #print axioms RetentionOverhead.overhead_bigO
 
--- Binary Kraft–McMillan, the shared arithmetic (`ALT/BinaryKraft.lean`): Mathlib's inequality
--- specialized to the binary alphabet and reindexed along an injective code, finite
--- (`indexed_finset_sum_le_one`) and countable (`indexed_tsum_le_one`). Both the [Discovery] §1.1
--- prior and the program-length side (`AdditiveComplexity.kraft_KP_E`) consume these.
-/-- info: 'BinaryKraft.indexed_finset_sum_le_one' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms BinaryKraft.indexed_finset_sum_le_one
-
-/-- info: 'BinaryKraft.indexed_tsum_le_one' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms BinaryKraft.indexed_tsum_le_one
-
--- [Discovery] §1.1 universal-prior sub-normalization (`ALT/PriorNormalization.lean`): the countable
+-- [Discovery] §1.1 universal-prior sub-normalization (`CodeLayer/PriorNormalization.lean`): the countable
 -- extension read at the hypothesis class — the `∝ 2^{−K}` prior is a semimeasure
 -- (`prior_tsum_le_one`).
-
-/-- info: 'PriorNormalization.prior_tsum_le_one' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms PriorNormalization.prior_tsum_le_one
 
 -- [Discovery] §3.3 explicit ε₀ lower bound (`ALT/EpsilonZeroBound.lean`): positivity (`eps0_pos`),
 -- the `γ`-separated demotion `ε₀ ≥ γ` (`eps0_ge_of_separated`), and the conditional polynomial
@@ -3802,22 +3050,6 @@ strict subset the guard pins verbatim. -/
 #guard_msgs (whitespace := lax) in
 #print axioms KReconnection.polytime_accounting
 
--- [Discovery] / [SQ] base Kolmogorov complexity (`ALT/KolmogorovComplexity.lean`): unboundedness of `K`
--- (`K_unbounded`) and the headline uncomputability of `K` (`K_not_computable`).
-/-- info: 'KolmogorovComplexity.K_unbounded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms KolmogorovComplexity.K_unbounded
-
-/-- info: 'KolmogorovComplexity.K_not_computable' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms KolmogorovComplexity.K_not_computable
-
--- [SQ] bit-length Kolmogorov complexity (`ALT/KolmogorovBitlen.lean`, namespace
--- `KolmogorovComplexity`): uncomputability of the paper's `r`-in-bits (`K_bitlen_not_computable`).
-/-- info: 'KolmogorovComplexity.K_bitlen_not_computable' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms KolmogorovComplexity.K_bitlen_not_computable
-
 -- Reflection-chain dependency audit (`ALT/ChainDependencyAudit.lean`): all five named edges
 -- compose into the three terminal claims with no missing link (`chain_complete`) and bare
 -- reflection sits off the tractability/retention path (`reflection_off_sq_and_retention`). Pure
@@ -3836,31 +3068,6 @@ strict subset the guard pins verbatim. -/
 /-- info: 'ChainDependencyAudit.steady_state_on_retention_off_sq' does not depend on any axioms -/
 #guard_msgs (whitespace := lax) in
 #print axioms ChainDependencyAudit.steady_state_on_retention_off_sq
-
--- [Discovery] §2.3 — Kolmogorov structure function, the 45° / geometric lower bound (FV-14,
--- slice one) on the additive carrier. Two-part description (per model) `KE_le_of_model`; the four
--- targets: antitone `structFn_antitone`, singleton collapse `structFn_singleton`, the 45° slice
--- `KE_le_structFn` (`KE x ≤ α + c₁·h_x(α) + c₂`, `c₁ = 15 + elen dbl`), and the lower-bound form
--- `structFn_ge`. `Classical.choice` is genuinely used (`extractor`/`mkSingleton` from universality).
-/-- info: 'StructureFunction.KE_le_of_model' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms StructureFunction.KE_le_of_model
-
-/-- info: 'StructureFunction.structFn_antitone' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms StructureFunction.structFn_antitone
-
-/-- info: 'StructureFunction.structFn_singleton' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms StructureFunction.structFn_singleton
-
-/-- info: 'StructureFunction.KE_le_structFn' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms StructureFunction.KE_le_structFn
-
-/-- info: 'StructureFunction.structFn_ge' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms StructureFunction.structFn_ge
 
 -- [Decoupling] §6.3/§6.4 + [Persistence] §5/§7 — the expressiveness excess order. The graded
 -- representational class is a faithful order (`RepClass_subset_iff`: inclusion iff budget ≤); the
@@ -4283,97 +3490,66 @@ strict subset the guard pins verbatim. -/
 #guard_msgs (whitespace := lax) in
 #print axioms TapeHostSurvival.comp_carries_survival
 
--- The coding theorem with a logarithmic loss: for a lower-semicomputable semimeasure, a decoder
--- built from the level-`k` request/firing search over the approximation's own witness, its
--- `gammaCode`/`bitsFixed` description read off the requester's rank among the firings.
-/-- info: 'PrefixMachine.coding_theorem_weak' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms PrefixMachine.coding_theorem_weak
+/-! ## The Birkhoff port's trajectory-space tool: the single-orbit oracle guards -/
 
--- The instance of the coding theorem with a logarithmic loss at the algorithmic probability `QB`.
-/-- info: 'PrefixMachine.coding_theorem_weak_QB' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms PrefixMachine.coding_theorem_weak_QB
+/-! ## Trajectory-space Tool (i) and the FJS-shaped oracle corollaries (`ALT/BirkhoffTool.lean`) -/
 
--- The online Kraft–Chaitin assignment's own capstone: the words it ever assigns, over the whole
--- history of a mass-respecting request stream, are pairwise prefix-free.
-/-- info: 'PrefixMachine.kcWord_prefixFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'BirkhoffTool.timeAverage_tendsto_expectation' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms PrefixMachine.kcWord_prefixFree
+#print axioms BirkhoffTool.timeAverage_tendsto_expectation
 
--- Levin's coding theorem's request-stream budget: an improving step's own level, plus a silent
--- step's own index, both shifted by two, keep the online Kraft–Chaitin partial sums at most one.
-/-- info: 'PrefixMachine.levinReq_mass' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'BirkhoffTool.mixing_oracle_sample_complexity' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms PrefixMachine.levinReq_mass
+#print axioms BirkhoffTool.mixing_oracle_sample_complexity
 
--- Levin's coding theorem, the `O(1)` form: on the prefix machine every lower-semicomputable
--- semimeasure is an ideal code up to an additive constant, via the online Kraft–Chaitin decoder.
-/-- info: 'PrefixMachine.coding_theorem' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'BirkhoffTool.mixing_oracle_tail_to' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms PrefixMachine.coding_theorem
+#print axioms BirkhoffTool.mixing_oracle_tail_to
 
--- The instance of Levin's coding theorem at the algorithmic probability `QB`.
-/-- info: 'PrefixMachine.coding_theorem_QB' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'BirkhoffTool.mixing_oracle_tail' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms PrefixMachine.coding_theorem_QB
+#print axioms BirkhoffTool.mixing_oracle_tail
 
--- Both directions at `QB`: with `two_pow_neg_KB_le_QB`, `QB` and `2 ^ (-KB)` agree up to a
--- multiplicative constant.
-/-- info: 'PrefixMachine.QB_le_two_pow_mul' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'BirkhoffTool.mixingHoeffding_of_iid' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms PrefixMachine.QB_le_two_pow_mul
+#print axioms BirkhoffTool.mixingHoeffding_of_iid
 
--- The coding theorem in multiplicative form, at a general lower-semicomputable semimeasure.
-/-- info: 'PrefixMachine.coding_theorem_mul' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'BirkhoffTool.mixingHoeffding_of_nonpos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms PrefixMachine.coding_theorem_mul
+#print axioms BirkhoffTool.mixingHoeffding_of_nonpos
 
--- `QB`'s universality: it dominates every lower-semicomputable semimeasure up to a constant
--- factor — a universal (maximal) lower-semicomputable semimeasure, never "the" one.
-/-- info: 'PrefixMachine.QB_universal' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'BirkhoffTool.not_mixingHoeffding_pinned' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms PrefixMachine.QB_universal
+#print axioms BirkhoffTool.not_mixingHoeffding_pinned
 
--- The joint-satisfiability witness for `QB_universal`'s hypotheses: the point mass at `0`.
-/-- info: 'PrefixMachine.QB_universal_nonvacuous' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'BirkhoffTool.mixing_oracle_truth_survives_noisy' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms PrefixMachine.QB_universal_nonvacuous
+#print axioms BirkhoffTool.mixing_oracle_truth_survives_noisy
 
--- Prefix complexity's minimality: an upper-semicomputable `f` with `KB ≤ f + c` for some `c` iff
--- its Kraft weight is summable.
-/-- info: 'PrefixMachine.KB_le_add_of_upperSemicomputable_summable' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms PrefixMachine.KB_le_add_of_upperSemicomputable_summable
+/-! ## Finite-horizon `MixingHoeffdingTo` (`ErgodicTheory/MixingHoeffding.lean`, `ALT/BirkhoffTool.lean`) -/
 
--- The joint-satisfiability witness for the minimality lemma's two hypotheses, at twice the
--- bit-length.
-/-- info: 'PrefixMachine.KB_le_add_of_upperSemicomputable_summable_nonvacuous' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'BirkhoffTool.mixingHoeffdingTo_of_le_floor' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms PrefixMachine.KB_le_add_of_upperSemicomputable_summable_nonvacuous
+#print axioms BirkhoffTool.mixingHoeffdingTo_of_le_floor
 
--- The converse half: `KB ≤ f + c` for some `c` forces `f`'s Kraft weight to be summable.
-/-- info: 'PrefixMachine.summable_of_KB_le_add' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'BirkhoffTool.not_mixingHoeffdingTo_pinned' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms PrefixMachine.summable_of_KB_le_add
+#print axioms BirkhoffTool.not_mixingHoeffdingTo_pinned
 
--- Both halves of the minimality lemma, as one `iff`, at an upper-semicomputable `f`.
-/-- info: 'PrefixMachine.KB_le_add_iff_summable' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'BirkhoffTool.mixingHoeffdingTo_mono_const' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms PrefixMachine.KB_le_add_iff_summable
+#print axioms BirkhoffTool.mixingHoeffdingTo_mono_const
 
--- The plain bit-length `K_bitlen` is upper-semicomputable, by a staged least-index search.
-/-- info: 'PrefixMachine.upperSemicomputable_K_bitlen' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'BirkhoffTool.mixing_oracle_sample_complexity_to' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms PrefixMachine.upperSemicomputable_K_bitlen
+#print axioms BirkhoffTool.mixing_oracle_sample_complexity_to
 
--- The first additive form between `KB` and `K_bitlen` is exactly the plain Kraft weight's
--- summability — not decided here in either direction.
-/-- info: 'PrefixMachine.KB_le_K_bitlen_add_iff_summable' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'BirkhoffTool.mixing_oracle_truth_survives_noisy_to' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms PrefixMachine.KB_le_K_bitlen_add_iff_summable
+#print axioms BirkhoffTool.mixing_oracle_truth_survives_noisy_to
 
--- A second proof of `PrefixEliasKB.KB_le_two_mul_size`, through the coding theorem's minimality.
-/-- info: 'PrefixMachine.KB_le_two_mul_size'' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-! ## Finite-horizon SQ oracle over a schedule (`ALT/BirkhoffTool.lean`) -/
+
+/-- info: 'BirkhoffTool.empirical_isSQOracle_of_mixingTo' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms PrefixMachine.KB_le_two_mul_size'
+#print axioms BirkhoffTool.empirical_isSQOracle_of_mixingTo

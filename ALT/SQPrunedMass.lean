@@ -20,7 +20,8 @@ competitors is `≤ δ/2`, established by competitor decay + the Kraft inequalit
 maximal inequality (Doob/Ville), which is the part the prose defers to a martingale tail bound.
 
 This is the companion to `ALT/SQVersionSpace.lean` (FV-A4, "truth survives pruning") and
-`ALT/SQOracle.lean` (FV-E, the empirical-answer concentration): there the geometry of a *single*
+`Learning/SQOracle.lean` (FV-E, the empirical-answer concentration): there the geometry of
+a *single*
 pruning step is proved; here the *accumulated* mass across the whole pruned set is summed & bounded.
 
 Like `ALT/SampleComplexity.lean` (FV-B2) this file reuses [Discovery] as **imported hypotheses**
@@ -50,7 +51,8 @@ description length in nats-vs-bits is absorbed into `K`) and the algebra stays i
   *post-`T_discover`* contribution.
 * Not the decay `L_t(R') ≤ exp(−2tε₀)` nor the normaliser `Z_t ≥ 2^{−K}`: those are the [Discovery]
   `DeterministicDiscovery` facts, imported here pre-bundled as the single hypothesis `hdecay`.
-* Not the union with `ALT/SQOracle.lean`'s `1−δ` truth-survival into a single `1−δ` soundness
+* Not the union with `Learning/SQOracle.lean`'s `1−δ` truth-survival into a single `1−δ`
+soundness
   statement: that final assembly stays in prose (it is the Bayes-mixture argument of [Discovery]).
 -/
 

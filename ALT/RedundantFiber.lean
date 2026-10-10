@@ -55,7 +55,7 @@ defeats the reading however small its rate, since the copies recover only to be 
 
 ## Scope
 
-The damage model itself — Proposition 6.1's (D1)/(D2), coupling corruption to misprediction and
+The damage model itself — Proposition 6.1's (DM1)/(DM2), coupling corruption to misprediction and
 bounding a hit's reach — is a **named hypothesis of the paper, not a theorem of this file**: every
 theorem below quantifies over an arbitrary finite hit schedule of the stated shape, rather than
 deriving that damage takes that shape from anything. This file's survival synthesis (Stages A–C)
@@ -613,14 +613,14 @@ theorem dSurpriseSet_card_mul_le {b D : ℕ} {iR : Fin C} {θ : ℚ}
           nlinarith [hbaseSeg', hrec']
   exact main H.card H (le_refl H.card) M e₀ hit n hR he₀ hDe₀ hhit
 
-/-! ### Which surprise set (D1) names: a refuting family
+/-! ### Which surprise set (DM1) names: a refuting family
 
-Proposition 6.1's damage model (D1) perturbs the guest only where its predictor is `ε`-surprised.
+Proposition 6.1's damage model (DM1) perturbs the guest only where its predictor is `ε`-surprised.
 On this construction that sentence names two different sets — the damaged run's own surprises
 (`dSurpriseSet`) and the undamaged run's (`floorSurpriseSetFrom`) — and neither contains the other
 in general. `dSurpriseSet_card_mul_le` above already commits to the undamaged reading: its
 hypothesis is stated over the schedule's own landings, not over the damaged run's own surprises.
-Read on the run it damages instead, (D1) is not a budget at all — the family below exhibits a
+Read on the run it damages instead, (DM1) is not a budget at all — the family below exhibits a
 schedule of every length whose every hit lands inside `dSurpriseSet`, while the same start and
 stream cap the undamaged count at `2`. -/
 
@@ -686,7 +686,7 @@ private lemma reseed_fixed (s : ℕ) :
 /-- **The undamaged reading, on the same start and stream, is a genuine budget.** The orbit
 `![0,2] → ![1,2] → ![2,2] → ![2,1] → ![2,0]` (a fixed point from there on) has wrong mass `4/5,
 2/3, 1/2, 1/3, 1/5`, so only the first two steps exceed `θ = 1/2` and every horizon's surprise
-count is at most `2`. So the two readings of (D1) disagree sharply on this construction: unbounded
+count is at most `2`. So the two readings of (DM1) disagree sharply on this construction: unbounded
 on the damaged run (`dSurpriseSet_reseed_eq_range`), capped at `2` on the undamaged one. -/
 theorem floorSurpriseSetFrom_reseed_card_le (n : ℕ) :
     (floorSurpriseSetFrom (![0, 2] : Fin 2 → ℕ) (fun _ : ℕ => (![false, true] : Fin 2 → Bool))

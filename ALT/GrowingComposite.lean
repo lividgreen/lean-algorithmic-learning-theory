@@ -8,6 +8,7 @@ module
 public import ALT.GrowingWorld
 public import ALT.NoisyWindowChain
 public import ALT.DamageGate
+public import ErgodicTheory.DrivenColumns
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -257,11 +258,6 @@ theorem advances_counterLaw_guestStage (k : ℕ) [NeZero k] (ξ : ℕ → Bool) 
   GrowingWorld.advances_guestStage (advances_compUpdate k ξ) (stagedSquare_compUpdate_counter k ξ)
 
 /-! ## Eventual periodicity: the transport, and the contrast guard -/
-
-/-- **Eventual periodicity** of a `ℕ`-indexed sequence: a period `P` that holds from some point `N`
-on. Absent from Mathlib (`Function.Periodic` is the exact-periodicity form) and minted here. -/
-def EventuallyPeriodic {α : Type*} (f : ℕ → α) : Prop :=
-  ∃ P N, 0 < P ∧ ∀ u, N ≤ u → f (u + P) = f u
 
 /-- `xor` cancels on the left: pure Boolean algebra, proved once at genuine local variables so
 `cases` substitutes correctly. -/

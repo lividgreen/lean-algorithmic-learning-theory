@@ -1764,7 +1764,7 @@ one, and a walk down a code is a walk down a proof term of the same shape. This 
 worked for selection, as infrastructure.
 
 A guard-rail for widths comes with it: state size facts through `size n ≤ n` (`size_le_self`,
-from `ALT.Code.SizeArith`) where a zero case exists. The `max`-form route
+from `CodeLayer.Code.SizeArith`) where a zero case exists. The `max`-form route
 (`size (m+1) ≤ max (size m) (size 1) + 1`) is unprovable at zero. -/
 
 private theorem size_succ_le {m B : ℕ} (h : m ≤ B) : Nat.size (m + 1) ≤ B + 1 :=

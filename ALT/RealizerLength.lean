@@ -5,7 +5,7 @@ Authors: Mykola Palamarchuk
 -/
 module
 
-public import ALT.Realizability
+public import Realizability.Realizability
 public import Mathlib.Data.Nat.Size
 public import Mathlib.Tactic.Linarith
 public import Mathlib.Tactic.Positivity

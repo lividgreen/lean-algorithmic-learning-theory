@@ -5,7 +5,7 @@ Authors: Mykola Palamarchuk
 -/
 module
 
-public import ALT.BayesRedundancy
+public import Learning.BayesRedundancy
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
 set_option linter.style.header false
@@ -22,7 +22,7 @@ of Theorem 3.1 (the prequential posterior concentrates on the true rule) in the
 realizable-deterministic case — **no Grünwald–Mehta import, no Markov inequality, no
 posterior-of-close hypothesis**. It replaces the whole `GrunwaldMehtaDiscovery` chain by an
 elementary competitor-likelihood-decay argument, reusing the Bayes-mixture model of
-`ALT/BayesRedundancy.lean`.
+`Learning/BayesRedundancy.lean`.
 
 ## The argument
 The posterior weight on the true rule `R` is `wpost = w R · Lik R n / P̄(n)` (`= w R / P̄(n)` since

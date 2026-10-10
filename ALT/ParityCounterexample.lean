@@ -5,7 +5,7 @@ Authors: Mykola Palamarchuk
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+public import Learning.SQBounds
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false
@@ -51,16 +51,6 @@ Status: PROVED as pure real-asymptotics statements. This is the *arithmetic core
 namespace ParityCounterexample
 
 open Asymptotics Filter
-
-/-- Modeled parity statistical dimension: exponential in the rule complexity `r`
-(`2^{Ω(n)}` with `r ≈ n`, the base folded into `ε > 0`). -/
-noncomputable def dSQ (ε r : ℝ) : ℝ := Real.exp (ε * r)
-
-/-- "Assumption A" ([SQ] §3.4 / §4): `d_SQ` is polynomially bounded in `r`. The weakest
-reasonable form of "poly-bounded" (genuine natural-number degree `k`), so its negation is the
-strongest faithful "not polynomial" claim. -/
-def PolyBounded (f : ℝ → ℝ) : Prop :=
-  ∃ (C : ℝ) (k : ℕ), ∀ᶠ r in atTop, f r ≤ C * r ^ k
 
 /-- Exponential beats every polynomial (faithful Mathlib-asymptotics core): every real power of
 `r` is little-o of the modeled exponential `d_SQ`. Direct from

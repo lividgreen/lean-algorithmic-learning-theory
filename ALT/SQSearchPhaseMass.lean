@@ -5,8 +5,8 @@ Authors: Mykola Palamarchuk
 -/
 module
 
-public import ALT.BinaryKraft
-public import ALT.Ville
+public import CodeLayer.BinaryKraft
+public import AnytimeValid.Ville
 
 -- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
 set_option linter.style.header false

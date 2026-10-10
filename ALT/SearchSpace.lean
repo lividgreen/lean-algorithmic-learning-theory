@@ -13,7 +13,8 @@ set_option linter.style.header false
 /-!
 # The search workspace: the native SPACE cost extended to all of `Nat.Partrec.Code`
 
-`ALT/TimeCost.lean` builds a total paired evaluator whose second component is a native *workspace*
+`CodeLayer/TimeCost.lean` builds a total paired evaluator whose second component is a
+native *workspace*
 measure `spaceCost`, at the price of leaving `rfind'` a placeholder `0`: the space account, like the
 step account, is stated only on the `RfindFree` fragment. `ALT/SearchCost.lean` closed that gap for
 the step count. This file closes it for the workspace, so that BOTH native cost measures are total

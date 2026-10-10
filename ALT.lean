@@ -8,18 +8,10 @@ module
 public import ALT.AccretingExcess
 public import ALT.AccretingWitness
 public import ALT.AccretiveDecoupling
-public import ALT.AdditiveComplexity
-public import ALT.AlgorithmicProbability
 public import ALT.AxiomAuditFoundation
 public import ALT.AxiomAuditMathlib
 public import ALT.BasinSettling
-public import ALT.BayesRedundancy
-public import ALT.BinaryConstant
-public import ALT.BinaryKraft
-public import ALT.Birkhoff.AxiomAudit
-public import ALT.Birkhoff.PointwiseBirkhoff
 public import ALT.BirkhoffTool
-public import ALT.BitStringPrimrec
 public import ALT.BlockPairCriterion
 public import ALT.BlockPairFamilyCriterion
 public import ALT.BlockPairHost
@@ -37,48 +29,28 @@ public import ALT.CapacityThreshold
 public import ALT.CartesianClosed
 public import ALT.CategoricalThreshold
 public import ALT.ChainDependencyAudit
-public import ALT.ChaitinIncompleteness
 public import ALT.ChaitinLadder
-public import ALT.ChaitinPrefix
 public import ALT.ChaitinPrefixLadder
 public import ALT.CheckerWorkspace
-public import ALT.ChengCCC
-public import ALT.Code.BitGates
-public import ALT.Code.EvalLaws
-public import ALT.Code.SizeArith
 public import ALT.CodeArith
 public import ALT.CodeDataRate
 public import ALT.CodePacking
-public import ALT.CodingTheorem
-public import ALT.CodingTheoremBitwise
-public import ALT.CodingTheoremDecoder
-public import ALT.CodingTheoremWeak
 public import ALT.Collector
 public import ALT.CommitmentSeam
-public import ALT.ConjunctionPredictor
-public import ALT.ConjunctionSolver
 public import ALT.CountableDiscovery
 public import ALT.CounterLearner
 public import ALT.DamageGate
-public import ALT.DecisionListData
-public import ALT.DecisionListPredictor
-public import ALT.DecisionListSolver
 public import ALT.DecoupledSimulation
 public import ALT.Decoupling
 public import ALT.DeepLadder
-public import ALT.DerivedStages
 public import ALT.DeterministicDiscovery
-public import ALT.DrivenColumns
-public import ALT.EndpointClasses
 public import ALT.EpsilonZeroBound
 public import ALT.EvoAbsorption
 public import ALT.ExcessOrder
 public import ALT.ExcessOrderComplete
 public import ALT.ExpensiveLens
 public import ALT.ExtensionalDiscovery
-public import ALT.ExtremeTapWidth
 public import ALT.FiniteHorizonDiscovery
-public import ALT.FiniteInfoTheory
 public import ALT.FiniteWorldWidth
 public import ALT.FixedLensCriterion
 public import ALT.FlooredMixture
@@ -100,32 +72,20 @@ public import ALT.GrowingCoreCrossing
 public import ALT.GrowingHostWitness
 public import ALT.GrowingPrice
 public import ALT.GrowingSeamWitness
-public import ALT.GrowingWidth
 public import ALT.GrowingWorld
 public import ALT.GrunwaldMehtaDiscovery
-public import ALT.HaltingProbability
 public import ALT.HellingerBridge
-public import ALT.HindsightCount
+public import ALT.HindsightMixture
 public import ALT.IndexCost
-public import ALT.KBEnumerable
 public import ALT.KReconnection
-public import ALT.KolmogorovBitlen
-public import ALT.KolmogorovComplexity
-public import ALT.KolmogorovTimeBounded
-public import ALT.KraftChaitin
-public import ALT.KraftMinimality
 public import ALT.LearningWitness
 public import ALT.LearningWitnessComplete
-public import ALT.LightConeWidth
-public import ALT.LocalMargin
 public import ALT.LogMassEvent
 public import ALT.MDLCoding
 public import ALT.MDLDominance
-public import ALT.MarkovHoeffding
-public import ALT.MemoryWidth
+public import ALT.MemoryWidthWitness
 public import ALT.MinimalityWitness
 public import ALT.NoisyWindowChain
-public import ALT.ObservedColumn
 public import ALT.ParameterizedNNO
 public import ALT.ParityCounterexample
 public import ALT.ParityWalk
@@ -136,26 +96,14 @@ public import ALT.Persistence.MovingLens
 public import ALT.Persistence.Robustness
 public import ALT.PersistenceCapacity
 public import ALT.PersistentWalk
-public import ALT.PolyTime
 public import ALT.PolyTimeAccounting
-public import ALT.PrefixComplexity
-public import ALT.PrefixCounting
 public import ALT.PrefixEliasKB
-public import ALT.PrefixInvariance
-public import ALT.PrefixInvarianceKB
-public import ALT.PrefixMachine
-public import ALT.PrefixModelCost
-public import ALT.PrefixPairKB
-public import ALT.PriorNormalization
 public import ALT.QuantizationRate
 public import ALT.ReadingWord
-public import ALT.Realizability
-public import ALT.RealizabilityCCC
-public import ALT.RealizabilityCoproduct
 public import ALT.RealizabilityRecursor
-public import ALT.RealizabilitySubobject
 public import ALT.RealizerLength
 public import ALT.RecursorAlgebra
+public import ALT.RecursorCoproductAlgebra
 public import ALT.RedundantFiber
 public import ALT.Reflective
 public import ALT.ReflectiveAutomaton
@@ -165,10 +113,7 @@ public import ALT.RepFintype
 public import ALT.RetentionOverhead
 public import ALT.RetentionUpperBound
 public import ALT.SQAlgorithm
-public import ALT.SQEnvelope
 public import ALT.SQMixtureSupermartingale
-public import ALT.SQObjects
-public import ALT.SQOracle
 public import ALT.SQPredictiveTransfer
 public import ALT.SQPrunedMass
 public import ALT.SQSearchPhaseMass
@@ -176,12 +121,11 @@ public import ALT.SQVersionSpace
 public import ALT.SampleComplexity
 public import ALT.SearchCost
 public import ALT.SearchSpace
-public import ALT.SerializationParse
 public import ALT.ShiftedSpikeCriterion
 public import ALT.ShiftedSpikeHost
 public import ALT.ShiftedSpikeTower
 public import ALT.SkewFiber
-public import ALT.StructureFunction
+public import ALT.SpawningFiber
 public import ALT.SubstitutionClass
 public import ALT.SubstitutionComposite
 public import ALT.SubstitutionSchedule
@@ -196,11 +140,8 @@ public import ALT.TapeHostOverlap
 public import ALT.TapeHostSchedule
 public import ALT.TapeHostSurvival
 public import ALT.TapeHostWitness
-public import ALT.TimeCost
 public import ALT.UniversalAt
-public import ALT.Ville
 public import ALT.WeightedFiber
-public import ALT.WindowCount
 public import ALT.WindowDeterminism
 public import ALT.WitnessMixture
 
@@ -225,6 +166,9 @@ series, cited in docstrings as:
 * **[Guests]** — a description-length theory of systems running inside finite and growing
   dynamical systems: priced factors, the Witness World, emergence, and growing worlds with
   their growing core, memory width and staged collapse;
+* **[RuleSpace]** — accretion, rays and robustness over the radius-one rule space:
+  the growing width decided at every quiescent elementary cellular automaton, the
+  rays of table 90 from the single seed, and robustness to two cells at every scale;
 * **[Growth]** — endogenous observability on growing hosts: statistical-query
   learning from substitution sources at explicit horizons;
 * **[Inevitability]** — the realization-synthesis capstone: two independent routes to

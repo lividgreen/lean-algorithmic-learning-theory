@@ -1,12 +1,12 @@
 {
   "ignore": {
-    "ALT.BayesRedundancy": [
+    "Learning.BayesRedundancy": [
       "Mathlib.Algebra.BigOperators.Field"
     ],
-    "ALT.BinaryConstant": [
+    "CodeLayer.BinaryConstant": [
       "Mathlib.Data.Nat.Size"
     ],
-    "ALT.BinaryKraft": [
+    "CodeLayer.BinaryKraft": [
       "Mathlib.InformationTheory.Coding.KraftMcMillan",
       "Mathlib.Topology.Algebra.InfiniteSum.Real"
     ],
@@ -25,7 +25,7 @@
     "ALT.CartesianClosed": [
       "Mathlib.Data.Finite.Prod"
     ],
-    "ALT.DecisionListSolver": [
+    "Learning.DecisionListSolver": [
       "Mathlib.Tactic.IntervalCases"
     ],
     "ALT.Decoupling": [
@@ -35,16 +35,16 @@
       "Mathlib.Analysis.Normed.Group.Indicator",
       "Mathlib.Analysis.Normed.Group.Tannery"
     ],
-    "ALT.FiniteInfoTheory": [
+    "ShannonInfo.FiniteInfoTheory": [
       "Mathlib.Algebra.BigOperators.Field"
     ],
     "ALT.GodelInternalization": [
       "Mathlib.Tactic.Linarith"
     ],
-    "ALT.KolmogorovComplexity": [
+    "AIT.KolmogorovComplexity": [
       "Mathlib.Data.Nat.SuccPred"
     ],
-    "ALT.KolmogorovTimeBounded": [
+    "AIT.KolmogorovTimeBounded": [
       "Mathlib.Data.Nat.Size"
     ],
     "ALT.MDLCoding": [
@@ -69,12 +69,12 @@
       "Mathlib.Data.Nat.Choose.Multinomial",
       "Mathlib.Data.Set.Card.Arithmetic"
     ],
-    "ALT.PolyTime": [
+    "CodeLayer.PolyTime": [
       "Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics",
       "Mathlib.Data.Nat.Size",
       "Mathlib.Tactic.Positivity"
     ],
-    "ALT.PrefixComplexity": [
+    "AIT.PrefixComplexity": [
       "Mathlib.Topology.Algebra.InfiniteSum.ENNReal"
     ],
     "ALT.ProofChainSkeleton": [
@@ -97,7 +97,7 @@
     "ALT.RetentionUpperBound": [
       "Mathlib.Algebra.BigOperators.Group.Finset.Basic"
     ],
-    "ALT.SQOracle": [
+    "Learning.SQOracle": [
       "Mathlib.Probability.Moments.SubGaussian"
     ],
     "ALT.SQPredictiveTransfer": [
@@ -105,10 +105,10 @@
       "Mathlib.Tactic.FieldSimp",
       "Mathlib.Tactic.Linarith"
     ],
-    "ALT.StructureFunction": [
+    "AIT.StructureFunction": [
       "Mathlib.Data.List.GetD"
     ],
-    "ALT.Ville": [
+    "AnytimeValid.Ville": [
       "Mathlib.Probability.Martingale.OptionalStopping"
     ]
   }
