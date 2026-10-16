@@ -1,8 +1,3 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.Persistence.Core
@@ -10,15 +5,13 @@ public import ALT.Persistence.MovingLens
 public import ALT.Persistence.Counting
 public import ALT.Persistence.Robustness
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # Persistence capacity: moving decoders and the price of a frame ([Decoupling] §3.5)
 
 A finite world is a state space `X` with an update `U : X → X`, and the cell-structured case is the
 memory `Mem ι V = ι → V` ([Persistence] §2.1). The Decoupling Lemma
-([Decoupling] §3, `Decoupling.decoupling_iff_persists_all`) says a faithfully-encoded model read off
+([Decoupling] §3, `ALT.decoupling_iff_persists_all`) says a faithfully-encoded model read off
 a FIXED region survives iteration exactly when the update is read-only there; total overwrite
 therefore excludes a persistent model ([Decoupling] §3, Corollary 3.2). A *time-dependent* decoder
 evades that exclusion — on a cyclic string under rotation every cell is rewritten at every step, yet
@@ -33,7 +26,8 @@ ABSOLUTE bound rather than a statement about some class of observers.
 
 The development lives in four modules under `ALT/Persistence/`, split along its thematic seams;
 this umbrella imports all four, so `import ALT.PersistenceCapacity` provides exactly what a single
-file would, and everything below shares the `PersistenceCapacity` namespace.
+file would, and everything below declares its names at `ALT`, a theorem under the predicate it
+takes.
 
 * `ALT.Persistence.Core` — ω-limit sets and the recurrent core, lens families and the capacity
   theorems, static versus moving, eventual persistence, the effective law, the static hierarchy.
@@ -73,14 +67,14 @@ its own core, the `e`-free forms are those same objects, and that is the setting
 theorems of [Persistence] §7 are stated in. `CbHe_perm` and `CbHue_perm` check the agreement.
 
 Longer qualifiers ride on the same stem as words: `CbHeOn` values the reading on a given region,
-`CbHev` allows a transient before it settles, and `CbH_upTo` / `CbHu_upTo` truncate both conditions
+`CbHev` allows a transient before it settles, and `CbHUpTo` / `CbHuUpTo` truncate both conditions
 at a finite horizon.
 
 ## Main results
 
 * `core_bijOn` — the update restricts to a bijection on the **recurrent core** `⋂ t, U^[t] '' univ`
   (the states surviving every number of steps).
-* `carries_coreLens_eq` / `carries_frame_eqOn_core` — **the frames are determined on the core**:
+* `Carries.coreLens_eq` / `Carries.frame_eqOn_core` — **the frames are determined on the core**:
   over ANY endofunction world, `U` restricted to the core is a permutation `corePerm`, and a carried
   family satisfies `ℓ t = ℓ 0 ∘ (corePerm U ^ t)⁻¹` there. Off the core the identity constrains
   nothing. This is what [Persistence] §2, Definition 2.2 appeals to in pricing a whole family by its
@@ -108,7 +102,7 @@ at a finite horizon.
   `#values * #Ball e ≤ #Mem`. Majority-vote write-back is the worked witness at margin one
   (`majority_margin`), and it saturates the bound exactly (`repair_tax_tight_majWorld`) — three-copy
   redundancy spends its whole capacity buying one cell of margin.
-* `Intertwines.comp` / `uniformBudget_comp` / `tower_no_free_lunch` — **the tower** ([Persistence]
+* `Intertwines.comp` / `UniformBudget.comp` / `tower_no_free_lunch` — **the tower** ([Persistence]
   §10.2 + §2). A sub-system is a world, so it hosts sub-systems. The **intertwining square** is the
   time-indexed substitution property, and dilation needs no second definition — a `τ`-dilated square
   is a square over `U^[τ]`. Squares **compose** and dilations **multiply** (`τ₁ * τ₂`); budgets
@@ -156,7 +150,7 @@ at a finite horizon.
 * `Cb` / `capacity_sandwich` — the **budgeted persistence capacity** ([Persistence] §5): the largest
   model carried by a family whose every frame's core table costs at most `b` bits. Monotone in the
   budget, capped by the core at every budget, and above the static levels past a finite one.
-* `collapse` / `collapse_balanced` / `collapse_generic` — **the price is generically unpayable**
+* `collapse` / `Balanced.collapse` / `collapse_generic` — **the price is generically unpayable**
   ([Persistence] §7). Over a permutation world the second frame is forced to be `ℓ₀ ∘ U⁻¹`, a budget
   of `b` bits describes at most `2 ^ (b + 1)` frames, and each frame is hit by exactly one coset of
   the lens's stabilizer — so all but a `2 ^ (b + 1) / N_bal` fraction of worlds admit NO affordable
@@ -187,7 +181,7 @@ the reference frame's relabelling-class size, which is `2 ^ E` for the carried e
 is monotone and the families are finite.
 
 **Which results need which world.** The ceiling of §3 (`core`, `Carries`, `capacity_core_iff`) and
-the core determination (`carries_coreLens_eq`) hold over an arbitrary finite state type `X` with an
+the core determination (`Carries.coreLens_eq`) hold over an arbitrary finite state type `X` with an
 arbitrary `U : X → X`, which is the generality [Persistence] §2.1 states. The cell structure
 `Mem ι V` is taken only where it carries the content: the read-only stratum and the static
 hierarchy (`Fix`, `static_le_moving`, `rotate_gap`, `hierarchy`), the eventual-persistence

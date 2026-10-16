@@ -1,16 +1,8 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import CodeLayer.BinaryConstant
 public import CodeLayer.TimeCost
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
-set_option linter.style.header false
-set_option linter.style.longLine false
 
 /-!
 # The orbit collector `collector cR` — discharging Prop 2.2's modeled premise
@@ -24,22 +16,24 @@ Status: PROVED (eval level). Target B (an explicit `evaln` budget) is a document
 
 ## What this replaces
 `prop_2_2_core` (in `BinaryConstant.lean`) took the collector `coll : Code` as an ARBITRARY code and
-ASSUMED the assembly halts on some output `y` (`h : y ∈ evaln T (comp coll (comp cR (bconst n))) 0`).
-That is the "modeled premise". This file CONSTRUCTS a genuine collector and PROVES the assembly
-computes the orbit prefix, so the premise is discharged at the eval level.
+ASSUMED the assembly halts on some output `y`
+(`h : y ∈ evaln T (comp coll (comp cR (bconst n))) 0`). That is the "modeled premise". This file
+CONSTRUCTS a genuine collector and PROVES the assembly computes the orbit prefix, so the premise is
+discharged at the eval level.
 
 ## The construction — a fixed iterator template with the rule plugged in
-A rule-INDEPENDENT collector receiving `cR(n)` cannot re-run `cR` (first-order `Code`, no internalized
-universal evaluator). So the collector is a fixed template `collector · := prec zero (stepWrap ·)`
-applied to the rule code `cR` — the rule appears as the subterm `comp cR projState` inside `stepWrap`.
-This is faithful: `elen (collector cR) = elen cR + 60` (a fixed constant plus the rule), so the
-assembled length is still `elen cR + O(log n) = r + O(log n)`.
+A rule-INDEPENDENT collector receiving `cR(n)` cannot re-run `cR` (first-order `Code`, no
+internalized universal evaluator). So the collector is a fixed template
+`collector · := prec zero (stepWrap ·)` applied to the rule code `cR` — the rule appears as the
+subterm `comp cR projState` inside `stepWrap`. This is faithful:
+`elen (collector cR) = elen cR + 60` (a fixed constant plus the rule), so the assembled length is
+still `elen cR + O(log n) = r + O(log n)`.
 
 ## I/O convention (fixed here; consumed by `prop_2_2_eval`)
-* Step map: `rs : ℕ → ℕ` (state ↦ next state), computed by `cR` (`hcR : ∀ x, eval cR x = some (rs x)`;
-  the rule is a total deterministic step, as in Prop 2.2).
-* Initial condition `x₀ = 0` (absorbed into the fixed `O(1)` collector — the paper puts the IC in the
-  `H_T` residual).
+* Step map: `rs : ℕ → ℕ` (state ↦ next state), computed by `cR`
+  (`hcR : ∀ x, eval cR x = some (rs x)`; the rule is a total deterministic step, as in Prop 2.2).
+* Initial condition `x₀ = 0` (absorbed into the fixed `O(1)` collector — the paper puts the IC in
+  the `H_T` residual).
 * Orbit: `o_t := rs^[t] 0` (certified by `orbitAcc_fst`).
 * Accumulator / encoded prefix: `orbitAcc rs n : ℕ`, defined by the same recursion the code runs:
   `orbitAcc rs 0 = 0` and `orbitAcc rs (k+1) = pair (rs sₖ) (pair encₖ sₖ)` where
@@ -51,10 +45,11 @@ assembled length is still `elen cR + O(log n) = r + O(log n)`.
 
 ## Boundaries
 * **Target B (explicit `evaln` budget) — WALL.** `evaln`'s single budget `k` guards `n ≤ k` at every
-  node (and `evaln_bound` forces every intermediate value `≤ k`), so any budget for the iterator is at
-  least its largest intermediate value `orbitAcc rs n` — super-exponential in `n`, NOT polynomial.
-  `evaln`'s `k` is fuel-with-a-value-ceiling, not the paper's TIME budget `T`. Honest fallback shipped:
-  `prop_2_2_t_exists` (∃ SOME budget, via `evaln_complete`). See the module note on the documented wall.
+  node (and `evaln_bound` forces every intermediate value `≤ k`), so any budget for the iterator is
+  at least its largest intermediate value `orbitAcc rs n` — super-exponential in `n`, NOT
+  polynomial. `evaln`'s `k` is fuel-with-a-value-ceiling, not the paper's TIME budget `T`. Honest
+  fallback shipped: `prop_2_2_t_exists` (∃ SOME budget, via `evaln_complete`). See the module note
+  on the documented wall.
 * **Target C (`H_T`) — model boundary.** `H_T = E_X[log 1/P*(X)]` lives on a probabilistic-program
   semantics (argmin over `P_T`, expected log-loss) Mathlib lacks. The deterministic-regime rendering
   (per-step log-loss `= 0`) is `0 = 0` — no content; the `log|O|` initial residual needs the
@@ -64,9 +59,9 @@ assembled length is still `elen cR + O(log n) = r + O(log n)`.
 
 @[expose] public section
 
-namespace AdditiveComplexity
+namespace ALT
 
-open Nat.Partrec Nat.Partrec.Code KolmogorovComplexity CodeEvalLaws
+open Nat.Partrec Nat.Partrec.Code AdditiveComplexity KolmogorovComplexity CodeEvalLaws
 
 /-! ## Length law for `prec` -/
 
@@ -94,8 +89,8 @@ theorem orbitAcc_fst (rs : ℕ → ℕ) (n : ℕ) : (orbitAcc rs n).unpair.1 = r
 
 /-! ## The collector code -/
 
-/-- Extract the recursion accumulator from a `prec`-step input `Nat.pair a (Nat.pair y m)`: two right
-unpairings give `m`. -/
+/-- Extract the recursion accumulator from a `prec`-step input `Nat.pair a (Nat.pair y m)`: two
+right unpairings give `m`. -/
 def projIH : Code := comp right right
 
 /-- The current-state projection: `left` of the accumulator. -/
@@ -105,16 +100,19 @@ def projState : Code := comp left projIH
 def projEnc : Code := comp right projIH
 
 /-- The step template: given `Nat.pair a (Nat.pair y m)`, output `Nat.pair (rs m₁) (Nat.pair m₂ m₁)`
-where `m₁ = m.unpair.1`, `m₂ = m.unpair.2`. The rule `cR` enters as the subterm `comp cR projState`. -/
+where `m₁ = m.unpair.1`, `m₂ = m.unpair.2`. The rule `cR` enters as the subterm `comp cR projState`.
+-/
 def stepWrap (cR : Code) : Code := pair (comp cR projState) (pair projEnc projState)
 
 /-- **The collector** (fixed iterator template with the rule plugged in): primitive recursion with
-base `zero` (= `orbitAcc rs 0`) and step `stepWrap cR`. On `Nat.pair 0 n` it outputs `orbitAcc rs n`. -/
+base `zero` (= `orbitAcc rs 0`) and step `stepWrap cR`. On `Nat.pair 0 n` it outputs
+`orbitAcc rs n`. -/
 def collector (cR : Code) : Code := prec Code.zero (stepWrap cR)
 
-/-- **The assembly** `collector ∘ (pair zero (bconst n))`: on input `0`, forms `Nat.pair 0 n` from the
-binary constant and iterates. This is the honest realization of the paper's `collector ∘ R ∘ bconst n`
-(the rule is inside `collector cR`, not a separate middle factor — see the module note). -/
+/-- **The assembly** `collector ∘ (pair zero (bconst n))`: on input `0`, forms `Nat.pair 0 n` from
+the binary constant and iterates. This is the honest realization of the paper's
+`collector ∘ R ∘ bconst n` (the rule is inside `collector cR`, not a separate middle factor — see
+the module note). -/
 noncomputable def assembly (cR : Code) (n : ℕ) : Code :=
   comp (collector cR) (pair Code.zero (bconst n))
 
@@ -196,8 +194,9 @@ private theorem elen_stepWrap (cR : Code) : elen (stepWrap cR) = elen cR + 54 :=
   rw [stepWrap, E_len_pair, E_len_comp, E_len_pair, elen_projState, elen_projEnc]
   omega
 
-/-- **The collector's length is a fixed `O(1)` plus the rule** — `elen (collector cR) = elen cR + 60`.
-So the collector contributes only a constant to the assembled program length. -/
+/-- **The collector's length is a fixed `O(1)` plus the rule** —
+`elen (collector cR) = elen cR + 60`. So the collector contributes only a constant to the assembled
+program length. -/
 theorem elen_collector (cR : Code) : elen (collector cR) = elen cR + 60 := by
   rw [collector, E_len_prec, elen_stepWrap]
   have hz : elen Code.zero = 3 := rfl
@@ -212,8 +211,8 @@ theorem elen_assembly (cR : Code) (n : ℕ) :
 
 /-! ## Prop 2.2 core, DISCHARGED at the eval level -/
 
-/-- **Prop 2.2 `|P|`-component, collector premise DISCHARGED (eval level).** For a rule `cR` computing
-a total step map `rs`, the length-`n` orbit prefix `orbitAcc rs n` has additive complexity
+/-- **Prop 2.2 `|P|`-component, collector premise DISCHARGED (eval level).** For a rule `cR`
+computing a total step map `rs`, the length-`n` orbit prefix `orbitAcc rs n` has additive complexity
 `KE ≤ elen cR + κ·Nat.size n + (84 + elen dbl)` with `κ = 15 + elen dbl` — i.e. `r + O(log n)`, with
 the collector CONSTRUCTED (not modeled). The witness is `assembly cR n`; its length is additive by
 `elen_assembly`, and `elen (bconst n) = O(Nat.size n)` by `elen_bconst_le`. -/
@@ -228,10 +227,12 @@ theorem prop_2_2_eval {cR : Code} {rs : ℕ → ℕ} (hcR : ∀ x, eval cR x = P
 
 /-- **Prop 2.2 `|P|`-component, time-bounded form (∃-budget fallback).** There EXISTS a step budget
 `T` under which `KE_t T (orbitAcc rs n) ≤ elen cR + κ·Nat.size n + (84 + elen dbl)`. The budget is
-existential (via `evaln_complete`), NOT an explicit polynomial in `n`: `evaln`'s `k` caps intermediate
-values, so any explicit budget for this iterator is ≥ `orbitAcc rs n` (super-exponential in `n`). The
-explicit-polynomial budget is a documented wall (module note), mirroring `KE_t_eventually`. -/
-theorem prop_2_2_t_exists {cR : Code} {rs : ℕ → ℕ} (hcR : ∀ x, eval cR x = Part.some (rs x)) (n : ℕ) :
+existential (via `evaln_complete`), NOT an explicit polynomial in `n`: `evaln`'s `k` caps
+intermediate values, so any explicit budget for this iterator is ≥ `orbitAcc rs n`
+(super-exponential in `n`). The explicit-polynomial budget is a documented wall (module note),
+mirroring `KE_t_eventually`. -/
+theorem prop_2_2_t_exists {cR : Code} {rs : ℕ → ℕ} (hcR : ∀ x, eval cR x = Part.some (rs x))
+    (n : ℕ) :
     ∃ T, KE_t T (orbitAcc rs n) ≤
       (elen cR + (15 + elen dbl) * Nat.size n + (84 + elen dbl) : ℕ) := by
   obtain ⟨T, hT⟩ := evaln_complete.1 (Part.eq_some_iff.mp (eval_assembly hcR n))
@@ -244,11 +245,11 @@ theorem prop_2_2_t_exists {cR : Code} {rs : ℕ → ℕ} (hcR : ∀ x, eval cR x
 
 /-! ## The native-cost LINEAR bound, discharged for the collector
 
-`prop_2_2_t_exists` above ships an EXISTENTIAL `evaln` budget because `evaln`'s fuel caps intermediate
-VALUES (`evaln_bound`), so no explicit polynomial budget exists for this value-growing iterator. The
-native step count `TimeCost.tc` (see `CodeLayer/TimeCost.lean`) instead charges each `prec`/`comp`
-unfolding `O(1)` regardless of value magnitude, so it DOES admit an explicit linear bound. The
-projection/stepWrap cost lemmas below feed the generic `TimeCost.tc_prec_le` engine. -/
+`prop_2_2_t_exists` above ships an EXISTENTIAL `evaln` budget because `evaln`'s fuel caps
+intermediate VALUES (`evaln_bound`), so no explicit polynomial budget exists for this value-growing
+iterator. The native step count `TimeCost.tc` (see `CodeLayer/TimeCost.lean`) instead charges each
+`prec`/`comp` unfolding `O(1)` regardless of value magnitude, so it DOES admit an explicit linear
+bound. The projection/stepWrap cost lemmas below feed the generic `TimeCost.tc_prec_le` engine. -/
 
 open TimeCost
 
@@ -279,12 +280,13 @@ collector.** For a rule `cR` whose per-call native cost is `≤ K` uniformly (`h
 native sequential-time cost on `Nat.pair a n` is `≤ (K + 19)·n + 19` — LINEAR in the number of orbit
 steps `n`, with the explicit fixed constant `C = 19` (the `stepWrap` proj/pair/comp overhead). The
 bound is MAGNITUDE-INDEPENDENT: it never mentions the accumulator values `rs^[i] 0` — which grow
-super-exponentially and are exactly what forced the `evaln` value-cap wall behind `prop_2_2_t_exists`
-— because each step's rule call is capped by the uniform `hK`, not by the value threaded through it.
-This is the wall discharged: `TimeCost.tc` charges `O(1)` per `prec`/`comp` unfolding regardless of
-value size (value-agreement `TimeCost.eval_eq_val` certifies the value carries no cap). `hcR` (the rule
-genuinely computes the total step map `rs`) is unused in the bound; it certifies `collector cR` is the
-honest orbit collector of `eval_collector`, keeping the statement parallel to `prop_2_2_t_exists`. -/
+super-exponentially and are exactly what forced the `evaln` value-cap wall behind
+`prop_2_2_t_exists` — because each step's rule call is capped by the uniform `hK`, not by the value
+threaded through it. This is the wall discharged: `TimeCost.tc` charges `O(1)` per `prec`/`comp`
+unfolding regardless of value size (value-agreement `TimeCost.eval_eq_val` certifies the value
+carries no cap). `hcR` (the rule genuinely computes the total step map `rs`) is unused in the bound;
+it certifies `collector cR` is the honest orbit collector of `eval_collector`, keeping the statement
+parallel to `prop_2_2_t_exists`. -/
 theorem prop_2_2_t_poly {cR : Code} {rs : ℕ → ℕ} (_hcR : ∀ x, eval cR x = Part.some (rs x))
     {K : ℕ} (hK : ∀ x, tc cR x ≤ K) (a n : ℕ) :
     tc (collector cR) (Nat.pair a n) ≤ (K + 19) * n + 19 := by
@@ -301,4 +303,4 @@ theorem prop_2_2_t_poly {cR : Code} {rs : ℕ → ℕ} (_hcR : ∀ x, eval cR x 
   rw [heq] at hbound
   omega
 
-end AdditiveComplexity
+end ALT

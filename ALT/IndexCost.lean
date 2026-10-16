@@ -1,8 +1,3 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import AIT.KolmogorovBitlen
@@ -12,8 +7,6 @@ public import CodeLayer.Code.SizeArith
 public import Mathlib.Data.Nat.Log
 public import Mathlib.Data.List.Forall2
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # The index cost of a description
@@ -78,7 +71,7 @@ construction here is that tree.
 
 @[expose] public section
 
-namespace IndexCost
+namespace ALT
 
 open Nat.Partrec Nat.Partrec.Code KolmogorovComplexity PrefixMachine AdditiveComplexity
   CodeEvalLaws CodeSizeArith
@@ -719,4 +712,4 @@ outright, `c` carrying only the decoder's own index. -/
 theorem K_bitlen_le_32_mul_KB : ∃ c, ∀ x, K_bitlen x ≤ 32 * KB x + c :=
   K_bitlen_le_32_mul_KB_of sizeLaw nestSpec decoderSpec
 
-end IndexCost
+end ALT

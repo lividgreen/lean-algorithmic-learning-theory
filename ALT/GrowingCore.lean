@@ -1,18 +1,11 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Batteries.Tactic.OpenPrivate
-public import CellularAutomata.MergeQuotient
+public import Nonautonomous.MergeQuotient
 public import ALT.GrowingWorld
 public import ALT.AccretingWitness
 public import ALT.PersistenceCapacity
-import all CellularAutomata.MergeQuotient
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
+import all Nonautonomous.MergeQuotient
 
 /-!
 # The growing core: the merge quotient as the canonical conservation guest
@@ -26,35 +19,38 @@ that is automatically injective — a **conservation guest** built with no hypot
 
 Every conservation guest (one whose law is injective) factors through this quotient: any
 merge-invariant staged reading is forced by the square's own iterates
-(`merges_invariant_of_stagedSquare`), so the merge quotient's retained profile is the exact ceiling
-on every conservation guest's extent.
-At a finite, constant-stage host, the quotient coincides with `PersistenceCapacity.core`: distinct
+(`Semiconj.merges_invariant`), so the merge quotient's retained profile is the exact
+ceiling on every conservation guest's extent.
+At a finite, constant-stage host, the quotient coincides with `ALT.core`: distinct
 core states never merge (the core is where `U` restricts to a bijection), and every state merges
 with the core state its transient reaches (`mergeQuotCoreEquiv`), recovering the finite theorem's
 "the core is big" as "the retained profile is big."
 
-Robustness is merging by construction: `AccretingWitness.accErasure`'s one-step erasure is exactly a
+Robustness is merging by construction: `ALT.accUpdate_eq_of_sum_lt`'s one-step erasure is exactly a
 one-step merge, so the accreting healer world's quotient is invariant under its own healing margin,
-and `AccretingWitness.accLaw`'s injectivity (append one bit) makes it the theorem's first concrete
+and `ALT.accLaw`'s injectivity (append one bit) makes it the theorem's first concrete
 consumer — the landed decode reading factors through the merge quotient at every stage.
 
 ## Main results
 
 * `Merges` / `mergesSetoid` / `MergeQuot` — **the manufacture**: eventual merging is an equivalence
-  (`merges_refl` / `merges_symm` / `merges_trans`), and its quotient is the canonical carrier.
-* `mergeLaw` / `mergeLaw_injective` / `stagedSquare_merge` — the induced law is well-defined,
-  injective with no hypothesis, and closes the staged square identically at every stage family.
+  (`Merges.refl` / `Merges.symm` / `Merges.trans`), and its quotient is the canonical carrier.
+* `mergeLaw` / `mergeLaw_injective` / `semiconj_merge` — the induced law is
+  well-defined, injective with no hypothesis, and closes the staged square identically at every
+  stage family.
 * `mergeMk_injective_of_injective` — at an injective `U`, `mergeMk U` is itself injective: no two
   distinct states ever merge, since an injective law's iterates cancel the witnessing equation
   outright.
-* `merges_invariant_of_stagedSquare` — **universality**: any injective-law staged-square reading is
-  merge-invariant per stage, so it factors through the quotient (`exists_mergeMk_injective`).
-* `mergeStage` / `advances_mergeStage` / `mergeStage_injOn` — **the retained profile** `R_t`: the
-  quotient's own guest stage, advancing under `Advances` and injected stage-to-stage by `mergeLaw`.
+* `Semiconj.merges_invariant` — **universality**: any injective-law staged-square
+  reading is merge-invariant per stage, so it factors through the quotient
+  (`exists_mergeMk_injective`).
+* `mergeFiber` / `positivelyInvariant_mergeFiber` / `mergeFiber_injOn` — **the retained profile**
+  `R_t`: the quotient's own guest stage, advancing under `PositivelyInvariant` and injected
+  stage-to-stage by `mergeLaw`.
 * `mergeQuotCoreEquiv` / `nat_card_mergeQuot_eq_core` — **the finite bridge**: at a finite carrier
-  the merge quotient is in bijection with `PersistenceCapacity.core`, matching class counts exactly.
-* `mergeRead_eq_of_merges` / `accMerges_of_accErasure` — **robustness is merging**: a healed
-  perturbation is, by definition of the quotient, invisible to the merge reading.
+  the merge quotient is in bijection with `ALT.core`, matching class counts exactly.
+* `mergeRead_eq_of_merges` / `accMerges_of_accUpdate_eq_of_sum_lt` — **robustness is merging**: a
+  healed perturbation is, by definition of the quotient, invisible to the merge reading.
 * `accLaw_injective` / `accRead_merges_invariant` — the accreting healer world's landed decode
   reading is merge-invariant at every stage — universality's first concrete consumer.
 
@@ -64,18 +60,18 @@ No pricing and no ownership claim: an affordable canonical-representative select
 hypothesis at paper level, exactly as the note's own accounting records. The crossing grade (a fixed
 Gödel sentence, threaded through an arbitrary monotone unbounded budget profile rather than the
 witness's own `t + 1`) is a separate module, `GrowingCoreCrossing.lean`: it consumes only
-`CategoricalThreshold`/`AccretingWitness.outgrows_paMinus_uniform` and needs nothing from the merge
+`CategoricalThreshold`/`ALT.outgrows_paMinus_uniform` and needs nothing from the merge
 quotient built here.
 -/
 
 
 @[expose] public section
 
-open private merges_of_iterate_eq_ge from CellularAutomata.MergeQuotient
+open private merges_of_iterate_eq_ge from Nonautonomous.MergeQuotient
 
-namespace GrowingCore
+namespace ALT
 
-open Decoupling PersistenceCapacity AccretingWitness
+open Nonautonomous
 
 variable {X M : Type*}
 
@@ -112,7 +108,7 @@ theorem coreOf_welldef {U : X → X} [Finite X] {s s' : X} (h : Merges U s s') :
   exact hinj ha ha' (by rw [← e1, ← e2, hM])
 
 /-- **The finite bridge, as a genuine map into the core** ([Guests] §7 Theorem 7.7(iv)): every merge
-class is read off at the transient bound, landing in `PersistenceCapacity.core`. -/
+class is read off at the transient bound, landing in `ALT.core`. -/
 noncomputable def coreOf (U : X → X) [Finite X] : MergeQuot U → ↥(core U) :=
   Quotient.lift (fun s => (⟨U^[Nat.card X] s, iterate_mem_core U le_rfl s⟩ : ↥(core U)))
     (fun _ _ hab => Subtype.ext (coreOf_welldef hab))
@@ -154,16 +150,16 @@ theorem mergeRead_eq_of_merges {U : X → X} {s s' : X} (h : Merges U s s') :
 
 variable {ι_J : Type*}
 
-/-- **The witness instantiation**: `AccretingWitness.accErasure`'s one-step erasure is, verbatim, a
+/-- **The witness instantiation**: `ALT.accUpdate_eq_of_sum_lt`'s one-step erasure is, verbatim, a
 one-step merge — a total-weight-bounded habitat perturbation with agreeing environment merges with
 the unperturbed state in one step, so the quotient reading is invariant under exactly the witness's
 margin. -/
-theorem accMerges_of_accErasure (k : ℕ) (π : Mem ι_J Bool → Mem ι_J Bool) (t : ℕ)
+theorem accMerges_of_accUpdate_eq_of_sum_lt (k : ℕ) (π : Mem ι_J Bool → Mem ι_J Bool) (t : ℕ)
     {s : List (Mem (Fin (3 ^ k)) Bool) × Mem ι_J Bool} (hs : s ∈ accCode k t)
     {s' : List (Mem (Fin (3 ^ k)) Bool) × Mem ι_J Bool} (hlen : s'.1.length = s.1.length)
     (henv : s'.2 = s.2) (hsum : (List.zipWith hammingDist s'.1 s.1).sum < 2 ^ k) :
     Merges (accUpdate k π) s' s :=
-  ⟨1, by simpa using accErasure k π t hs hlen henv hsum⟩
+  ⟨1, by simpa using accUpdate_eq_of_sum_lt k π t hs hlen henv hsum⟩
 
 /-- `accLaw` appends one fixed bit, so it is injective — checked at its declaration rather than
 assumed. -/
@@ -175,7 +171,7 @@ stage that eventually merge under the accreting update decode identically. -/
 theorem accRead_merges_invariant (k : ℕ) (π : Mem ι_J Bool → Mem ι_J Bool) :
     ∀ t, ∀ s ∈ accStage k t, ∀ s' ∈ accStage k t,
       Merges (accUpdate k π) s s' → accRead k t s = accRead k t s' :=
-  merges_invariant_of_stagedSquare accLaw_injective (advances_accUpdate k π)
+  Semiconj.merges_invariant accLaw_injective (advances_accUpdate k π)
     (stagedSquare_accRead k π)
 
-end GrowingCore
+end ALT

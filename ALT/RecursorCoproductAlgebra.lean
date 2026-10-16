@@ -1,18 +1,8 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Realizability.RealizabilityCoproduct
 public import ALT.RecursorAlgebra
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
-set_option linter.style.header false
-set_option linter.style.longLine false
--- Definitional `show` (unfolding assembly/algebra projections) is used idiomatically here.
-set_option linter.style.show false
 
 /-!
 # The recursor's initial algebra on the genuine carrier `Asm` ([Decoupling] §4, §5)
@@ -20,27 +10,29 @@ set_option linter.style.show false
 The endofunctor `X ↦ 𝟙 ⊕ X` on the realizability category `RealizabilityCCC.Asm`, built from its
 finite coproducts (`Realizability/RealizabilityCoproduct.lean`), and the discriminating initial
 `𝟙 ⊕ (·)`-algebra of `ALT/RecursorAlgebra.lean` lifted onto that carrier: `succEndoAsm`,
-`SatAlgAsm M`, and `boundedInitialAlgebraAsm_isInitial`, initial only in the saturating
+`SatAlgAsm M`, and `boundedInitialAlgebraAsmIsInitial`, initial only in the saturating
 subcategory.
 -/
 
 
 @[expose] public section
 
-namespace RealizabilityCoproduct
+namespace ALT.AssemblyRecursorAlgebra
 
-open RealizabilityCCC Nat.Partrec CategoryTheory CategoryTheory.Limits
+open RealizabilityCoproduct RealizabilityCCC Nat.Partrec CategoryTheory CategoryTheory.Limits
 
 /-! ## FV-18 on the genuine carrier: the endofunctor `X ↦ 𝟙 ⊕ X` and its initial algebra
 
 With coproducts in hand, the endofunctor `X ↦ 𝟙 ⊕ X` (`𝟙 = terminalAsm`) exists on `Asm`, so the
 `ALT/RecursorAlgebra.lean` discriminating initial `𝟙 ⊕ (·)`-algebra (FV-18) can be restated on the
 **same carrier** as the CCC (`RealizabilityCCC.lean`) and the §6.3 checkers — no longer the `Type`
-stand-in. As in FV-18 the initial object lives only in the *saturating* subcategory (a finite carrier
-is never a true NNO; `ParameterizedNNO.no_true_nno`), and the successor saturates rather than wraps. -/
+stand-in. As in FV-18 the initial object lives only in the *saturating* subcategory (a finite
+carrier is never a true NNO; `no_true_nno`), and the successor saturates rather
+than wraps. -/
 
 /-- The endofunctor `F X = 𝟙 ⊕ X` on `Asm` (`𝟙 = terminalAsm`). Its functorial action on a morphism
-`g` is `[inl, inr ∘ g]` — built from the copairing universal property, so trackability is inherited. -/
+`g` is `[inl, inr ∘ g]` — built from the copairing universal property, so trackability is inherited.
+-/
 noncomputable def succEndoAsm : Asm ⥤ Asm where
   obj X := coprodAsm terminalAsm X
   map {X Y} g := copair (inl terminalAsm Y) (g ≫ inr terminalAsm Y)
@@ -66,8 +58,9 @@ thin). -/
 abbrev SatAlgAsm (M : ℕ) : Type _ :=
   ObjectProperty.FullSubcategory (fun alg : Endofunctor.Algebra succEndoAsm => Sat M alg)
 
-/-- The successor-square identity from `Sat` (the `Asm` analogue of `RecursorAlgebra.iterate_succ_sat`). -/
-lemma iterate_succ_sat (M : ℕ) (alg : Endofunctor.Algebra succEndoAsm) (hsat : Sat M alg)
+/-- The successor-square identity from `Sat` (the `Asm` analogue of
+`TypeRecursorAlgebra.Sat.iterate_succ`). -/
+lemma Sat.iterate_succ (M : ℕ) (alg : Endofunctor.Algebra succEndoAsm) (hsat : Sat M alg)
     (k : Fin (M + 1)) :
     sA alg ((sA alg)^[k.val] (zA alg)) = (sA alg)^[min (k.val + 1) M] (zA alg) := by
   rcases lt_or_eq_of_le (Nat.lt_succ_iff.mp k.isLt) with hlt | heq
@@ -90,7 +83,8 @@ noncomputable def toZeroMor (M : ℕ) : terminalAsm ⟶ finAsm M :=
 
 /-- The saturating-successor morphism `finAsm M ⟶ finAsm M` (tracked by finite-domain lookup). -/
 noncomputable def boundedSuccMor (M : ℕ) : finAsm M ⟶ finAsm M :=
-  ⟨RecursorAlgebra.boundedSucc M, trackable_of_finDom M (finAsm M) (RecursorAlgebra.boundedSucc M)⟩
+  ⟨TypeRecursorAlgebra.boundedSucc M,
+    trackable_of_fin_dom M (finAsm M) (TypeRecursorAlgebra.boundedSucc M)⟩
 
 /-- **The bounded algebra on `Asm`.** Carrier `finAsm M`; structure map the copairing of the
 basepoint `𝟙 ⟶ finAsm M` and the saturating successor `finAsm M ⟶ finAsm M` — so it lives on the
@@ -99,10 +93,12 @@ noncomputable def boundedAlgAsm (M : ℕ) : Endofunctor.Algebra succEndoAsm wher
   a := finAsm M
   str := copair (toZeroMor M) (boundedSuccMor M)
 
-theorem sA_boundedAlgAsm_eq (M : ℕ) : sA (boundedAlgAsm M) = RecursorAlgebra.boundedSucc M := rfl
+theorem sA_boundedAlgAsm_eq (M : ℕ) :
+    sA (boundedAlgAsm M) = TypeRecursorAlgebra.boundedSucc M := rfl
 theorem zA_boundedAlgAsm_eq (M : ℕ) : zA (boundedAlgAsm M) = (0 : Fin (M + 1)) := rfl
 
-/-- The orbit value climbs and saturates (`Asm` analogue of `RecursorAlgebra.boundedAlg_orbit_val`). -/
+/-- The orbit value climbs and saturates (`Asm` analogue of
+`TypeRecursorAlgebra.boundedAlg_orbit_val`). -/
 lemma boundedAlgAsm_orbit_val (M n : ℕ) :
     ((sA (boundedAlgAsm M))^[n] (zA (boundedAlgAsm M))).val = min n M := by
   induction n with
@@ -116,45 +112,46 @@ lemma boundedAlgAsm_orbit_val (M n : ℕ) :
 lemma boundedAlgAsm_sat (M : ℕ) : Sat M (boundedAlgAsm M) := by
   have hM : (sA (boundedAlgAsm M))^[M] (zA (boundedAlgAsm M)) = Fin.last M := by
     apply Fin.ext; rw [boundedAlgAsm_orbit_val, Fin.val_last]; omega
-  show sA (boundedAlgAsm M) ((sA (boundedAlgAsm M))^[M] (zA (boundedAlgAsm M)))
+  change sA (boundedAlgAsm M) ((sA (boundedAlgAsm M))^[M] (zA (boundedAlgAsm M)))
       = (sA (boundedAlgAsm M))^[M] (zA (boundedAlgAsm M))
   rw [hM, sA_boundedAlgAsm_eq]
-  exact RecursorAlgebra.boundedSucc_last M
+  exact TypeRecursorAlgebra.boundedSucc_last M
 
 /-! ### The unique morphism out: the bounded recursor `k ↦ sᵏ z` -/
 
 /-- The underlying map of the unique morphism `boundedAlgAsm M ⟶ alg`: the bounded recursor
-`k ↦ sᵏ z` (the saturating `Fin` counterpart of `ParameterizedNNO.cyclicParamNNO`). -/
-noncomputable def recFn (M : ℕ) (alg : Endofunctor.Algebra succEndoAsm) : Fin (M + 1) → alg.a.carrier :=
+`k ↦ sᵏ z` (the saturating `Fin` counterpart of `cyclicParamNNO`). -/
+noncomputable def recFn (M : ℕ) (alg : Endofunctor.Algebra succEndoAsm) : Fin (M + 1) →
+    alg.a.carrier :=
   fun k => (sA alg)^[k.val] (zA alg)
 
 @[simp] lemma recFn_zero (M : ℕ) (alg : Endofunctor.Algebra succEndoAsm) :
     recFn M alg 0 = zA alg := by simp [recFn]
 
 /-- The bounded recursor as a *realized* morphism `finAsm M ⟶ alg.a` — tracked by finite-domain
-lookup (`trackable_of_finDom`), so it is a genuine morphism of the realizability category. -/
+lookup (`trackable_of_fin_dom`), so it is a genuine morphism of the realizability category. -/
 noncomputable def recMor (M : ℕ) (alg : Endofunctor.Algebra succEndoAsm) : finAsm M ⟶ alg.a :=
-  ⟨recFn M alg, trackable_of_finDom M alg.a (recFn M alg)⟩
+  ⟨recFn M alg, trackable_of_fin_dom M alg.a (recFn M alg)⟩
 
-/-- The bounded recursor **is** an algebra homomorphism `boundedAlgAsm M ⟶ alg`, for every saturating
-`alg` (existence half of initiality). The pointwise recursor square uses `iterate_succ_sat` at the
-saturating endpoint. -/
+/-- The bounded recursor **is** an algebra homomorphism `boundedAlgAsm M ⟶ alg`, for every
+saturating `alg` (existence half of initiality). The pointwise recursor square uses
+`Sat.iterate_succ` at the saturating endpoint. -/
 noncomputable def toSatHomAsm (M : ℕ) (alg : Endofunctor.Algebra succEndoAsm) (hsat : Sat M alg) :
     boundedAlgAsm M ⟶ alg where
   f := recMor M alg
   h := by
     apply Subtype.ext
     funext x
-    show alg.str.1 ((succEndoAsm.map (recMor M alg)).1 x)
+    change alg.str.1 ((succEndoAsm.map (recMor M alg)).1 x)
         = (recMor M alg).1 ((boundedAlgAsm M).str.1 x)
     cases x with
     | inl u =>
         cases u
-        show zA alg = recFn M alg 0
+        change zA alg = recFn M alg 0
         rw [recFn_zero]
     | inr k =>
-        show sA alg ((sA alg)^[k.val] (zA alg)) = (sA alg)^[min (k.val + 1) M] (zA alg)
-        exact iterate_succ_sat M alg hsat k
+        change sA alg ((sA alg)^[k.val] (zA alg)) = (sA alg)^[min (k.val + 1) M] (zA alg)
+        exact Sat.iterate_succ M alg hsat k
 
 lemma toSatHomAsm_f_apply (M : ℕ) (alg : Endofunctor.Algebra succEndoAsm) (hsat : Sat M alg)
     (k : Fin (M + 1)) : (toSatHomAsm M alg hsat).f.1 k = (sA alg)^[k.val] (zA alg) := rfl
@@ -173,7 +170,7 @@ lemma hom_zero (M : ℕ) (alg : Endofunctor.Algebra succEndoAsm) (g : boundedAlg
 
 /-- The `inr`-square: `g (succ k) = s (g k)`. -/
 lemma hom_succ (M : ℕ) (alg : Endofunctor.Algebra succEndoAsm) (g : boundedAlgAsm M ⟶ alg)
-    (k : Fin (M + 1)) : g.f.1 (RecursorAlgebra.boundedSucc M k) = sA alg (g.f.1 k) :=
+    (k : Fin (M + 1)) : g.f.1 (TypeRecursorAlgebra.boundedSucc M k) = sA alg (g.f.1 k) :=
   (hom_pointwise M alg g (Sum.inr k)).symm
 
 /-- **Uniqueness on the orbit** (a genuine induction): any algebra hom `g : boundedAlgAsm M ⟶ alg`
@@ -192,7 +189,8 @@ lemma hom_f_orbit (M : ℕ) (alg : Endofunctor.Algebra succEndoAsm) (g : bounded
       intro hn
       have hn' : n < M + 1 := by omega
       have hlt : n < M := by omega
-      have hpt : RecursorAlgebra.boundedSucc M (⟨n, hn'⟩ : Fin (M + 1)) = (⟨n + 1, hn⟩ : Fin (M + 1)) := by
+      have hpt : TypeRecursorAlgebra.boundedSucc M (⟨n, hn'⟩ : Fin (M + 1)) =
+          (⟨n + 1, hn⟩ : Fin (M + 1)) := by
         apply Fin.ext
         change min (n + 1) M = n + 1
         omega
@@ -206,7 +204,7 @@ lemma hom_f_eq_rec (M : ℕ) (alg : Endofunctor.Algebra succEndoAsm) (g : bounde
     g.f = recMor M alg := by
   apply Subtype.ext
   funext k
-  show g.f.1 k = (sA alg)^[k.val] (zA alg)
+  change g.f.1 k = (sA alg)^[k.val] (zA alg)
   exact hom_f_orbit M alg g k.val k.isLt
 
 /-! ### The discriminating initiality on the genuine carrier -/
@@ -219,17 +217,17 @@ noncomputable def boundedInitialAlgebraAsm (M : ℕ) : SatAlgAsm M where
 /-- **FV-18 on the genuine carrier (headline).** `boundedInitialAlgebraAsm M` is a *genuine*
 `IsInitial` object of the saturating full subcategory `SatAlgAsm M` of
 `Endofunctor.Algebra succEndoAsm`, where `succEndoAsm` is the endofunctor `X ↦ 𝟙 ⊕ X` on the
-realizability category `Asm` (the same carrier as the CCC of `RealizabilityCCC.lean`). Discharged via
-`IsInitial.ofUniqueHom`: existence is the recursor hom `toSatHomAsm`, uniqueness is the orbit
+realizability category `Asm` (the same carrier as the CCC of `RealizabilityCCC.lean`). Discharged
+via `IsInitial.ofUniqueHom`: existence is the recursor hom `toSatHomAsm`, uniqueness is the orbit
 induction `hom_f_eq_rec`.
 
 Honesty (as in the `Type`-level FV-18): morphisms here are honest algebra homomorphisms (tracked
 functions commuting with the structure map), **not** `Prop`s, so uniqueness is a real induction over
 the orbit; and initiality holds **only** in the saturating subcategory — the unrestricted initial
-`𝟙 ⊕ (·)`-algebra is the infinite `ℕ`, and `ParameterizedNNO.no_true_nno` forbids a true NNO on a
+`𝟙 ⊕ (·)`-algebra is the infinite `ℕ`, and `no_true_nno` forbids a true NNO on a
 finite carrier (recorded by `boundedAlgAsm_str_not_injective`: the structure map is not injective,
 hence not a Lambek iso). -/
-noncomputable def boundedInitialAlgebraAsm_isInitial (M : ℕ) :
+noncomputable def boundedInitialAlgebraAsmIsInitial (M : ℕ) :
     IsInitial (boundedInitialAlgebraAsm M) :=
   IsInitial.ofUniqueHom
     (fun Y => ObjectProperty.homMk (toSatHomAsm M Y.obj Y.property))
@@ -238,10 +236,11 @@ noncomputable def boundedInitialAlgebraAsm_isInitial (M : ℕ) :
       apply Endofunctor.Algebra.ext
       exact hom_f_eq_rec M Y.obj m.hom)
 
-/-- **Honesty (Lambek does not apply here).** The structure map of `boundedAlgAsm M` is not injective
-(its domain `𝟙 ⊕ Fin (M+1)` has `M+2` elements, its codomain `M+1`), hence not an isomorphism. So the
-finite initial object of the saturating subcategory is *not* a Lambek fixed point — the same
-finite-capacity obstruction (`ParameterizedNNO.no_true_nno`) as the `Type`-level FV-18. -/
+/-- **Honesty (Lambek does not apply here).** The structure map of `boundedAlgAsm M` is not
+injective (its domain `𝟙 ⊕ Fin (M+1)` has `M+2` elements, its codomain `M+1`), hence not an
+isomorphism. So the finite initial object of the saturating subcategory is *not* a Lambek fixed
+point — the same finite-capacity obstruction (`no_true_nno`) as the `Type`-level
+FV-18. -/
 theorem boundedAlgAsm_str_not_injective (M : ℕ) :
     ¬ Function.Injective (boundedAlgAsm M).str.1 := by
   intro hinj
@@ -251,4 +250,4 @@ theorem boundedAlgAsm_str_not_injective (M : ℕ) :
   simp only [Fintype.card_sum, Fintype.card_fin, Fintype.card_punit] at hle
   omega
 
-end RealizabilityCoproduct
+end ALT.AssemblyRecursorAlgebra

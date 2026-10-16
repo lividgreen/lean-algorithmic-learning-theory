@@ -1,16 +1,8 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Mathlib.Analysis.Complex.ExponentialBounds
 public import Mathlib.Analysis.SpecialFunctions.Log.Base
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
-set_option linter.style.header false
-set_option linter.style.longLine false
 
 /-!
 # Capacity threshold for rule-based encodings ([Discovery], Corollary 2.2)
@@ -28,7 +20,7 @@ Corollary 2.2 only.
   and `0 ≤ c₃ ≤ c₂`), entails `K ≥ Kmin` — i.e. in the regime the rule-based encoding
   is representable.
 * `KminBits r c₃ = r + 2·log₂ r + c₃` is the bits-faithful threshold (matching §2.2's base-2
-  coding); `MDLCoding.selfDelim_realizes_KminBits` proves it is *realized* by an actual
+  coding); `ALT.selfDelim_realizes_KminBits` proves it is *realized* by an actual
   self-delimiting code (`|selfDelim p| ≤ KminBits |p| 1`), so the `2 log r` framing overhead is a
   derived code length, not an assertion — content-checking Cor 2.2 as eq.(1)/eq.(2) ground Thm 2.1.
 
@@ -50,7 +42,7 @@ exactly as in the paper's "O(·) with constants traceable in principle" conventi
 
 @[expose] public section
 
-namespace CapacityThreshold
+namespace ALT
 
 /-- Minimal model-description cost of the rule-based two-part encoding, in bits:
 program length `r`, the Elias-δ self-delimiting overhead `2 log r`, and the
@@ -59,7 +51,8 @@ noncomputable def Kmin (r c₃ : ℝ) : ℝ := r + 2 * Real.log r + c₃
 
 /-- Bits-form capacity threshold (Cor 2.2), matching §2.2's base-2 coding: program length `r`
 plus the Elias self-delimiting framing `2·log₂ r` plus `c₃`. The natural-log `Kmin` above is the
-same threshold with the constant base-change `1/log 2` absorbed into `c₀` (paper's O(·) convention). -/
+same threshold with the constant base-change `1/log 2` absorbed into `c₀` (paper's O(·) convention).
+-/
 noncomputable def KminBits (r c₃ : ℝ) : ℝ := r + 2 * Real.logb 2 r + c₃
 
 /-- A capacity `K` is *representable* (can host the rule-based encoding) iff it meets the
@@ -109,4 +102,4 @@ theorem representable_of_C1
   unfold Representable Kmin
   linarith [key, hC1]
 
-end CapacityThreshold
+end ALT

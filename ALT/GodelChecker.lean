@@ -1,17 +1,9 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Foundation.FirstOrder.Incompleteness.Examples
 public import ALT.GodelCore
 public import ALT.GodelComplete
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
-set_option linter.style.header false
-set_option linter.style.longLine false
 
 /-!
 # A concrete sound bounded proof-checker over Foundation ([Decoupling] §6.3, the Level-2 witness)
@@ -50,10 +42,10 @@ named axiom. This is the recommended witness. The earlier obstruction (no `Δ₁
 for `𝗥₀`/`𝗤`, both infinite via the `𝗘𝗤` schema) is sidestepped because `𝗣𝗔⁻` — though it extends
 `𝗥₀` — is itself finite.
 
-A parallel `𝗜𝚺₁` witness (`isigma1_decides_bounded_nonprovability'`, the same statement at `T = 𝗜𝚺₁`)
-is **also fully axiom-clean**: Foundation's `𝗜𝚺₁`/`𝗣𝗔` `Δ₁`-definability is a *theorem*
+A parallel `𝗜𝚺₁` witness (`isigma1_decides_bounded_nonprovability'`, the same statement at
+`T = 𝗜𝚺₁`) is **also fully axiom-clean**: Foundation's `𝗜𝚺₁`/`𝗣𝗔` `Δ₁`-definability is a *theorem*
 (an instance synthesized from `PeanoMinus.delta1`,
-`InductionScheme.delta1_strictHierarchy` and the union instance), so
+`InductionScheme.delta1_prenexHierarchy` and the union instance), so
 `exists_true_but_unprovable_sentence_of_sigma1sound 𝗜𝚺₁` carries no named axiom and
 `#print axioms` of the witness shows only `propext, Classical.choice, Quot.sound`. `𝗣𝗔⁻ ⊊ 𝗜𝚺₁`, so
 the `𝗣𝗔⁻` capstone is the weaker, more faithful (§5.3-class) statement, and the `𝗜𝚺₁` form is the
@@ -64,8 +56,8 @@ This checker is **computable** (`Prf` `#eval`s — see `prf_nondegenerate`/`prf_
 **incomplete**: it is a Hilbert (ax+MP) script checker over a *fixed finite* axiom list, whereas
 Foundation's classical first-order `⊢` is the one-sided sequent calculus `𝐋𝐊¹`, with no exposed
 Hilbert-vs-`𝐋𝐊¹` completeness bridge. `ALT/GodelCheckerComplete.lean` (FV-9) supplies the dual —
-sound AND complete, but `noncomputable`. Merging the two into a single computable-and-complete bounded
-decider is a **documented WALL**; the precise missing object is a runnable
+sound AND complete, but `noncomputable`. Merging the two into a single computable-and-complete
+bounded decider is a **documented WALL**; the precise missing object is a runnable
 `Decidable`/`Bool` form of Foundation's `noncomputable` Δ₁-fixpoint proof predicate
 `Bootstrapping.Proof` — see the wall section of `GodelCheckerComplete.lean` for the full statement.
 Non-load-bearing: the §6.3 verdict needs only this checker's soundness.
@@ -74,7 +66,7 @@ Non-load-bearing: the §6.3 verdict needs only this checker's soundness.
 
 @[expose] public section
 
-namespace GodelChecker
+namespace ALT.HilbertChecker
 
 open FFL FFL.Entailment FFL.FirstOrder FFL.FirstOrder.Arithmetic
 
@@ -235,11 +227,11 @@ theorem paMinus_decides_bounded_nonprovability
   exact hunprov (Prf_sound 𝗣𝗔⁻ Ax hAx δ p h)
 
 /-- **§6.3 Theorem 6.3, L2b — concrete, for the real `𝗜𝚺₁` Gödel sentence.** The parallel witness to
-`paMinus_decides_bounded_nonprovability` at Foundation's canonical Σ₁-induction theory `T = 𝗜𝚺₁`: the
-**actual** Gödel sentence `G` of `𝗜𝚺₁` (true in `ℕ`, unprovable in `𝗜𝚺₁`) is decided as
+`paMinus_decides_bounded_nonprovability` at Foundation's canonical Σ₁-induction theory `T = 𝗜𝚺₁`:
+the **actual** Gödel sentence `G` of `𝗜𝚺₁` (true in `ℕ`, unprovable in `𝗜𝚺₁`) is decided as
 bounded-non-provable for the concrete sound checker over any provable axiom `Ax`. Foundation's
 `𝗜𝚺₁.Δ₁` instance is a *theorem* (synthesized from `PeanoMinus.delta1`,
-`InductionScheme.delta1_strictHierarchy` and the union instance, the `𝗜𝚺₁`/`𝗣𝗔`
+`InductionScheme.delta1_prenexHierarchy` and the union instance, the `𝗜𝚺₁`/`𝗣𝗔`
 `Δ₁`-definability obligation discharged upstream), so this witness is **fully axiom-clean**:
 `#print axioms` shows only
 `propext, Classical.choice, Quot.sound`. `𝗣𝗔⁻ ⊊ 𝗜𝚺₁`, so `paMinus_decides_bounded_nonprovability`
@@ -325,4 +317,4 @@ theorem godel_mem_Formula (δ : S) (Mchk : ℕ) (h : Encodable.encode δ ≤ Mch
     (⟨Encodable.encode δ, h, by simp [Wff, Encodable.encodek]⟩ : Formula Mchk) ∈
       (Finset.univ : Finset (Formula Mchk)) := Finset.mem_univ _
 
-end GodelChecker
+end ALT.HilbertChecker

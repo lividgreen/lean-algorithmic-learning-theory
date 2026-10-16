@@ -1,19 +1,12 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.WeightedFiber
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # The quantization rate ([Inevitability] §6)
 
-`WeightedFiber.weighted_fiber_not_exactly_bayes` shows the carrier projection is not the identity:
+`ALT.weighted_fiber_not_exactly_bayes` shows the carrier projection is not the identity:
 on a two-candidate, budget-`2` instance the projected step discards an entire update the exact
 replicator step would have made. This file answers the question that boundary opened — in what
 sense, and how fast, does the finite fiber *approach* the exact Bayes run?
@@ -45,7 +38,9 @@ candidates already below one quantum) are both left open.
 
 @[expose] public section
 
-namespace WeightedFiber
+namespace ALT
+
+open WVec
 
 /-! ## The exactness horizon -/
 
@@ -409,4 +404,4 @@ theorem rate_vacuous_at_badW_instance : (4 * (2 : ℚ) / (2 : ℚ)) ≥ 2 := by 
 
 end Reconciliation
 
-end WeightedFiber
+end ALT

@@ -1,14 +1,7 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Learning.SQBounds
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # Parity counterexample to Assumption A ([SQ], §5)
@@ -48,9 +41,9 @@ Status: PROVED as pure real-asymptotics statements. This is the *arithmetic core
 
 @[expose] public section
 
-namespace ParityCounterexample
+namespace ALT
 
-open Asymptotics Filter
+open Asymptotics Filter SQBounds
 
 /-- Exponential beats every polynomial (faithful Mathlib-asymptotics core): every real power of
 `r` is little-o of the modeled exponential `d_SQ`. Direct from
@@ -89,4 +82,4 @@ theorem dSQ_not_polyBounded (ε : ℝ) (hε : 0 < ε) : ¬ PolyBounded (dSQ ε) 
   have hpos : 0 < Real.exp (ε * r) := Real.exp_pos _
   linarith
 
-end ParityCounterexample
+end ALT

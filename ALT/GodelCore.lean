@@ -1,27 +1,21 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 -- Targeted (non-umbrella) import, so this shared core stays light: the statements below need
 -- nothing beyond core Lean, and the import supplies the style-linter options this file opts out of.
 module
 
 public import Mathlib.Order.Basic
 
-set_option linter.style.header false
 
 /-!
 # Gödel threshold — pure-logic core ([Decoupling] §5.3 + §6)
 
 Shared pure-logic core of `ALT/GodelThreshold.lean`: the abstract predicates and the threshold
-lemma, in `namespace GodelThreshold` so all existing references (`GodelThreshold.Incompleteness`,
-`…RepresentsUnderivableTruth`, `…godel_threshold`, `…Representable`) resolve unchanged.
+lemma, stated at the root `ALT` namespace (`ALT.Incompleteness`,
+`ALT.RepresentsUnderivableTruth`, `ALT.godel_threshold`, `ALT.DepthRepresentable`).
 
 This file stays deliberately light (core Lean plus `Mathlib.Order.Basic`). That lets BOTH the
 Mathlib side (`ALT/GodelThreshold.lean`, which adds the NNO-tied `reflective_of_depth`) and the
 Foundation side (`ALT/GodelComplete.lean`, which discharges `Incompleteness` from the ported Gödel
-theorem) import these definitions and share the **literal** `GodelThreshold.Incompleteness` symbol,
+theorem) import these definitions and share the **literal** `ALT.Incompleteness` symbol,
 so the hypothesis one side states is exactly the one the other discharges. Factoring the shared
 predicates into a single lightweight module is what makes that identity structural rather than
 incidental.
@@ -35,11 +29,11 @@ Status: PROVED as pure logic (`#print axioms` → standard axioms only).
 @[expose] public section
 
 assert_not_exists FFL.FirstOrder.Arithmetic.exists_true_but_unprovable_sentence_of_sigma1sound
-assert_not_exists ParameterizedNNO.ParamNNO
+assert_not_exists ALT.ParamNNO
 assert_not_exists Nat.Partrec.Code
 assert_not_exists CategoryTheory.Functor
 
-namespace GodelThreshold
+namespace ALT
 
 universe u
 
@@ -47,14 +41,14 @@ variable {Sentence : Type u} (gnum : Sentence → Nat) (Derivable True_ : Senten
 
 /-- §5.3: a sentence is representable in the depth-`M` NNO `N_M` iff its Gödel number is within the
 depth — i.e. it is one of the `M+1` orbit elements indexed `0…M` of
-`ParameterizedNNO.ParamNNO`. -/
-def Representable (M : Nat) (s : Sentence) : Prop := gnum s ≤ M
+`ParamNNO`. -/
+def DepthRepresentable (M : Nat) (s : Sentence) : Prop := gnum s ≤ M
 
 /-- Def 6.1's operative consequence (§6): the subsystem contains a representable sentence that is
 true in the standard model but not derivable in its internal logic. This is NOT the full
 Definition 6.1 (CCC + NNO + `M > g(T_S)`) — see `ALT/Reflective.lean`. -/
 def RepresentsUnderivableTruth (M : Nat) : Prop :=
-  ∃ s, Representable gnum M s ∧ True_ s ∧ ¬ Derivable s
+  ∃ s, DepthRepresentable gnum M s ∧ True_ s ∧ ¬ Derivable s
 
 /-- Gödel's first incompleteness theorem for `T_S` as an abstract statement: a sentence `G` with
 Gödel number `gTS`, true in the standard model but not derivable. Here it is an imported
@@ -72,4 +66,4 @@ theorem godel_threshold (M gTS : Nat) (hM : gTS ≤ M)
   change gnum G ≤ M
   omega
 
-end GodelThreshold
+end ALT

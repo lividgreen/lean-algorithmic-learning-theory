@@ -1,15 +1,8 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import CodeLayer.BinaryKraft
 public import AnytimeValid.Ville
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # Search-phase pruned mass: the log-Bayes potential ([SQ] Appendix A, Claim 2, search half)
@@ -67,7 +60,7 @@ the Bayes-mixture argument of [Discovery]) is machine-checked separately in `SQP
 
 @[expose] public section
 
-namespace SQSearchPhaseMass
+namespace ALT
 
 /-- The potential range: for a real potential `Φ` with `Φ 0 ≤ K` and `Φ n ≥ 0`, the telescoped
 total of its per-step drops is `≤ K`. (No monotonicity needed for the bound itself.) -/
@@ -346,4 +339,4 @@ theorem search_phase_mass_charged [IsProbabilityMeasure μ]
 
 end ChargedChain
 
-end SQSearchPhaseMass
+end ALT

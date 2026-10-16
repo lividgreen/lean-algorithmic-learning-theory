@@ -1,11 +1,7 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Batteries.Tactic.OpenPrivate
+public import Mathlib.Data.Fintype.Perm
 public import Mathlib.Data.Finite.Perm
 public import Mathlib.Data.Nat.Choose.Multinomial
 public import Mathlib.Tactic.Group
@@ -14,8 +10,6 @@ public import ALT.Collector
 public import ALT.Persistence.MovingLens
 import all ALT.Persistence.MovingLens
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # Persistence capacity III: complexity and counting ([Persistence] §5–§8)
@@ -31,7 +25,7 @@ that storage costs and shows the price is generically unpayable.
   largest model carried by a family whose every frame's core table costs at most `b` bits.
   Monotone in the budget, capped by the core at every budget, and above the static levels past a
   finite one.
-* `collapse` / `collapse_balanced` / `collapse_generic` — **the price is generically unpayable**
+* `collapse` / `Balanced.collapse` / `collapse_generic` — **the price is generically unpayable**
   ([Persistence] §7): over a permutation world the second frame is forced, a budget of `b` bits
   describes at most `2 ^ (b + 1)` frames, and each frame is hit by exactly one coset of the
   lens's stabilizer.
@@ -53,14 +47,14 @@ that storage costs and shows the price is generically unpayable.
   and the **paired frame** ([Persistence] Remark 6.6, and §7's paired table from one uniform
   code): an address is paid once.
 * The multiplicative congruential world (cheap dynamics, exhibited), faithful self-reading priced
-  at the world's rule, and capacity out to a finite horizon (`CbH_upTo` / `CbHu_upTo`).
+  at the world's rule, and capacity out to a finite horizon (`CbHUpTo` / `CbHuUpTo`).
 -/
 
 @[expose] public section
 
-namespace PersistenceCapacity
+namespace ALT
 
-open Decoupling CodeEvalLaws
+open CodeEvalLaws
 
 variable {X ι V M : Type*}
 
@@ -277,7 +271,7 @@ theorem card_stabilizer_lens {α : Type*} [Finite α] (ℓ : α → Fin m) :
 /-- **The descent coset, as a bijection onto the stabilizer** ([Persistence] §8, Corollary
 8.11(i)'s own count): `V ↦ V * U⁻¹` bijects the permutations descending through `κ` with law `W`
 onto `stabilizer (Perm (Fin n)) κ`, `U` itself supplying the non-emptiness witness — the identical
-move `FrameItinerary.consistentEquivStab` runs for the joint itinerary's stabilizer. -/
+move `ALT.consistentEquivStab` runs for the joint itinerary's stabilizer. -/
 private noncomputable def descentEquivStab {z : ℕ} (κ : Fin n → Fin z) (W : Fin z → Fin z)
     {U : Perm (Fin n)} (hU : ∀ x, κ (U x) = W (κ x)) :
     ↥{V : Perm (Fin n) | ∀ x, κ (V x) = W (κ x)} ≃ ↥(stabilizer (Perm (Fin n)) κ) where
@@ -534,7 +528,7 @@ theorem exists_balanced (hm : 0 < m) (hdvd : m ∣ n) : ∃ ℓ : Fin n → Fin 
         rw [Nat.add_comm, Nat.add_mul_div_right _ _ hm, Nat.div_eq_of_lt i.2, Nat.zero_add] }
   rw [Nat.card_congr e, Nat.card_eq_fintype_card, Fintype.card_fin]
 
-private theorem prod_fiber_balanced {ℓ : Fin n → Fin m} (h : Balanced ℓ) :
+private theorem Balanced.prod_fiber {ℓ : Fin n → Fin m} (h : Balanced ℓ) :
     ∏ i : Fin m, (Nat.card {x : Fin n // ℓ x = i})! = ((n / m)!) ^ m := by
   rw [Finset.prod_congr rfl fun i (_ : i ∈ Finset.univ) => by rw [h i]]
   simp
@@ -544,7 +538,7 @@ stated multiplicatively. Its logarithm is `κ · n − Θ(2 ^ κ · log n)` for 
 estimate, and the one presentation-level step this development leaves to the paper. -/
 theorem card_balancedLenses {ℓ : Fin n → Fin m} (h : Balanced ℓ) :
     Nat.card ↥(orbit (Perm (Fin n)) ℓ) * ((n / m)!) ^ m = n ! := by
-  rw [← prod_fiber_balanced h]
+  rw [← Balanced.prod_fiber h]
   exact card_orbit_mul_prod_fiber ℓ
 
 /-- The lens, tabulated along `Fin n`: the finite object whose complexity prices the frame. -/
@@ -678,12 +672,12 @@ theorem collapse (ℓ₀ : Fin n → Fin m) (b : ℕ) :
 each read from `n / m` states, at most `2 ^ (b + 1) · ((n / m) !) ^ m` worlds are affordable. Since
 `N_bal = n ! / ((n / m) !) ^ m` has `log₂ N_bal = κ · n − Θ(2 ^ κ log n)`, a budget below that
 leaves all but a vanishing fraction of worlds with NO affordable moving decoder. -/
-theorem collapse_balanced {ℓ₀ : Fin n → Fin m} (hbal : Balanced ℓ₀) (b : ℕ) :
+theorem Balanced.collapse {ℓ₀ : Fin n → Fin m} (hbal : Balanced ℓ₀) (b : ℕ) :
     {U : Perm (Fin n) | ∃ ℓ : ℕ → Fin n → Fin m,
         PermCarries U ℓ ∧ ℓ 0 = ℓ₀ ∧ PermBudget ℓ b}.ncard
       ≤ 2 ^ (b + 1) * ((n / m)!) ^ m := by
-  rw [← prod_fiber_balanced hbal]
-  exact collapse ℓ₀ b
+  rw [← Balanced.prod_fiber hbal]
+  exact ALT.collapse ℓ₀ b
 
 /-- **The collapse, as a fraction of all worlds** ([Persistence] §7, Theorem 7.3): the worlds
 carrying the model under some budget-`b` family are at most a `2 ^ (b + 1) / N_bal` fraction of the
@@ -1120,8 +1114,9 @@ theorem smul_markingLens {r : ℕ} {x : Fin r → Fin n} (hx : Function.Injectiv
 family `ℓ t := ℓ₀ ∘ (U ^ t)⁻¹` carries a persistent model over **every** permutation world. Reading
 through the time-`t` frame after `t` steps returns the time-`0` reading, by construction — no
 genericity, no maximality, no hypothesis on `U` at all. -/
-theorem markCarries {r : ℕ} {U : Perm (Fin n)} {x : Fin r → Fin n} (hx : Function.Injective x)
-    (hrn : r < n) : PermCarries U (fun t => (U ^ t) • markingLens x) := by
+theorem permCarries_pow_smul_markingLens {r : ℕ} {U : Perm (Fin n)} {x : Fin r → Fin n}
+    (hx : Function.Injective x) (hrn : r < n) :
+    PermCarries U (fun t => (U ^ t) • markingLens x) := by
   constructor
   · simpa using markingLens_surjective hx hrn
   · intro t i
@@ -1151,7 +1146,7 @@ theorem CbH_ge_marking {r : ℕ} {U : Perm (Fin n)} {x : Fin r → Fin n} (hx : 
     rw [smul_markingLens hx (U ^ t)]
     exact hprice _ ((U ^ t).injective.comp hx)
   have hmem : Nat.card ↥(orbit (Perm (Fin n)) (markingLens x)) ∈ BudgetedEntropies U b :=
-    ⟨r + 1, fun t => (U ^ t) • markingLens x, markCarries hx hrn, hb, by simp⟩
+    ⟨r + 1, fun t => (U ^ t) • markingLens x, permCarries_pow_smul_markingLens hx hrn, hb, by simp⟩
   have hle : Nat.card ↥(orbit (Perm (Fin n)) (markingLens x)) ≤ CbH U b :=
     le_csSup (bddAbove_budgetedEntropies U b) hmem
   calc n ! = Nat.card ↥(orbit (Perm (Fin n)) (markingLens x))
@@ -1758,7 +1753,7 @@ again at every step, forever, and the collapse prices exactly that rent.
 
 The uniform variant named after Definition 5.1 is the other way to hold a reading: one program of
 length at most `b` computing `t ↦ ℓ t`. The observer *owns* the reading, paying once. The exchange
-rate between the two is the paper's `K (ℓ t) ≤ b + O (log t)`, and `uniformBudget_frame_cost` is
+rate between the two is the paper's `K (ℓ t) ≤ b + O (log t)`, and `UniformBudget.frame_cost` is
 that reduction with both constants explicit and absolute: the owner's program, run at `t`, is a
 description of frame `t` — hand `t` to it as a binary constant and `invariance_general` charges the
 program once and the clock `O (log t)`.
@@ -1792,7 +1787,7 @@ family, the world, and `n`.
 
 This is what converts an owned reading into a rented one, and it is the only bridge between the two
 budgets used below. -/
-theorem uniformBudget_frame_cost {ℓ : ℕ → Fin n → Fin m} {b : ℕ} (h : UniformBudget ℓ b) (t : ℕ) :
+theorem UniformBudget.frame_cost {ℓ : ℕ → Fin n → Fin m} {b : ℕ} (h : UniformBudget ℓ b) (t : ℕ) :
     KE (lensCode (ℓ t)) ≤ b + (15 + elen dbl) * Nat.size t + (3 + (15 + elen dbl)) := by
   obtain ⟨c, hlen, heval⟩ := h
   have hinv := invariance_general c t (lensCode (ℓ t)) (heval t)
@@ -1802,9 +1797,9 @@ theorem uniformBudget_frame_cost {ℓ : ℕ → Fin n → Fin m} {b : ℕ} (h : 
 are themselves constants — `Nat.size t ≤ 1` — so the reduction's `O (log t)` degenerates to `O (1)`
 on exactly the frames the collapse reads. No horizon appears, and none can: the bound is uniform in
 everything. -/
-private theorem uniformBudget_early_cost {ℓ : ℕ → Fin n → Fin m} {b : ℕ} (h : UniformBudget ℓ b)
+private theorem UniformBudget.early_cost {ℓ : ℕ → Fin n → Fin m} {b : ℕ} (h : UniformBudget ℓ b)
     {t : ℕ} (ht : t ≤ 1) : KE (lensCode (ℓ t)) ≤ b + (33 + 2 * elen dbl) := by
-  have hc := uniformBudget_frame_cost h t
+  have hc := UniformBudget.frame_cost h t
   have hs : Nat.size t ≤ 1 := by
     rcases Nat.le_one_iff_eq_zero_or_eq_one.mp ht with rfl | rfl <;> simp
   have hm := Nat.mul_le_mul (le_refl (15 + elen dbl)) hs
@@ -1877,8 +1872,8 @@ theorem CbHu_collapse (b d : ℕ) :
     Nat.sSup_mem hne (bddAbove_uniformBudgetedEntropies U b)
   refine ⟨k, ℓ 0, hcar.1, ?_⟩
   have h1 : ℓ 1 = U • ℓ 0 := permCarries_frame_one hcar.2
-  have hb0 := uniformBudget_early_cost hbud (t := 0) (by norm_num)
-  have hb1 := uniformBudget_early_cost hbud (t := 1) (le_refl 1)
+  have hb0 := UniformBudget.early_cost hbud (t := 0) (by norm_num)
+  have hb1 := UniformBudget.early_cost hbud (t := 1) (le_refl 1)
   rw [h1, show U • ℓ 0 = ℓ 0 ∘ ⇑U⁻¹ from rfl] at hb1
   calc 2 ^ (KE (lensCode (ℓ 0)) + KE (lensCode (ℓ 0 ∘ ⇑U⁻¹)) + d + 2)
       ≤ 2 ^ (2 * (b + (33 + 2 * elen dbl)) + d + 2) :=
@@ -1898,16 +1893,16 @@ Two things are worth reading off the statement. First, the world's own table nee
 apparatus: a permutation of `Fin n` coerces to a function `Fin n → Fin n`, which is a lens, so
 `lensCode ⇑U` is the same object the collapse already prices. Second, Proposition 8.1's `O (log t)`
 per frame does not appear here — it has been *absorbed* into the definition of `UniformBudget`, and
-`uniformBudget_frame_cost` is where it reappears, with the constant made explicit. That is the whole
+`UniformBudget.frame_cost` is where it reappears, with the constant made explicit. That is the whole
 point of the uniform variant: the clock is not part of what the owner stores.
 
 The construction itself is table transport. `U`'s table is inverted by `idx` — the ledger's own
 primitive — and the reading is dragged along it once per step. -/
 
 /-- The canonical family over a permutation world carries a persistent model, for **any** surjective
-reference frame ([Persistence] §7). `markCarries`, with the marking lens generalized away: reading
-through the time-`t` frame after `t` steps returns the time-`0` reading by construction, over every
-permutation world, with no hypothesis on `U`. -/
+reference frame ([Persistence] §7). `permCarries_pow_smul_markingLens`, with the marking lens
+generalized away: reading through the time-`t` frame after `t` steps returns the time-`0` reading
+by construction, over every permutation world, with no hypothesis on `U`. -/
 theorem permCarries_smul {U : Perm (Fin n)} {ℓ₀ : Fin n → Fin m} (h : Function.Surjective ℓ₀) :
     PermCarries U (fun t => (U ^ t) • ℓ₀) := by
   constructor
@@ -2748,7 +2743,7 @@ noncomputable def rangeCode : Nat.Partrec.Code :=
       (Primrec.encode.comp Primrec.list_range)).partrec))
 
 /-- `rangeCode`'s evaluation law: consumed outside this module by
-`GrowingPrice.exists_qualifying_pair_of_pos`'s witness, which prices the identity lens
+`ALT.exists_qualifying_pair_of_pos`'s witness, which prices the identity lens
 `id : Fin N → Fin N` (`lensCode_id`) the same way this module prices `k`'s own numeral — hence
 public, unlike its `itinBuilder`/`markBuilder` siblings. -/
 theorem eval_rangeCode (k : ℕ) :
@@ -3030,8 +3025,7 @@ theorem ledger_itinerary (hn : 0 < n) {U : Perm (Fin n)} {ℓ : ℕ → Fin n �
   rw [htcelen] at hle
   nlinarith [hle, htielen, hbnbound, hbibound, hidxsize']
 
-set_option linter.style.longLine false in
-/-- info: 'PersistenceCapacity.ledger_itinerary' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.ledger_itinerary' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms ledger_itinerary
 
@@ -3117,7 +3111,7 @@ theorem ledger_itinerary_consecutive (hn : 0 < n) {U : Perm (Fin n)} {ℓ : ℕ 
   nlinarith [hle, hbnbound, hbibound, hbkbound, hidxsize']
 
 set_option linter.style.longLine false in
-/-- info: 'PersistenceCapacity.ledger_itinerary_consecutive' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.ledger_itinerary_consecutive' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms ledger_itinerary_consecutive
 
@@ -3264,7 +3258,8 @@ private theorem primrec_isValidDescent :
   exact hBij.and hMatch
 
 set_option maxHeartbeats 1000000 in
--- same headroom reason as `primrec_isValid_rel`: multi-level packing meets `primrec_isValidDescent`.
+-- same headroom reason as `primrec_isValid_rel`: multi-level packing meets
+-- `primrec_isValidDescent`.
 /-- **The membership relation is primitive recursive**, over `(w, param)` with `param` packing
 `(n, t0, t1)` — `primrec_isValidDescent` at `param` and `w` rebuilt into one packed program. -/
 private theorem primrec_isValidDescent_rel :
@@ -3718,7 +3713,7 @@ the rule iterates) specialized to exactly two calls at the recursion index rathe
 accumulated state. -/
 
 /-- Extracts the recursion index `n` from a `prec`-step input `Nat.pair a (Nat.pair n prev)` — the
-companion projection to `AdditiveComplexity.projIH` (which extracts `prev`). -/
+companion projection to `projIH` (which extracts `prev`). -/
 def projIdx : Code := comp left right
 
 private theorem eval_projIdx (a n prev : ℕ) :
@@ -3823,7 +3818,7 @@ constant — coefficient `1` on `b`, not the `2` that reading the two frames off
 zipping them (`KE_lensCode_pairLens_le`) would pay. The clock inputs are constants (`t = 0, 1`), so
 `bconst 2`'s own cost is the only variable term, and it is bounded by `Nat.size 2 = 2`, an absolute
 numeral. -/
-theorem uniformBudget_pairLens_le {ℓ : ℕ → Fin n → Fin m} {b : ℕ} (h : UniformBudget ℓ b) :
+theorem UniformBudget.pairLens_le {ℓ : ℕ → Fin n → Fin m} {b : ℕ} (h : UniformBudget ℓ b) :
     KE (lensCode (pairLens (ℓ 0) (ℓ 1)))
       ≤ b + (57 + 3 * (15 + elen dbl) + elen zipBuilder + 6) := by
   obtain ⟨c, hlen, heval⟩ := h
@@ -4059,12 +4054,12 @@ reading, here run through Target A's cheaper frame term rather than two separate
 `ledger_graded_paired_faithful` (Target B) is the singleton-fibre special case, where the defect
 term vanishes; `CbHu_collapse` stays beside both, unsuperseded — it bounds the FRACTION of worlds
 exceeding a threshold across every reference frame at once, a statement this one does not make. -/
-theorem uniformBudget_ledger_paired_le (hn : 0 < n) {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m}
+theorem UniformBudget.ledger_paired_le (hn : 0 < n) {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m}
     {b : ℕ} (hcar : PermCarries U ℓ) (hbud : UniformBudget ℓ b) :
     KE (lensCode U) ≤ b + (15 + elen dbl) * Nat.size n
       + (15 + elen dbl) * Nat.size (∏ i : Fin m, (Nat.card {x : Fin n // ℓ 0 x = i})!)
       + (63 + 3 * (15 + elen dbl) + elen zipBuilder + pairedLedgerConst) := by
-  have hA := uniformBudget_pairLens_le hbud
+  have hA := UniformBudget.pairLens_le hbud
   have hB := ledger_graded_paired hn hcar
   omega
 
@@ -4228,7 +4223,7 @@ Note what is NOT claimed. This is the permutation-setting construction, not Prop
 statement, which is set in the cell-structured world over the recurrent core `Mem_∞` and carries the
 transient `U ^ N`; that plumbing is deliberately not built here. And Proposition 8.1's per-frame
 `O (log t)` does not appear above because `UniformBudget` does not charge for the clock —
-`uniformBudget_frame_cost` is where that cost is recovered, and `CbHu_collapse` is where it is shown
+`UniformBudget.frame_cost` is where that cost is recovered, and `CbHu_collapse` is where it is shown
 not to help. The bound is in terms of the *given* codes' lengths, not `KE`; the two coincide when
 the codes are `KE`-optimal, which is how `CbHu_ge_lcg` consumes it. -/
 theorem ownership {U : Perm (Fin n)} {ℓ₀ : Fin n → Fin m} (cℓ cU : Nat.Partrec.Code)
@@ -4666,17 +4661,17 @@ theorem faithful_rule_cost {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m} {b
 /-- **Target B — the faithful extraction at coefficient one.** For a faithful family carried by a
 *uniform* budget `b` (`faithful_rule_cost`'s own hypotheses), the world's table costs one budget —
 `KE (lensCode ⇑U) ≤ b + O (log n)`, not `faithful_rule_cost`'s `2 * b`. The route is Target A
-(`uniformBudget_pairLens_le`) feeding `ledger_graded_paired_faithful`: at a faithful reference frame
+(`UniformBudget.pairLens_le`) feeding `ledger_graded_paired_faithful`: at a faithful reference frame
 the coset term collapses (singleton fibres, `∏ fiber! = 1`), so nothing beyond
 `ledger_graded_paired_faithful`'s own `Nat.size n` term survives. `faithful_rule_cost` stays beside
 it, unsuperseded — its `2 * b` is the icode/invcomp route's own shadow, worth keeping for its
 smaller, `n`-free constant. -/
-theorem uniformBudget_faithful_rule_cost_le (hn : 0 < n) {U : Perm (Fin n)}
+theorem UniformBudget.faithful_rule_cost_le (hn : 0 < n) {U : Perm (Fin n)}
     {ℓ : ℕ → Fin n → Fin m} {b : ℕ} (hcar : PermCarries U ℓ) (hbij : Function.Bijective (ℓ 0))
     (hbud : UniformBudget ℓ b) :
     KE (lensCode ⇑U) ≤ b + (15 + elen dbl) * Nat.size n
       + (63 + 4 * (15 + elen dbl) + elen zipBuilder + pairedLedgerConst) := by
-  have hA := uniformBudget_pairLens_le hbud
+  have hA := UniformBudget.pairLens_le hbud
   have hB := ledger_graded_paired_faithful hn hcar hbij
   omega
 
@@ -4727,9 +4722,9 @@ below index by a horizon `T` — carry the model, and pay for it, out to time `T
 where the uniform (owned) and per-frame (rented) budgets can finally be compared *honestly*.
 
 Why the horizon is the natural setting for that comparison. The exchange rate between the budgets is
-`uniformBudget_frame_cost`: an owner's program run at `t` describes frame `t` at `b + O (log t)`.
+`UniformBudget.frame_cost`: an owner's program run at `t` describes frame `t` at `b + O (log t)`.
 Truncate at `T` and the clock is bounded — `O (log T)` — and the comparison is immediate
-(`CbHu_upTo_le_CbH_upTo`). The horizon is not a technicality here; it is what the `log` is a
+(`CbHuUpTo_le_CbHUpTo`). The horizon is not a technicality here; it is what the `log` is a
 function of.
 
 It is *not*, however, the only setting: `CbHu_le_CbH` at the end of this section gives the same
@@ -4737,7 +4732,7 @@ comparison with no horizon at all, at cost `O (log n !)`, because a carried fami
 permutation world repeats with the world's period. The two differ in what the constant depends on —
 `T` there, `n` here — and neither is absolute.
 
-What does *not* need a horizon is the collapse. `CbH_upTo_collapse` is `CbH_collapse` with the cap
+What does *not* need a horizon is the collapse. `CbHUpTo_collapse` is `CbH_collapse` with the cap
 unchanged, at every `T ≥ 1`, because the counting consumes frames `0` and `1` and nothing else
 (`permCarries_frame_one`): the collapse is a horizon-1 statement already, and truncating the object
 it speaks about cannot weaken it. A short-lived observer gets no discount for being short-lived.
@@ -4773,7 +4768,7 @@ private theorem UniformBudget.upTo {ℓ : ℕ → Fin n → Fin m} {b : ℕ} (h 
 
 /-- **The ledger survives truncation**: at any horizon `T ≥ 1` the second frame is still determined
 by the first and the world (`permCarries_frame_one`'s argument, which reads `t = 1` only). -/
-theorem permCarriesUpTo_frame_one {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m} {T : ℕ}
+theorem PermCarriesUpTo.frame_one {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m} {T : ℕ}
     (h : PermCarriesUpTo U ℓ T) (hT : 1 ≤ T) : ℓ 1 = U • ℓ 0 := by
   funext x
   rw [smul_lens_apply]
@@ -4789,7 +4784,7 @@ def BudgetedEntropiesUpTo (U : Perm (Fin n)) (b T : ℕ) : Set ℕ :=
 /-- **The entropic capacity out to horizon `T`** ([Persistence] §5, Definition 5.4 truncated): the
 largest carried entropy of a reference frame whose family carries the model, and pays `b` per frame,
 out to time `T`. -/
-noncomputable def CbH_upTo (U : Perm (Fin n)) (b T : ℕ) : ℕ := sSup (BudgetedEntropiesUpTo U b T)
+noncomputable def CbHUpTo (U : Perm (Fin n)) (b T : ℕ) : ℕ := sSup (BudgetedEntropiesUpTo U b T)
 
 /-- The **owner's** carried entropies out to horizon `T`. -/
 def UniformBudgetedEntropiesUpTo (U : Perm (Fin n)) (b T : ℕ) : Set ℕ :=
@@ -4798,7 +4793,7 @@ def UniformBudgetedEntropiesUpTo (U : Perm (Fin n)) (b T : ℕ) : Set ℕ :=
 
 /-- **The uniform entropic capacity out to horizon `T`** ([Persistence] §5, Definition 5.5
 truncated): the capacity of an observer that owns its reading and needs it only until `T`. -/
-noncomputable def CbHu_upTo (U : Perm (Fin n)) (b T : ℕ) : ℕ :=
+noncomputable def CbHuUpTo (U : Perm (Fin n)) (b T : ℕ) : ℕ :=
   sSup (UniformBudgetedEntropiesUpTo U b T)
 
 private theorem budgetedEntropiesUpTo_le {U : Perm (Fin n)} {b T N : ℕ}
@@ -4823,11 +4818,11 @@ private theorem bddAbove_uniformBudgetedEntropiesUpTo (U : Perm (Fin n)) (b T : 
     BddAbove (UniformBudgetedEntropiesUpTo U b T) :=
   ⟨n !, fun _ h => uniformBudgetedEntropiesUpTo_le h⟩
 
-/-- **A longer horizon never helps**: `CbH_upTo` is antitone in `T`. A family carrying the model out
+/-- **A longer horizon never helps**: `CbHUpTo` is antitone in `T`. A family carrying the model out
 to `T₂` carries it out to every `T₁ ≤ T₂`, and pays for fewer frames doing so — more horizon is
 strictly more constraint, never more capacity. -/
-theorem CbH_upTo_antitone (U : Perm (Fin n)) (b : ℕ) {T₁ T₂ : ℕ} (h : T₁ ≤ T₂) :
-    CbH_upTo U b T₂ ≤ CbH_upTo U b T₁ :=
+theorem CbHUpTo_antitone (U : Perm (Fin n)) (b : ℕ) {T₁ T₂ : ℕ} (h : T₁ ≤ T₂) :
+    CbHUpTo U b T₂ ≤ CbHUpTo U b T₁ :=
   csSup_le_csSup' (bddAbove_budgetedEntropiesUpTo U b T₁) (by
     rintro N ⟨k, ℓ, hcar, hbud, rfl⟩
     exact ⟨k, ℓ, ⟨hcar.1, fun t ht => hcar.2 t (ht.trans h)⟩,
@@ -4835,7 +4830,7 @@ theorem CbH_upTo_antitone (U : Perm (Fin n)) (b : ℕ) {T₁ T₂ : ℕ} (h : T�
 
 /-- **The unbounded-horizon capacity is below every truncation** — the full object satisfies every
 truncation of itself, so nothing is lost by asking less. -/
-theorem CbH_le_CbH_upTo (U : Perm (Fin n)) (b T : ℕ) : CbH U b ≤ CbH_upTo U b T :=
+theorem CbH_le_CbHUpTo (U : Perm (Fin n)) (b T : ℕ) : CbH U b ≤ CbHUpTo U b T :=
   csSup_le_csSup' (bddAbove_budgetedEntropiesUpTo U b T) (by
     rintro N ⟨k, ℓ, hcar, hbud, rfl⟩
     exact ⟨k, ℓ, hcar.upTo T, fun t _ => hbud t, rfl⟩)
@@ -4846,25 +4841,25 @@ budget `b` exceeds `2 * b + d + 2` number at most `n ! / 2 ^ d` — the **same**
 `CbH_collapse`, with nothing given away for the shorter life.
 
 The reason is structural. The counting consumes frames `0` and `1` and no others: `ℓ 1` is
-determined by `ℓ 0` and the world (`permCarriesUpTo_frame_one`), and the budget is read at those two
+determined by `ℓ 0` and the world (`PermCarriesUpTo.frame_one`), and the budget is read at those two
 frames alone. So `CbH_collapse` was *already* a horizon-1 statement, and truncating the capacity
 object it bounds cannot weaken it. An observer that only needs its reading until tomorrow pays the
 same generic price as one that needs it forever. -/
-theorem CbH_upTo_collapse (b d : ℕ) {T : ℕ} (hT : 1 ≤ T) :
-    {U : Perm (Fin n) | 2 ^ (2 * b + d + 2) < CbH_upTo U b T}.ncard * 2 ^ d ≤ n ! := by
+theorem CbHUpTo_collapse (b d : ℕ) {T : ℕ} (hT : 1 ≤ T) :
+    {U : Perm (Fin n) | 2 ^ (2 * b + d + 2) < CbHUpTo U b T}.ncard * 2 ^ d ≤ n ! := by
   refine le_trans (Nat.mul_le_mul_right _ (Set.ncard_le_ncard ?_ (Set.toFinite _)))
     (collapse_union d)
   intro U hU
-  have hlt : 2 ^ (2 * b + d + 2) < CbH_upTo U b T := hU
+  have hlt : 2 ^ (2 * b + d + 2) < CbHUpTo U b T := hU
   have hne : (BudgetedEntropiesUpTo U b T).Nonempty := by
     by_contra hcon
     rw [Set.not_nonempty_iff_eq_empty] at hcon
-    rw [CbH_upTo, hcon, csSup_empty] at hlt
+    rw [CbHUpTo, hcon, csSup_empty] at hlt
     exact absurd hlt (Nat.not_lt_zero _)
-  obtain ⟨k, ℓ, hcar, hbud, hval⟩ : CbH_upTo U b T ∈ BudgetedEntropiesUpTo U b T :=
+  obtain ⟨k, ℓ, hcar, hbud, hval⟩ : CbHUpTo U b T ∈ BudgetedEntropiesUpTo U b T :=
     Nat.sSup_mem hne (bddAbove_budgetedEntropiesUpTo U b T)
   refine ⟨k, ℓ 0, hcar.1, ?_⟩
-  have h1 : ℓ 1 = U • ℓ 0 := permCarriesUpTo_frame_one hcar hT
+  have h1 : ℓ 1 = U • ℓ 0 := PermCarriesUpTo.frame_one hcar hT
   have hb0 := hbud 0 (Nat.zero_le _)
   have hb1 := hbud 1 hT
   rw [h1, show U • ℓ 0 = ℓ 0 ∘ ⇑U⁻¹ from rfl] at hb1
@@ -4875,7 +4870,7 @@ theorem CbH_upTo_collapse (b d : ℕ) {T : ℕ} (hT : 1 ≤ T) :
 /-- **The frame-cost reduction, out to a horizon**: an owner's program prices every frame it is
 asked about at `b + O (log T)` — the clock is read at `t ≤ T`, so `Nat.size t ≤ Nat.size T` bounds
 it uniformly over the frames in question. -/
-theorem uniformBudgetUpTo_frame_cost {ℓ : ℕ → Fin n → Fin m} {b T : ℕ}
+theorem UniformBudgetUpTo.frame_cost {ℓ : ℕ → Fin n → Fin m} {b T : ℕ}
     (h : UniformBudgetUpTo ℓ b T) {t : ℕ} (ht : t ≤ T) :
     KE (lensCode (ℓ t)) ≤ b + (15 + elen dbl) * Nat.size T + (3 + (15 + elen dbl)) := by
   obtain ⟨c, hlen, heval⟩ := h
@@ -4889,7 +4884,7 @@ it must be horizon-indexed.
 
 Out to horizon `T`, an owner at budget `b` carries no more entropy than a renter at
 `b + O (log T)`: the owner's program, run at each `t ≤ T`, *is* a per-frame description, costing the
-program plus the clock (`uniformBudgetUpTo_frame_cost`), and `t ≤ T` bounds the clock at
+program plus the clock (`UniformBudgetUpTo.frame_cost`), and `t ≤ T` bounds the clock at
 `κ · Nat.size T` with `κ = 15 + elen dbl` absolute.
 
 What the horizon buys is a constant that does not grow with `n`. Dropping it entirely still leaves a
@@ -4899,12 +4894,12 @@ which needs only frames `0` and `1`, whose clocks are constants.
 
 So the ledger of renting versus owning reads: owning is amortization worth exactly the clock, and
 the clock is worth `O (log T)`. It buys no entropy the renter cannot have for `O (log T)` more
-bits — and, generically, `CbH_upTo_collapse` caps them both at `Θ (b)` anyway. -/
-theorem CbHu_upTo_le_CbH_upTo (U : Perm (Fin n)) (b T : ℕ) :
-    CbHu_upTo U b T ≤ CbH_upTo U (b + (15 + elen dbl) * Nat.size T + (3 + (15 + elen dbl))) T :=
+bits — and, generically, `CbHUpTo_collapse` caps them both at `Θ (b)` anyway. -/
+theorem CbHuUpTo_le_CbHUpTo (U : Perm (Fin n)) (b T : ℕ) :
+    CbHuUpTo U b T ≤ CbHUpTo U (b + (15 + elen dbl) * Nat.size T + (3 + (15 + elen dbl))) T :=
   csSup_le_csSup' (bddAbove_budgetedEntropiesUpTo U _ T) (by
     rintro N ⟨k, ℓ, hcar, hbud, rfl⟩
-    exact ⟨k, ℓ, hcar, fun t ht => uniformBudgetUpTo_frame_cost hbud ht, rfl⟩)
+    exact ⟨k, ℓ, hcar, fun t ht => UniformBudgetUpTo.frame_cost hbud ht, rfl⟩)
 
 /-! ### The horizon runs out: a family over a permutation world repeats
 
@@ -4918,13 +4913,13 @@ So the uniform-to-per-frame comparison *does* hold with no horizon at all
 (`CbHu_le_CbH`) — the cost is a constant in `n`, not an absolute one. This is worth stating
 precisely, because "unbounded in `t`" invites the stronger reading that no horizon-free comparison
 exists; over these worlds one does. What is genuinely unavailable horizon-free is an **absolute**
-constant, independent of `n`: `CbHu_upTo_le_CbH_upTo` pays `O (log T)` and `CbHu_le_CbH` pays
+constant, independent of `n`: `CbHuUpTo_le_CbHUpTo` pays `O (log T)` and `CbHu_le_CbH` pays
 `O (log n !)`, and neither degenerates to `O (1)`. -/
 
 /-- **Every frame is the reference frame, relabelled** — the persistence identity solved for `ℓ t`.
 `U ^ t` is invertible, so `ℓ t ∘ U ^ t = ℓ 0` reads as `ℓ t = ℓ 0 ∘ (U ^ t)⁻¹`: over a permutation
 world a family carrying a model has no freedom past its reference frame. -/
-theorem permCarries_frame_eq {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m} (h : PermCarries U ℓ)
+theorem PermCarries.frame_eq {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m} (h : PermCarries U ℓ)
     (t : ℕ) : ℓ t = ℓ 0 ∘ ⇑((U ^ t)⁻¹) := by
   funext y
   have := h.2 t ((U ^ t)⁻¹ y)
@@ -4932,21 +4927,21 @@ theorem permCarries_frame_eq {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m} 
 
 /-- **The family repeats with the world's period**: frame `t` is frame `t % orderOf U`. A carried
 family over a permutation world takes only `orderOf U` distinct values, however long it runs. -/
-theorem permCarries_frame_mod {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m} (h : PermCarries U ℓ)
+theorem PermCarries.frame_mod {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m} (h : PermCarries U ℓ)
     (t : ℕ) : ℓ (t % orderOf U) = ℓ t := by
-  rw [permCarries_frame_eq h, permCarries_frame_eq h (t := t), pow_mod_orderOf]
+  rw [PermCarries.frame_eq h, PermCarries.frame_eq h (t := t), pow_mod_orderOf]
 
 /-- **Owning beats renting by at most the world's period** — the uniform-to-per-frame comparison,
 horizon-free after all.
 
 An owner at budget `b` carries no more entropy than a renter at `b + O (log n !)`, with **no horizon
-anywhere**: the frames of a carried family repeat with the world's period (`permCarries_frame_mod`),
+anywhere**: the frames of a carried family repeat with the world's period (`PermCarries.frame_mod`),
 so the owner's program never needs its clock past `orderOf U ≤ n !`, and the `O (log t)` of
-`uniformBudget_frame_cost` is really `O (log orderOf U)`.
+`UniformBudget.frame_cost` is really `O (log orderOf U)`.
 
 The constant `κ · Nat.size (n !) + (3 + κ)` depends on `n` and on nothing else — not the world, not
 the reading, not the family. That dependence is the whole difference between this and
-`CbHu_upTo_le_CbH_upTo`, which pays `O (log T)` for a horizon `T` that may be far below the period.
+`CbHuUpTo_le_CbHUpTo`, which pays `O (log T)` for a horizon `T` that may be far below the period.
 What no route gives is an **absolute** constant: over an unbounded horizon the clock genuinely must
 count to the period, and `log n !` is `Θ (n log n)`.
 
@@ -4959,8 +4954,8 @@ theorem CbHu_le_CbH (U : Perm (Fin n)) (b : ℕ) :
   refine csSup_le_csSup' (bddAbove_budgetedEntropies U _) ?_
   rintro N ⟨k, ℓ, hcar, hbud, rfl⟩
   refine ⟨k, ℓ, hcar, fun t => ?_, rfl⟩
-  rw [← permCarries_frame_mod hcar t]
-  have hc := uniformBudget_frame_cost hbud (t % orderOf U)
+  rw [← PermCarries.frame_mod hcar t]
+  have hc := UniformBudget.frame_cost hbud (t % orderOf U)
   have hpos : 0 < orderOf U := orderOf_pos U
   have hcard : orderOf U ≤ n ! := by
     have h := orderOf_le_card_univ (x := U)
@@ -4972,4 +4967,4 @@ theorem CbHu_le_CbH (U : Perm (Fin n)) (b : ℕ) :
 
 end Collapse
 
-end PersistenceCapacity
+end ALT

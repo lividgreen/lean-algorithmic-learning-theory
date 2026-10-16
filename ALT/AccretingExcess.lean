@@ -1,15 +1,8 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.AccretingWitness
 public import ALT.ExcessOrderComplete
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # The accreting crossing package: uniform excess, eventual hosting, and the assembled witness
@@ -23,13 +16,13 @@ guest's growing budget eventually clears the threshold and stays cleared: a fixe
 delivered once from incompleteness, that every later stage hosts.
 
 * `outgrows_paMinus_uniform` — the uniform excess ([Decoupling] §6.3/§6.4):
-  `ExcessOrder.outgrows_paMinus` states `∃ gTS` *inside* its budget `κ`, so a literal reading lets
+  `ALT.outgrows_paMinus` states `∃ gTS` *inside* its budget `κ`, so a literal reading lets
   each budget pick its own sentence. Its proof obtains `gTS` from
-  `GodelComplete.incompleteness_of_arith` before `κ` is ever consulted, so pulling the witness
+  `ALT.incompleteness_of_arith` before `κ` is ever consulted, so pulling the witness
   outside the budget quantifier is a restatement, not a strengthening: one `gTS`, fixed with the
   theory, that every hosting budget represents.
 * `eventually_hostsAt` — eventual hosting, crossing stage explicit ([Decoupling] §6.3/§6.4): past
-  `t₀ := GodelInternalization.capacity (Nat.clog 2 (g + 1))`, every later stage `t + 1` hosts `g`.
+  `t₀ := ALT.capacity (Nat.clog 2 (g + 1))`, every later stage `t + 1` hosts `g`.
 * `accreting_outgrows_paMinus` — the package: the accreting healer world's landed skeleton clauses
   ([Guests] §3/§5) beside the uniform excess's eventual-hosting crossing, at every stage past
   threshold.
@@ -48,11 +41,10 @@ and does not reach the list carrier this module accretes over. No pricing statem
 
 @[expose] public section
 
-namespace AccretingWitness
+namespace ALT
 
-open ExcessOrder
-open RealizabilityCCC RealizabilityRecursor
-open PersistenceCapacity Decoupling AdditiveComplexity
+open RealizabilityCCC
+open AdditiveComplexity
 open FFL.FirstOrder FFL.FirstOrder.Arithmetic
 
 variable {ι_J : Type*}
@@ -60,34 +52,34 @@ variable {ι_J : Type*}
 /-! ## The uniform excess -/
 
 /-- **The excess order at `𝗣𝗔⁻`, with one Gödel size uniform across every budget** ([Decoupling]
-§6.3/§6.4). `ExcessOrder.outgrows_paMinus` delivers `gTS` inside its `∀ κ`, so read literally each
+§6.3/§6.4). `ALT.outgrows_paMinus` delivers `gTS` inside its `∀ κ`, so read literally each
 budget could get its own sentence; this pulls the witness outside the quantifier. The proof is a
-restatement, not a strengthening: `GodelComplete.incompleteness_of_arith` already supplies `gTS`
+restatement, not a strengthening: `ALT.incompleteness_of_arith` already supplies `gTS`
 before any budget is consulted, so the same `gTS` serves every `κ`. -/
 theorem outgrows_paMinus_uniform :
-    ∃ gTS, ∀ κ Mchk, CategoricalThreshold.hostsAt κ gTS → gTS < Mchk → Mchk ≤ gTS ^ 2 →
+    ∃ gTS, ∀ κ Mchk, ALT.hostsAt κ gTS → gTS < Mchk → Mchk ≤ gTS ^ 2 →
       ∃ R : ReflectiveAsm gTS, R.depth = Mchk ∧
-        CapacityLayer.FitsIn (recursorAsm R.depth) κ ∧
-        ∃ M, GodelThreshold.RepresentsUnderivableTruth (Encodable.encode : Sentence ℒₒᵣ → ℕ)
+        ALT.FitsIn (recursorAsm R.depth) κ ∧
+        ∃ M, ALT.RepresentsUnderivableTruth (Encodable.encode : Sentence ℒₒᵣ → ℕ)
           (fun δ => (𝗣𝗔⁻ : ArithmeticTheory) ⊢ δ) (fun δ => ℕ↓[ℒₒᵣ] ⊧ δ) M := by
   have : (𝗣𝗔⁻ : ArithmeticTheory).Δ₁ := Theory.Δ₁.ofFinite 𝗣𝗔⁻ PeanoMinus.finite
-  obtain ⟨gTS, hInc⟩ := GodelComplete.incompleteness_of_arith 𝗣𝗔⁻
+  obtain ⟨gTS, hInc⟩ := ALT.incompleteness_of_arith 𝗣𝗔⁻
   refine ⟨gTS, fun κ Mchk hhost h1 h2 => ?_⟩
   obtain ⟨R, hdepth, hfits, himp⟩ :=
-    ExcessOrder.outgrows κ (Encodable.encode : Sentence ℒₒᵣ → ℕ)
+    ALT.outgrows κ (Encodable.encode : Sentence ℒₒᵣ → ℕ)
       (fun δ => (𝗣𝗔⁻ : ArithmeticTheory) ⊢ δ) (fun δ => ℕ↓[ℒₒᵣ] ⊧ δ) gTS Mchk hhost h1 h2
   exact ⟨R, hdepth, hfits, himp hInc⟩
 
 /-! ## Eventual hosting -/
 
 /-- **Eventual hosting, with the crossing stage explicit** ([Decoupling] §6.3/§6.4). Past
-`t₀ := GodelInternalization.capacity (Nat.clog 2 (g + 1))`, every later stage `t + 1` hosts `g`:
+`t₀ := ALT.capacity (Nat.clog 2 (g + 1))`, every later stage `t + 1` hosts `g`:
 the budget only grows from `t₀` on, and `t₀` itself already enters
-(`CategoricalThreshold.hostsAt_enters`). -/
+(`ALT.hostsAt_enters`). -/
 theorem eventually_hostsAt (g : ℕ) :
-    ∃ t₀, ∀ t, t₀ ≤ t → CategoricalThreshold.hostsAt (t + 1) g :=
-  ⟨GodelInternalization.capacity (Nat.clog 2 (g + 1)), fun t ht =>
-    CategoricalThreshold.hostsAt_mono (by omega) (CategoricalThreshold.hostsAt_enters g)⟩
+    ∃ t₀, ∀ t, t₀ ≤ t → ALT.hostsAt (t + 1) g :=
+  ⟨ALT.capacity (Nat.clog 2 (g + 1)), fun t ht =>
+    ALT.hostsAt_mono (by omega) (ALT.hostsAt_enters g)⟩
 
 /-! ## The package -/
 
@@ -100,23 +92,23 @@ delivers a reflective object representing an underivable `𝗣𝗔⁻` truth out
 holds at every stage past threshold" is a literal quantifier shape here, not a schema to be
 instantiated per stage. -/
 theorem accreting_outgrows_paMinus (k : ℕ) (π : Mem ι_J Bool → Mem ι_J Bool) :
-    (GrowingWorld.Advances (accUpdate k π) (accStage k) ∧
-      GrowingWorld.StagedSquare (accUpdate k π) accLaw (accRead k) (accStage k) ∧
-      (∀ t, (GrowingWorld.guestStage (accRead (ι_J := ι_J) k) (accStage k) t).ncard
+    (Nonautonomous.PositivelyInvariant (accUpdate k π) (accStage k) ∧
+      Nonautonomous.Semiconj (accUpdate k π) accLaw (accRead k) (accStage k) ∧
+      (∀ t, (Nonautonomous.imageFiber (accRead (ι_J := ι_J) k) (accStage k) t).ncard
         = 2 ^ (t + 1)) ∧
       (∀ t s, s ∈ accCode k t →
         ∀ s' : List (Mem (Fin (3 ^ k)) Bool) × Mem ι_J Bool, s'.1.length = s.1.length →
           s'.2 = s.2 → (List.zipWith hammingDist s'.1 s.1).sum < 2 ^ k →
             accUpdate k π s' = accUpdate k π s)) ∧
-    (∃ gTS, (∃ t₀, ∀ t, t₀ ≤ t → CategoricalThreshold.hostsAt (t + 1) gTS) ∧
-      ∀ t Mchk, CategoricalThreshold.hostsAt (t + 1) gTS → gTS < Mchk → Mchk ≤ gTS ^ 2 →
+    (∃ gTS, (∃ t₀, ∀ t, t₀ ≤ t → ALT.hostsAt (t + 1) gTS) ∧
+      ∀ t Mchk, ALT.hostsAt (t + 1) gTS → gTS < Mchk → Mchk ≤ gTS ^ 2 →
         ∃ R : ReflectiveAsm gTS, R.depth = Mchk ∧
-          CapacityLayer.FitsIn (recursorAsm R.depth) (t + 1) ∧
-          ∃ M, GodelThreshold.RepresentsUnderivableTruth (Encodable.encode : Sentence ℒₒᵣ → ℕ)
+          ALT.FitsIn (recursorAsm R.depth) (t + 1) ∧
+          ∃ M, ALT.RepresentsUnderivableTruth (Encodable.encode : Sentence ℒₒᵣ → ℕ)
             (fun δ => (𝗣𝗔⁻ : ArithmeticTheory) ⊢ δ) (fun δ => ℕ↓[ℒₒᵣ] ⊧ δ) M) := by
   obtain ⟨gTS, hInc⟩ := outgrows_paMinus_uniform
   exact ⟨⟨advances_accUpdate k π, stagedSquare_accRead k π, ncard_guestStage_accRead ι_J k,
-      fun t s hs s' hlen henv hsum => accErasure k π t hs hlen henv hsum⟩,
+      fun t s hs s' hlen henv hsum => accUpdate_eq_of_sum_lt k π t hs hlen henv hsum⟩,
     gTS, eventually_hostsAt gTS, fun t => hInc (t + 1)⟩
 
-end AccretingWitness
+end ALT

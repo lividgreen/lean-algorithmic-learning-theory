@@ -1,8 +1,3 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.CapacityBoundedEval
@@ -10,8 +5,6 @@ public import CodeLayer.AdditiveComplexity
 public import Realizability.Realizability
 public import ALT.RealizerLength
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # Transporting a realizer, and what it costs in each currency ([Decoupling] §4.5)
@@ -25,7 +18,7 @@ arguments and values are written down. On a fixed partial combinatory algebra th
 coded: given a coded retraction pair `(c_emb, c_proj)` for the input convention and a coded map
 `c_emb` for the output convention, a realizer `r` is carried to the **conjugation**
 
-  `transport c_emb c_proj r = comp c_emb (comp r c_proj)`
+  `transportRealizer c_emb c_proj r = comp c_emb (comp r c_proj)`
 
 — re-encode the argument back to the old convention, run `r`, re-encode the result. `eval_transport`
 and `realizes_transport` say this conjugate realizes the same function against the new conventions,
@@ -42,7 +35,7 @@ quantifies over subsystems or mentions a state layout.
 The point of pricing the conjugation is that its costs obey *different* algebras:
 
 * **description length ADDS** — `elen_transport` is an exact identity,
-  `elen (transport …) = elen c_emb + elen r + elen c_proj + 6`, the two `+3`s being the
+  `elen (transportRealizer …) = elen c_emb + elen r + elen c_proj + 6`, the two `+3`s being the
   serialization's own overhead for the two `comp` nodes;
 * **workspace MAXES** — `spaceCost_transport_le` bounds the conjugate by `max g b`, where `g` is the
   realizer's own workspace grade and `b` the re-encoders'. Composition never sums workspace, so
@@ -73,7 +66,7 @@ paragraph rather than look for a dropped variable.
 
 @[expose] public section
 
-namespace GradeTransport
+namespace ALT
 
 open Nat.Partrec (Code)
 open Nat.Partrec.Code
@@ -84,7 +77,7 @@ open TimeCost AdditiveComplexity Realizability
 /-- **The transport of a realizer along a change of encoding**: re-encode the argument back to the
 source convention with `c_proj`, run `r`, then re-encode the result with `c_emb`. A single code,
 built from `comp` alone. -/
-def transport (c_emb c_proj r : Code) : Code := comp c_emb (comp r c_proj)
+def transportRealizer (c_emb c_proj r : Code) : Code := comp c_emb (comp r c_proj)
 
 /-! ## Correctness: the conjugate computes the same function -/
 
@@ -100,10 +93,10 @@ theorem eval_transport {c_emb c_proj r : Code} {α β : Type*} {encA encA' : α 
     {f : α → β} (hemb : RfindFree c_emb) (hproj : RfindFree c_proj)
     (hretr : ∀ x, val c_proj (encA' x) = encA x)
     (hr : ∀ x, eval r (encA x) = Part.some (encB (f x))) (x : α) :
-    eval (transport c_emb c_proj r) (encA' x) = Part.some (val c_emb (encB (f x))) := by
+    eval (transportRealizer c_emb c_proj r) (encA' x) = Part.some (val c_emb (encB (f x))) := by
   have hcomp : ∀ (a b : Code) (n : ℕ), eval (comp a b) n = (eval b n).bind fun u => eval a u :=
     fun _ _ _ => rfl
-  rw [transport, hcomp, hcomp, eval_eq_val hproj (encA' x), Part.bind_some, hretr x, hr x,
+  rw [transportRealizer, hcomp, hcomp, eval_eq_val hproj (encA' x), Part.bind_some, hretr x, hr x,
     Part.bind_some, eval_eq_val hemb (encB (f x))]
 
 /-- **Re-encoding an assembly along a code**: the same finite carrier, each element now written as
@@ -130,7 +123,7 @@ theorem realizes_transport {A B : Assembly} {f : A.carrier → B.carrier}
     (hretr : ∀ x, val c_proj (val c_embA (A.enc x)) = A.enc x)
     (hr : ∀ x, eval r (A.enc x) = Part.some (B.enc (f x))) :
     Realizes (A := reencode A c_embA hinjA) (B := reencode B c_emb hinjB) f :=
-  ⟨transport c_emb c_proj r,
+  ⟨transportRealizer c_emb c_proj r,
     eval_transport (encA := A.enc) (encA' := fun x => val c_embA (A.enc x))
       (encB := B.enc) hemb hproj hretr hr⟩
 
@@ -154,7 +147,7 @@ theorem spaceCost_transport_le {c_emb c_proj r : Code} {n b g : ℕ}
     (hprojn : spaceCost c_proj n ≤ b)
     (hrun : ∀ v, Nat.size v ≤ b → spaceCost r v ≤ g)
     (hembn : ∀ v, Nat.size v ≤ g → spaceCost c_emb v ≤ b) :
-    spaceCost (transport c_emb c_proj r) n ≤ max g b := by
+    spaceCost (transportRealizer c_emb c_proj r) n ≤ max g b := by
   -- the inner conjugate `comp r c_proj` is the composition law of the family, at `max b g`
   have hinner : spaceCost (comp r c_proj) n ≤ max b g :=
     spaceCost_comp_le hproj hprojn hrun
@@ -163,7 +156,7 @@ theorem spaceCost_transport_le {c_emb c_proj r : Code} {n b g : ℕ}
     rw [val_comp]
     exact le_trans (size_val_le_spaceCost hr (val c_proj n))
       (hrun (val c_proj n) (le_trans (size_val_le_spaceCost hproj n) hprojn))
-  rw [transport, spaceCost_comp]
+  rw [transportRealizer, spaceCost_comp]
   refine max_le (le_trans hinner (le_of_eq (max_comm b g))) ?_
   exact le_trans (hembn _ hmid) (le_max_right g b)
 
@@ -178,8 +171,8 @@ priced by a *sum* in description length and by a *maximum* in workspace. The two
 capacity grade do not obey the same algebra, and a graded semantics over this carrier has to carry
 both. -/
 theorem elen_transport (c_emb c_proj r : Code) :
-    elen (transport c_emb c_proj r) = elen c_emb + elen r + elen c_proj + 6 := by
-  rw [transport, E_len_comp, E_len_comp]
+    elen (transportRealizer c_emb c_proj r) = elen c_emb + elen r + elen c_proj + 6 := by
+  rw [transportRealizer, E_len_comp, E_len_comp]
   omega
 
 /-! ## The index-length currency: grades MAX-AFFINE per hop -/
@@ -191,8 +184,8 @@ parts' index lengths (`CodeSizeArith.size_pair_le_max`), and the constant prefac
 adds a further three bits — so a `comp` node's index length is at most `2·max` of its parts' plus
 three. This is the per-hop step that `bitlen_transport_le` compounds. -/
 theorem bitlen_comp_le (cf cg : Code) :
-    Realizability.bitlen (comp cf cg)
-      ≤ 2 * max (Realizability.bitlen cf) (Realizability.bitlen cg) + 3 := by
+    ALT.bitlen (comp cf cg)
+      ≤ 2 * max (ALT.bitlen cf) (ALT.bitlen cg) + 3 := by
   have henc : Encodable.encode (comp cf cg)
       = 4 * Nat.pair (Encodable.encode cf) (Encodable.encode cg) + 6 := by
     simp only [encodeCode_eq, encodeCode]; ring
@@ -208,7 +201,7 @@ theorem bitlen_comp_le (cf cg : Code) :
   have hpair : Nat.size (Nat.pair (Encodable.encode cf) (Encodable.encode cg))
       ≤ 2 * max (Nat.size (Encodable.encode cf)) (Nat.size (Encodable.encode cg)) :=
     CodeSizeArith.size_pair_le_max _ _
-  unfold Realizability.bitlen
+  unfold ALT.bitlen
   rw [henc]
   omega
 
@@ -224,12 +217,12 @@ pairing (`bitlen_comp_le`), and the nodes compose. That the factor *compounds* p
 one-hop law holds as stated while the iterated transport of the full functor — where the leading
 factor would multiply once per hosting square — remains a conjecture. -/
 theorem bitlen_transport_le {c_emb c_proj r : Code} {b g : ℕ}
-    (hemb : Realizability.bitlen c_emb ≤ b) (hproj : Realizability.bitlen c_proj ≤ b)
-    (hr : Realizability.bitlen r ≤ g) :
-    Realizability.bitlen (transport c_emb c_proj r) ≤ 4 * max g b + 9 := by
+    (hemb : ALT.bitlen c_emb ≤ b) (hproj : ALT.bitlen c_proj ≤ b)
+    (hr : ALT.bitlen r ≤ g) :
+    ALT.bitlen (transportRealizer c_emb c_proj r) ≤ 4 * max g b + 9 := by
   have hinner := bitlen_comp_le r c_proj
   have houter := bitlen_comp_le c_emb (comp r c_proj)
-  rw [transport]
+  rw [transportRealizer]
   omega
 
-end GradeTransport
+end ALT

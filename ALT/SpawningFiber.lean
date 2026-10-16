@@ -1,15 +1,8 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.RedundantFiber
 public import ALT.GrowingWorld
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # The spawning fiber: a growing population outlasts every rate below one
@@ -45,7 +38,9 @@ at the same vector and reading the base's own stream from its own spawn step on.
 
 @[expose] public section
 
-namespace WeightedFiber
+namespace ALT
+
+open WVec
 
 section Spawn
 
@@ -340,7 +335,8 @@ def spawnUpdate (S : Fin n₁ → Fin n₁) (dec : Fin C → Fin n₁ → Fin n�
 population has `t + 1` copies are carried into those with `t + 2`. -/
 theorem advances_spawnUpdate (S : Fin n₁ → Fin n₁) (dec : Fin C → Fin n₁ → Fin n₁) (W : ℕ)
     (u : WVec C W) :
-    GrowingWorld.Advances (spawnUpdate S dec W u) (fun t => {p | p.2.length = t + 1}) := by
+    Nonautonomous.PositivelyInvariant (spawnUpdate S dec W u)
+      (fun t => {p | p.2.length = t + 1}) := by
   intro t p hp
   simp only [Set.mem_ofPred_eq] at hp ⊢
   simp [spawnUpdate, hp]
@@ -371,16 +367,19 @@ theorem spawnUpdate_iterate (S : Fin n₁ → Fin n₁) (dec : Fin C → Fin n�
 
 end World
 
-end WeightedFiber
+end ALT
 
-/-- info: 'WeightedFiber.spawnPredFrame_eq_next_of_rate' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.spawnPredFrame_eq_next_of_rate' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.spawnPredFrame_eq_next_of_rate
+#print axioms ALT.spawnPredFrame_eq_next_of_rate
 
-/-- info: 'WeightedFiber.spawnPredFrame_eq_next_of_rate_nonvacuous' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.spawnPredFrame_eq_next_of_rate_nonvacuous' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.spawnPredFrame_eq_next_of_rate_nonvacuous
+#print axioms ALT.spawnPredFrame_eq_next_of_rate_nonvacuous
 
-/-- info: 'WeightedFiber.spawnPredFrame_rate_one_guard' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.spawnPredFrame_rate_one_guard' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.spawnPredFrame_rate_one_guard
+#print axioms ALT.spawnPredFrame_rate_one_guard

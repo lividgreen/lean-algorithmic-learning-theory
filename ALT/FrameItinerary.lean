@@ -1,14 +1,7 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.PersistenceCapacity
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # The ledger's frame count and the truncated itinerary ([Persistence] §6, Theorem 6.5)
@@ -43,9 +36,9 @@ own argument reads.
 
 @[expose] public section
 
-namespace FrameItinerary
+namespace ALT
 
-open PersistenceCapacity AdditiveComplexity Equiv Equiv.Perm MulAction Nat
+open AdditiveComplexity Equiv Equiv.Perm MulAction Nat
 
 -- `•` on lenses is the relabelling action `U • ℓ = ℓ ∘ U⁻¹` ([Persistence] §7, Lemma 7.1's
 -- convention); `PersistenceCapacity`'s own local instance of it does not export past that file's
@@ -54,13 +47,13 @@ attribute [local instance] arrowAction
 
 variable {n m : ℕ}
 
-/-- `(U • ℓ) x = ℓ (U⁻¹ x)`, restated because `PersistenceCapacity.smul_lens_apply` is file-private.
+/-- `(U • ℓ) x = ℓ (U⁻¹ x)`, restated because `ALT.smul_lens_apply` is file-private.
 -/
 private theorem smul_lens_apply' {α β : Type*} (U : Perm α) (ℓ : α → β) (x : α) :
     (U • ℓ) x = ℓ (U⁻¹ x) := rfl
 
 /-- A permutation stabilizes a lens exactly when it preserves the lens's fibers, restated because
-`PersistenceCapacity.mem_stabilizer_lens` is file-private. -/
+`ALT.mem_stabilizer_lens` is file-private. -/
 private theorem mem_stabilizer_lens' {α β : Type*} {U : Perm α} {ℓ : α → β} :
     U ∈ stabilizer (Perm α) ℓ ↔ ∀ x, ℓ (U x) = ℓ x := by
   constructor
@@ -339,10 +332,10 @@ theorem consistent_card_one {U : Perm (Fin n)} {ℓ : ℕ → Fin n → Fin m} (
 
 /-! ### Theorem 6.5's `K (U) ≤ …` display
 
-`PersistenceCapacity.ConsistentWith` reads the same consistency condition as `Consistent` here, but
+`ALT.ConsistentWith` reads the same consistency condition as `Consistent` here, but
 over an explicit `List ℕ` of held times rather than a `Finset ℕ` — the currency the decoder's
 `Primrec` construction needs. The two bridge lemmas below identify the sets exactly, so
-`PersistenceCapacity.ledger_itinerary`/`ledger_itinerary_consecutive` — the machine-checked decoder,
+`ALT.ledger_itinerary`/`ledger_itinerary_consecutive` — the machine-checked decoder,
 built there — apply here with `N` supplied from
 `consistent_card_bminus`/`consistent_card_consecutive`. -/
 
@@ -616,51 +609,55 @@ private theorem guard_region_nonvacuous :
   · simp only [Consistent, Set.mem_ofPred_eq]
     decide
 
-end FrameItinerary
+end ALT
 
 /-! ## Axiom audit
 
 The ten capstones above are `#print axioms`-clean on the standard triple, and the guards below
 make that build-enforced. -/
 
-set_option linter.style.longLine false
 
-/-- info: 'FrameItinerary.permCarries_step' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.permCarries_step' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms FrameItinerary.permCarries_step
+#print axioms ALT.permCarries_step
 
-/-- info: 'FrameItinerary.consistent_card' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.consistent_card' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms FrameItinerary.consistent_card
+#print axioms ALT.consistent_card
 
-/-- info: 'FrameItinerary.consistent_unique_of_injective' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.consistent_unique_of_injective' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms FrameItinerary.consistent_unique_of_injective
+#print axioms ALT.consistent_unique_of_injective
 
-/-- info: 'FrameItinerary.consistent_card_bminus' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.consistent_card_bminus' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms FrameItinerary.consistent_card_bminus
+#print axioms ALT.consistent_card_bminus
 
-/-- info: 'FrameItinerary.consistent_unique_of_injective_bminus' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.consistent_unique_of_injective_bminus' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms FrameItinerary.consistent_unique_of_injective_bminus
+#print axioms ALT.consistent_unique_of_injective_bminus
 
-/-- info: 'FrameItinerary.consistent_card_consecutive' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.consistent_card_consecutive' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms FrameItinerary.consistent_card_consecutive
+#print axioms ALT.consistent_card_consecutive
 
-/-- info: 'FrameItinerary.consistent_card_one' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.consistent_card_one' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms FrameItinerary.consistent_card_one
+#print axioms ALT.consistent_card_one
 
-/-- info: 'FrameItinerary.consistent_card_ge_factorial_compl' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.consistent_card_ge_factorial_compl' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms FrameItinerary.consistent_card_ge_factorial_compl
+#print axioms ALT.consistent_card_ge_factorial_compl
 
-/-- info: 'FrameItinerary.ledger_itinerary_bminus' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.ledger_itinerary_bminus' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms FrameItinerary.ledger_itinerary_bminus
+#print axioms ALT.ledger_itinerary_bminus
 
-/-- info: 'FrameItinerary.ledger_itinerary_range' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.ledger_itinerary_range' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms FrameItinerary.ledger_itinerary_range
+#print axioms ALT.ledger_itinerary_range

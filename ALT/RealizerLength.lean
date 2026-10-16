@@ -1,16 +1,9 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Realizability.Realizability
 public import Mathlib.Data.Nat.Size
 public import Mathlib.Tactic.Linarith
 public import Mathlib.Tactic.Positivity
-set_option linter.style.header false
-set_option linter.style.longLine false
 
 /-!
 # Realizer-length non-closure ([Decoupling] §4.3 — categorical Kolmogorov / Shannon counting bound)
@@ -26,24 +19,26 @@ morphism (every function is realized, `realizes_of_finite`) whose every realizer
 
 @[expose] public section
 
-namespace Realizability
+namespace ALT
 
-open Nat.Partrec
+open Realizability Nat.Partrec
 
 /-- Every assembly has **decidable equality** — its encoding `enc` into ℕ is injective
 (`Function.Injective.decidableEq`), constructively. This is what makes the function space
-`A.carrier → B.carrier` a `Fintype`, so its cardinality (the count in the Shannon bound) is defined. -/
+`A.carrier → B.carrier` a `Fintype`, so its cardinality (the count in the Shannon bound) is defined.
+-/
 instance instDecidableEqCarrier (A : Assembly) : DecidableEq A.carrier := A.enc_inj.decidableEq
 
 /-- Bit-length of a code: `Nat.size` of its Gödel index (the paper's realizer length `r`). -/
 def bitlen (r : Code) : ℕ := Nat.size (Encodable.encode r)
 
-/-- `r` tracks `f` (the un-existentialized `Realizes`): `Realizes f ↔ ∃ r, RealizesBy r f` (defeq). -/
+/-- `r` tracks `f` (the un-existentialized `Realizes`): `Realizes f ↔ ∃ r, RealizesBy r f` (defeq).
+-/
 def RealizesBy {A B : Assembly} (r : Code) (f : A.carrier → B.carrier) : Prop :=
   ∀ x, r.eval (A.enc x) = Part.some (B.enc (f x))
 
 /-- A code realizes at most one function (extensionally) — `B.enc` is injective. -/
-theorem realizes_unique {A B : Assembly} {r : Code} {f g : A.carrier → B.carrier}
+theorem RealizesBy.unique {A B : Assembly} {r : Code} {f g : A.carrier → B.carrier}
     (hf : RealizesBy r f) (hg : RealizesBy r g) : f = g := by
   funext x
   exact B.enc_inj (Part.some_inj.mp ((hf x).symm.trans (hg x)))
@@ -64,7 +59,7 @@ theorem realizer_length_overflow {A B : Assembly} (b : ℕ)
     have hcode : r f = r g :=
       Encodable.encode_injective (by simpa [φ, Fin.mk.injEq] using hfg)
     have : RealizesBy (r f) g := by rw [hcode]; exact hr g
-    exact realizes_unique (hr f) this
+    exact RealizesBy.unique (hr f) this
   have hle := Fintype.card_le_of_injective φ hφinj
   rw [Fintype.card_fin] at hle
   omega
@@ -98,14 +93,15 @@ theorem exp_realizer_overflow (s : ℕ) (hs : 1 ≤ s) :
 
 /-- **Explicit exponential magnitude** ([Decoupling] §4.3). Sharpens
 `exp_realizer_overflow` from the linear `> s`-bit figure to the paper's literal `≈ 2^{|s_work|}`-bit
-figure: the SAME fitting object `fatAsm s` (working carrier `Fin (2^s)`, so `|s_work| = s`) carries a
-genuine morphism (`Realizes f`) every realizer of which has bit-length `≥ s · 2^s`. The core is the
-Shannon counting bound at the threshold `b = s·2^s − 1`: with `|α→α| = (2^s)^{2^s} = 2^{s·2^s}`
+figure: the SAME fitting object `fatAsm s` (working carrier `Fin (2^s)`, so `|s_work| = s`) carries
+a genuine morphism (`Realizes f`) every realizer of which has bit-length `≥ s · 2^s`. The core is
+the Shannon counting bound at the threshold `b = s·2^s − 1`: with `|α→α| = (2^s)^{2^s} = 2^{s·2^s}`
 functions but only `≤ 2^b` codes of length `≤ b`, some morphism has no realizer of length `≤ b`,
 i.e. length `≥ s·2^s`. -/
 theorem exp_realizer_overflow_exponential (s : ℕ) (hs : 1 ≤ s) :
     ∃ A : Assembly, A.FitsIn s ∧
-      ∃ f : A.carrier → A.carrier, Realizes f ∧ ∀ r : Code, RealizesBy r f → s * 2 ^ s ≤ bitlen r := by
+      ∃ f : A.carrier → A.carrier, Realizes f ∧ ∀ r : Code, RealizesBy r f → s * 2 ^ s ≤ bitlen
+          r := by
   refine ⟨fatAsm s, fatAsm_fitsIn s, ?_⟩
   have hc : Fintype.card (fatAsm s).carrier = 2 ^ s := by
     change Fintype.card (Fin (2 ^ s)) = 2 ^ s
@@ -130,10 +126,11 @@ theorem exp_realizer_overflow_exponential (s : ℕ) (hs : 1 ≤ s) :
 open Classical in
 /-- **Counting bound, cardinality form.** At most `2 ^ b` functions `A → B` admit a realizer of
 bit-length `≤ b`. Each such function chooses a short realizer, whose Gödel code lands in `Fin (2^b)`
-(via `Nat.size_le`), and a code realizes at most one function (`realizes_unique`), so the choice is
-injective. -/
+(via `Nat.size_le`), and a code realizes at most one function (`RealizesBy.unique`), so the choice
+is injective. -/
 theorem shortRealizable_card_le (A B : Assembly) (b : ℕ) :
-    Fintype.card {f : A.carrier → B.carrier // ∃ r : Code, bitlen r ≤ b ∧ RealizesBy r f} ≤ 2 ^ b := by
+    Fintype.card {f : A.carrier → B.carrier // ∃ r : Code, bitlen r ≤ b ∧ RealizesBy r f} ≤ 2
+        ^ b := by
   have hlt : ∀ f : {f : A.carrier → B.carrier // ∃ r : Code, bitlen r ≤ b ∧ RealizesBy r f},
       Encodable.encode f.2.choose < 2 ^ b :=
     fun f => Nat.size_le.mp f.2.choose_spec.1
@@ -146,19 +143,20 @@ theorem shortRealizable_card_le (A B : Assembly) (b : ℕ) :
     apply Subtype.ext
     have hrf : RealizesBy f.2.choose f.1 := f.2.choose_spec.2
     have hrg : RealizesBy f.2.choose g.1 := by rw [hcode]; exact g.2.choose_spec.2
-    exact realizes_unique hrf hrg
+    exact RealizesBy.unique hrf hrg
   have hle := Fintype.card_le_of_injective φ hφinj
   rwa [Fintype.card_fin] at hle
 
 open Classical in
-/-- **Almost-all form** ([Decoupling] §4.3 / §7.2). All but at most `2 ^ b` of the functions `A → B` have
-**every** realizer longer than `b` bits: the "long-realizer" set is the complement of the
+/-- **Almost-all form** ([Decoupling] §4.3 / §7.2). All but at most `2 ^ b` of the functions `A → B`
+have **every** realizer longer than `b` bits: the "long-realizer" set is the complement of the
 short-realizable set, whose cardinality is `≤ 2 ^ b` by `shortRealizable_card_le`. -/
 theorem almost_all_realizer_overflow (A B : Assembly) (b : ℕ) :
     Fintype.card (A.carrier → B.carrier) - 2 ^ b ≤
       Fintype.card {f : A.carrier → B.carrier // ∀ r : Code, RealizesBy r f → b < bitlen r} := by
   have hiff : ∀ f : A.carrier → B.carrier,
-      (∀ r : Code, RealizesBy r f → b < bitlen r) ↔ ¬ ∃ r : Code, bitlen r ≤ b ∧ RealizesBy r f := by
+      (∀ r : Code, RealizesBy r f → b < bitlen r) ↔ ¬ ∃ r : Code, bitlen r ≤ b ∧ RealizesBy r
+          f := by
     intro f
     constructor
     · rintro h ⟨r, hb, hr⟩
@@ -199,4 +197,4 @@ theorem almost_all_fatAsm_overflow (s : ℕ) (hs : 1 ≤ s) :
   rw [hcardEq, hcong] at key
   exact key
 
-end Realizability
+end ALT

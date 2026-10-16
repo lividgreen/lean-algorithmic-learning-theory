@@ -1,14 +1,7 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.SkewFiber
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # The weighted fiber: selection that *is* Bayesian update ([Inevitability] §6)
@@ -111,13 +104,13 @@ redundancy argument for a *floored* process, are not developed here.
 
 @[expose] public section
 
-namespace WeightedFiber
+namespace ALT
 
-open PersistenceCapacity Decoupling AdditiveComplexity SkewFiber
+open AdditiveComplexity
 open Equiv MulAction
 
 -- `•` on the recurrent-core reading is the relabelling action `U • ℓ = ℓ ∘ U⁻¹`; the same local
--- instance `PersistenceCapacity.emergence` is stated under.
+-- instance `ALT.emergence` is stated under.
 attribute [local instance] arrowAction
 
 /-! ## The exact identity: the replicator step is Bayes' rule -/
@@ -255,7 +248,7 @@ variable {n₁ C W : ℕ}
 abbrev WVec (C W : ℕ) := Fin C → Fin (W + 1)
 
 /-- The weights as naturals. -/
-def raw (w : WVec C W) : Fin C → ℕ := fun i => (w i : ℕ)
+def WVec.raw (w : WVec C W) : Fin C → ℕ := fun i => (w i : ℕ)
 
 /-- Package a natural weight vector into the carrier. -/
 def pack (W : ℕ) (v : Fin C → ℕ) : WVec C W :=
@@ -264,14 +257,14 @@ def pack (W : ℕ) (v : Fin C → ℕ) : WVec C W :=
 /-- **One generation of the weighted fiber**: the exact replicator step, then the carrier
 projection. All of the approximation is in the second half. -/
 def wGen (W : ℕ) (f : Fin C → ℕ) (w : WVec C W) : WVec C W :=
-  pack W (project W (bayesStep f (raw w)))
+  pack W (project W (bayesStep f (WVec.raw w)))
 
 /-- **Packing does not clamp**: the projection already fits, so the step's arithmetic is exactly
 `project ∘ bayesStep`. The budget cap is an invariant of the step, not a truncation hidden in the
 carrier — which is what makes the residual in `weighted_fiber_not_exactly_bayes` attributable to the
 rounding alone. -/
 theorem raw_wGen (hW : 1 ≤ W) (f : Fin C → ℕ) (w : WVec C W) :
-    raw (wGen W f w) = project W (bayesStep f (raw w)) := by
+    WVec.raw (wGen W f w) = project W (bayesStep f (WVec.raw w)) := by
   funext i
   exact min_eq_left (project_le hW _ i)
 
@@ -381,13 +374,13 @@ Note what is absent: the fitness. The winner-take-all frame had to score the pop
 current base state to read it; a weight vector already carries the posterior, so the reading is a
 function of the fiber coordinate alone. -/
 def argmaxFrame (n₁ W : ℕ) [NeZero C] : Fin (n₁ * (W + 1) ^ C) → Fin C :=
-  fun p => argmax (raw (finFunctionFinEquiv.symm (finProdFinEquiv.symm p).2))
+  fun p => argmax (WVec.raw (finFunctionFinEquiv.symm (finProdFinEquiv.symm p).2))
 
 /-- **The base-reading frame** ([Inevitability] §6): read the fittest candidate's *prediction of the
 base*. The weight vector's heaviest candidate is decoded into a rule by `dec`, and that rule is
 applied to the current base state, so the frame's value is a base state and not a candidate.
 
-This is `SkewFiber.predFrame`'s shape over the weighted carrier, and the change that matters is the
+This is `ALT.predFrame`'s shape over the weighted carrier, and the change that matters is the
 same one: the codomain. Coverage of `Fin n₁` is a question about the base coordinate — which the
 fiber reads and never writes — where coverage of `Fin C` by a candidate-valued reading can only be
 charged to the initial weight vector. -/
@@ -403,7 +396,7 @@ The uniform floor changes what "settled" means: a bare point mass is not reachab
 coordinate may be zero. The settled configuration is instead the whole budget on one candidate and
 one reserved quantum on each of the others — and it is a genuine fixed point.
 
-`argmaxFrame` is a candidate-valued frame, so — exactly as for `SkewFiber.fittestFrame` — its
+`argmaxFrame` is a candidate-valued frame, so — exactly as for `ALT.fittestFrame` — its
 coverage has to be charged to the initial condition: each candidate is read off its own settled
 vector, on dynamics carrying no information.
 
@@ -431,7 +424,7 @@ theorem wMax_settled (hW : 1 ≤ W) (c : Fin C) : wMax (settled W c) = W := by
   rwa [settled, ite_eq_left rfl] at this
 
 theorem raw_pack_settled (hW : 1 ≤ W) (c : Fin C) :
-    raw (pack W (settled W c) : WVec C W) = settled W c := by
+    WVec.raw (pack W (settled W c) : WVec C W) = settled W c := by
   funext i
   exact min_eq_left (settled_le hW c i)
 
@@ -440,7 +433,7 @@ settled vector reproduces itself: the common divisor is `1`, so the rescale is t
 coordinate is already at or above the reserve. -/
 theorem wGen_settled (hW : 1 ≤ W) (f : Fin C → ℕ) (hf : ∀ i, f i = 1) (c : Fin C) :
     wGen W f (pack W (settled W c)) = (pack W (settled W c) : WVec C W) := by
-  have hstep : bayesStep f (raw (pack W (settled W c) : WVec C W)) = settled W c := by
+  have hstep : bayesStep f (WVec.raw (pack W (settled W c) : WVec C W)) = settled W c := by
     funext i
     rw [bayesStep, raw_pack_settled hW, hf i, Nat.mul_one]
   have hd : scaleDiv W (settled W c) = 1 := by
@@ -538,7 +531,7 @@ theorem wGen_settled_of_faithful (hW : 1 ≤ W) (S : Fin n₁ → Fin n₁)
   have hfc₀ : predFitPos S dec x c₀ = 2 := by rw [predFitPos, ite_eq_left hc₀]
   have hfle : ∀ i, predFitPos S dec x i ≤ 2 := by intro i; rw [predFitPos]; split <;> omega
   have hf1 : ∀ i, 1 ≤ predFitPos S dec x i := fun i => predFitPos_pos S dec x i
-  have hstep : bayesStep (predFitPos S dec x) (raw (pack W (settled W c₀) : WVec C W))
+  have hstep : bayesStep (predFitPos S dec x) (WVec.raw (pack W (settled W c₀) : WVec C W))
       = fun i => settled W c₀ i * predFitPos S dec x i := by
     funext i
     rw [bayesStep, raw_pack_settled hW]
@@ -663,7 +656,7 @@ and after `N` steps it is `S^[N + 1]` of the initial base coordinate — surject
 surjections.
 
 The coverage comes off the base coordinate, which the fiber reads and never writes. This is
-`SkewFiber.surjective_predFrame_of_faithful`'s premise shape and conclusion transported to the
+`ALT.surjective_predFrame_of_faithful`'s premise shape and conclusion transported to the
 weighted carrier, with one difference in what holds the population still: there a variation rule was
 switched off, here the configuration is a fixed point of the fitness itself
 (`wGen_settled_of_faithful`).
@@ -841,7 +834,7 @@ def badW : Fin 2 → ℕ := ![2, 1]
 def badFit : Fin 2 → ℕ := ![2, 1]
 
 /-- The exact step doubles the leading weight; the projection then halves everything back. -/
-theorem badProject : project 2 (bayesStep badFit badW) = badW := by decide
+theorem project_bayesStep_badFit_eq_badW : project 2 (bayesStep badFit badW) = badW := by decide
 
 /-- **Bayes up to the carrier, not Bayes.** On this two-candidate, budget-`2` instance the *exact*
 replicator step reproduces the posterior term for term, and the projected step returns the **prior
@@ -856,11 +849,12 @@ theorem weighted_fiber_not_exactly_bayes :
     toDist (bayesStep badFit badW) = bayesPost (toDist badW) badFit ∧
       toDist (project 2 (bayesStep badFit badW)) = toDist badW ∧
       bayesPost (toDist badW) badFit ≠ toDist badW := by
-  refine ⟨toDist_bayesStep badFit badW (by decide) (by decide), congrArg toDist badProject, ?_⟩
+  refine ⟨toDist_bayesStep badFit badW (by decide) (by decide),
+    congrArg toDist project_bayesStep_badFit_eq_badW, ?_⟩
   intro hcon
   have h0 := congrFun hcon 0
   norm_num [bayesPost, toDist, badW, badFit, Fin.sum_univ_two] at h0
 
 end Residual
 
-end WeightedFiber
+end ALT

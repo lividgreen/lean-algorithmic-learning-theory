@@ -1,8 +1,3 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Mathlib.Analysis.MeanInequalities
@@ -50,9 +45,9 @@ Two devices do the work.
 
 @[expose] public section
 
-namespace PersistentWalk
+namespace ALT
 
-open MeasureTheory ProbabilityTheory ParityWalk Real
+open MeasureTheory ProbabilityTheory Real
 
 /-! ## Combining dependent summands: the arithmetic–geometric mean step -/
 
@@ -230,19 +225,19 @@ theorem persistentSum_tail (hmeas : ∀ i, Measurable (ξ i)) (hindep : iIndepFu
 
 end Tail
 
-end PersistentWalk
+end ALT
 
 /-! ## Axiom audit
 
 The combination step and the persistent tail are `#print axioms`-clean on the standard triple, and
 the guards below make that build-enforced. -/
 
-set_option linter.style.longLine false
 
-/-- info: 'PersistentWalk.hasSubgaussianMGF_sum_range' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.hasSubgaussianMGF_sum_range' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms PersistentWalk.hasSubgaussianMGF_sum_range
+#print axioms ALT.hasSubgaussianMGF_sum_range
 
-/-- info: 'PersistentWalk.persistentSum_tail' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.persistentSum_tail' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms PersistentWalk.persistentSum_tail
+#print axioms ALT.persistentSum_tail

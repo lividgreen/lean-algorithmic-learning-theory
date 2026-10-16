@@ -1,15 +1,7 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.SQSearchPhaseMass
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style linters (long doc lines).
-set_option linter.style.header false
-set_option linter.style.longLine false
 
 /-!
 # The mixture mass `Z_t` as a genuine supermartingale ([SQ] Appendix A, FV-I)
@@ -17,7 +9,7 @@ set_option linter.style.longLine false
 Provenance: [SQ], Appendix A: "Ville's inequality: the likelihood
 ratio is a non-negative supermartingale under realizability", with `Z_t = ∑ w(R')·L_t(R')` and
 `𝔼[Z_0] ≤ 1` by Kraft. This is exactly the premise FV-G's chained theorem
-(`SQSearchPhaseMass.search_phase_mass_ville_chain`, `ALT/SQSearchPhaseMass.lean`) still carries
+(`ALT.search_phase_mass_ville_chain`, `ALT/SQSearchPhaseMass.lean`) still carries
 as `hsuper : Supermartingale Z ℱ μ`. FV-I **constructs** that `Z` on a trajectory space, discharging
 the premise for the paper's realizable-deterministic regime ([Discovery] §3): candidates are
 deterministic rules, the truth predicts the realized symbol with probability 1, so each per-step
@@ -62,14 +54,14 @@ events depending only on coordinates `≤ i`. FOUND in Mathlib (not hand-rolled)
   dynamics: `detFactor` genuinely instantiates the `[0,1]`-valued,
   `ℱ_{s+1}`-measurable factor for deterministic rules (closing the FV-I measurability residue), but
   which `pred` the algorithm emits is the algorithm-layer identification, still ahead.
-* Not the Kraft bound's origin ([Discovery] `PriorNormalization`/`PrefixComplexity`): imported here as
-  the hypothesis `hkraft : ∑ w ≤ 1`.
+* Not the Kraft bound's origin ([Discovery] `PriorNormalization`/`PrefixComplexity`): imported here
+  as the hypothesis `hkraft : ∑ w ≤ 1`.
 -/
 
 
 @[expose] public section
 
-namespace SQMixtureSupermartingale
+namespace ALT
 
 open MeasureTheory
 open scoped ProbabilityTheory
@@ -190,7 +182,7 @@ theorem search_phase_mass_bound [IsProbabilityMeasure μ]
         ∑ i ∈ pruned ω, (-Real.log (1 - mfun ω i))
           ≤ (∑ k ∈ Finset.range N, (Φ ω k - Φ ω (k + 1))) + Real.log (1 / δ)) :
     μ {ω | Cc + Real.log (1 / δ) < ∑ i ∈ pruned ω, mfun ω i} ≤ ENNReal.ofReal δ :=
-  SQSearchPhaseMass.search_phase_mass_ville_chain (Z cands w g)
+  ALT.search_phase_mass_ville_chain (Z cands w g)
     (Z_supermartingale cands w g hw hkraft hg01 hgmeas) (Z_nonneg cands w g hw hg01)
     (integral_Z_zero_le_one cands w g hkraft) δ hδ0 pruned mfun Φ N Cc hm1 hΦ0 hΦn hcharge
 
@@ -202,10 +194,10 @@ section DeterministicFactor
 
 [Discovery] / [SQ] rules are DETERMINISTIC: a candidate `R'` predicts a single next symbol
 `pred R' s h ∈ X` from the length-`s` history `h`, so its per-step likelihood of the realized symbol
-is `0/1`. This section instantiates the abstract factor `g` at that concrete `detFactor`, discharging
-FV-I's last named hypothesis (`hgmeas`) for the deterministic regime: the strong measurability is
-PROVED from `Filtration.piLE`'s coordinate structure (both the predicted symbol and the realized
-symbol `ω s` depend only on coordinates `≤ s + 1`), the alphabet `X` being discrete
+is `0/1`. This section instantiates the abstract factor `g` at that concrete `detFactor`,
+discharging FV-I's last named hypothesis (`hgmeas`) for the deterministic regime: the strong
+measurability is PROVED from `Filtration.piLE`'s coordinate structure (both the predicted symbol and
+the realized symbol `ω s` depend only on coordinates `≤ s + 1`), the alphabet `X` being discrete
 (`Countable` + `MeasurableSingletonClass`) so equality-events are measurable. -/
 
 variable {X : Type*} [MeasurableSpace X] [Countable X] [MeasurableSingletonClass X] [DecidableEq X]
@@ -273,4 +265,4 @@ theorem Z_det_supermartingale [IsProbabilityMeasure μ]
 
 end DeterministicFactor
 
-end SQMixtureSupermartingale
+end ALT

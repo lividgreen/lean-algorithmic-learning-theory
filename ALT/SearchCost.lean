@@ -1,15 +1,8 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import CodeLayer.Code.EvalLaws
 public import CodeLayer.TimeCost
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
-set_option linter.style.header false
 
 /-!
 # The search cost: the native cost model extended to all of `Nat.Partrec.Code`
@@ -54,10 +47,11 @@ uniform in the input exists for an unbounded search.
 
 @[expose] public section
 
-namespace TimeCost
+namespace ALT
 
 open Nat.Partrec (Code)
 open Nat.Partrec.Code
+open TimeCost
 open CodeEvalLaws
 
 /-! ## The probe-cost accumulator -/
@@ -344,4 +338,4 @@ theorem tcP_rfind'_le {cf : Code} {B : ℕ} (a m n : ℕ)
   rw [Nat.mul_succ]
   exact Nat.add_le_add_right hsum (n + 1)
 
-end TimeCost
+end ALT

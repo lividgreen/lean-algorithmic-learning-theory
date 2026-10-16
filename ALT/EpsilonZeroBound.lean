@@ -1,14 +1,7 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # The explicit ε₀ lower bound ([Discovery] §3.3 / Theorem 3.1)
@@ -58,7 +51,7 @@ Status: PROVED as pure `Finset` / real arithmetic. A thin supporting win (cf. `P
 
 @[expose] public section
 
-namespace EpsilonZeroBound
+namespace ALT
 
 open Real Finset
 
@@ -106,4 +99,4 @@ theorem Tdiscover_antitone {c r δ : ℝ} (hc : 0 ≤ c)
   intro a ha _ _ hab
   exact Tdiscover_le_of_separated hc hnum ha hab
 
-end EpsilonZeroBound
+end ALT

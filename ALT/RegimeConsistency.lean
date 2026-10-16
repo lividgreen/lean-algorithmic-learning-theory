@@ -1,14 +1,7 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Mathlib.Analysis.Complex.ExponentialBounds
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # Regime consistency ([Discovery], §1.2)
@@ -55,7 +48,7 @@ regime only.
 
 @[expose] public section
 
-namespace RegimeConsistency
+namespace ALT
 
 /-- The regime `r ≪ K ≪ L` is internally consistent: under C1–C3 with explicit named constant
 conditions, the strict ordering `r < K < L` holds. The two estimates are independent — `r < K`
@@ -108,4 +101,4 @@ theorem regime_satisfiable :
     Real.log_le_sub_one_of_pos (by norm_num)
   nlinarith [h]
 
-end RegimeConsistency
+end ALT

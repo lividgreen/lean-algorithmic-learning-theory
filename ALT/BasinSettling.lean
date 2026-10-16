@@ -1,14 +1,7 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.FlooredMixture
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # Settling from every initial weight vector ([Inevitability] §6)
@@ -96,7 +89,9 @@ and are not re-derived here. -/
 
 @[expose] public section
 
-namespace WeightedFiber
+namespace ALT
+
+open WVec
 
 /-! ## The run from an arbitrary initial weight vector -/
 
@@ -669,7 +664,6 @@ with the fiber coordinate started anywhere on the carrier rather than at the uni
 
 section PredictiveFiber
 
-open SkewFiber
 
 variable {n₁ C W : ℕ}
 
@@ -1213,56 +1207,68 @@ theorem raw_wRunFrom_bothLead_ne_settled (t : ℕ) (c : Fin 2) :
 
 end Guards
 
-end WeightedFiber
+end ALT
 
-/-- info: 'WeightedFiber.wRunFrom_add' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.wRunFrom_add' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.wRunFrom_add
+#print axioms ALT.wRunFrom_add
 
-/-- info: 'WeightedFiber.argmax_wRunFrom_eventually_const' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.argmax_wRunFrom_eventually_const' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.argmax_wRunFrom_eventually_const
+#print axioms ALT.argmax_wRunFrom_eventually_const
 
-/-- info: 'WeightedFiber.argmax_wRunFrom_eventually_const_consistent' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.argmax_wRunFrom_eventually_const_consistent' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.argmax_wRunFrom_eventually_const_consistent
+#print axioms ALT.argmax_wRunFrom_eventually_const_consistent
 
-/-- info: 'WeightedFiber.argmax_wRunFrom_eventually_const_of_eventually_realizable' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.argmax_wRunFrom_eventually_const_of_eventually_realizable' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.argmax_wRunFrom_eventually_const_of_eventually_realizable
+#print axioms ALT.argmax_wRunFrom_eventually_const_of_eventually_realizable
 
-/-- info: 'WeightedFiber.argmax_wRunFrom_seededAlt_card_changes_eq' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.argmax_wRunFrom_seededAlt_card_changes_eq' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.argmax_wRunFrom_seededAlt_card_changes_eq
+#print axioms ALT.argmax_wRunFrom_seededAlt_card_changes_eq
 
-/-- info: 'WeightedFiber.argmax_wRunFrom_lateHit_missCount_ne_zero' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.argmax_wRunFrom_lateHit_missCount_ne_zero' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.argmax_wRunFrom_lateHit_missCount_ne_zero
+#print axioms ALT.argmax_wRunFrom_lateHit_missCount_ne_zero
 
-/-- info: 'WeightedFiber.argmax_wRunFrom_zeroMiss_misses' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.argmax_wRunFrom_zeroMiss_misses' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.argmax_wRunFrom_zeroMiss_misses
+#print axioms ALT.argmax_wRunFrom_zeroMiss_misses
 
-/-- info: 'WeightedFiber.argmax_wRun_altMiss_not_eventually_const' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.argmax_wRun_altMiss_not_eventually_const' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.argmax_wRun_altMiss_not_eventually_const
+#print axioms ALT.argmax_wRun_altMiss_not_eventually_const
 
-/-- info: 'WeightedFiber.argmaxFrame_wWorld_eventually_const_wStartFrom' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.argmaxFrame_wWorld_eventually_const_wStartFrom' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.argmaxFrame_wWorld_eventually_const_wStartFrom
+#print axioms ALT.argmaxFrame_wWorld_eventually_const_wStartFrom
 
-/-- info: 'WeightedFiber.raw_wRunFrom_eventually_lock' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.raw_wRunFrom_eventually_lock' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.raw_wRunFrom_eventually_lock
+#print axioms ALT.raw_wRunFrom_eventually_lock
 
-/-- info: 'WeightedFiber.raw_wRunFrom_eventually_settled' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.raw_wRunFrom_eventually_settled' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.raw_wRunFrom_eventually_settled
+#print axioms ALT.raw_wRunFrom_eventually_settled
 
-/-- info: 'WeightedFiber.raw_wRunFrom_zeroMiss_ne_settled' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.raw_wRunFrom_zeroMiss_ne_settled' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.raw_wRunFrom_zeroMiss_ne_settled
+#print axioms ALT.raw_wRunFrom_zeroMiss_ne_settled
 
-/-- info: 'WeightedFiber.raw_wRunFrom_bothLead_ne_settled' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.raw_wRunFrom_bothLead_ne_settled' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.raw_wRunFrom_bothLead_ne_settled
+#print axioms ALT.raw_wRunFrom_bothLead_ne_settled

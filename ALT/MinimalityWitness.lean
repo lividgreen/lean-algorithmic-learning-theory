@@ -1,8 +1,3 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.GodelInternalization
@@ -29,7 +24,7 @@ The exponential object `expAsm` of the realizability category ([Decoupling] §4.
 exponential modality of §4.5 are therefore *absent from this module's import closure*. The
 `assert_not_exists` guards below hold the module to that fact: were either the strict or the graded
 exponential ever pulled onto the internalization's dependency path, this file would fail to compile.
-This complements FV-13 (`RealizabilityRecursor.reflectiveAsm_representsUnderivableTruth`), where the
+This complements FV-13 (`ALT.ReflectiveAsm.representsUnderivableTruth`), where the
 exponential is present and genuine yet the §6 consequence still flows through the recursor and
 imported incompleteness alone: there the exponential is off the critical path; here it is out of the
 build.
@@ -49,26 +44,26 @@ assert_not_exists RealizabilityCCC.expAsm
 -- capacity-graded exponential of the §4.5 general-functor conjecture. It is defined over `expAsm`,
 -- so excluding the strict exponential already excludes it; asserted explicitly to keep the §4.5
 -- boundary self-evident to a reader of this file.
-assert_not_exists GradedApplication.gradedExp
+assert_not_exists ALT.gradedExp
 
-namespace MinimalityWitness
+namespace ALT
 
 /-- **[Decoupling] §6.3 Theorem 6.3 over the cartesian–recursor fragment (§4.6, Prop 4.5; FV-8).**
 For a bounded checker with budget `M_chk ≤ g²` whose indexing budget reaches `g`, under imported
 incompleteness: the Gödel number is in range (`g ≤ M_chk`), the decision morphism returns
 `Decide(G) = true`, and the recursor depth is hosted by the linear capacity `2n`,
-`n = ⌈log₂(g+1)⌉`. A re-export of `GodelInternalization.internalization`: the whole statement is
+`n = ⌈log₂(g+1)⌉`. A re-export of `BoundedChecker.internalization`: the whole statement is
 assembled from finite products and the bounded recursor `cyclicParamNNO M_chk`, and the exponential
 object is `assert_not_exists`-absent from this module — Proposition 4.5, machine-enforced. -/
-alias fragment_internalization := GodelInternalization.internalization
+alias fragment_internalization := BoundedChecker.internalization
 
 /-- **[Decoupling] §6.3 Theorem 6.3, Level L2b — concrete, real Gödel sentence (FV-8).** For the
 finite theory `𝗣𝗔⁻` and any provable axiom list, the actual Gödel sentence `G` (true in `ℕ`,
 `𝗣𝗔⁻`-unprovable) is decided as bounded-non-provable by the executable sound checker:
 `Prf Ax G p = false` for every proof code `p ≤ M_chk`. A re-export of
-`GodelChecker.paMinus_decides_bounded_nonprovability`: like the abstract form it is built from
+`HilbertChecker.paMinus_decides_bounded_nonprovability`: like the abstract form it is built from
 finite products and the bounded recursor only — no exponential object enters this module's closure
 (Proposition 4.5, machine-enforced). Axiom-clean. -/
-alias fragment_decides_godel := GodelChecker.paMinus_decides_bounded_nonprovability
+alias fragment_decides_godel := HilbertChecker.paMinus_decides_bounded_nonprovability
 
-end MinimalityWitness
+end ALT

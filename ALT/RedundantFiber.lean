@@ -1,14 +1,7 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.LogMassEvent
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # The redundant fiber: recovery plus repetition ([Inevitability] §6, the survival core)
@@ -61,7 +54,7 @@ theorem below quantifies over an arbitrary finite hit schedule of the stated sha
 deriving that damage takes that shape from anything. This file's survival synthesis (Stages A–C)
 is not yet a numbered proposition in any paper. The composite's own price — [Inevitability]
 Theorem 6.6(vi), "P copies and the decode" — is formalized in its two halves across two files: the
-`P`-fold carrier's cost is `SkewFiber.KE_skewWorldFin_powFiber_le`, and the decode's own cost,
+`P`-fold carrier's cost is `ALT.KE_skewWorldFin_powFiber_le`, and the decode's own cost,
 priced here (`compFrameFlat`, `KE_compFrameFlat_le`), closes the clause.
 
 Stage A's recovery price is proved directly over `dRun`'s own `Finset`-indexed schedule
@@ -74,7 +67,7 @@ fact about the same packed `dRun` — the two share the landed automaton on ever
 it. `segSurpriseCard_le` restates the same bound over an explicit list of `(gap, landing)` segments
 (`segRun`): Stage A's own decomposition where a schedule is naturally given as a list, not a bridge
 the set-indexed price depends on. Stage C's survival theorems do not appeal to
-`SurpriseBudget.survives_of_invariant`: the composite's own damage model — an override at named
+`ALT.survives_of_invariant`: the composite's own damage model — an override at named
 copies, not a Hamming-bounded perturbation of one shared memory — is more direct to induct on than
 to repackage as an instance of that structure.
 -/
@@ -82,9 +75,11 @@ to repackage as an instance of that structure.
 
 @[expose] public section
 
-namespace WeightedFiber
+namespace ALT
 
-open PersistenceCapacity AdditiveComplexity SkewFiber CodeEvalLaws
+open WVec
+
+open AdditiveComplexity CodeEvalLaws
 
 /-! ## Stage A — recovery: a damaged run settles, and its price is the seeded-start count -/
 
@@ -759,17 +754,17 @@ theorem compPredFrame_eq_of_mem_verifiers [NeZero C] [NeZero P] {S : Fin n₁ �
 
 /-! ### The decode, generalized and priced ([Inevitability] Theorem 6.6(vi), the decode half)
 
-`compPredFrame`'s reading, `argmax ∘ raw`, is a function of a copy's own state and of nothing
+`compPredFrame`'s reading, `argmax ∘ WVec.raw`, is a function of a copy's own state and of nothing
 else — so the search this section prices is stated over an arbitrary per-copy state space `Fin n₂`
 and an arbitrary reading `θ : Fin n₂ → Fin C`, folded onto the flat carrier `Fin (n₁ * n₂ ^ P)` the
-pricing layer needs a `lensCode` for. `frameVerifiers`/`compFrame` mirror
+pricing layer needs a `lensCode` for. `frameVerifiers`/`redundantCompFrame` mirror
 `verifiers`/`compPredFrame` exactly, `List`-valued rather than `Finset`-valued: `List.finRange P`
 lists the copies in increasing order, so its filter's own head (`List.getD · 0 default`) is
 already the least verifying index, without a separate minimality argument, and the same shape is
 what the Primrec builder below needs. -/
 
 /-- **The verifying copies, on an arbitrary per-copy reading** ([Inevitability] §6, Finding 3,
-generalized): `verifiers`, generalized from a raw weight vector's `argmax ∘ raw` reading to an
+generalized): `verifiers`, generalized from a raw weight vector's `argmax ∘ WVec.raw` reading to an
 arbitrary per-copy state space `Fin n₂` and reading `θ`. -/
 def frameVerifiers {n₂ : ℕ} (S : Fin n₁ → Fin n₁) (dec : Fin C → Fin n₁ → Fin n₁)
     (θ : Fin n₂ → Fin C) (x : Fin n₁) (v : Fin P → Fin n₂) : List (Fin P) :=
@@ -778,32 +773,33 @@ def frameVerifiers {n₂ : ℕ} (S : Fin n₁ → Fin n₁) (dec : Fin C → Fin
 /-- **The composite reading, on an arbitrary per-copy reading** ([Inevitability] §6, Finding 3,
 generalized): the least-indexed verifying copy's decoded prediction, falling back to copy `0` when
 none verifies — `compPredFrame`'s own shape, generalized. -/
-def compFrame {n₂ : ℕ} [NeZero P] (S : Fin n₁ → Fin n₁) (dec : Fin C → Fin n₁ → Fin n₁)
+def redundantCompFrame {n₂ : ℕ} [NeZero P] (S : Fin n₁ → Fin n₁) (dec : Fin C → Fin n₁ → Fin n₁)
     (θ : Fin n₂ → Fin C) (x : Fin n₁) (v : Fin P → Fin n₂) : Fin n₁ :=
   dec (θ (v ((frameVerifiers S dec θ x v).getD 0 0))) x
 
 /-- **Value agreement, generalized** — `compPredFrame_eq_of_mem_verifiers`'s own argument, over
-`compFrame`. -/
-theorem compFrame_eq_of_mem_verifiers {n₂ : ℕ} [NeZero P] {S : Fin n₁ → Fin n₁}
+`redundantCompFrame`. -/
+theorem redundantCompFrame_eq_of_mem_verifiers {n₂ : ℕ} [NeZero P] {S : Fin n₁ → Fin n₁}
     {dec : Fin C → Fin n₁ → Fin n₁} {θ : Fin n₂ → Fin C} {x : Fin n₁} {v : Fin P → Fin n₂}
     {i : Fin P} (hi : i ∈ frameVerifiers S dec θ x v) :
-    compFrame S dec θ x v = S x := by
+    redundantCompFrame S dec θ x v = S x := by
   have hne : frameVerifiers S dec θ x v ≠ [] := List.ne_nil_of_mem hi
   have hmem : (frameVerifiers S dec θ x v).getD 0 0 ∈ frameVerifiers S dec θ x v := by
     have hlen : 0 < (frameVerifiers S dec θ x v).length := List.length_pos_of_ne_nil hne
     rw [List.getD_eq_getElem _ 0 hlen]
     exact List.getElem_mem hlen
   rw [frameVerifiers, List.mem_filter, decide_eq_true_eq] at hmem
-  rw [compFrame]
+  rw [redundantCompFrame]
   exact hmem.2
 
 /-- **The composite decode, on the flat carrier** ([Inevitability] §6, Theorem 6.6(vi), the decode
-half — priced by `KE_compFrameFlat_le`). `compFrame`, folded onto `Fin (n₁ * n₂ ^ P)`: `x` is the
-base coordinate and `v` the `P` copies, read out of the composite fiber coordinate by
+half — priced by `KE_compFrameFlat_le`). `redundantCompFrame`, folded onto `Fin (n₁ * n₂ ^ P)`: `x`
+is the base coordinate and `v` the `P` copies, read out of the composite fiber coordinate by
 `finFunctionFinEquiv`. -/
 def compFrameFlat {n₂ : ℕ} [NeZero P] (S : Fin n₁ → Fin n₁) (dec : Fin C → Fin n₁ → Fin n₁)
     (θ : Fin n₂ → Fin C) (p : Fin (n₁ * n₂ ^ P)) : Fin n₁ :=
-  compFrame S dec θ (finProdFinEquiv.symm p).1 (finFunctionFinEquiv.symm (finProdFinEquiv.symm p).2)
+  redundantCompFrame S dec θ (finProdFinEquiv.symm p).1
+    (finFunctionFinEquiv.symm (finProdFinEquiv.symm p).2)
 
 /-- **Non-vacuity**: a flat state whose `i`-th copy verifies decodes to the base's own next state —
 the flat analogue of `compPredFrame_eq_of_mem_verifiers`, over an arbitrary copy's raw reading
@@ -813,18 +809,18 @@ theorem compFrameFlat_eq_of_exists {n₂ : ℕ} [NeZero P] {S : Fin n₁ → Fin
     (hi : dec (θ (finFunctionFinEquiv.symm (finProdFinEquiv.symm p).2 i))
             (finProdFinEquiv.symm p).1 = S (finProdFinEquiv.symm p).1) :
     compFrameFlat S dec θ p = S (finProdFinEquiv.symm p).1 := by
-  refine compFrame_eq_of_mem_verifiers (i := i) ?_
+  refine redundantCompFrame_eq_of_mem_verifiers (i := i) ?_
   rw [frameVerifiers, List.mem_filter, decide_eq_true_eq]
   exact ⟨List.mem_finRange i, hi⟩
 
 /-- **The priced flat carrier is the composite guest's own state space** ([Inevitability] Theorem
 6.6(vi)'s identification, the last residue of clause (vi)): `compFrameFlat`'s generalized decode,
 instantiated at the per-copy space `n₂ := (W + 1) ^ C` with `θ` the fiber-only half of
-`WeightedFiber.argmaxFrame`, agrees with `compPredFrame` on the composite's own carrier — the flat
+`ALT.argmaxFrame`, agrees with `compPredFrame` on the composite's own carrier — the flat
 `Fin (n₁ * ((W + 1) ^ C) ^ P)` is the population's own `Fin P → WVec C W`, read digitwise by
 `finFunctionFinEquiv` at both levels (per copy, and over the population), exactly as `compPredFrame`
 reads it directly. Neither side's tie-breaking order is observable here: every verifying copy
-decodes to the same value `S x` (`compFrame_eq_of_mem_verifiers`,
+decodes to the same value `S x` (`redundantCompFrame_eq_of_mem_verifiers`,
 `compPredFrame_eq_of_mem_verifiers`), so the two frames agree without needing `frameVerifiers`'s
 least index and `verifiers`'s `Finset.min'` to be the same copy. -/
 theorem compFrameFlat_eq_compPredFrame [NeZero C] [NeZero P] (S : Fin n₁ → Fin n₁)
@@ -839,10 +835,10 @@ theorem compFrameFlat_eq_compPredFrame [NeZero C] [NeZero P] (S : Fin n₁ → F
     simp only [hθ, Equiv.symm_apply_apply]
   have hflat : compFrameFlat (n₂ := (W + 1) ^ C) S dec θ
       (finProdFinEquiv (x, finFunctionFinEquiv fun j => finFunctionFinEquiv (v j)))
-      = compFrame S dec θ x (fun j => finFunctionFinEquiv (v j)) := by
+      = redundantCompFrame S dec θ x (fun j => finFunctionFinEquiv (v j)) := by
     rw [compFrameFlat]
     simp only [Equiv.symm_apply_apply]
-  rw [hflat, compFrame]
+  rw [hflat, redundantCompFrame]
   by_cases hne : (verifiers S dec x v).Nonempty
   · obtain ⟨i, hiv⟩ := hne
     have hif : i ∈ frameVerifiers S dec θ x (fun j => finFunctionFinEquiv (v j)) := by
@@ -852,8 +848,8 @@ theorem compFrameFlat_eq_compPredFrame [NeZero C] [NeZero P] (S : Fin n₁ → F
       simpa only [verifiers, Finset.mem_filter, Finset.mem_univ, true_and] using hiv
     have hleft : dec (θ ((fun j => finFunctionFinEquiv (v j))
         ((frameVerifiers S dec θ x (fun j => finFunctionFinEquiv (v j))).getD 0 0))) x = S x := by
-      have := compFrame_eq_of_mem_verifiers (S := S) (dec := dec) hif
-      rwa [compFrame] at this
+      have := redundantCompFrame_eq_of_mem_verifiers (S := S) (dec := dec) hif
+      rwa [redundantCompFrame] at this
     rw [hleft, compPredFrame_eq_of_mem_verifiers hiv]
   · have heq : verifiers S dec x v = ∅ := Finset.not_nonempty_iff_eq_empty.mp hne
     have hempty : frameVerifiers S dec θ x (fun j => finFunctionFinEquiv (v j)) = [] := by
@@ -871,7 +867,7 @@ end Composite
 
 /-! ### The decode's price: a bounded search over the population
 
-`compFrameFlat`'s search is priced by the same recipe as `SkewFiber.skewTableFn` (weave two
+`compFrameFlat`'s search is priced by the same recipe as `ALT.skewTableFn` (weave two
 tables with one fixed builder) composed with `PersistenceCapacity`'s bounded-search recipe (filter
 `List.range P`, select by `List.getD`, precedented by `candList`/`gradedTableFn`): the three
 ingredient tables and `P` are packed into one natural number, and one fixed builder — independent
@@ -1012,13 +1008,13 @@ private theorem primrec_compFrameTable :
   exact Primrec.list_map (Primrec.list_range.comp hbound) (Primrec₂.mk primrec_compFrameEntry)
 
 /-- A `fiberFlat`-shaped table's entry at a flat index, restated for `dec`'s own shape
-(`SkewFiber.lensTable_getD_fiberFlat`'s content, unavailable here as it is file-local there). -/
+(`ALT.lensTable_getD_fiberFlat`'s content, unavailable here as it is file-local there). -/
 private theorem lensTable_getD_fiberFlat' {a b : ℕ} (G : Fin a → Fin b → Fin b)
     (i : Fin a) (w : Fin b) :
     (lensTable (fiberFlat G)).getD ((i : ℕ) * b + w) 0 = (G i w : ℕ) := by
   have hval : (i : ℕ) * b + w = (finProdFinEquiv (i, w) : ℕ) := by
     rw [finProdFinEquiv_apply_val]; ring
-  rw [hval, lensTable_getD _ (finProdFinEquiv (i, w)).isLt, fiberFlat_apply]
+  rw [hval, lensTable_getD_of_lt _ (finProdFinEquiv (i, w)).isLt, fiberFlat_apply]
 
 /-- **The least verifying `Fin P` and the least verifying raw `ℕ` agree**: `frameVerifiers`'
 `List.finRange`-filtered search, read through `Fin.val`, is `List.range`'s own filtered search on
@@ -1107,10 +1103,10 @@ private theorem compFrameTable_eq {n₁ n₂ C P : ℕ} [NeZero P] (S : Fin n₁
     simp only
     rw [← hv c]
     have hvlt : (v c : ℕ) < n₂ := (v c).isLt
-    rw [lensTable_getD θ hvlt]
+    rw [lensTable_getD_of_lt θ hvlt]
     have hveq : (⟨(v c : ℕ), hvlt⟩ : Fin n₂) = v c := Fin.eta _ _
     rw [hveq, lensTable_getD_fiberFlat' dec (θ (v c)) ⟨x, hxlt⟩]
-  have hTSx : (lensTable S).getD x 0 = (S ⟨x, hxlt⟩ : ℕ) := lensTable_getD S hxlt
+  have hTSx : (lensTable S).getD x 0 = (S ⟨x, hxlt⟩ : ℕ) := lensTable_getD_of_lt S hxlt
   have hpredcompat : ∀ c : Fin P,
       (dec (θ (v c)) ⟨x, hxlt⟩ = S ⟨x, hxlt⟩) ↔ (decAt (c : ℕ) = (lensTable S).getD x 0) := by
     intro c
@@ -1119,8 +1115,8 @@ private theorem compFrameTable_eq {n₁ n₂ C P : ℕ} [NeZero P] (S : Fin n₁
   have hbridge := finRange_filter_getD_val_eq (P := P)
     (fun i : Fin P => dec (θ (v i)) ⟨x, hxlt⟩ = S ⟨x, hxlt⟩)
     (fun c : ℕ => decAt c = (lensTable S).getD x 0) hpredcompat
-  change (compFrame S dec θ ⟨x, hxlt⟩ v : ℕ) = _
-  rw [compFrame, ← hdecAt ((frameVerifiers S dec θ ⟨x, hxlt⟩ v).getD 0 0)]
+  change (redundantCompFrame S dec θ ⟨x, hxlt⟩ v : ℕ) = _
+  rw [redundantCompFrame, ← hdecAt ((frameVerifiers S dec θ ⟨x, hxlt⟩ v).getD 0 0)]
   exact congrArg decAt hbridge
 
 /-- **The composite decode builder, from `⟨T_S, T_dec, T_θ, P⟩`** — ONE fixed function, with `P`
@@ -1222,10 +1218,10 @@ theorem eval_compFrameCode {n₁ n₂ C P : ℕ} [NeZero P] (S : Fin n₁ → Fi
 /-- **The decode's price** ([Inevitability] Theorem 6.6(vi), the decode half — the theorem's one
 remaining paper-level step, now closed). The three ingredient codes' lengths plus one addressing
 term logarithmic in `P` (`Nat.size P`), plus an absolute constant independent of the world, of
-`n₁`, `n₂`, `C`, and `P`. Assembled exactly as `SkewFiber.KE_skewWorldFin_powFiber_le` prices "P
+`n₁`, `n₂`, `C`, and `P`. Assembled exactly as `ALT.KE_skewWorldFin_powFiber_le` prices "P
 copies": the composed code *runs* a bounded search over the population rather than carrying a
 `P`-fold table, so `P` enters through `Nat.size P` alone. Together with
-`SkewFiber.KE_skewWorldFin_powFiber_le`, this closes clause (vi) at the same level of identification
+`ALT.KE_skewWorldFin_powFiber_le`, this closes clause (vi) at the same level of identification
 the rest of §6's pricing already runs at: the composite guest is `P` copies (there) and the
 verifying decode (here), and both cost `O (log n₁ + log P)` over their own ingredients. -/
 theorem KE_compFrameFlat_le {n₁ n₂ C P : ℕ} [NeZero P] (S : Fin n₁ → Fin n₁)
@@ -1406,28 +1402,33 @@ theorem compRun_synchronized_guard :
 
 end Survival
 
-end WeightedFiber
+end ALT
 
-/-- info: 'WeightedFiber.dSurpriseSet_card_mul_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.dSurpriseSet_card_mul_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.dSurpriseSet_card_mul_le
+#print axioms ALT.dSurpriseSet_card_mul_le
 
-/-- info: 'WeightedFiber.compPredFrame_eq_next_of_realizable_budget' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.compPredFrame_eq_next_of_realizable_budget' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.compPredFrame_eq_next_of_realizable_budget
+#print axioms ALT.compPredFrame_eq_next_of_realizable_budget
 
-/-- info: 'WeightedFiber.dSurpriseSet_reseed_eq_range' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.dSurpriseSet_reseed_eq_range' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.dSurpriseSet_reseed_eq_range
+#print axioms ALT.dSurpriseSet_reseed_eq_range
 
-/-- info: 'WeightedFiber.floorSurpriseSetFrom_reseed_card_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.floorSurpriseSetFrom_reseed_card_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.floorSurpriseSetFrom_reseed_card_le
+#print axioms ALT.floorSurpriseSetFrom_reseed_card_le
 
-/-- info: 'WeightedFiber.KE_compFrameFlat_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.KE_compFrameFlat_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.KE_compFrameFlat_le
+#print axioms ALT.KE_compFrameFlat_le
 
-/-- info: 'WeightedFiber.compRun_synchronized_guard' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.compRun_synchronized_guard' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.compRun_synchronized_guard
+#print axioms ALT.compRun_synchronized_guard

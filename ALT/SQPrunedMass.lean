@@ -1,14 +1,7 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # Post-discovery pruned mass: competitor-decay + Kraft ([SQ] Appendix A, Claim 2)
@@ -59,7 +52,7 @@ soundness
 
 @[expose] public section
 
-namespace SQPrunedMass
+namespace ALT
 
 /-- Past `T_discover`, geometric decay kills the `2^K` prefactor: for
 `t ≥ (K·log 2 + log(2/δ))/(2ε₀)`, `2^K · exp(−2tε₀) ≤ δ/2` (with `2^K = exp(K·log 2)`). -/
@@ -106,4 +99,4 @@ theorem accumulated_pruned_mass_le
     _ ≤ 1 * (δ / 2) := mul_le_mul_of_nonneg_right hkraft hδ2
     _ = δ / 2 := by ring
 
-end SQPrunedMass
+end ALT

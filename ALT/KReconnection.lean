@@ -1,8 +1,3 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import AIT.KolmogorovComplexity
@@ -14,8 +9,6 @@ public import ALT.RegimeConsistency
 public import ALT.RetentionOverhead
 public import ALT.PolyTimeAccounting
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # Cross-file `K`-reconnection: the abstract `r` is the real Kolmogorov complexity
@@ -32,9 +25,9 @@ already-proved abstract theorem applied at `r := ↑(ruleComplexity R)`.
   complexity of a rule `R` (modelled as a `Code`); by `K_bitlen_eq` this is
   `Nat.size (K (encode R))`, the bit-length of the least-index complexity of `R`'s Gödel number.
 * Five corollaries re-state the LOAD-BEARING abstract theorems about that real `r`: Corollary 2.2
-  (`representable_of_C1`), Theorem 2.1 (`mdl_dominance`), regime consistency
-  (`regime_strict_ordering`), retention overhead (`overhead_bigO`), poly-time accounting
-  (`polytime_accounting`). This closes the "K stays in prose / `r` is an abstract real" boundary
+  (`representable_of_C1_K`), Theorem 2.1 (`mdl_dominance_K`), regime consistency
+  (`regime_strict_ordering_K`), retention overhead (`overhead_bigO_K`), poly-time accounting
+  (`polytime_accounting_K`). This closes the "K stays in prose / `r` is an abstract real" boundary
   across the whole MDL corpus.
 
 ## What this does NOT establish (flagged plainly)
@@ -58,7 +51,7 @@ already-proved abstract theorem applied at `r := ↑(ruleComplexity R)`.
 
 @[expose] public section
 
-namespace KReconnection
+namespace ALT
 
 open KolmogorovComplexity
 
@@ -68,57 +61,53 @@ of a rule `R` (modelled as a `Nat.Partrec.Code`). By `K_bitlen_eq`, this is
 noncomputable def ruleComplexity (R : Nat.Partrec.Code) : ℕ := K_bitlen (Encodable.encode R)
 
 /-- Corollary 2.2 (representability) at the genuine `r = K(R)`. Instantiation of
-`CapacityThreshold.representable_of_C1`; the C1/C3 hypotheses remain assumptions. -/
-theorem representable_of_C1 (R : Nat.Partrec.Code) (K c₀ c₂ c₃ δ : ℝ)
+`ALT.representable_of_C1`; the C1/C3 hypotheses remain assumptions. -/
+theorem representable_of_C1_K (R : Nat.Partrec.Code) (K c₀ c₂ c₃ δ : ℝ)
     (hC1 : c₀ * (ruleComplexity R) * Real.log ((ruleComplexity R) / δ) ≤ K)
     (hc₀ : 3 ≤ c₀) (hδ0 : 0 < δ) (hδ1 : δ < 1)
     (hC3 : c₂ ≤ (ruleComplexity R)) (hc₂ : 3 ≤ c₂) (_hc₃0 : 0 ≤ c₃) (hc₃ : c₃ ≤ c₂) :
-    CapacityThreshold.Representable K (ruleComplexity R) c₃ :=
-  CapacityThreshold.representable_of_C1 K (ruleComplexity R) c₀ c₂ c₃ δ
+    ALT.Representable K (ruleComplexity R) c₃ :=
+  ALT.representable_of_C1 K (ruleComplexity R) c₀ c₂ c₃ δ
     hC1 hc₀ hδ0 hδ1 hC3 hc₂ _hc₃0 hc₃
 
 /-- Theorem 2.1 (static MDL dominance) at the genuine `r = K(R)`. Instantiation of
-`MDLDominance.mdl_dominance`; the regime margin `hReg` remains an assumption. -/
-theorem mdl_dominance (R : Nat.Partrec.Code) (c₃ O n cd : ℝ)
+`ALT.mdl_dominance`; the regime margin `hReg` remains an assumption. -/
+theorem mdl_dominance_K (R : Nat.Partrec.Code) (c₃ O n cd : ℝ)
     (hr : 3 ≤ (ruleComplexity R : ℝ)) (hO : 3 ≤ O) (hn : 2 ≤ n) (hc₃ : 0 ≤ c₃) (hcd : 0 ≤ cd)
     (hReg : (ruleComplexity R) + 2 * Real.log (ruleComplexity R) + c₃ + cd + 1
               ≤ (n - 1) * (Real.log O - 1)) :
-    MDLDominance.Lrule (ruleComplexity R) c₃ O n cd < MDLDominance.Ltable O n :=
-  MDLDominance.mdl_dominance (ruleComplexity R) c₃ O n cd hr hO hn hc₃ hcd hReg
+    ALT.Lrule (ruleComplexity R) c₃ O n cd < ALT.Ltable O n :=
+  ALT.mdl_dominance (ruleComplexity R) c₃ O n cd hr hO hn hc₃ hcd hReg
 
 /-- Regime consistency `r < K < L` at the genuine `r = K(R)`. Instantiation of
-`RegimeConsistency.regime_strict_ordering`; the C1–C3 hypotheses remain assumptions. -/
-theorem regime_strict_ordering (R : Nat.Partrec.Code) (K L c₀ c₁ c₂ δ : ℝ)
+`ALT.regime_strict_ordering`; the C1–C3 hypotheses remain assumptions. -/
+theorem regime_strict_ordering_K (R : Nat.Partrec.Code) (K L c₀ c₁ c₂ δ : ℝ)
     (hC1 : c₀ * (ruleComplexity R) * Real.log ((ruleComplexity R) / δ) ≤ K) (hC2 : c₁ * K ≤ L)
     (hC3 : c₂ ≤ (ruleComplexity R)) (hc₀ : 1 ≤ c₀) (hc₁ : 1 < c₁) (hc₂ : 3 ≤ c₂)
     (hδ0 : 0 < δ) (hδ1 : δ < 1) :
     ((ruleComplexity R : ℕ) : ℝ) < K ∧ K < L :=
-  RegimeConsistency.regime_strict_ordering (ruleComplexity R) K L c₀ c₁ c₂ δ
+  ALT.regime_strict_ordering (ruleComplexity R) K L c₀ c₁ c₂ δ
     hC1 hC2 hC3 hc₀ hc₁ hc₂ hδ0 hδ1
 
 /-- Retention capacity overhead `O(r·log(r/δ))` at the genuine `r = K(R)`. Instantiation of
-`RetentionOverhead.overhead_bigO`; the regime constants remain assumptions. -/
-theorem overhead_bigO (R : Nat.Partrec.Code) (δ c₆ c₇ : ℝ)
+`ALT.overhead_bigO`; the regime constants remain assumptions. -/
+theorem overhead_bigO_K (R : Nat.Partrec.Code) (δ c₆ c₇ : ℝ)
     (hr : 3 ≤ (ruleComplexity R : ℝ)) (hδ0 : 0 < δ) (hδ1 : δ < 1) (hc₆ : 0 ≤ c₆) (hc₇ : 0 ≤ c₇) :
-    RetentionOverhead.g (ruleComplexity R) δ c₆ c₇
+    ALT.g (ruleComplexity R) δ c₆ c₇
       ≤ (c₆ + c₇ + 3) * (ruleComplexity R) * Real.log ((ruleComplexity R) / δ) :=
-  RetentionOverhead.overhead_bigO (ruleComplexity R) δ c₆ c₇ hr hδ0 hδ1 hc₆ hc₇
+  ALT.overhead_bigO (ruleComplexity R) δ c₆ c₇ hr hδ0 hδ1 hc₆ hc₇
 
 /-- Poly-time accounting `O(r²·log(1/δ))` at the genuine `r = K(R)`. Instantiation of
-`PolyTimeAccounting.polytime_accounting`; the sample/per-step bounds remain assumptions. -/
-theorem polytime_accounting (R : Nat.Partrec.Code) (Tsearch cstep a b δ : ℝ)
+`ALT.polytime_accounting`; the sample/per-step bounds remain assumptions. -/
+theorem polytime_accounting_K (R : Nat.Partrec.Code) (Tsearch cstep a b δ : ℝ)
     (hT : Tsearch ≤ a * (ruleComplexity R) * Real.log (1 / δ)) (hc : cstep ≤ b * (ruleComplexity R))
     (ha : 0 ≤ a) (_hb : 0 ≤ b) (hr : 1 ≤ (ruleComplexity R : ℝ))
     (_hT0 : 0 ≤ Tsearch) (hc0 : 0 ≤ cstep) (hδ0 : 0 < δ) (hδ1 : δ < 1) :
     Tsearch * cstep ≤ a * b * (ruleComplexity R) ^ 2 * Real.log (1 / δ) :=
-  PolyTimeAccounting.polytime_accounting Tsearch cstep (ruleComplexity R) a b δ
+  ALT.polytime_accounting Tsearch cstep (ruleComplexity R) a b δ
     hT hc ha _hb hr _hT0 hc0 hδ0 hδ1
 
-end KReconnection
-
-namespace PrefixMachine
-
-open Nat.Partrec Nat.Partrec.Code KolmogorovComplexity PrefixComplexity KReconnection
+open Nat.Partrec Nat.Partrec.Code PrefixComplexity PrefixMachine
 
 /-- **`KB` at `ruleComplexity`.** `KB_le_K_bitlen_add_two_mul_size_of` at `x := Encodable.encode R`,
 since `ruleComplexity R = K_bitlen (Encodable.encode R)` by definition. -/
@@ -138,4 +127,4 @@ theorem KB_le_ruleComplexity_add_two_mul_size :
   KB_le_ruleComplexity_add_two_mul_size_of (fun f hf => KB_partial_map_le f hf)
     KB_le_size_add_two_mul_size_size
 
-end PrefixMachine
+end ALT

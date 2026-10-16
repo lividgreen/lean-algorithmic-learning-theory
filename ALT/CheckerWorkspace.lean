@@ -1,16 +1,9 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import CodeLayer.TimeCost
 public import CodeLayer.PolyTime
 public import ALT.GodelInternalization
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # The checker's scratch account: assembling the bounded-enumeration workspace bound
@@ -61,7 +54,7 @@ no budget hypothesis at all and returns a bound in which `M_chk` does not occur.
 
 @[expose] public section
 
-namespace CheckerWorkspace
+namespace ALT
 
 open Nat.Partrec (Code)
 open Nat.Partrec.Code
@@ -84,11 +77,11 @@ theorem size_eq_clog (p : ℕ) : Nat.size p = Nat.clog 2 (p + 1) := by
 /-- The capacity bound on a candidate proof code, in the native measure's vocabulary: for the
 concrete budget `M_chk ≤ g²` of [Decoupling] §6.3, every candidate `p ≤ M_chk` occupies at most
 `capacity n = 2n` bits, `n := ⌈log₂(g+1)⌉` the size of the Gödel sentence. This is
-`GodelInternalization.proofcode_workspace_bound` read through `size_eq_clog`. -/
+`proofcode_workspace_bound` read through `size_eq_clog`. -/
 theorem proofcode_size_le_capacity (g Mchk : ℕ) (hM : Mchk ≤ g ^ 2) {p : ℕ} (hp : p ≤ Mchk) :
-    Nat.size p ≤ GodelInternalization.capacity (Nat.clog 2 (g + 1)) := by
+    Nat.size p ≤ capacity (Nat.clog 2 (g + 1)) := by
   rw [size_eq_clog]
-  exact GodelInternalization.proofcode_workspace_bound g Mchk hM hp
+  exact proofcode_workspace_bound g Mchk hM hp
 
 /-! ## The closure: the enumeration's workspace does not grow with the budget -/
 
@@ -159,10 +152,10 @@ It is not the paper's `≈ 4n` for holding the sentence and the current candidat
 figure is **concatenation** arithmetic (component bit-lengths add — `prodAsm_fitsIn`, FV-14), a
 different packing. The two are not to be identified. -/
 theorem checkerInput_size_le {g Mchk a p b : ℕ} (hM : Mchk ≤ g ^ 2) (hp : p ≤ Mchk) (hb : b ≤ 1)
-    (ha : Nat.size a ≤ GodelInternalization.capacity (Nat.clog 2 (g + 1))) :
+    (ha : Nat.size a ≤ capacity (Nat.clog 2 (g + 1))) :
     Nat.size (Nat.pair a (Nat.pair p b)) ≤
-      4 * GodelInternalization.capacity (Nat.clog 2 (g + 1)) + 4 := by
-  have hpc : Nat.size p ≤ GodelInternalization.capacity (Nat.clog 2 (g + 1)) :=
+      4 * capacity (Nat.clog 2 (g + 1)) + 4 := by
+  have hpc : Nat.size p ≤ capacity (Nat.clog 2 (g + 1)) :=
     proofcode_size_le_capacity g Mchk hM hp
   have hbs : Nat.size b ≤ 1 := by
     rcases Nat.le_one_iff_eq_zero_or_eq_one.1 hb with rfl | rfl <;> simp
@@ -176,7 +169,7 @@ theorem checkerInput_size_le {g Mchk a p b : ℕ} (hM : Mchk ≤ g ^ 2) (hp : p 
 /-- The running verdict of the enumeration, in closed form. A bounded recursion whose base returns
 `1` and whose step multiplies the carried verdict by `¬Prf(φ, p)` computes, at counter `k`, exactly
 "no candidate below `k` was accepted". -/
-theorem checkerLoop_val (C : GodelInternalization.BoundedChecker) (φ : C.Formula) {cf cg : Code}
+theorem checkerLoop_val (C : BoundedChecker) (φ : C.Formula) {cf cg : Code}
     {a : ℕ} (hinit : val cf a = 1)
     (hstep : ∀ p b, val cg (Nat.pair a (Nat.pair p b)) = b * (if C.Prf φ p = true then 0 else 1)) :
     ∀ k, val (prec cf cg) (Nat.pair a k) = if ∀ p < k, C.Prf φ p = false then 1 else 0 := by
@@ -212,11 +205,11 @@ verdict as the finite fold `⋀_{p ≤ M_chk} ¬Prf(φ, p)`.
 
 The counter is `M_chk + 1`, not `M_chk`: `prec` at `⟨a, k⟩` runs its step at counters `0, …, k-1`,
 while `Decide` folds over the `M_chk + 1` codes `p ≤ M_chk`. -/
-theorem checkerLoop_val_decides (C : GodelInternalization.BoundedChecker) (φ : C.Formula)
+theorem checkerLoop_val_decides (C : BoundedChecker) (φ : C.Formula)
     {cf cg : Code} {a : ℕ} (hinit : val cf a = 1)
     (hstep : ∀ p b, val cg (Nat.pair a (Nat.pair p b)) = b * (if C.Prf φ p = true then 0 else 1)) :
-    val (prec cf cg) (Nat.pair a (C.Mchk + 1)) = 1 ↔ GodelInternalization.Decide C φ = true := by
-  rw [checkerLoop_val C φ hinit hstep, GodelInternalization.decide_eq_true_iff]
+    val (prec cf cg) (Nat.pair a (C.Mchk + 1)) = 1 ↔ BoundedChecker.Decide C φ = true := by
+  rw [checkerLoop_val C φ hinit hstep, BoundedChecker.decide_eq_true_iff]
   have hiff : (∀ p < C.Mchk + 1, C.Prf φ p = false) ↔ ∀ p ≤ C.Mchk, C.Prf φ p = false :=
     ⟨fun h p hp => h p (by omega), fun h p hp => h p (by omega)⟩
   by_cases h : ∀ p < C.Mchk + 1, C.Prf φ p = false
@@ -225,4 +218,4 @@ theorem checkerLoop_val_decides (C : GodelInternalization.BoundedChecker) (φ : 
   · rw [ite_eq_right h]
     exact ⟨fun hc => absurd hc (by omega), fun hc => absurd (hiff.2 hc) h⟩
 
-end CheckerWorkspace
+end ALT

@@ -1,9 +1,4 @@
 /-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
-/-
 # Birkhoff Tool: single-orbit SQ oracle from the pointwise ergodic theorem
 
 This module restates the vendored pointwise Birkhoff ergodic theorem
@@ -13,7 +8,7 @@ and connects it to the FV-E oracle interface.
 
 ## What is proved here (all machine-checked, axioms = the standard triple)
 
-* `BirkhoffTool.shift` — the left shift on the trajectory space `ℕ → X`; a shift-invariant
+* `ALT.shift` — the left shift on the trajectory space `ℕ → X`; a shift-invariant
   probability measure is a *stationary trajectory law*, and `Ergodic shift μ` an *ergodic* one.
 * `birkhoffAverage_eq_empiricalMean` — the Birkhoff time-average along one orbit *is* the
   single-orbit empirical mean `SQOracle.empiricalMean`, definitionally.  This is the bridge between
@@ -27,13 +22,14 @@ and connects it to the FV-E oracle interface.
 
 * `MixingHoeffding` — the FJS-shaped (Fan–Jiang–Sun, JMLR 22(139), 2021, Thm 1) *quantitative*
   single-orbit Hoeffding tail with the variance proxy inflated by a spectral-gap constant `c ≥ 1`.
-  `ErgodicTheory.MarkovHoeffding.mixingHoeffding_of_gap` DERIVES it, for a finite-state chain, from an
-  operator-norm spectral gap (`GapContraction`) and a chain trajectory law (`IsChainMeasure`), at
+  `ErgodicTheory.MarkovHoeffding.mixingHoeffding_of_gap` DERIVES it, for a finite-state chain, from
+  an operator-norm spectral gap (`GapContraction`) and a chain trajectory law (`IsChainMeasure`), at
   an explicit constant `cGap lam`; here it stays a named premise, exactly as the qualitative
   Tool (i) does not by itself give a rate.  The derivation's own `IsChainMeasure` hypothesis is
-  now discharged unconditionally too: `ErgodicTheory.MarkovHoeffding.exists_mixingHoeffding_of_gap` supplies
-  a chain measure for every `Stochastic`/`GapContraction` pair, via Mathlib's Ionescu-Tulcea
-  construction.  At `c = 1` (`λ = 0`, i.i.d.) it is exactly `SQOracle.sq_oracle_concentration`.
+  now discharged unconditionally too: `ErgodicTheory.MarkovHoeffding.exists_mixingHoeffding_of_gap`
+  supplies a chain measure for every `Stochastic`/`GapContraction` pair, via Mathlib's
+  Ionescu-Tulcea construction.  At `c = 1` (`λ = 0`, i.i.d.) it is exactly
+  `SQOracle.sq_oracle_concentration`.
 * `mixing_oracle_sample_complexity`, `mixing_oracle_tail` — the oracle-error corollaries derived
   *from* `MixingHoeffding`: `n ≥ (2c/τ²)·log(2/δ)` single-orbit steps answer an SQ query to
   tolerance `τ` with confidence `≥ 1 − δ`, in the exact shapes the FV-E interface
@@ -48,15 +44,13 @@ public import ErgodicTheory.Birkhoff.PointwiseBirkhoff
 public import Learning.SQOracle
 public import ErgodicTheory.MixingHoeffding
 
-set_option linter.style.header false
-set_option linter.style.longLine false
 
 
 @[expose] public section
 
-open MeasureTheory Filter Topology MeasurableSpace SQOracle
+open MeasureTheory Filter Topology MeasurableSpace SQOracle MixingHoeffding
 
-namespace BirkhoffTool
+namespace ALT
 
 variable {X : Type*} [MeasurableSpace X]
 
@@ -91,12 +85,12 @@ theorem timeAverage_tendsto_expectation
       Tendsto (fun n => empiricalMean (fun i => φ ∘ shift^[i]) n ω) atTop (𝓝 (∫ x, φ x ∂μ)) := by
   have hmp : MeasurePreserving shift μ μ := herg.toMeasurePreserving
   -- Pointwise Birkhoff: time-average → the invariant conditional expectation, a.e.
-  have hbirk := birkhoffErgodicTheorem' μ hmp hφ
+  have hbirk := Birkhoff.birkhoff_ergodic_theorem' μ hmp hφ
   -- The invariant conditional expectation is genuinely shift-invariant.
-  have hmeasInv : Measurable[invariants shift] (invCondexp μ shift φ) := by
-    unfold invCondexp
+  have hmeasInv : Measurable[invariants shift] (Birkhoff.invCondexp μ shift φ) := by
+    unfold Birkhoff.invCondexp
     exact MeasureTheory.stronglyMeasurable_condExp.measurable
-  have hinv : invCondexp μ shift φ ∘ shift = invCondexp μ shift φ :=
+  have hinv : Birkhoff.invCondexp μ shift φ ∘ shift = Birkhoff.invCondexp μ shift φ :=
     MeasurableSpace.invariant_of_measurable_invariants hmeasInv
   -- Ergodicity ⇒ it is a.e. equal to some constant `c`.
   obtain ⟨c, hc⟩ := herg.ae_eq_const_of_ae_eq_comp₀
@@ -104,9 +98,9 @@ theorem timeAverage_tendsto_expectation
     (Filter.Eventually.of_forall fun x => congrFun hinv x)
   -- `c` is the mean, since the conditional expectation preserves the integral.
   have hcval : c = ∫ x, φ x ∂μ := by
-    have h1 : ∫ x, invCondexp μ shift φ x ∂μ = ∫ x, φ x ∂μ := by
-      unfold invCondexp; exact integral_condExp (invariants_le shift)
-    have h2 : ∫ x, invCondexp μ shift φ x ∂μ = c := by
+    have h1 : ∫ x, Birkhoff.invCondexp μ shift φ x ∂μ = ∫ x, φ x ∂μ := by
+      unfold Birkhoff.invCondexp; exact integral_condExp (invariants_le shift)
+    have h2 : ∫ x, Birkhoff.invCondexp μ shift φ x ∂μ = c := by
       rw [integral_congr_ae hc]; simp
     rw [← h1, h2]
   -- Assemble: rewrite the limit through the bridge and the constant.
@@ -114,7 +108,7 @@ theorem timeAverage_tendsto_expectation
   have hfun : (fun n => empiricalMean (fun i => φ ∘ shift^[i]) n ω)
       = (birkhoffAverage ℝ shift φ · ω) := by
     funext n; exact (birkhoffAverage_eq_empiricalMean φ n ω).symm
-  have hval : invCondexp μ shift φ ω = ∫ x, φ x ∂μ := by
+  have hval : Birkhoff.invCondexp μ shift φ ω = ∫ x, φ x ∂μ := by
     rw [hcω]; simpa using hcval
   rw [hfun, ← hval]
   exact hω
@@ -128,7 +122,8 @@ is reached by the same real-analysis as `SQOracle.sq_oracle_sample_complexity`. 
 /-- **`MixingHoeffding` at `c = 1` is the i.i.d. case, genuinely** ([SQ] §3.2, Tool (i); FV-M).
 The FJS-shaped hypothesis above is exactly `SQOracle.sq_oracle_concentration`'s conclusion once
 `c = 1` collapses the denominator `2 * c` to `2`: an i.i.d. ensemble of trajectories satisfies
-`MixingHoeffding` at the constant its own Hoeffding bound gives, with no mixing hypothesis needed. -/
+`MixingHoeffding` at the constant its own Hoeffding bound gives, with no mixing hypothesis needed.
+-/
 theorem mixingHoeffding_of_iid
     (μ : Measure (ℕ → X)) [IsProbabilityMeasure μ]
     (Z : ℕ → (ℕ → X) → ℝ) (predZ : ℝ)
@@ -138,7 +133,8 @@ theorem mixingHoeffding_of_iid
     (hmean : ∀ i, ∫ ω, Z i ω ∂μ = predZ) :
     MixingHoeffding μ Z predZ 1 := by
   intro n τ hn hτ
-  simpa using SQOracle.sq_oracle_concentration Z predZ n τ hmeas hbdd hindep hmean hn hτ
+  simpa [SQOracle.empiricalMean] using
+    SQOracle.sq_oracle_concentration Z predZ n τ hmeas hbdd hindep hmean hn hτ
 
 /-- **The `c ≤ 0` vacuity of `MixingHoeffding`** ([Inevitability] §2, Definition 2.3's `e1` field —
 the existential there quantifies `c` away). `MixingHoeffding μ Z predZ c` holds trivially whenever
@@ -152,6 +148,7 @@ theorem mixingHoeffding_of_nonpos
     (Z : ℕ → (ℕ → X) → ℝ) (predZ c : ℝ) (hc : c ≤ 0) :
     MixingHoeffding μ Z predZ c := by
   intro n τ hn hτ
+  change μ.real {ω | τ ≤ |empiricalMean Z n ω - predZ|} ≤ _
   have hnum : -(n : ℝ) * τ ^ 2 ≤ 0 :=
     mul_nonpos_of_nonpos_of_nonneg (neg_nonpos.mpr (Nat.cast_nonneg n)) (sq_nonneg τ)
   have hden : 2 * c ≤ 0 := by linarith
@@ -207,6 +204,7 @@ theorem mixingHoeffding_of_deviation_bound
     (hbound : ∀ᵐ ω ∂μ, ∀ n : ℕ, 1 ≤ n → (n : ℝ) * |empiricalMean Z n ω - predZ| ≤ E) :
     MixingHoeffding μ Z predZ (E ^ 2 / (2 * Real.log 2)) := by
   intro n τ hn hτ
+  change μ.real {ω | τ ≤ |empiricalMean Z n ω - predZ|} ≤ _
   have hnR : (0 : ℝ) < n := by exact_mod_cast hn
   by_cases hτlarge : E / (n : ℝ) < τ
   · have hnull : μ {ω | ¬ ∀ k : ℕ, 1 ≤ k → (k : ℝ) * |empiricalMean Z k ω - predZ| ≤ E} = 0 :=
@@ -238,13 +236,14 @@ theorem mixingHoeffding_of_deviation_bound
 `ω₀`, the a.e. hypothesis collapses to a pointwise one: `MixingHoeffding` at `Measure.dirac ω₀`
 follows directly from the deviation bound holding at `ω₀` itself. Needs measurability of the
 query ensemble to compute the Dirac measure of the (possibly non-open/closed) deviation event,
-the same requirement `GrowingComposite.mixingHoeffding_dirac_iff` carries. -/
+the same requirement `ALT.mixingHoeffding_dirac_iff` carries. -/
 theorem mixingHoeffding_dirac_of_deviation_bound
     (ω₀ : ℕ → X) (Z : ℕ → (ℕ → X) → ℝ) (predZ E : ℝ) (hE : 0 ≤ E)
     (hmeas : ∀ i, Measurable (Z i))
     (hbound : ∀ n : ℕ, 1 ≤ n → (n : ℝ) * |empiricalMean Z n ω₀ - predZ| ≤ E) :
     MixingHoeffding (Measure.dirac ω₀) Z predZ (E ^ 2 / (2 * Real.log 2)) := by
   intro n τ hn hτ
+  change (Measure.dirac ω₀).real {ω | τ ≤ |empiricalMean Z n ω - predZ|} ≤ _
   have hempmeas : Measurable (empiricalMean Z n) :=
     (Finset.measurable_fun_sum (Finset.range n) fun i _ => hmeas i).const_mul _
   have hAmeas : MeasurableSet {ω | τ ≤ |empiricalMean Z n ω - predZ|} :=
@@ -287,9 +286,9 @@ recovered from its own twin at `N := n`. -/
 `[−1, 1]`-normalized law satisfies the predicate — the finite-horizon sibling of
 `mixingHoeffding_of_nonpos`'s `c ≤ 0` vacuity, and the reason a finite-horizon E1 claim must travel
 with its horizon stated against its constant. At tolerance `τ ≤ 2` the tail bound's right side is
-already `≥ 1`, since `n·τ² ≤ 4n ≤ 4N ≤ 2c·log 2`; past `τ = 2` the deviation event is empty outright,
-since a `[−1, 1]`-bounded ensemble's empirical mean, against a `[−1, 1]`-bounded declared answer,
-never strays more than `2`. -/
+already `≥ 1`, since `n·τ² ≤ 4n ≤ 4N ≤ 2c·log 2`; past `τ = 2` the deviation event is empty
+outright, since a `[−1, 1]`-bounded ensemble's empirical mean, against a `[−1, 1]`-bounded declared
+answer, never strays more than `2`. -/
 theorem mixingHoeffdingTo_of_le_floor
     (μ : Measure (ℕ → X)) [IsProbabilityMeasure μ]
     (Z : ℕ → (ℕ → X) → ℝ) (predZ c : ℝ) (N : ℕ) (hc : 0 < c)
@@ -297,13 +296,15 @@ theorem mixingHoeffdingTo_of_le_floor
     (hN : (N : ℝ) ≤ c * Real.log 2 / 2) :
     MixingHoeffdingTo N μ Z predZ c := by
   intro n τ hn hnN hτ
+  change μ.real {ω | τ ≤ |empiricalMean Z n ω - predZ|} ≤ _
   have hnR : (n : ℝ) ≤ (N : ℝ) := by exact_mod_cast hnN
   by_cases hτ2 : τ ≤ 2
   · -- below tolerance `2` the bound's own right side has not yet dropped under `1`
     have hτsq : τ ^ 2 ≤ 4 := by nlinarith [hτ, hτ2]
     have hbound : (n : ℝ) * τ ^ 2 ≤ 2 * c * Real.log 2 := by
       have h4n : (n : ℝ) * τ ^ 2 ≤ 4 * (n : ℝ) :=
-        by nlinarith [mul_nonneg (Nat.cast_nonneg n : (0 : ℝ) ≤ (n : ℝ)) (by linarith : (0:ℝ) ≤ 4 - τ ^ 2)]
+        by nlinarith
+            [mul_nonneg (Nat.cast_nonneg n : (0 : ℝ) ≤ (n : ℝ)) (by linarith : (0:ℝ) ≤ 4 - τ ^ 2)]
       linarith [hnR, hN]
     have hstep : (n : ℝ) * τ ^ 2 / (2 * c) ≤ Real.log 2 := by
       rw [div_le_iff₀ (by positivity)]; nlinarith [hbound]
@@ -356,7 +357,9 @@ theorem not_mixingHoeffdingTo_pinned
   intro hmix
   set n₀ : ℕ := ⌈2 * c * Real.log 2⌉₊ + 1 with hn0def
   have hn0_ge : 1 ≤ n₀ := by omega
-  have hb := hmix n₀ 1 hn0_ge hN (by norm_num)
+  have hb : μ.real {ω | (1 : ℝ) ≤
+      |empiricalMean (fun (_ : ℕ) (_ : ℕ → X) => (1 : ℝ)) n₀ ω - 0|} ≤ _ :=
+    hmix n₀ 1 hn0_ge hN (by norm_num)
   have hn0ne : n₀ ≠ 0 := by omega
   have hn0Rne : (n₀ : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn0ne
   have hempval : ∀ ω : ℕ → X, empiricalMean (fun (_ : ℕ) (_ : ℕ → X) => (1 : ℝ)) n₀ ω = 1 := by
@@ -394,12 +397,12 @@ theorem not_mixingHoeffdingTo_pinned
     exact Real.exp_lt_exp.mpr hkey
   linarith
 
-/-- **`MixingHoeffding` at positive `c` is refutable: a frozen orbit is not mixing** ([Inevitability]
-§5, Theorem 5.1(a): "the update is a permutation, so E1 fails"). The constant query ensemble
-`Z i ≡ 1` against the declared answer `predZ = 0` witnesses this at every positive mixing constant
-`c`: the empirical mean never moves off `1`, so the deviation event at tolerance `τ = 1` is the whole
-space, and no exponential tail bound with a fixed positive `c` can dominate a probability pinned at
-`1` for arbitrarily large `n`. `c ≤ 0` is excluded by hypothesis, as it must be — see
+/-- **`MixingHoeffding` at positive `c` is refutable: a frozen orbit is not mixing**
+([Inevitability] §5, Theorem 5.1(a): "the update is a permutation, so E1 fails"). The constant query
+ensemble `Z i ≡ 1` against the declared answer `predZ = 0` witnesses this at every positive mixing
+constant `c`: the empirical mean never moves off `1`, so the deviation event at tolerance `τ = 1` is
+the whole space, and no exponential tail bound with a fixed positive `c` can dominate a probability
+pinned at `1` for arbitrarily large `n`. `c ≤ 0` is excluded by hypothesis, as it must be — see
 `mixingHoeffding_of_nonpos`. See `not_mixingHoeffdingTo_pinned` for the finite-horizon form this
 specializes. -/
 theorem not_mixingHoeffding_pinned
@@ -435,7 +438,8 @@ theorem not_mixingHoeffding_of_periodic_ne
   have hn0_pos : 0 < n₀ := by omega
   have hn_ge_n0 : n₀ ≤ n₀ * Pd := Nat.le_mul_of_pos_right n₀ hPd
   have hn1 : 1 ≤ n₀ * Pd := le_trans hn0_pos hn_ge_n0
-  have hb := hmix (n₀ * Pd) τ hn1 hτpos.le
+  have hb : μ.real {ω | τ ≤ |empiricalMean Z (n₀ * Pd) ω - predZ|} ≤ _ :=
+    hmix (n₀ * Pd) τ hn1 hτpos.le
   have hval : empiricalMean Z (n₀ * Pd) = fun _ => avg := funext fun ω => hper ω n₀ hn0_pos
   have hsetuniv : {ω : ℕ → X | τ ≤ |empiricalMean Z (n₀ * Pd) ω - predZ|} = Set.univ := by
     ext ω
@@ -469,7 +473,7 @@ theorem not_mixingHoeffding_of_periodic_ne
   linarith
 
 /-- **`MixingHoeffdingTo` is monotone in the mixing constant.** A schedule's queries carry
-different mixing constants (`LearningWitness.scheduledConst` branches between `samePairConst` and
+different mixing constants (`ALT.scheduledConst` branches between `samePairConst` and
 `pairConst`); this lifts a per-query `MixingHoeffdingTo` at its own constant `c` to any larger
 constant `c'`, since widening the FJS variance proxy only weakens the tail bound. -/
 theorem mixingHoeffdingTo_mono_const
@@ -521,7 +525,8 @@ theorem mixing_oracle_sample_complexity_to
     (hn1 : 1 ≤ n) (hnN : n ≤ N) (hτ : 0 < τ) (hδ0 : 0 < δ)
     (hn : (2 * c / τ ^ 2) * Real.log (2 / δ) ≤ (n : ℝ)) :
     1 - δ ≤ μ.real {ω | |empiricalMean Z n ω - predZ| < τ} := by
-  have hconc := hmix n τ hn1 hnN hτ.le
+  have hconc : μ.real {ω | τ ≤ |empiricalMean Z n ω - predZ|} ≤ _ :=
+    hmix n τ hn1 hnN hτ.le
   have hexple := mixing_exp_le_delta hc hτ hδ0 hn
   have hempmeas : Measurable (empiricalMean Z n) := by
     unfold empiricalMean
@@ -562,7 +567,8 @@ theorem mixing_oracle_tail_to
     (hn1 : 1 ≤ n) (hnN : n ≤ N) (hτ : 0 < τ) (hδ0 : 0 < δ)
     (hn : (2 * c / τ ^ 2) * Real.log (2 / δ) ≤ (n : ℝ)) :
     μ {ω | τ < |empiricalMean Z n ω - predZ|} ≤ ENNReal.ofReal δ := by
-  have hconc := hmix n τ hn1 hnN hτ.le
+  have hconc : μ.real {ω | τ ≤ |empiricalMean Z n ω - predZ|} ≤ _ :=
+    hmix n τ hn1 hnN hτ.le
   have hexple := mixing_exp_le_delta hc hτ hδ0 hn
   -- The strict-tail event sits inside the closed-tail event of `MixingHoeffdingTo`.
   have hsub : {ω | τ < |empiricalMean Z n ω - predZ|} ⊆ {ω | τ ≤ |empiricalMean Z n ω - predZ|} :=
@@ -607,7 +613,7 @@ theorem mixing_oracle_truth_survives_noisy_to
   refine hsc.trans (measureReal_mono ?_ (measure_ne_top μ _))
   intro ω hω
   simp only [Set.mem_ofPred_eq] at hω ⊢
-  exact SQVersionSpace.truth_survives_pruning_noisy predR a (empiricalMean Z n ω) τ η hτ.le hη
+  exact SQBounds.truth_survives_pruning_noisy predR a (empiricalMean Z n ω) τ η hτ.le hη
     hbudget hω.le hnoise
 
 /-- **Single-orbit noisy truth-survival** (from `MixingHoeffding`; [SQ] §3.1's window-noise budget,
@@ -617,7 +623,7 @@ with `n ≥ (2c/τ²)·log(2/δ)` single-orbit steps and window-noise budget `2�
 deterministic-prediction truth `predR`'s statistic lies within `2τ` of the empirical answer with
 probability `≥ 1 − δ` — so the *unchanged* `2τ`-pruning rule never discards it, on a mixing
 trajectory rather than an i.i.d. ensemble. At `η = 0` (forcing `a = predR`) this composes
-`mixing_oracle_sample_complexity` with `SQVersionSpace.truth_survives_pruning`. -/
+`mixing_oracle_sample_complexity` with `SQBounds.truth_survives_pruning`. -/
 theorem mixing_oracle_truth_survives_noisy
     (μ : Measure (ℕ → X)) [IsProbabilityMeasure μ]
     (Z : ℕ → (ℕ → X) → ℝ) (predR a c : ℝ) (n : ℕ) (τ δ η : ℝ)
@@ -636,7 +642,8 @@ theorem mixing_oracle_truth_survives_noisy
 The finite-horizon composition ([SQ] §3.3; FV-M): `sq_oracle_uniform_tail`'s union bound applied to
 a schedule of queries each satisfying `MixingHoeffdingTo` at one shared constant `c`, giving FV-J's
 oracle object off an event of measure `≤ δ` at a single sample size `n ≤ N` — the mixing,
-finite-horizon twin of `SQOracle.empirical_isSQOracle_of_iid`, which is its `c = 1`, `N = n` case. -/
+finite-horizon twin of `SQOracle.empirical_isSQOracle_of_iid`, which is its `c = 1`, `N = n` case.
+-/
 
 /-- **Finite-horizon mixing oracle over a schedule** ([SQ] §3.3; FV-M). A schedule of queries `Qs`,
 each representative below the horizon `N` at one shared mixing constant `c`
@@ -671,21 +678,24 @@ theorem empirical_isSQOracle_of_mixingTo
   rw [hδ'def]
   field_simp
 
-end BirkhoffTool
+end ALT
 
 /-! ## Axiom audit
 
 `not_mixingHoeffding_of_periodic_ne` is `#print axioms`-clean on the standard triple, and the guard
 below makes that build-enforced. -/
 
-/-- info: 'BirkhoffTool.not_mixingHoeffding_of_periodic_ne' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.not_mixingHoeffding_of_periodic_ne' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms BirkhoffTool.not_mixingHoeffding_of_periodic_ne
+#print axioms ALT.not_mixingHoeffding_of_periodic_ne
 
-/-- info: 'BirkhoffTool.mixingHoeffding_of_deviation_bound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.mixingHoeffding_of_deviation_bound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms BirkhoffTool.mixingHoeffding_of_deviation_bound
+#print axioms ALT.mixingHoeffding_of_deviation_bound
 
-/-- info: 'BirkhoffTool.mixingHoeffding_dirac_of_deviation_bound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.mixingHoeffding_dirac_of_deviation_bound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms BirkhoffTool.mixingHoeffding_dirac_of_deviation_bound
+#print axioms ALT.mixingHoeffding_dirac_of_deviation_bound

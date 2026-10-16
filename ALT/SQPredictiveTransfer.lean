@@ -1,8 +1,3 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Mathlib.Algebra.Order.BigOperators.Ring.Finset
@@ -10,8 +5,6 @@ public import Mathlib.Basic.Real.Basic
 public import Mathlib.Tactic.FieldSimp
 public import Mathlib.Tactic.Linarith
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # Predictive transfer: the Bayes-mixture perturbation bound ([SQ] Appendix A)
@@ -64,7 +57,7 @@ sharpened. Any `α`-guarantee on `P` (L1 vs. the truth `q`) transfers to `α + 2
 
 @[expose] public section
 
-namespace SQPredictiveTransfer
+namespace ALT
 
 /-- The scalar heart of the perturbation bound: with survivor mass `V > 0`, pruned mass `W ≥ 0`,
 and nonnegative outcome weights `a` (survivors) and `b` (pruned), the one-step predictive gap of a
@@ -197,4 +190,4 @@ theorem accumulated_perturbation_le
   exact mixture_prune_perturbation (alive t) (pruned t) (hdisj t ht) outs (u t) (p t)
     (hu t ht) (hp0 t ht) (hp1 t ht) (hV t ht)
 
-end SQPredictiveTransfer
+end ALT

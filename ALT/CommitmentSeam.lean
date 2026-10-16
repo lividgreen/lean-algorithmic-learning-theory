@@ -1,14 +1,7 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.SQAlgorithm
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # The commitment step's selector: which rule the learner commits to ([Discovery] §5)
@@ -25,9 +18,9 @@ is the full mixture rather than a single rule — and that the residual stochast
 
 What is machine-checked here is the step's **selector**, and only that:
 * **which** candidate the threshold picks out, and that it picks out *at most one*
-  (`commits_unique`) — so "the rule `R`" is a well-defined object rather than a hopeful singular;
+  (`Commits.unique`) — so "the rule `R`" is a well-defined object rather than a hopeful singular;
 * that the selected candidate **is the truth** (`commits_truth`), under the discovery hypotheses;
-* that the selection is **time-stable** past the discovery horizon (`commits_stable`) — the
+* that the selection is **time-stable** past the discovery horizon (`Commits.stable`) — the
   learner does not commit to one rule and later to another.
 
 What remains an architectural assumption, exactly as the paper states it:
@@ -42,7 +35,7 @@ stable rule) and leaves the *retention* side (writing it, and keeping it) where 
 
 ## The objects
 Everything is stated over the algorithm object of [SQ] §4 / Appendix A (FV-K) — `alive`, the
-survivor set, and the pruned posterior that `SQAlgorithm.algorithm_discovery` bounds below by
+survivor set, and the pruned posterior that `ALT.algorithm_discovery` bounds below by
 `1 − δ/2`. That quotient is unnamed there (it appears inline in the conclusion); `prunedPosterior`
 names it and nothing more, so `algorithm_discovery`'s conclusion *is*
 `1 − δ/2 ≤ prunedPosterior … iR` definitionally.
@@ -69,16 +62,14 @@ load-bearing direction, is proved against the harder case.
 
 @[expose] public section
 
-namespace CommitmentSeam
-
-open SQAlgorithm SQMixtureSupermartingale
+namespace ALT
 
 variable {X : Type*} [DecidableEq X] {ι : Type*} {Q : Type*}
 
 /-! ## The posterior the commitment step reads, and the threshold it applies -/
 
 /-- **The pruned posterior** of the [SQ] §4 algorithm: the Bayes posterior with the normalizer
-restricted to the survivor set `alive … n ω`. This is the quantity `SQAlgorithm.algorithm_discovery`
+restricted to the survivor set `alive … n ω`. This is the quantity `ALT.algorithm_discovery`
 bounds below by `1 − δ/2`; naming it changes nothing (the two are definitionally equal), it only
 makes the commitment step's input citable. -/
 noncomputable def prunedPosterior [Fintype ι] (pred : ι → (s : ℕ) → (Fin s → X) → X)
@@ -103,7 +94,7 @@ which exceeds the available mass `1` precisely because `δ < 1`.
 Stated for an arbitrary real-valued mass `p` on a finite candidate set `S` with total mass at most
 `1`, so it applies to the pruned posterior (whose mass over the survivor set is exactly `1`) without
 assuming anything else about the algorithm. -/
-theorem commits_unique {p : ι → ℝ} {S : Finset ι} {δ : ℝ} (hδ : δ < 1)
+theorem Commits.unique {p : ι → ℝ} {S : Finset ι} {δ : ℝ} (hδ : δ < 1)
     (hnn : ∀ i ∈ S, 0 ≤ p i) (hsum : ∑ i ∈ S, p i ≤ 1) {i j : ι}
     (hi : Commits p S δ i) (hj : Commits p S δ j) : i = j := by
   classical
@@ -123,7 +114,7 @@ theorem commits_unique {p : ι → ℝ} {S : Finset ι} {δ : ℝ} (hδ : δ < 1
 
 /-! ## The pruned posterior is a probability on the survivor set -/
 
-/-- The survivor set carries positive mass: the truth is alive (`SQAlgorithm.truth_survives`) and,
+/-- The survivor set carries positive mass: the truth is alive (`ALT.truth_survives`) and,
 being realizable, contributes its full prior weight `w iR > 0`. This is the nonemptiness the pruned
 posterior is conditioned on — carried as a hypothesis chain rather than assumed. -/
 theorem alive_mass_pos [Fintype ι] (pred : ι → (s : ℕ) → (Fin s → X) → X) (stat : ι → Q → ℝ)
@@ -157,7 +148,7 @@ theorem prunedPosterior_nonneg [Fintype ι] (pred : ι → (s : ℕ) → (Fin s 
     (Finset.sum_nonneg fun j _ => mul_nonneg (hw j) (hLnn j))
 
 /-- **The pruned posterior has total mass `1` on the survivor set** — it is a genuine probability
-there, which is what makes `commits_unique` applicable. (Over the *whole* candidate set the same
+there, which is what makes `Commits.unique` applicable. (Over the *whole* candidate set the same
 quotient sums to at least `1`, the normalizer running over survivors only; the survivor set is the
 right domain for the commitment step, and the one the paper's "posterior mass on `R`" refers to.) -/
 theorem prunedPosterior_sum_alive [Fintype ι] (pred : ι → (s : ℕ) → (Fin s → X) → X)
@@ -173,8 +164,8 @@ theorem prunedPosterior_sum_alive [Fintype ι] (pred : ι → (s : ℕ) → (Fin
 /-! ## The selector returns the truth -/
 
 /-- **The truth is committed.** Past the discovery horizon the true rule is alive
-(`SQAlgorithm.truth_survives`) and its pruned posterior has reached the threshold
-(`SQAlgorithm.algorithm_discovery`) — so it satisfies the commitment predicate. -/
+(`ALT.truth_survives`) and its pruned posterior has reached the threshold
+(`ALT.algorithm_discovery`) — so it satisfies the commitment predicate. -/
 theorem commits_truth [Fintype X] [Fintype ι]
     (pred : ι → (s : ℕ) → (Fin s → X) → X) (stat : ι → Q → ℝ) (oracleAns : Q → ℝ)
     (τ : ℝ) (hτ : 0 ≤ τ) (sched : ℕ → Finset Q) (w : ι → ℝ) (ω : ℕ → X) (iR : ι)
@@ -200,9 +191,9 @@ theorem commits_truth [Fintype X] [Fintype ι]
 horizon, the candidates satisfying the commitment predicate are *exactly* the true rule — at every
 such time. The single equivalence carries all three claims the seam needs:
 * **existence** — the truth commits (`← ` direction),
-* **well-definedness** — nothing else does (`→` direction, via `commits_unique`),
+* **well-definedness** — nothing else does (`→` direction, via `Commits.unique`),
 * **time-stability** — the right-hand side `i = iR` does not depend on `n`, so the committed rule
-  is the same at every time past the horizon (spelled out in `commits_stable`).
+  is the same at every time past the horizon (spelled out in `Commits.stable`).
 
 `δ < 1` is required, not cosmetic: it is exactly what makes the threshold `1 − δ/2` exceed half the
 available mass, and hence what makes the selection unique. The separation hypothesis is taken at
@@ -233,7 +224,7 @@ theorem commitment_seam [Fintype X] [Fintype ι]
     δ ε₀ hδ hε n (fun j hj t _ => hsep j hj t) hT
   constructor
   · intro hi
-    exact commits_unique hδ1
+    exact Commits.unique hδ1
       (fun j _ => prunedPosterior_nonneg pred stat oracleAns τ sched w n ω hw j)
       (le_of_eq (prunedPosterior_sum_alive pred stat oracleAns τ sched w n ω hden)) hi htruth
   · rintro rfl
@@ -244,7 +235,7 @@ horizon are to the same rule. This is not a separate argument: `commitment_seam`
 the committed candidate as `iR` at each time independently, so stability is that identification
 applied twice. Recording it as its own statement is what makes "the learner does not re-commit"
 a citable fact rather than a reading of the capstone. -/
-theorem commits_stable [Fintype X] [Fintype ι]
+theorem Commits.stable [Fintype X] [Fintype ι]
     (pred : ι → (s : ℕ) → (Fin s → X) → X) (stat : ι → Q → ℝ) (oracleAns : Q → ℝ)
     (τ : ℝ) (hτ : 0 ≤ τ) (sched : ℕ → Finset Q) (w : ι → ℝ) (ω : ℕ → X) (iR : ι)
     (hw : ∀ i, 0 ≤ w i) (k : ℕ) (hwR : w iR = (2 : ℝ) ^ (-(k : ℝ))) (hsumw : ∑ i, w i ≤ 1)
@@ -264,4 +255,4 @@ theorem commits_stable [Fintype X] [Fintype ι]
     δ ε₀ hδ hδ1 hε hsep
   rw [(hseam m hm i).1 hi, (hseam n hn j).1 hj]
 
-end CommitmentSeam
+end ALT

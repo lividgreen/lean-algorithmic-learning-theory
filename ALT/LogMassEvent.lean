@@ -1,15 +1,8 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Mathlib.Algebra.Order.Ring.Pow
 public import ALT.BasinSettling
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # The log-mass event bound over seeded starts ([Discovery] §3.3)
@@ -129,7 +122,9 @@ ratio as an integer deficit.
 
 @[expose] public section
 
-namespace WeightedFiber
+namespace ALT
+
+open WVec
 
 /-! ## The seeded exponent automaton -/
 
@@ -263,7 +258,7 @@ def wrongMassFrom (e₀ : Fin C → ℕ) (M : ℕ → Fin C → Bool) (b t : ℕ
     toDist (raw (wRunFrom (2 ^ b) (missFit M) (pack (2 ^ b) fun j => 2 ^ e₀ j) t)) i else 0
 
 /-- The seeded surprise set, mirroring `floorSurpriseSet`: the membership condition is strict, as
-in `BayesRedundancy.surpriseSet`. -/
+in `BayesRedundancy.errorTimes`. -/
 def floorSurpriseSetFrom (e₀ : Fin C → ℕ) (M : ℕ → Fin C → Bool) (b : ℕ) (θ : ℚ) (n : ℕ) :
     Finset ℕ :=
   (Finset.range n).filter fun t => θ < wrongMassFrom e₀ M b t
@@ -1039,7 +1034,7 @@ power-of-two start inside the register.** The truth's exponent never exceeds `b`
 competitor's is at least `0`, so the wrong mass at every step is at least
 `(C − 1)/(2^b + C − 1)`, which the condition's failure puts above `θ`. The landed
 `floorSurpriseFrom_unbounded_below_gate` is this at the zero seed. -/
-theorem floorSurpriseFrom_allMiss_card_eq {e₀ : Fin C → ℕ} {b : ℕ} (he₀ : ∀ i, e₀ i ≤ b)
+theorem floorSurpriseFrom_allMiss_card_eq {C : ℕ} {e₀ : Fin C → ℕ} {b : ℕ} (he₀ : ∀ i, e₀ i ≤ b)
     {iR : Fin C} (θ : ℚ) (hθ : θ * ((2 : ℚ) ^ b + ((C : ℚ) - 1)) < (C : ℚ) - 1) (n : ℕ) :
     (floorSurpriseSetFrom e₀ (allMiss iR) b θ n).card = n := by
   have hC1 : 1 ≤ C := iR.pos
@@ -1095,7 +1090,7 @@ count over every stream with a never-missing candidate exists exactly when the f
 holds: sufficiency is `floorSurpriseFrom_card_add_le_capacity` at `N = C·b + Σ_{i ≠ iR} e₀ i`,
 necessity is `floorSurpriseFrom_allMiss_card_eq` at horizon `N + 1`;
 `floorSurprise_bounded_iff` is the zero seed's case. -/
-theorem floorSurpriseFrom_bounded_iff {e₀ : Fin C → ℕ} {b : ℕ} (he₀ : ∀ i, e₀ i ≤ b)
+theorem floorSurpriseFrom_bounded_iff {C : ℕ} {e₀ : Fin C → ℕ} {b : ℕ} (he₀ : ∀ i, e₀ i ≤ b)
     {iR : Fin C} (θ : ℚ) :
     (∃ N, ∀ M : ℕ → Fin C → Bool, (∀ t, M t iR = false) →
         ∀ n, (floorSurpriseSetFrom e₀ M b θ n).card ≤ N)
@@ -1123,7 +1118,7 @@ competitor's own exponent can only trade in the truth's favour: at any step, a c
 exponent is bounded by its own current exponent plus how far the truth has pulled ahead of its
 seed. Off a rescale the truth gains one and no competitor moves; at a rescale the truth is frozen
 and a competitor's exponent falls by at most one — either way the inequality is preserved. -/
-private theorem allMiss_headroom_invariant {e₀ : Fin C → ℕ} {b : ℕ} {iR : Fin C} (t : ℕ)
+private theorem allMiss_headroom_invariant {C : ℕ} {e₀ : Fin C → ℕ} {b : ℕ} {iR : Fin C} (t : ℕ)
     (j : Fin C) (hj : j ≠ iR) :
     e₀ j + expRunFrom e₀ (allMiss iR) b t iR
       ≤ e₀ iR + t + expRunFrom e₀ (allMiss iR) b t j := by
@@ -1158,7 +1153,7 @@ at any threshold up to `1/2`. The mechanism
 is `allMiss_headroom_invariant` read as a mass inequality: the competitors' current mass, scaled by
 the truth's own current share, dominates the seed's competitor mass scaled by the truth's *seed*
 share, so the competitors cannot have decayed faster than the hypothesis rules out. -/
-theorem floorSurpriseFrom_allMiss_mem {e₀ : Fin C → ℕ} {b : ℕ} (he₀ : ∀ i, e₀ i ≤ b)
+theorem floorSurpriseFrom_allMiss_mem {C : ℕ} {e₀ : Fin C → ℕ} {b : ℕ} (he₀ : ∀ i, e₀ i ≤ b)
     {iR : Fin C} {θ : ℚ} (hθ : θ ≤ 1 / 2) {t n : ℕ} (ht : t < n)
     (hlt : 2 ^ (e₀ iR + t) < ∑ i ∈ Finset.univ.erase iR, 2 ^ e₀ i) :
     t ∈ floorSurpriseSetFrom e₀ (allMiss iR) b θ n := by
@@ -1204,7 +1199,7 @@ theorem floorSurpriseFrom_allMiss_mem {e₀ : Fin C → ℕ} {b : ℕ} (he₀ : 
 /-- **The count is at least `k` once the seed's headroom is spent by `k`** ([Discovery] Proposition
 3.5(iii), row FV-37). The mem lemma applies at every step below `k`, since the power on the left
 only shrinks as `t` does. -/
-theorem floorSurpriseFrom_allMiss_card_ge {e₀ : Fin C → ℕ} {b : ℕ} (he₀ : ∀ i, e₀ i ≤ b)
+theorem floorSurpriseFrom_allMiss_card_ge {C : ℕ} {e₀ : Fin C → ℕ} {b : ℕ} (he₀ : ∀ i, e₀ i ≤ b)
     {iR : Fin C} {θ : ℚ} (hθ : θ ≤ 1 / 2) {k n : ℕ} (hk : k ≤ n)
     (hle : 2 ^ (e₀ iR + k) ≤ ∑ i ∈ Finset.univ.erase iR, 2 ^ e₀ i) :
     k ≤ (floorSurpriseSetFrom e₀ (allMiss iR) b θ n).card := by
@@ -1297,60 +1292,74 @@ theorem floorSurpriseFrom_deficit_refutes_seed_free {b r : ℕ} (hr : r ≤ b) {
 
 end Guards
 
-end WeightedFiber
+end ALT
 
-/-- info: 'WeightedFiber.raw_wRunFrom_eq_pow_expRunFrom' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.raw_wRunFrom_eq_pow_expRunFrom' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.raw_wRunFrom_eq_pow_expRunFrom
+#print axioms ALT.raw_wRunFrom_eq_pow_expRunFrom
 
-/-- info: 'WeightedFiber.floorSurpriseFrom_card_mul_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.floorSurpriseFrom_card_mul_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.floorSurpriseFrom_card_mul_le
+#print axioms ALT.floorSurpriseFrom_card_mul_le
 
-/-- info: 'WeightedFiber.floorSurprise_card_mul_le_log' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.floorSurprise_card_mul_le_log' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.floorSurprise_card_mul_le_log
+#print axioms ALT.floorSurprise_card_mul_le_log
 
-/-- info: 'WeightedFiber.floorSurpriseFrom_card_mul_le_prior' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.floorSurpriseFrom_card_mul_le_prior' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.floorSurpriseFrom_card_mul_le_prior
+#print axioms ALT.floorSurpriseFrom_card_mul_le_prior
 
-/-- info: 'WeightedFiber.floorSurpriseFrom_unbounded_below_gate_witness' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.floorSurpriseFrom_unbounded_below_gate_witness' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.floorSurpriseFrom_unbounded_below_gate_witness
+#print axioms ALT.floorSurpriseFrom_unbounded_below_gate_witness
 
-/-- info: 'WeightedFiber.floorSurpriseFrom_deficit_refutes_seed_free' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.floorSurpriseFrom_deficit_refutes_seed_free' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.floorSurpriseFrom_deficit_refutes_seed_free
+#print axioms ALT.floorSurpriseFrom_deficit_refutes_seed_free
 
-/-- info: 'WeightedFiber.floorSurpriseFrom_card_add_le_capacity' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.floorSurpriseFrom_card_add_le_capacity' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.floorSurpriseFrom_card_add_le_capacity
+#print axioms ALT.floorSurpriseFrom_card_add_le_capacity
 
-/-- info: 'WeightedFiber.floorSurprise_card_le_capacity' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.floorSurprise_card_le_capacity' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.floorSurprise_card_le_capacity
+#print axioms ALT.floorSurprise_card_le_capacity
 
-/-- info: 'WeightedFiber.floorSurprise_bounded_iff' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.floorSurprise_bounded_iff' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.floorSurprise_bounded_iff
+#print axioms ALT.floorSurprise_bounded_iff
 
-/-- info: 'WeightedFiber.floorSurpriseFrom_allMiss_mem_nonvacuous' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.floorSurpriseFrom_allMiss_mem_nonvacuous' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.floorSurpriseFrom_allMiss_mem_nonvacuous
+#print axioms ALT.floorSurpriseFrom_allMiss_mem_nonvacuous
 
-/-- info: 'WeightedFiber.floorSurpriseFrom_card_add_le_capacity_nonvacuous' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.floorSurpriseFrom_card_add_le_capacity_nonvacuous' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.floorSurpriseFrom_card_add_le_capacity_nonvacuous
+#print axioms ALT.floorSurpriseFrom_card_add_le_capacity_nonvacuous
 
-/-- info: 'WeightedFiber.floorSurpriseFrom_allMiss_card_eq' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.floorSurpriseFrom_allMiss_card_eq' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.floorSurpriseFrom_allMiss_card_eq
+#print axioms ALT.floorSurpriseFrom_allMiss_card_eq
 
-/-- info: 'WeightedFiber.floorSurpriseFrom_allMiss_card_eq_nonvacuous' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.floorSurpriseFrom_allMiss_card_eq_nonvacuous' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.floorSurpriseFrom_allMiss_card_eq_nonvacuous
+#print axioms ALT.floorSurpriseFrom_allMiss_card_eq_nonvacuous
 
-/-- info: 'WeightedFiber.floorSurpriseFrom_bounded_iff' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.floorSurpriseFrom_bounded_iff' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.floorSurpriseFrom_bounded_iff
+#print axioms ALT.floorSurpriseFrom_bounded_iff

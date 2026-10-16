@@ -1,15 +1,8 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.GradeTransport
 public import ALT.GradedApplication
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # Transport at grade: conjugating a graded realizer between re-encodings ([Decoupling] §4.5)
@@ -24,11 +17,11 @@ reads the price off as a grade.
 `reencodeAsm A c` re-encodes an assembly: an element keeps its identity, but a realizer index `m` of
 it is carried to `val c m`, the value the code `c` computes on `m`. This is the **direct-image**
 realizability relation (`∃ m, A.realizes m a ∧ n = val c m`); unlike the `Assembly`-level
-`GradeTransport.reencode`, it asks for **no injectivity** of the new naming, because a
+`reencode`, it asks for **no injectivity** of the new naming, because a
 many-realizers assembly already tolerates many names per element.
 
 `transportIdx c_emb c_proj r` transports a realizer *index*: decode `r` to a code, conjugate it with
-the coded retraction pair `(c_emb, c_proj)` (`GradeTransport.transport`), re-encode the result. Its
+the coded retraction pair `(c_emb, c_proj)` (`transportRealizer`), re-encode the result. Its
 tracking law (`tracks_transportIdx`) and its grade law (`grade_transportIdx_le`) are the two halves;
 `gradedTransport` packages them, carrying an element of `[A ⇒ B]_g` to an element of
 `[reencodeAsm A c_embA ⇒ reencodeAsm B c_emb]_{4·max g b + 9}`.
@@ -41,7 +34,7 @@ input to output.
 
 ## The retraction, and its asymmetry
 `tracks_transportIdx` inherits the asymmetry of the `Assembly`-level
-`GradeTransport.realizes_transport` (cross-referenced for orientation, not consumed here — the two
+`realizes_transport` (cross-referenced for orientation, not consumed here — the two
 live over different assembly notions). The input side needs a genuine retraction (`hretr`: `c_proj`
 undoes `c_embA` on the realizer indices actually in use), because the conjugate must recover the old
 index before the realizer can run on it; the output side needs only a coded map `c_emb`, applied to
@@ -52,7 +45,7 @@ over the indices in use, as every realizer hypothesis in this development is, ne
 ## The price
 `grade_transportIdx_le` is the §4.5 transport clause at grade: the index length of the conjugate is
 at most `4 · max g b + 9`, where `g` bounds the realizer's grade and `b` the re-encoders'. It is the
-one-hop max-affine law of `GradeTransport.bitlen_transport_le` read through the `Code ≃ ℕ` numbering
+one-hop max-affine law of `bitlen_transport_le` read through the `Code ≃ ℕ` numbering
 (`grade_encode`, `bitlen_ofNat`). The semantic conjunct needs no separate statement: it is exactly
 `gradedExp`'s tracking clause, holding on the transported element by `tracks_transportIdx`.
 
@@ -70,11 +63,11 @@ assembly map is built (the assembly induced by a hosting square is a separate co
 
 @[expose] public section
 
-namespace GradedConjugation
+namespace ALT
 
 open Nat.Partrec (Code)
 open Nat.Partrec.Code
-open RealizabilityCCC GradedApplication TimeCost
+open RealizabilityCCC TimeCost
 
 /-! ## Re-encoding a many-realizers assembly, and transporting an index -/
 
@@ -89,10 +82,10 @@ def reencodeAsm (A : Asm) (c : Code) : Asm where
     exact ⟨val c m, m, hm, rfl⟩
 
 /-- **Transporting a realizer index.** Decode the index `r` to a code, conjugate it with the coded
-retraction pair `(c_emb, c_proj)` (`GradeTransport.transport`), and re-encode the conjugate. This is
+retraction pair `(c_emb, c_proj)` (`transportRealizer`), and re-encode the conjugate. This is
 the action `transportIdx` a capacity-respecting simulation has on realizer indices. -/
 def transportIdx (c_emb c_proj : Code) (r : ℕ) : ℕ :=
-  Encodable.encode (GradeTransport.transport c_emb c_proj (Denumerable.ofNat Code r))
+  Encodable.encode (transportRealizer c_emb c_proj (Denumerable.ofNat Code r))
 
 /-! ## The tracking law transports -/
 
@@ -118,7 +111,7 @@ theorem tracks_transportIdx {A B : Asm} {f : A.carrier → B.carrier}
   refine ⟨val c_emb k, ?_, ⟨k, hBk, rfl⟩⟩
   have hdecode : ap (transportIdx c_emb c_proj r) (val c_embA m)
       = eval (comp c_emb (comp (Denumerable.ofNat Code r) c_proj)) (val c_embA m) := by
-    simp only [ap, transportIdx, Denumerable.ofNat_encode, GradeTransport.transport]
+    simp only [ap, transportIdx, Denumerable.ofNat_encode, transportRealizer]
   rw [hdecode]
   have hcomp : ∀ (a b : Code) (t : ℕ), eval (comp a b) t = (eval b t).bind fun u => eval a u :=
     fun _ _ _ => rfl
@@ -133,20 +126,20 @@ theorem tracks_transportIdx {A B : Asm} {f : A.carrier → B.carrier}
 
 /-- **The transported index stays within the max-affine budget ([Decoupling] §4.5).** If the two
 re-encoders have index length at most `b` and the realizer has grade at most `g`, the transported
-index has grade at most `4 · max g b + 9`. This is `GradeTransport.bitlen_transport_le` read through
+index has grade at most `4 · max g b + 9`. This is `bitlen_transport_le` read through
 the `Code ≃ ℕ` numbering (`grade_encode`, `bitlen_ofNat`): the counting-bound realizer length and
 the exponential's grade are one quantity. -/
 theorem grade_transportIdx_le {c_emb c_proj : Code} {r b g : ℕ}
-    (hemb : Realizability.bitlen c_emb ≤ b) (hproj : Realizability.bitlen c_proj ≤ b)
+    (hemb : ALT.bitlen c_emb ≤ b) (hproj : ALT.bitlen c_proj ≤ b)
     (hg : grade r ≤ g) :
     grade (transportIdx c_emb c_proj r) ≤ 4 * max g b + 9 := by
-  have hbr : Realizability.bitlen (Denumerable.ofNat Code r) ≤ g := by
+  have hbr : ALT.bitlen (Denumerable.ofNat Code r) ≤ g := by
     rw [bitlen_ofNat]; exact hg
   have hkey : grade (transportIdx c_emb c_proj r)
-      = Realizability.bitlen (GradeTransport.transport c_emb c_proj (Denumerable.ofNat Code r)) :=
+      = ALT.bitlen (transportRealizer c_emb c_proj (Denumerable.ofNat Code r)) :=
     grade_encode _
   rw [hkey]
-  exact GradeTransport.bitlen_transport_le hemb hproj hbr
+  exact bitlen_transport_le hemb hproj hbr
 
 /-- **The transport clause of Conjecture 4.4, at grade.** A capacity-respecting re-encoding takes a
 morphism affordable at grade `g` — an element of the graded exponential `[A ⇒ B]_g` — to a morphism
@@ -157,7 +150,7 @@ realizer is the conjugated index, whose grade the max-affine one-hop law bounds
 capacity-respecting transport does not overflow — it grows by one max-affine hop. -/
 noncomputable def gradedTransport {A B : Asm} {b g : ℕ} {c_embA c_emb c_proj : Code}
     (hemb : RfindFree c_emb) (hproj : RfindFree c_proj)
-    (hbe : Realizability.bitlen c_emb ≤ b) (hbp : Realizability.bitlen c_proj ≤ b)
+    (hbe : ALT.bitlen c_emb ≤ b) (hbp : ALT.bitlen c_proj ≤ b)
     (hretr : ∀ (a : A.carrier) (m : ℕ), A.realizes m a → val c_proj (val c_embA m) = m)
     (f : (gradedExp g A B).carrier) :
     (gradedExp (4 * max g b + 9) (reencodeAsm A c_embA) (reencodeAsm B c_emb)).carrier :=
@@ -171,7 +164,7 @@ noncomputable def gradedTransport {A B : Asm} {b g : ℕ} {c_embA c_emb c_proj :
 realizers, not elements; the morphism it produces computes the same map on carriers as its input. -/
 theorem gradedTransport_fn {A B : Asm} {b g : ℕ} {c_embA c_emb c_proj : Code}
     (hemb : RfindFree c_emb) (hproj : RfindFree c_proj)
-    (hbe : Realizability.bitlen c_emb ≤ b) (hbp : Realizability.bitlen c_proj ≤ b)
+    (hbe : ALT.bitlen c_emb ≤ b) (hbp : ALT.bitlen c_proj ≤ b)
     (hretr : ∀ (a : A.carrier) (m : ℕ), A.realizes m a → val c_proj (val c_embA m) = m)
     (f : (gradedExp g A B).carrier) :
     fn (gradedTransport hemb hproj hbe hbp hretr f) = fn f := rfl
@@ -214,7 +207,7 @@ theorem tracks_pullback {A B : Asm} {f : A.carrier → B.carrier} {c_read c_sect
   refine ⟨val c_sect k, ?_, ?_⟩
   · have hdecode : ap (transportIdx c_sect c_read r) n
         = eval (comp c_sect (comp (Denumerable.ofNat Code r) c_read)) n := by
-      simp only [ap, transportIdx, Denumerable.ofNat_encode, GradeTransport.transport]
+      simp only [ap, transportIdx, Denumerable.ofNat_encode, transportRealizer]
     rw [hdecode]
     have hcomp : ∀ (a b : Code) (t : ℕ), eval (comp a b) t = (eval b t).bind fun u => eval a u :=
       fun _ _ _ => rfl
@@ -234,7 +227,7 @@ length at most `b`. The grade law is `grade_transportIdx_le` at `(c_sect, c_read
 max-affine index arithmetic; only the conjugation's argument order differs. -/
 noncomputable def gradedPullback {A B : Asm} {b g : ℕ} {c_read c_sect : Code}
     (hread : RfindFree c_read) (hsectRF : RfindFree c_sect)
-    (hbr : Realizability.bitlen c_read ≤ b) (hbs : Realizability.bitlen c_sect ≤ b)
+    (hbr : ALT.bitlen c_read ≤ b) (hbs : ALT.bitlen c_sect ≤ b)
     (hsA : ∀ (a : A.carrier) (m : ℕ), A.realizes m a → val c_read (val c_sect m) = m)
     (hsB : ∀ (b' : B.carrier) (m : ℕ), B.realizes m b' → val c_read (val c_sect m) = m)
     (f : (gradedExp g A B).carrier) :
@@ -249,10 +242,10 @@ noncomputable def gradedPullback {A B : Asm} {b g : ℕ} {c_read c_sect : Code}
 /-- **The pullback leaves the underlying function untouched**, exactly as the pushforward does. -/
 theorem gradedPullback_fn {A B : Asm} {b g : ℕ} {c_read c_sect : Code}
     (hread : RfindFree c_read) (hsectRF : RfindFree c_sect)
-    (hbr : Realizability.bitlen c_read ≤ b) (hbs : Realizability.bitlen c_sect ≤ b)
+    (hbr : ALT.bitlen c_read ≤ b) (hbs : ALT.bitlen c_sect ≤ b)
     (hsA : ∀ (a : A.carrier) (m : ℕ), A.realizes m a → val c_read (val c_sect m) = m)
     (hsB : ∀ (b' : B.carrier) (m : ℕ), B.realizes m b' → val c_read (val c_sect m) = m)
     (f : (gradedExp g A B).carrier) :
     fn (gradedPullback hread hsectRF hbr hbs hsA hsB f) = fn f := rfl
 
-end GradedConjugation
+end ALT

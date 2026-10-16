@@ -1,8 +1,3 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import CodeLayer.TimeCost
@@ -11,8 +6,6 @@ public import Mathlib.Tactic.NormNum
 public import Mathlib.Tactic.Positivity
 public import Mathlib.Tactic.Ring
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # A small-step interpreter for `Nat.Partrec.Code`, on configuration numerals
@@ -133,7 +126,7 @@ offset — into the one-probe recurrence the machine actually implements.
 
 @[expose] public section
 
-namespace BoundedInterp
+namespace ALT
 
 open Nat.Partrec (Code)
 open Nat.Partrec.Code
@@ -936,7 +929,7 @@ decreasing_by exact stkTail_lt _h
 
 @[simp] private theorem isStack_zero : IsStack 0 := by rw [IsStack]; simp
 
-private theorem isStack_cons {f k : ℕ} (h : IsStack k) : IsStack (stkCons f k) := by
+private theorem IsStack.cons {f k : ℕ} (h : IsStack k) : IsStack (stkCons f k) := by
   rw [IsStack]
   simpa using h
 
@@ -1025,15 +1018,15 @@ private theorem isStack_stepDescend {c n k : ℕ} (h : IsStack k) :
   | succ => simpa [stepDescend, hc] using h
   | left => simpa [stepDescend, hc] using h
   | right => simpa [stepDescend, hc] using h
-  | pair cf cg => simpa [stepDescend, hc] using isStack_cons (f := _) h
-  | comp cf cg => simpa [stepDescend, hc] using isStack_cons (f := _) h
-  | prec cf cg => simpa [stepDescend, hc] using isStack_cons (f := _) h
-  | rfind' cf => simpa [stepDescend, hc] using isStack_cons (f := _) h
+  | pair cf cg => simpa [stepDescend, hc] using IsStack.cons (f := _) h
+  | comp cf cg => simpa [stepDescend, hc] using IsStack.cons (f := _) h
+  | prec cf cg => simpa [stepDescend, hc] using IsStack.cons (f := _) h
+  | rfind' cf => simpa [stepDescend, hc] using IsStack.cons (f := _) h
 
 private theorem isStack_stepReturn {v f k : ℕ} (h : IsStack k) :
     IsStack (cfStk (stepReturn v f k)) := by
   rcases ht : frTag f with _ | _ | _ | _ | _ | t
-  · simpa [stepReturn, ht] using isStack_cons (f := _) h
+  · simpa [stepReturn, ht] using IsStack.cons (f := _) h
   · simpa [stepReturn, ht] using h
   · simpa [stepReturn, ht] using h
   · obtain ⟨cgn, aa, yy, rr, hp⟩ :
@@ -1043,15 +1036,15 @@ private theorem isStack_stepReturn {v f k : ℕ} (h : IsStack k) :
           simp [Nat.pair_unpair]⟩
     cases rr with
     | zero => simpa [stepReturn, ht, hp] using h
-    | succ r => simpa [stepReturn, ht, hp] using isStack_cons (f := _) h
+    | succ r => simpa [stepReturn, ht, hp] using IsStack.cons (f := _) h
   · by_cases hv : v = 0
     · simpa [stepReturn, ht, hv] using h
-    · simpa [stepReturn, ht, hv] using isStack_cons (f := _) h
-  · simpa [stepReturn, ht] using isStack_cons (f := _) h
+    · simpa [stepReturn, ht, hv] using IsStack.cons (f := _) h
+  · simpa [stepReturn, ht] using IsStack.cons (f := _) h
 
 /-- **One step keeps the stack well formed.** Each case either leaves the stack alone, pushes a
 cell onto it, or pops to its tail — and a cell's tail is well formed whenever the cell is. -/
-private theorem isStack_step {s : ℕ} (h : IsStack (cfStk s)) : IsStack (cfStk (stepUFn s)) := by
+private theorem IsStack.step {s : ℕ} (h : IsStack (cfStk s)) : IsStack (cfStk (stepUFn s)) := by
   by_cases hh : isHalt s = true
   · rwa [stepUFn_halt hh]
   · by_cases hm : cfMode s = 0
@@ -1081,7 +1074,7 @@ theorem isStack_run (p x : ℕ) : ∀ τ : ℕ, IsStack (cfStk (stepUFn^[τ] (in
     | succ t ih =>
         intro s h
         rw [Function.iterate_succ_apply]
-        exact ih (stepUFn s) (isStack_step h)
+        exact ih (stepUFn s) (IsStack.step h)
   intro τ
   exact hgen τ _ (by simp [initConfig])
 
@@ -1496,18 +1489,17 @@ counter, spending a level of fuel each time, while a stack machine that keeps on
 from the base case. What the climb needs is the chain of intermediate values, and these recover it —
 the clause at counter `y + 1` names the value at `y`, and fuel monotonicity lifts it back. -/
 
-set_option linter.flexible false in
 /-- **Downward closure.** If bounded recursion is defined at counter `j + 1`, it is defined at `j`:
 the clause at `j + 1` evaluates it, one level of fuel down, and fuel monotonicity lifts the witness
 back up. -/
 private theorem evaln_prec_defined_below {k : ℕ} {cf cg : Code} {a j w : ℕ}
     (hw : w ∈ evaln (k + 1) (Code.prec cf cg) (Nat.pair a (j + 1))) :
     ∃ v, v ∈ evaln (k + 1) (Code.prec cf cg) (Nat.pair a j) := by
-  simp [evaln, Option.bind_eq_some_iff] at hw
+  simp only [evaln, Nat.unpaired, Nat.unpair_pair, Option.bind_eq_bind, Option.mem_def,
+      Option.bind_eq_some_iff, Option.guard_eq_some', exists_const] at hw
   obtain ⟨-, i, hi, -⟩ := hw
   exact ⟨i, evaln_mono (Nat.le_succ k) hi⟩
 
-set_option linter.flexible false in
 /-- **The value chain.** If bounded recursion gives `v` at counter `y` and `w` at counter `y + 1`,
 then `w` is what the step code produces from `v`. This is what lets the climb take its next turn.
 
@@ -1517,7 +1509,8 @@ private theorem evaln_prec_stepUp {k : ℕ} {cf cg : Code} {a y v w : ℕ}
     (hv : v ∈ evaln (k + 1) (Code.prec cf cg) (Nat.pair a y))
     (hw : w ∈ evaln (k + 1) (Code.prec cf cg) (Nat.pair a (y + 1))) :
     w ∈ evaln (k + 1) cg (Nat.pair a (Nat.pair y v)) := by
-  simp [evaln, Option.bind_eq_some_iff] at hw
+  simp only [evaln, Nat.unpaired, Nat.unpair_pair, Option.bind_eq_bind, Option.mem_def,
+      Option.bind_eq_some_iff, Option.guard_eq_some', exists_const] at hw
   obtain ⟨-, i, hi, hcg⟩ := hw
   have hi' : i ∈ evaln (k + 1) (Code.prec cf cg) (Nat.pair a y) :=
     evaln_mono (Nat.le_succ k) hi
@@ -1525,11 +1518,11 @@ private theorem evaln_prec_stepUp {k : ℕ} {cf cg : Code} {a y v w : ℕ}
   subst this
   exact hcg
 
-set_option linter.flexible false in
 /-- Bounded recursion at counter zero is the base code. -/
 private theorem evaln_prec_base {k : ℕ} {cf cg : Code} {a v : ℕ}
     (h : v ∈ evaln (k + 1) (Code.prec cf cg) (Nat.pair a 0)) : v ∈ evaln (k + 1) cf a := by
-  simp [evaln, Option.bind_eq_some_iff] at h
+  simp only [evaln, Nat.unpaired, Nat.unpair_pair, Option.bind_eq_bind, Nat.rec_zero,
+      Option.mem_def, Option.bind_eq_some_iff, Option.guard_eq_some', exists_const] at h
   exact h.2
 
 /-- Downward closure, iterated: defined at `m` means defined everywhere below. -/
@@ -1549,7 +1542,6 @@ private theorem evaln_prec_defined_le {k : ℕ} {cf cg : Code} {a : ℕ} : ∀ (
 
 /-! ## The loop, run -/
 
-set_option linter.flexible false in
 /-- **The bounded-recursion loop's run.** From the loop frame at counter `y` holding the value
 bounded recursion has there, the machine reaches the return of the value at counter `y + r`.
 
@@ -1583,7 +1575,6 @@ private theorem prec_loop_reaches {k : ℕ} {cf cg : Code} {a : ℕ}
 
 /-! ## Completeness -/
 
-set_option linter.flexible false in
 /-- **Every fuelled computation is a run of the machine.** If the fuelled evaluator produces `x`
 from `c` at `n`, then the machine, started descending into `c` at `n` above any stack, returns `x`
 onto that same stack.
@@ -1602,27 +1593,34 @@ private theorem evaln_reaches : ∀ (K : ℕ) (c : Code) (n x : ℕ), x ∈ eval
       induction c with
       | zero =>
           intro n x h stk
-          simp [evaln, Option.bind_eq_some_iff] at h
+          simp only [evaln, Option.pure_def, Option.bind_eq_bind, Option.mem_def,
+              Option.bind_eq_some_iff, Option.guard_eq_some', Option.some.injEq, exists_const] at h
           obtain ⟨-, rfl⟩ := h
           exact Reaches.head (step_zero _ _) (Reaches.refl _)
       | succ =>
           intro n x h stk
-          simp [evaln, Option.bind_eq_some_iff] at h
+          simp only [evaln, Nat.succ_eq_add_one, Option.pure_def, Option.bind_eq_bind,
+              Option.mem_def, Option.bind_eq_some_iff, Option.guard_eq_some', Option.some.injEq,
+              exists_const] at h
           obtain ⟨-, rfl⟩ := h
           exact Reaches.head (step_succ _ _) (Reaches.refl _)
       | left =>
           intro n x h stk
-          simp [evaln, Option.bind_eq_some_iff] at h
+          simp only [evaln, Option.pure_def, Option.bind_eq_bind, Option.mem_def,
+              Option.bind_eq_some_iff, Option.guard_eq_some', Option.some.injEq, exists_const] at h
           obtain ⟨-, rfl⟩ := h
           exact Reaches.head (step_left _ _) (Reaches.refl _)
       | right =>
           intro n x h stk
-          simp [evaln, Option.bind_eq_some_iff] at h
+          simp only [evaln, Option.pure_def, Option.bind_eq_bind, Option.mem_def,
+              Option.bind_eq_some_iff, Option.guard_eq_some', Option.some.injEq, exists_const] at h
           obtain ⟨-, rfl⟩ := h
           exact Reaches.head (step_right _ _) (Reaches.refl _)
       | pair cf cg ihf ihg =>
           intro n x h stk
-          simp [evaln, Option.bind_eq_some_iff, Seq.seq] at h
+          simp only [evaln, Seq.seq, Option.map_eq_map, Option.bind_eq_bind, Option.mem_def,
+              Option.bind_eq_some_iff, Option.guard_eq_some', Option.map_eq_some_iff,
+              exists_exists_and_eq_and, exists_const] at h
           obtain ⟨-, u, hu, v, hv, rfl⟩ := h
           refine Reaches.head (step_pair' cf cg n stk) ?_
           refine Reaches.trans (ihf n u hu _) ?_
@@ -1631,7 +1629,8 @@ private theorem evaln_reaches : ∀ (K : ℕ) (c : Code) (n x : ℕ), x ∈ eval
           exact Reaches.head (step_ret_pairL u v stk) (Reaches.refl _)
       | comp cf cg ihf ihg =>
           intro n x h stk
-          simp [evaln, Option.bind_eq_some_iff] at h
+          simp only [evaln, Option.bind_eq_bind, Option.mem_def, Option.bind_eq_some_iff,
+              Option.guard_eq_some', exists_const] at h
           obtain ⟨-, u, hu, hx⟩ := h
           refine Reaches.head (step_comp' cf cg n stk) ?_
           refine Reaches.trans (ihg n u hu _) ?_
@@ -1650,13 +1649,14 @@ private theorem evaln_reaches : ∀ (K : ℕ) (c : Code) (n x : ℕ), x ∈ eval
           intro n x h stk
           obtain ⟨a, m, rfl⟩ : ∃ a m, n = Nat.pair a m :=
             ⟨n.unpair.1, n.unpair.2, (Nat.pair_unpair n).symm⟩
-          simp [evaln, Option.bind_eq_some_iff] at h
+          simp only [evaln, Nat.unpaired, Nat.unpair_pair, Option.pure_def, Option.bind_eq_bind,
+              Option.mem_def, Option.bind_eq_some_iff, Option.guard_eq_some', exists_const] at h
           obtain ⟨-, u, hu, hx⟩ := h
           refine Reaches.head (step_rfind' cf a m stk) ?_
           refine Reaches.trans (ihf (Nat.pair a m) u hu _) ?_
           by_cases hu0 : u = 0
           · subst hu0
-            simp at hx
+            simp only [↓reduceIte, Option.some.injEq] at hx
             subst hx
             exact Reaches.head (step_ret_search_found _ _ _ _) (Reaches.refl _)
           · rw [ite_eq_right hu0] at hx
@@ -1693,7 +1693,7 @@ truncated subtraction, division, remainder, powers with a variable exponent, `Na
 whole of the stack's packing (`stkCons`, `stkBody`, `stkLen`, `stkHead`, `stkTail`, `stkIsCons`),
 the halt test, every branch condition, and the arithmetic form of the constructor dispatch.
 
-**Why this matters for cost, and not only for size.** `tc_precFree_const` below makes the premise
+**Why this matters for cost, and not only for size.** `PrecFree.tc_const` below makes the premise
 exact: a code built without bounded recursion or search charges a number of steps that does not
 depend on its input at all. That is what would license an absolute constant for one step of the
 machine. Bounded recursion breaks it in a specific way — `TimeCost.tc_prec_le` charges
@@ -1724,7 +1724,7 @@ and one more, and no clause consults the value flowing through.
 This is the exact content of "a fixed constructor-free-of-recursion skeleton costs an absolute
 constant per step" — and, read the other way, it is what a realization gives up the moment it needs
 bounded recursion to add two numbers. -/
-theorem tc_precFree_const :
+theorem PrecFree.tc_const :
     ∀ {c : Code}, PrecFree c → ∀ m n, TimeCost.tc c m = TimeCost.tc c n := by
   intro c
   induction c with
@@ -1744,4 +1744,4 @@ theorem tc_precFree_const :
   | prec cf cg _ _ => intro h; exact h.elim
   | rfind' cf _ => intro h; exact h.elim
 
-end BoundedInterp
+end ALT

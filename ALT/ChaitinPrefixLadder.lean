@@ -1,18 +1,10 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ChaitinIncompleteness.ChaitinIncompleteness
 public import ChaitinIncompleteness.KBEnumerable
-public import ChaitinIncompleteness.SelectorLadder
+public import ChaitinIncompleteness.TheoryProgression
 public import AIT.PrefixCounting
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
-set_option linter.style.header false
-set_option linter.style.longLine false
 
 /-!
 # The prefix-Chaitin ladder: prefix complexity strictly increases at every rung
@@ -40,24 +32,26 @@ least the base's plus the rung index.
 
 ## What this does NOT establish (flagged)
 
-* The parent theorem's two hypotheses — `KB`'s invariance under computable maps and an Elias
-  bound on `KB` — are proved nowhere in this file; each is a leaf proposition proved elsewhere.
-* A non-vacuity witness for the parent theorem is owed once both leaves are in the tree; only
+* The conditional theorem's two hypotheses — `KB`'s invariance under computable maps and an
+  Elias bound on `KB` — are proved nowhere in this file; each is a premise proved elsewhere.
+* The conditional theorem's non-vacuity witness lives with its assembly in
+  `ALT/PrefixEliasKB.lean` (`prefixChaitinLadder_not_uniform_nonvacuous`); only
   `KB_enumeratorB_lt_succ`'s own non-vacuity, unconditional, is shown here.
 -/
 
 
 @[expose] public section
 
-namespace DeepLadder
+namespace ALT
 
+open TheoryProgression PrefixCounting
 open Nat.Partrec Nat.Partrec.Code
 open FFL.FirstOrder FFL.FirstOrder.Arithmetic KolmogorovComplexity AdditiveComplexity PrefixMachine
 
 
 /-- An enumerator of `T`'s provable sentences of this form, epsilon-chosen from
-`exists_enumerator_chaitinB`. `T`'s `Δ₁` data is taken EXPLICITLY (mirroring `ladderDelta1`
-rather than `chaitin_theoremB`'s own `[T.Δ₁]`), since below `T` ranges over ladder-derived
+`exists_enumerator_chaitin_KB`. `T`'s `Δ₁` data is taken EXPLICITLY (mirroring `progressionDelta1`
+rather than `chaitin_theorem_KB`'s own `[T.Δ₁]`), since below `T` ranges over ladder-derived
 theories with no registered global instance. -/
 noncomputable def enumeratorB (T : ArithmeticTheory) (_dT : T.Δ₁) : Code :=
   Classical.epsilon (fun e : Code =>
@@ -66,9 +60,9 @@ noncomputable def enumeratorB (T : ArithmeticTheory) (_dT : T.Δ₁) : Code :=
 theorem enumeratorB_spec (T : ArithmeticTheory) (dT : T.Δ₁) :
     ∀ a, ((enumeratorB T dT).eval a).Dom ↔
       T ⊢ chaitinSentenceB (Nat.unpair a).1 (Nat.unpair a).2 :=
-  Classical.epsilon_spec (exists_enumerator_chaitinB T)
+  Classical.epsilon_spec (exists_enumerator_chaitin_KB T)
 
-/-- The Berry code underlying `chaitin_theoremB`, epsilon-chosen ONCE, outside every theory — the
+/-- The Berry code underlying `chaitin_theorem_KB`, epsilon-chosen ONCE, outside every theory — the
 whole point being that no theory argument enters here, so the constant it contributes below is
 the same for every theory. -/
 noncomputable def prefixChaitinCode : Code :=
@@ -81,7 +75,7 @@ theorem prefixChaitinCode_spec : ∀ (T : ArithmeticTheory) [T.Δ₁] [𝗥₀ �
     [FFL.Entailment.Consistent T] (e : Code),
     (∀ a, (e.eval a).Dom ↔ T ⊢ chaitinSentenceB (Nat.unpair a).1 (Nat.unpair a).2) →
     ∀ s n, T ⊢ chaitinSentenceB s n → n < elen prefixChaitinCode + KB (Encodable.encode e) :=
-  Classical.epsilon_spec chaitin_theoremB
+  Classical.epsilon_spec chaitin_theorem_KB
 
 /-- `T`'s own additive threshold: the fixed Berry code's length plus `T`'s own enumerator's
 prefix complexity. -/
@@ -105,7 +99,7 @@ noncomputable def prefixChaitinPick (T : ArithmeticTheory) (d : T.Δ₁) : Sente
 /-- The rung selector at base `𝗥₀`: Chaitin's additive-form theorem on `KB`, at each theory's own
 threshold — unprovability follows because the threshold itself is exactly the bound
 `prefixChaitinCode_spec` gives, so a proof would force the threshold below itself. -/
-noncomputable def prefixChaitinSelector : RungSelector (𝗥₀ : ArithmeticTheory) where
+noncomputable def prefixChaitinSelector : SentenceSelector (𝗥₀ : ArithmeticTheory) where
   pick := prefixChaitinPick
   true_pick T d := by
     intro _ _
@@ -127,16 +121,16 @@ variable (T₀ : ArithmeticTheory) (d₀ : T₀.Δ₁) [(𝗥₀ : ArithmeticThe
 
 /-- The prefix-Chaitin ladder started at `T₀`, at `prefixChaitinSelector`. -/
 noncomputable abbrev prefixChaitinLadder (n : ℕ) : ArithmeticTheory :=
-  ladderTheory prefixChaitinSelector T₀ d₀ n
+  progressionTheory prefixChaitinSelector T₀ d₀ n
 
 /-- The `n`-th rung of the prefix-Chaitin ladder. -/
 noncomputable abbrev prefixChaitinRung (n : ℕ) : Sentence ℒₒᵣ :=
-  rung prefixChaitinSelector T₀ d₀ n
+  selectedSentence prefixChaitinSelector T₀ d₀ n
 
-/-- The `Δ₁`-definability data of stage `n`'s theory, read off `ladderDelta1` at the selector —
+/-- The `Δ₁`-definability data of stage `n`'s theory, read off `progressionDelta1` at the selector —
 named so the statements below can read `prefixEnumAt` rather than repeating this projection. -/
 @[reducible] noncomputable def prefixChaitinDelta1 (n : ℕ) : (prefixChaitinLadder T₀ d₀ n).Δ₁ :=
-  ladderDelta1 prefixChaitinSelector T₀ d₀ n
+  progressionDelta1 prefixChaitinSelector T₀ d₀ n
 
 /-- The chosen enumerator of the ladder's stage `n`: `enumeratorB` at stage `n`'s own `Δ₁` data. -/
 noncomputable def prefixEnumAt (n : ℕ) : Code :=
@@ -153,13 +147,13 @@ theorem KB_enumerator_succ_gt (n : ℕ) (e' : Code)
       prefixChaitinLadder T₀ d₀ (n + 1) ⊢ chaitinSentenceB (Nat.unpair a).1 (Nat.unpair a).2) :
     KB (Encodable.encode (prefixEnumAt T₀ d₀ n)) < KB (Encodable.encode e') := by
   have := prefixChaitinDelta1 T₀ d₀ (n + 1)
-  have := base_le_ladderTheory prefixChaitinSelector T₀ d₀ (n + 1)
-  have := models_ladderTheory prefixChaitinSelector T₀ d₀ (n + 1)
+  have := base_le_progressionTheory prefixChaitinSelector T₀ d₀ (n + 1)
+  have := models_progressionTheory prefixChaitinSelector T₀ d₀ (n + 1)
   have hprov : prefixChaitinLadder T₀ d₀ (n + 1) ⊢
       chaitinSentenceB (prefixChaitinWitness (prefixChaitinLadder T₀ d₀ n)
           (prefixChaitinDelta1 T₀ d₀ n))
         (prefixThreshold (prefixChaitinLadder T₀ d₀ n) (prefixChaitinDelta1 T₀ d₀ n)) :=
-    FFL.Entailment.Axiomatized.by_axm (rung_mem_succ prefixChaitinSelector T₀ d₀ n)
+    FFL.Entailment.Axiomatized.by_axm (selectedSentence_mem_succ prefixChaitinSelector T₀ d₀ n)
   have hbound := prefixChaitinCode_spec (prefixChaitinLadder T₀ d₀ (n + 1)) e' he'
     (prefixChaitinWitness (prefixChaitinLadder T₀ d₀ n) (prefixChaitinDelta1 T₀ d₀ n))
     (prefixThreshold (prefixChaitinLadder T₀ d₀ n) (prefixChaitinDelta1 T₀ d₀ n)) hprov
@@ -231,4 +225,4 @@ theorem prefixChaitinLadder_not_uniform_of
   rw [heq] at hn
   omega
 
-end DeepLadder
+end ALT

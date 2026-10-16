@@ -1,16 +1,9 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
 public import Mathlib.GroupTheory.Perm.Fin
 public import ALT.PersistenceCapacity
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # The expensive-lens guard family: a double pigeonhole in the counting currency
@@ -46,7 +39,7 @@ descending through `conjLens z c V := baseLens z c ∘ ⇑V⁻¹` with the same 
 **The double pigeonhole.** The lens map `V ↦ conjLens z c V` and the world map `V ↦ conjWorld z c V`
 each have few permutations affording a cheap `lensCode` (`AdditiveComplexity.card_KE_le`'s counting
 bound, pulled back one fibre at a time): the lens map's fibres are cosets of `baseLens z c`'s
-stabilizer, of order `(c !) ^ z`, which is exactly `PersistenceCapacity.collapse_count` read at
+stabilizer, of order `(c !) ^ z`, which is exactly `ALT.collapse_count` read at
 `baseLens z c` (`lens_collapse_count`); the world map's fibres are cosets of `baseWorld z c`'s
 centralizer, of order at most `N` — a cycle covering the whole domain is determined by the image of
 one point, so a centralizing permutation is determined by where it sends that point
@@ -68,9 +61,9 @@ boundary are deliberately not consumed. Cite `[Persistence] §8` at Propositions
 
 @[expose] public section
 
-namespace ExpensiveLens
+namespace ALT
 
-open Equiv Equiv.Perm AdditiveComplexity PersistenceCapacity Nat
+open Equiv Equiv.Perm AdditiveComplexity Nat
 
 variable {z c : ℕ}
 
@@ -228,7 +221,7 @@ private theorem centralizer_card_le {N : ℕ} [NeZero N] (U₀ : Equiv.Perm (Fin
 
 /-- **The world floor** ([Persistence] §8, Proposition 8.36(ii)'s counting floor, the world-side
 half): at most `2 ^ (L + 1) * N` permutations `V` conjugate a fixed `N`-cycle `U₀` into a world
-whose table is `L`-affordable. Mirrors `PersistenceCapacity.collapse_count`, with the world map's
+whose table is `L`-affordable. Mirrors `ALT.collapse_count`, with the world map's
 centralizer-coset fibres (`centralizer_card_le`, order at most `N`) in place of the lens map's
 stabilizer-coset fibres. -/
 theorem conj_collapse_count {N : ℕ} [NeZero N] (U₀ : Equiv.Perm (Fin N)) (hcyc : U₀.IsCycle)
@@ -279,7 +272,7 @@ attribute [local instance] arrowAction
 
 /-- **The lens floor** ([Persistence] §8, Proposition 8.36(ii)'s counting floor, the lens-side
 half): at most `2 ^ (L + 1) * (c !) ^ z` permutations `V` relabel `baseLens` into an `L`-affordable
-table. `PersistenceCapacity.collapse_count` read at `baseLens z c`, with the fibre profile
+table. `ALT.collapse_count` read at `baseLens z c`, with the fibre profile
 (`baseLens_fiber_card`) collapsing the stabilizer order to `(c !) ^ z`. -/
 theorem lens_collapse_count (L : ℕ) :
     {V : Equiv.Perm (Fin (c * z)) | KE (lensCode (conjLens z c V)) ≤ L}.ncard
@@ -319,7 +312,7 @@ composite pricing point is unavailable together with a cheap lens, so "the compo
 is refuted at the parameters this family witnesses. Proposition 8.35(v)'s own reading is
 `lensCode (conjLens z c V)` costing at least the lens's carried entropy,
 `log₂ [(c * z) ! / (c !) ^ z]`
-(`PersistenceCapacity.card_orbit_mul_prod_fiber` at the uniform profile) — the family below
+(`ALT.card_orbit_mul_prod_fiber` at the uniform profile) — the family below
 states the `∃`-witness this floor forces, not the general `∀`-bound, which stays paper-level. -/
 theorem expensiveLens_family (z c L₁ L₂ : ℕ) (hz : 2 ≤ z) (hc : 2 ≤ c)
     (h : 2 ^ (L₁ + 1) * (c !) ^ z + 2 ^ (L₂ + 1) * (c * z) < (c * z)!) :
@@ -353,12 +346,12 @@ theorem expensiveLens_instance :
       ∧ 30 < KE (lensCode (⇑(conjWorld 3 9 V))) :=
   expensiveLens_family 3 9 30 30 (by norm_num) (by norm_num) (by decide)
 
-end ExpensiveLens
+end ALT
 
-/-- info: 'ExpensiveLens.expensiveLens_family' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.expensiveLens_family' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms ExpensiveLens.expensiveLens_family
+#print axioms ALT.expensiveLens_family
 
-/-- info: 'ExpensiveLens.expensiveLens_instance' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.expensiveLens_instance' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms ExpensiveLens.expensiveLens_instance
+#print axioms ALT.expensiveLens_instance

@@ -1,14 +1,7 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Mathlib.Data.Set.Insert
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # The Decoupling Lemma: structural core + necessity ([Decoupling] §3 Lemma 3.1)
@@ -27,7 +20,7 @@ degrees of freedom overwrites it unless the code cells are read-only".
 Status: PROVED as the information-theoretic core (pure shared-memory algebra), both directions.
 
 ## What this DOES establish
-* `fixes_iterate` / `model_persists`: SUFFICIENCY (D1) — cells `U` never writes stay fixed across
+* `Fixes.iterate` / `model_persists`: SUFFICIENCY (D1) — cells `U` never writes stay fixed across
   all `k` iterations, so a model read from a read-only region persists.
 * `model_destroyed_by_write`: the concrete no-go — writing the read-out cell changes the model in
   one step.
@@ -59,7 +52,7 @@ Status: PROVED as the information-theoretic core (pure shared-memory algebra), b
 
 @[expose] public section
 
-namespace Decoupling
+namespace ALT
 
 variable {ι V M : Type*}
 
@@ -83,7 +76,7 @@ theorem Faithful.dependsOn {decode : Mem ι V → M} {R} (hf : Faithful decode R
     DependsOn decode R := fun s t h => (hf s t).mpr h
 
 /-- D1 mechanism: cells the update never writes stay fixed across ALL `k` iterations. -/
-theorem fixes_iterate {U : Mem ι V → Mem ι V} {R} (h : Fixes U R) :
+theorem Fixes.iterate {U : Mem ι V → Mem ι V} {R} (h : Fixes U R) :
     ∀ k s, ∀ a ∈ R, (U^[k] s) a = s a := by
   intro k; induction k with
   | zero => intro s a _; rfl
@@ -93,7 +86,7 @@ theorem fixes_iterate {U : Mem ι V → Mem ι V} {R} (h : Fixes U R) :
 theorem model_persists {U} {R} {decode : Mem ι V → M}
     (hU : Fixes U R) (hd : DependsOn decode R) :
     ∀ k s, decode (U^[k] s) = decode s :=
-  fun k s => hd _ _ (fun a ha => fixes_iterate hU k s a ha)
+  fun k s => hd _ _ (fun a ha => Fixes.iterate hU k s a ha)
 
 /-- The concrete no-go ("applying destroys it"): if the update writes the cell the model is read
 from, one application changes the model. -/
@@ -225,7 +218,7 @@ need only hold *on* `Ω`, and persistence is then read only along `Ω`-orbits. R
 
 /-- [Decoupling] §3, Proposition 3.4 (mechanism, relativized). On an update-closed set `Ω`, cells
 the update fixes throughout `Ω` stay fixed across every iteration of any `Ω`-orbit. The
-`fixes_iterate`
+`Fixes.iterate`
 induction, with `Ω`-membership threaded through the closure hypothesis `hΩ`. -/
 theorem fixes_iterate_on {U : Mem ι V → Mem ι V} {R : Set ι} {Ω : Set (Mem ι V)}
     (hΩ : ∀ s ∈ Ω, U s ∈ Ω) (hfix : ∀ s ∈ Ω, ∀ a ∈ R, U s a = s a) :
@@ -265,4 +258,4 @@ example {U : Mem ι V → Mem ι V} {R : Set ι} {decode : Mem ι V → M} (hf :
   · intro hall s a ha
     exact h.mpr (fun s _ k => hall k s) s (Set.mem_univ s) a ha
 
-end Decoupling
+end ALT

@@ -1,8 +1,3 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Batteries.Tactic.OpenPrivate
@@ -16,8 +11,6 @@ import all ALT.Persistence.MovingLens
 public import ALT.Persistence.Counting
 import all ALT.Persistence.Counting
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # Persistence capacity IV: worlds, towers and the robustness margin ([Persistence] §2, §10)
@@ -47,7 +40,7 @@ sub-systems into towers, and prices what survives a perturbation.
   into a world and the entropic floor Corollary 7.5(i) gives every permutation world is gone — at
   most `2 ^ (b + 1) * (c - 1) ^ tr` of the `c ^ tr` worlds of that shape admit ANY non-constant
   affordable carried family, at any fixed label count.
-* `Intertwines.comp` / `uniformBudget_comp` / `tower_no_free_lunch` / `entropy_comp_le` — **the
+* `Intertwines.comp` / `UniformBudget.comp` / `tower_no_free_lunch` / `entropy_comp_le` — **the
   tower** ([Persistence] §10.2 + §2): squares compose, dilations multiply, budgets add; stacking
   buys structure, never generic capacity, and entropy is antitone up the levels. Beside it, the
   guest ledgers ([Guests] §2, §4, §9.2): the reversible-host dichotomy, the lossy and law-blind
@@ -64,9 +57,9 @@ sub-systems into towers, and prices what survives a perturbation.
 
 @[expose] public section
 
-namespace PersistenceCapacity
+namespace ALT
 
-open Decoupling CodeEvalLaws
+open CodeEvalLaws
 
 variable {X ι V M : Type*}
 
@@ -295,7 +288,7 @@ def unionLens {n₁ n₂ k₁ k₂ : ℕ} (ℓ₁ : ℕ → Fin n₁ → Fin k�
 
 /-- **A block-pair of carrying families carries the union.** Each block's reading persists along its
 own block, and the union world never moves a state across the divide. -/
-theorem permCarries_unionLens {n₁ n₂ k₁ k₂ : ℕ} {U₁ : Perm (Fin n₁)} {U₂ : Perm (Fin n₂)}
+theorem PermCarries.unionLens {n₁ n₂ k₁ k₂ : ℕ} {U₁ : Perm (Fin n₁)} {U₂ : Perm (Fin n₂)}
     {ℓ₁ : ℕ → Fin n₁ → Fin k₁} {ℓ₂ : ℕ → Fin n₂ → Fin k₂}
     (h₁ : PermCarries U₁ ℓ₁) (h₂ : PermCarries U₂ ℓ₂) :
     PermCarries (unionWorld U₁ U₂) (unionLens ℓ₁ ℓ₂) := by
@@ -303,22 +296,22 @@ theorem permCarries_unionLens {n₁ n₂ k₁ k₂ : ℕ} {U₁ : Perm (Fin n₁
   · intro v
     refine Fin.addCases (fun a => ?_) (fun b => ?_) v
     · obtain ⟨i, hi⟩ := h₁.1 a
-      exact ⟨Fin.castAdd n₂ i, by simp [unionLens, Fin.append_left, hi]⟩
+      exact ⟨Fin.castAdd n₂ i, by simp [ALT.unionLens, Fin.append_left, hi]⟩
     · obtain ⟨j, hj⟩ := h₂.1 b
-      exact ⟨Fin.natAdd n₁ j, by simp [unionLens, Fin.append_right, hj]⟩
+      exact ⟨Fin.natAdd n₁ j, by simp [ALT.unionLens, Fin.append_right, hj]⟩
   · intro t x
     refine Fin.addCases (fun i => ?_) (fun j => ?_) x
     · rw [unionWorld_pow_left]
-      simp only [unionLens, Fin.append_left]
+      simp only [ALT.unionLens, Fin.append_left]
       rw [h₁.2 t i]
     · rw [unionWorld_pow_right]
-      simp only [unionLens, Fin.append_right]
+      simp only [ALT.unionLens, Fin.append_right]
       rw [h₂.2 t j]
 
 /-- **The block-pair-lens builder**: on `⟨⟨block one's table, block two's table⟩, k₁⟩` it gives
 the union lens's table. Unlike `unionTableFn`, the shift **must** be supplied — a lens's table has
 one entry per state, so its length is the block size and the *label* count is nowhere in it. That is
-the one place a size parameter is unavoidable here, and `uniformBudget_unionLens` pays `O (log k₁)`
+the one place a size parameter is unavoidable here, and `UniformBudget.unionLens` pays `O (log k₁)`
 for it. -/
 def unionLensTableFn (p : ℕ) : ℕ :=
   Encodable.encode
@@ -384,7 +377,7 @@ one label per state, so it fixes the block size but says nothing about how many 
 the one asymmetry with `KE_unionWorld_le`, where the shift *is* readable off the table. Since a
 carried family's reference frame is surjective, `k₁ ≤ n₁` always, so the term is `O (log n₁)` — see
 `CbHu_unionWorld_ge`, which is where it gets discharged into a world-size constant. -/
-theorem uniformBudget_unionLens {n₁ n₂ k₁ k₂ : ℕ} {ℓ₁ : ℕ → Fin n₁ → Fin k₁}
+theorem UniformBudget.unionLens {n₁ n₂ k₁ k₂ : ℕ} {ℓ₁ : ℕ → Fin n₁ → Fin k₁}
     {ℓ₂ : ℕ → Fin n₂ → Fin k₂} {b₁ b₂ : ℕ} (h₁ : UniformBudget ℓ₁ b₁)
     (h₂ : UniformBudget ℓ₂ b₂) :
     UniformBudget (unionLens ℓ₁ ℓ₂) (b₁ + b₂ + (15 + elen dbl) * Nat.size k₁
@@ -471,7 +464,7 @@ theorem prod_fiber_unionLens {n₁ n₂ k₁ k₂ : ℕ} (ℓ₁ : ℕ → Fin n
   · exact Finset.prod_congr rfl fun b _ => by rw [card_fiber_unionLens_right]
 
 /-- A carried family's reference frame is surjective, so it has no more labels than states. -/
-theorem permCarries_label_le {n' k : ℕ} {U : Perm (Fin n')} {ℓ : ℕ → Fin n' → Fin k}
+theorem PermCarries.label_le {n' k : ℕ} {U : Perm (Fin n')} {ℓ : ℕ → Fin n' → Fin k}
     (h : PermCarries U ℓ) : k ≤ n' := by
   have := Fintype.card_le_of_surjective _ h.1
   simpa using this
@@ -481,9 +474,9 @@ world's uniform entropic capacity is at least the **product** of the two blocks'
 affordable reading of each block owns an affordable reading of the union, and the union's carried
 entropy multiplies rather than merely adding.
 
-The budget shift `O (log n₁) + O (1)` is the label-shift constant of `uniformBudget_unionLens`,
+The budget shift `O (log n₁) + O (1)` is the label-shift constant of `UniformBudget.unionLens`,
 discharged here into a world-size term: a carried family's frame is surjective, so its label count
-is at most its block size (`permCarries_label_le`).
+is at most its block size (`PermCarries.label_le`).
 
 The orbit arithmetic is the content. Disjoint labels keep the two blocks' fibres from mixing
 (`prod_fiber_unionLens`), so orbit–stabilizer gives
@@ -510,11 +503,11 @@ theorem CbHu_unionWorld_ge {n₁ n₂ : ℕ} (U₁ : Perm (Fin n₁)) (U₂ : Pe
   -- the block-pair family is owned at the stated budget
   have hbudU : UniformBudget (unionLens ℓ₁ ℓ₂) (b₁ + b₂ + (15 + elen dbl) * Nat.size n₁
       + (elen unionLensBuilder + (15 + elen dbl) + 9)) := by
-    refine UniformBudget.mono (uniformBudget_unionLens hbud₁ hbud₂) ?_
-    have hk : Nat.size k₁ ≤ Nat.size n₁ := Nat.size_le_size (permCarries_label_le hcar₁)
+    refine UniformBudget.mono (UniformBudget.unionLens hbud₁ hbud₂) ?_
+    have hk : Nat.size k₁ ≤ Nat.size n₁ := Nat.size_le_size (PermCarries.label_le hcar₁)
     have := Nat.mul_le_mul_left (15 + elen dbl) hk
     omega
-  have hge := CbHu_ge_of_uniform (permCarries_unionLens hcar₁ hcar₂) hbudU
+  have hge := CbHu_ge_of_uniform (PermCarries.unionLens hcar₁ hcar₂) hbudU
   -- orbit–stabilizer on all three worlds
   have hu := card_orbit_mul_prod_fiber (unionLens ℓ₁ ℓ₂ 0)
   rw [prod_fiber_unionLens] at hu
@@ -551,8 +544,8 @@ region is not a new setting at all: it is a smaller permutation world.
 `image_perm_eq` is why. A permutation that maps `B` into `B` maps `B` *onto* `B` (injectivity plus
 finiteness), so `B` is setwise invariant, `U` restricts to a permutation of `B` (`subPerm`), and
 transporting along an enumeration gives an honest world `subWorld` over `Fin B.card`. Carrying
-families correspond both ways — `permCarriesOn_restrict` and `permCarriesOn_extend` — and the
-ledger's frame determination survives restriction (`permCarriesOn_frame_one`).
+families correspond both ways — `PermCarriesOn.restrict` and `permCarriesOn_extend` — and the
+ledger's frame determination survives restriction (`PermCarriesOn.frame_one`).
 
 So the initial-conditions axis has, over permutation worlds, exactly the content of
 **decomposition**: which closed regions carry what. That is a real reduction and it is also a real
@@ -642,7 +635,7 @@ def extendLens {m : ℕ} (B : Finset (Fin n)) (e : {x : Fin n // x ∈ B} ≃ Fi
   fun x => if h : x ∈ B then ℓ' t (e ⟨x, h⟩) else v₀
 
 /-- **A basin family restricts to a sub-world family.** -/
-theorem permCarriesOn_restrict {m : ℕ} {U : Perm (Fin n)} {B : Finset (Fin n)}
+theorem PermCarriesOn.restrict {m : ℕ} {U : Perm (Fin n)} {B : Finset (Fin n)}
     (hB : ∀ i ∈ B, U i ∈ B) (e : {x : Fin n // x ∈ B} ≃ Fin B.card) {ℓ : ℕ → Fin n → Fin m}
     (h : PermCarriesOn B U ℓ) : PermCarries (subWorld hB e) (restrictLens B e ℓ) := by
   constructor
@@ -682,7 +675,7 @@ theorem permCarriesOn_extend {m : ℕ} {U : Perm (Fin n)} {B : Finset (Fin n)}
 
 /-- **The ledger survives restriction to a basin**: on a closed region the second frame is still
 determined by the first and the world. -/
-theorem permCarriesOn_frame_one {m : ℕ} {U : Perm (Fin n)} {B : Finset (Fin n)}
+theorem PermCarriesOn.frame_one {m : ℕ} {U : Perm (Fin n)} {B : Finset (Fin n)}
     {ℓ : ℕ → Fin n → Fin m} (h : PermCarriesOn B U ℓ) {x : Fin n} (hx : x ∈ B) :
     ℓ 1 (U x) = ℓ 0 x := by
   have := h.2 1 x hx
@@ -705,10 +698,10 @@ predicate at an invertible update, so the two carrying notions in this file are 
 `S ⊆ Mem` as the log-size of its relabelling class *on `S`* — its orbit under `Sym (S)` — and prices
 a persistent family by `E (ℓ₀)`, the entropy on the **recurrent core**. The persistence identity is
 not silent off the core: it pins `ℓ 0` everywhere, forcing it through the retraction onto the core
-(`carries_frame_zero_congr`), and only the LATER frames are free there, reading a state off the
+(`Carries.frame_zero_congr`), and only the LATER frames are free there, reading a state off the
 image of `U^[t]` however they like. So `CbHe` values a family at
 `Nat.card (orbit (Perm ↥(core U)) (coreLens U (ℓ 0)))`, which is Definition 2.2's `2 ^ (E (ℓ₀))` on
-`S = core U`, and `carries_coreLens_eq` is what entitles it to price a whole family by frame zero:
+`S = core U`, and `Carries.coreLens_eq` is what entitles it to price a whole family by frame zero:
 on the core every frame is one relabelling of `ℓ 0`, so all frames share a profile. Over a
 permutation world the core is everything and this agrees with `CbH` on the nose (`CbHe_perm`); over
 a general world it does not, and the core-restricted reading is the definition's.
@@ -919,7 +912,7 @@ def basinWorld {c tr : ℕ} (cyc : Perm (Fin c)) (β : Fin tr → Fin c) : Fin (
 /-- **The reference frame at a transient state is pinned by the frame at the core state one cycle
 step behind its landing point** — reading the persistence identity at `t = 1` twice, once through
 the transient route and once through the core route it lands beside, and matching the two. This is
-the mechanism behind Proposition 7.9(i): `carries_frame_zero_congr` gives the general merging
+the mechanism behind Proposition 7.9(i): `Carries.frame_zero_congr` gives the general merging
 statement, and this is what merging costs a transient state specifically, in THIS shape of world. -/
 private theorem basinWorld_confine {c tr k : ℕ} {cyc : Perm (Fin c)} {β : Fin tr → Fin c}
     {ℓ : Lens (Fin (c + tr)) (Fin k)} (h : Carries (basinWorld cyc β) ℓ) (j : Fin tr) :
@@ -1238,10 +1231,10 @@ theorem orbit_restrict_iterate {U : Fin n → Fin n} {B : Set (Fin n)} (hB : ∀
       omegaPerm_pow_apply]
   rw [h, orbit_smul]
 
-/-- **Every frame is the reference frame, transported** — `carries_coreLens_eq` for an attractor.
+/-- **Every frame is the reference frame, transported** — `Carries.coreLens_eq` for an attractor.
 `ω(B)` is a permutation world, so an exactly-carrying family has no freedom there past frame
 zero. -/
-theorem carriesOn_restrict_eq {U : Fin n → Fin n} {B : Set (Fin n)} (hB : ∀ s ∈ B, U s ∈ B)
+theorem CarriesOn.restrict_eq {U : Fin n → Fin n} {B : Set (Fin n)} (hB : ∀ s ∈ B, U s ∈ B)
     {ℓ : ℕ → Fin n → Fin m} (h : CarriesOn U ℓ (omegaLimit U B)) (t : ℕ) :
     (omegaLimit U B).domRestrict (ℓ t)
       = (omegaLimit U B).domRestrict (ℓ 0) ∘ ⇑(omegaPerm U hB ^ t)⁻¹ := by
@@ -1386,7 +1379,7 @@ reindexing of itself**: read frame `t` for `t < n`, and past that read frame
 The replacement carries because of where the two regimes meet. Below `n` it is the original family.
 At or past `n` every state is already in the recurrent core (`iterate_mem_core` — the space bounds
 its own transient), and on the core congruent exponents give literally equal frames
-(`carries_coreLens_eq` plus `pow_mod_orderOf`), so the clamped index reads what the true index would
+(`Carries.coreLens_eq` plus `pow_mod_orderOf`), so the clamped index reads what the true index would
 have. Frame zero is untouched, so the carried entropy is untouched. And every frame the replacement
 ever reads has index at most `n + orderOf (corePerm U) ≤ n + n !`, so one uniform program prices all
 of them through a clock that never counts past that.
@@ -1428,7 +1421,7 @@ private theorem clamp_le (U : Fin n → Fin n) (t : ℕ) : clamp U t ≤ n + n !
 /-- **Past the transient, the clamped index reads the same frame.** At or past `n` the exponents
 `clamp U t` and `t` are congruent modulo the core permutation's order, so they name the same power
 of it — and on the core a carried family's frame is determined by that power
-(`carries_coreLens_eq`). -/
+(`Carries.coreLens_eq`). -/
 private theorem corePerm_pow_clamp (U : Fin n → Fin n) {t : ℕ} (ht : n ≤ t) :
     corePerm U ^ (clamp U t) = corePerm U ^ t := by
   have hlt : ¬ t < n := by omega
@@ -1460,13 +1453,13 @@ theorem CbHue_le_CbHe (U : Fin n → Fin n) (b : ℕ) :
     · push Not at ht
       have hmem : U^[t] s ∈ core U := iterate_mem_core U (by simpa using ht) s
       have key : ℓ (clamp U t) (U^[t] s) = ℓ t (U^[t] s) := by
-        have h1 := congrFun (carries_coreLens_eq hcar (clamp U t)) ⟨U^[t] s, hmem⟩
-        have h2 := congrFun (carries_coreLens_eq hcar t) ⟨U^[t] s, hmem⟩
+        have h1 := congrFun (Carries.coreLens_eq hcar (clamp U t)) ⟨U^[t] s, hmem⟩
+        have h2 := congrFun (Carries.coreLens_eq hcar t) ⟨U^[t] s, hmem⟩
         simp only [coreLens, Function.comp_apply] at h1 h2
         rw [h1, h2, corePerm_pow_clamp U ht]
       rw [key]; exact hcar.2 t s
   · intro t
-    have hc := uniformBudget_frame_cost hbud (clamp U t)
+    have hc := UniformBudget.frame_cost hbud (clamp U t)
     have hs : Nat.size (clamp U t) ≤ Nat.size (n + n !) := Nat.size_le_size (clamp_le U t)
     have hmul := Nat.mul_le_mul_left (15 + elen dbl) hs
     exact le_trans hc (by omega)
@@ -1491,7 +1484,7 @@ Three facts make the tower:
   to level 2. Level 2's clock ticks once per `τ₂` ticks of level 1's, which is why the composite's
   frame `k` reads level-1 frame `τ₂ * k`. This is the renormalization-flavoured part and it is
   purely equational.
-* **Budgets add** (`uniformBudget_comp`): one fixed builder runs both levels' programs and composes
+* **Budgets add** (`UniformBudget.comp`): one fixed builder runs both levels' programs and composes
   their tabulations, so an owner of both levels owns the composite at `b₁ + b₂` plus the clock
   needed to say `τ₂` — `O (Nat.size τ₂)`, the `bconst` idiom, absolute in everything else.
 * **The identity law anchors** (`Intertwines.anchored`): a square whose law is `id` is exactly a
@@ -1576,8 +1569,7 @@ theorem intertwines_realize (e : X ≃ X) (F : M → M) (ℓ₀ : X → M) :
   simp only [Function.comp_apply]
   rw [Function.iterate_succ_apply (⇑e.symm), e.symm_apply_apply, Function.iterate_succ_apply' F]
 
-set_option linter.style.longLine false in
-/-- info: 'PersistenceCapacity.intertwines_realize' depends on axioms: [propext, Quot.sound] -/
+/-- info: 'ALT.intertwines_realize' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms intertwines_realize
 
@@ -1598,8 +1590,7 @@ theorem Intertwines.closed_form {e : X ≃ X} {F : M → M} {ℓ : ℕ → X →
       rw [hx, congrFun ih (e.symm x), ← Function.iterate_succ_apply' F,
         ← Function.iterate_succ_apply (⇑e.symm)]
 
-set_option linter.style.longLine false in
-/-- info: 'PersistenceCapacity.Intertwines.closed_form' depends on axioms: [propext, Quot.sound] -/
+/-- info: 'ALT.Intertwines.closed_form' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms Intertwines.closed_form
 
@@ -1623,7 +1614,7 @@ theorem Intertwines.fixed_bijective [Finite M] {U : X → X} {F : M → M} {ℓ�
   exact ⟨Finite.injective_iff_surjective.mpr hFsurj, hFsurj⟩
 
 set_option linter.style.longLine false in
-/-- info: 'PersistenceCapacity.Intertwines.fixed_bijective' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.Intertwines.fixed_bijective' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms Intertwines.fixed_bijective
 
@@ -1673,8 +1664,7 @@ theorem ledger_graded_lossy (hn : 0 < n) {U : Perm (Fin n)} {F : Fin m → Fin m
   have hbound := ledger_graded hn hpers
   rwa [h0, h1] at hbound
 
-set_option linter.style.longLine false in
-/-- info: 'PersistenceCapacity.ledger_graded_lossy' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.ledger_graded_lossy' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms ledger_graded_lossy
 
@@ -1712,7 +1702,7 @@ theorem ledger_graded_paired_lossy (hn : 0 < n) {U : Perm (Fin n)} {F : Fin m �
   rwa [h0, h1] at hbound
 
 set_option linter.style.longLine false in
-/-- info: 'PersistenceCapacity.ledger_graded_paired_lossy' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.ledger_graded_paired_lossy' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms ledger_graded_paired_lossy
 
@@ -1751,7 +1741,7 @@ theorem settlingDepth_le_card_range {F : Fin m → Fin m} {d : ℕ}
     omega
 
 set_option linter.style.longLine false in
-/-- info: 'PersistenceCapacity.settlingDepth_le_card_range' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.settlingDepth_le_card_range' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms settlingDepth_le_card_range
 
@@ -1776,7 +1766,7 @@ theorem settlingDepth_parityLens_le_one {d : ℕ}
   rwa [hcard] at hbound
 
 set_option linter.style.longLine false in
-/-- info: 'PersistenceCapacity.settlingDepth_parityLens_le_one' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.settlingDepth_parityLens_le_one' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms settlingDepth_parityLens_le_one
 
@@ -1877,8 +1867,7 @@ theorem card_lawBlind_le (ℓ ℓ' : Fin n → Fin m) :
     _ = Nat.card (Set.range ℓ') ^ Nat.card (Set.range ℓ)
         * ∏ i : Fin m, (Nat.card {x : Fin n // ℓ' x = i})! := by ring
 
-set_option linter.style.longLine false in
-/-- info: 'PersistenceCapacity.card_lawBlind_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.card_lawBlind_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms card_lawBlind_le
 
@@ -2365,8 +2354,7 @@ theorem ledger_lawBlind (hn : 0 < n) {U : Perm (Fin n)} {ℓ ℓ' : Fin n → Fi
   rw [pairedLedgerConstLB]
   omega
 
-set_option linter.style.longLine false in
-/-- info: 'PersistenceCapacity.ledger_lawBlind' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.ledger_lawBlind' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms ledger_lawBlind
 
@@ -2415,7 +2403,7 @@ theorem parityLens_intertwines_not_carries {n : ℕ} (hn : 2 ≤ n) (U : Perm (F
   ⟨intertwines_parityLens n U, fun hc => not_permPersists_parityLens hn U hc.2⟩
 
 set_option linter.style.longLine false in
-/-- info: 'PersistenceCapacity.parityLens_intertwines_not_carries' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.parityLens_intertwines_not_carries' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms parityLens_intertwines_not_carries
 
@@ -2445,7 +2433,7 @@ theorem discreteFactor_intertwines_not_carries {U : Perm (Fin n)} (hU : U ≠ 1)
   ⟨intertwines_discreteFactor U, Function.bijective_id, not_permCarries_discreteFactor hU⟩
 
 set_option linter.style.longLine false in
-/-- info: 'PersistenceCapacity.discreteFactor_intertwines_not_carries' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.discreteFactor_intertwines_not_carries' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms discreteFactor_intertwines_not_carries
 
@@ -2473,7 +2461,7 @@ private theorem exists_apply_ne {k : ℕ} {V : Perm (Fin k)} (hV : V ≠ 1) : �
 /-- A permutation's inverse cancels it — stated to keep `⁻¹`'s surface syntax intact for `simp`,
 where the library's `Equiv.symm`-phrased form (`Equiv.Perm.inv_def` unfolds `⁻¹` to `.symm`) would
 otherwise fight a neighbouring `pow_succ`/`unionWorld_invPow_*` rewrite over the same subterm. -/
-private theorem invApplySelf {k : ℕ} (V : Perm (Fin k)) (x : Fin k) : V⁻¹ (V x) = x := by
+private theorem perm_inv_apply_self {k : ℕ} (V : Perm (Fin k)) (x : Fin k) : V⁻¹ (V x) = x := by
   rw [Equiv.Perm.inv_def]; exact Equiv.symm_apply_apply V x
 
 /-- **The square commutes blockwise** ([Guests] §4, Remark 4.2): `U = U₁ ⊕ U₂`, the law carries the
@@ -2487,7 +2475,7 @@ theorem intertwines_twoBlockGuest {n₁ n₂ : ℕ} (U₁ : Perm (Fin n₁)) (U�
   · simp only [twoBlockLens, unionWorld_left, unionWorld_invPow_left]
   · simp only [twoBlockLens, unionWorld_right, unionWorld_invPow_right, Equiv.Perm.one_apply]
     congr 1
-    rw [pow_succ, Equiv.Perm.mul_apply, invApplySelf]
+    rw [pow_succ, Equiv.Perm.mul_apply, perm_inv_apply_self]
 
 /-- **Every frame is a bijection**: each is the coercion of a permutation, so faithfulness is
 near-free — the honest content of the square is `intertwines_twoBlockGuest`. -/
@@ -2516,7 +2504,7 @@ theorem ne_twoBlockLens (n₁ : ℕ) {n₂ : ℕ} {U₂ : Perm (Fin n₂)} (hU�
   intro hEq
   have heq := congrFun hEq (Fin.natAdd n₁ (U₂ k))
   simp only [twoBlockLens, pow_one, pow_zero, Equiv.Perm.one_apply, unionWorld_inv_right,
-    invApplySelf] at heq
+    perm_inv_apply_self] at heq
   exact hk (Fin.natAdd_injective n₂ n₁ heq).symm
 
 /-- **Witness 3 — the two-block guest** ([Guests] §4, Remark 4.2): bundles (a)–(d) beside
@@ -2536,7 +2524,7 @@ theorem twoBlockGuest_intertwines_not_carries {n₁ n₂ : ℕ} (U₁ : Perm (Fi
     fun hcar => not_permPersists_twoBlockGuest U₂ hU₁ hcar.2, ne_twoBlockLens n₁ hU₂⟩
 
 set_option linter.style.longLine false in
-/-- info: 'PersistenceCapacity.twoBlockGuest_intertwines_not_carries' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.twoBlockGuest_intertwines_not_carries' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms twoBlockGuest_intertwines_not_carries
 
@@ -2832,28 +2820,25 @@ theorem conjugationGuest_intertwines_not_carries {n : ℕ} [NeZero n] (hn : 2 �
   ⟨intertwines_conjugationGuest h₁ h₂, bijective_conjugationLens h₁,
     not_permCarries_conjugationGuest hn h₁ h₂⟩
 
-set_option linter.style.longLine false in
-/-- info: 'PersistenceCapacity.orbitEnum_bijective' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.orbitEnum_bijective' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms orbitEnum_bijective
 
-set_option linter.style.longLine false in
-/-- info: 'PersistenceCapacity.orbitEnum_conj' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.orbitEnum_conj' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms orbitEnum_conj
 
-set_option linter.style.longLine false in
-/-- info: 'PersistenceCapacity.orbitEnum_unique' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.orbitEnum_unique' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms orbitEnum_unique
 
 set_option linter.style.longLine false in
-/-- info: 'PersistenceCapacity.conjugation_pair_injective' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.conjugation_pair_injective' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms conjugation_pair_injective
 
 set_option linter.style.longLine false in
-/-- info: 'PersistenceCapacity.conjugationGuest_intertwines_not_carries' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.conjugationGuest_intertwines_not_carries' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms conjugationGuest_intertwines_not_carries
 
@@ -3026,7 +3011,7 @@ the alphabets, or the families — and the dilation is charged its bit-length, n
 
 This is what makes the tower a *priced* object rather than a free construction, and it is what
 `tower_no_free_lunch` spends. -/
-theorem uniformBudget_comp {n₁ n₂ n₃ : ℕ} {ℓ₁ : ℕ → Fin n₁ → Fin n₂} {ℓ₂ : ℕ → Fin n₂ → Fin n₃}
+theorem UniformBudget.comp {n₁ n₂ n₃ : ℕ} {ℓ₁ : ℕ → Fin n₁ → Fin n₂} {ℓ₂ : ℕ → Fin n₂ → Fin n₃}
     {τ₂ b₁ b₂ : ℕ} (h₁ : UniformBudget ℓ₁ b₁) (h₂ : UniformBudget ℓ₂ b₂) :
     UniformBudget (fun j => ℓ₂ j ∘ ℓ₁ (τ₂ * j))
       (b₁ + b₂ + (15 + elen dbl) * Nat.size τ₂ + towerConst) := by
@@ -3043,7 +3028,7 @@ of the base world, forever. The two theorems below price that memory — and the
 against the **base** world, not the comfortable coarse-grained one the tower's top level inhabits.
 
 The argument is the three facts assembled. The tower is a carrying family of `U^[τ₁ * τ₂]`
-(`tower_carries`); it is owned at the summed budget (`uniformBudget_comp`); so its carried entropy
+(`tower_carries`); it is owned at the summed budget (`UniformBudget.comp`); so its carried entropy
 is a member of the iterated world's uniform-capacity set, hence below the supremum. Nothing about
 the tower's *height* or its internal structure enters: two levels are priced here, and the same
 composition applied repeatedly prices any finite tower, because the composite of two squares is
@@ -3077,7 +3062,7 @@ theorem tower_no_free_lunch {n₁ n₂ n₃ : ℕ} {U : Fin n₁ → Fin n₁} {
         (coreLens (U^[τ₁ * τ₂]) ((fun j => ℓ₂ j ∘ ℓ₁ (τ₂ * j)) 0)))
       ≤ CbHue (U^[τ₁ * τ₂]) (b₁ + b₂ + (15 + elen dbl) * Nat.size τ₂ + towerConst) :=
   le_csSup (bddAbove_uniformBudgetedEntropiesE _ _)
-    ⟨n₃, _, tower_carries h₁ h₂ hs₁ hs₂, uniformBudget_comp hb₁ hb₂, rfl⟩
+    ⟨n₃, _, tower_carries h₁ h₂ hs₁ hs₂, UniformBudget.comp hb₁ hb₂, rfl⟩
 
 /-- **No free lunch, over a permutation base**: the same bound against `CbHu (U ^ (τ₁ * τ₂))`, where
 the iterated world is spelled as the group power it is. This is the form `CbHu_collapse` consumes —
@@ -3092,7 +3077,7 @@ theorem tower_no_free_lunch_perm {n₁ n₂ n₃ : ℕ} {U : Perm (Fin n₁)} {F
     Nat.card ↥(orbit (Perm (Fin n₁)) ((fun j => ℓ₂ j ∘ ℓ₁ (τ₂ * j)) 0))
       ≤ CbHu (U ^ (τ₁ * τ₂)) (b₁ + b₂ + (15 + elen dbl) * Nat.size τ₂ + towerConst) := by
   refine le_csSup (bddAbove_uniformBudgetedEntropies _ _)
-    ⟨n₃, _, ?_, uniformBudget_comp hb₁ hb₂, rfl⟩
+    ⟨n₃, _, ?_, UniformBudget.comp hb₁ hb₂, rfl⟩
   rw [permCarries_iff_carries, Equiv.Perm.coe_pow]
   exact tower_carries h₁ h₂ hs₁ hs₂
 
@@ -3150,14 +3135,14 @@ needed: a world's table is as long as its state space, so `prodTableFn` reads `n
 table's own length and interleaves. So the cheap-dynamics regime is closed under Cartesian product
 too.
 
-**Readings lift through projections** (`carries_prodLensFst`, `intertwines_prodLensFst`). A lens
+**Readings lift through projections** (`Carries.prodLensFst`, `Intertwines.prodLensFst`). A lens
 family on the habitat becomes a lens family on the product by ignoring the second coordinate, and
 both of the properties that make it a sub-system survive verbatim: it still carries its model, and
 if it satisfied an intertwining square with a law `F`, the lifted family satisfies the same square
 with the same `F`. Neither proof does any work — the product's first coordinate evolves by `U₁` and
 by nothing else — and that is the content: *what the habitat does is unaffected by what it is
 standing next to*. The lift is owned at `O (log n₂)` above the factor's own budget
-(`uniformBudget_prodLensFinFst`); the size must be supplied here, exactly as for the union's lens,
+(`UniformBudget.prodLensFinFst`); the size must be supplied here, exactly as for the union's lens,
 because a lens's table has one entry per state and so records the state count but not the label
 count.
 
@@ -3343,7 +3328,7 @@ def prodLensFst {X₁ X₂ M : Type*} (ℓ₁ : ℕ → X₁ → M) : ℕ → X�
 /-- **The lift still carries its model.** The product's first coordinate evolves by `U₁` and by
 nothing else, so persistence transports verbatim; surjectivity needs only that there is *some*
 second coordinate to stand at. What the habitat does is unaffected by what it stands beside. -/
-theorem carries_prodLensFst {X₁ X₂ M : Type*} [Nonempty X₂] {U₁ : X₁ → X₁} {U₂ : X₂ → X₂}
+theorem Carries.prodLensFst {X₁ X₂ M : Type*} [Nonempty X₂] {U₁ : X₁ → X₁} {U₂ : X₂ → X₂}
     {ℓ₁ : ℕ → X₁ → M} (h : Carries U₁ ℓ₁) :
     Carries (prodWorld U₁ U₂) (prodLensFst (X₂ := X₂) ℓ₁) := by
   constructor
@@ -3351,13 +3336,13 @@ theorem carries_prodLensFst {X₁ X₂ M : Type*} [Nonempty X₂] {U₁ : X₁ �
     obtain ⟨x, hx⟩ := h.1 v
     exact ⟨(x, Classical.arbitrary X₂), hx⟩
   · intro t s
-    simp only [prodLensFst, prodWorld_iterate_apply]
+    simp only [ALT.prodLensFst, prodWorld_iterate_apply]
     exact h.2 t s.1
 
 /-- **The lift satisfies the same square with the same law.** A sub-system of the habitat is a
 sub-system of the product, running the identical `F`: one line, because the square is a statement
 about the first coordinate only. -/
-theorem intertwines_prodLensFst {X₁ X₂ M : Type*} {U₁ : X₁ → X₁} {U₂ : X₂ → X₂} {F : M → M}
+theorem Intertwines.prodLensFst {X₁ X₂ M : Type*} {U₁ : X₁ → X₁} {U₂ : X₂ → X₂} {F : M → M}
     {ℓ₁ : ℕ → X₁ → M} (h : Intertwines U₁ F ℓ₁) :
     Intertwines (prodWorld U₁ U₂) F (prodLensFst (X₂ := X₂) ℓ₁) :=
   fun t s => h t s.1
@@ -3380,7 +3365,7 @@ def prodLensFinFst {n₁ k₁ : ℕ} (ℓ₁ : ℕ → Fin n₁ → Fin k₁) (n
 
 /-- The lifted family carries the factor's model over the product world. A nonempty second factor
 is what makes the lifted frame surjective. -/
-theorem permCarries_prodLensFinFst {n₁ n₂ k₁ : ℕ} {U₁ : Perm (Fin n₁)} {U₂ : Perm (Fin n₂)}
+theorem PermCarries.prodLensFinFst {n₁ n₂ k₁ : ℕ} {U₁ : Perm (Fin n₁)} {U₂ : Perm (Fin n₂)}
     {ℓ₁ : ℕ → Fin n₁ → Fin k₁} (h : PermCarries U₁ ℓ₁) (hn₂ : 0 < n₂) :
     PermCarries (prodWorldFin U₁ U₂) (prodLensFinFst ℓ₁ n₂) := by
   constructor
@@ -3393,7 +3378,7 @@ theorem permCarries_prodLensFinFst {n₁ n₂ k₁ : ℕ} {U₁ : Perm (Fin n₁
     exact h.2 t i
 
 /-- **Each label, repeated once per state of the second factor.** The shape of the lifted frame's
-table; the repetition count must be supplied — see `uniformBudget_prodLensFinFst`. -/
+table; the repetition count must be supplied — see `UniformBudget.prodLensFinFst`. -/
 def liftAppend (T₁ : List ℕ) (s : ℕ) : List ℕ := T₁.flatMap (fun a => List.replicate s a)
 
 private theorem primrec_liftAppend : Primrec fun q : List ℕ × ℕ => liftAppend q.1 q.2 := by
@@ -3463,10 +3448,10 @@ private theorem eval_liftBuilder (p : ℕ) :
 
 /-- **The lifted reading is owned at the factor's budget plus the second factor's size.** The
 `O (log n₂)` is not removable on this route and is not a fixed constant, for the same reason as in
-`uniformBudget_unionLens`: a lens's table records one label per state, so it fixes the state count
+`UniformBudget.unionLens`: a lens's table records one label per state, so it fixes the state count
 but says nothing about how many states the *other* factor has. Standing beside a big environment
 costs the observer the environment's size and nothing more. -/
-theorem uniformBudget_prodLensFinFst {n₁ n₂ k₁ : ℕ} {ℓ₁ : ℕ → Fin n₁ → Fin k₁} {b₁ : ℕ}
+theorem UniformBudget.prodLensFinFst {n₁ n₂ k₁ : ℕ} {ℓ₁ : ℕ → Fin n₁ → Fin k₁} {b₁ : ℕ}
     (h₁ : UniformBudget ℓ₁ b₁) :
     UniformBudget (prodLensFinFst ℓ₁ n₂) (b₁ + (15 + elen dbl) * Nat.size n₂
       + (elen liftBuilder + (15 + elen dbl) + 6)) := by
@@ -3659,7 +3644,7 @@ theorem KE_factorFst_le_of_faithful {n₁ n₂ k : ℕ} {U₁ : Perm (Fin n₁)}
 /-- **A faithful reading of the product hands back the SECOND factor's rule** — the factor the
 observer may have no interest in. Same route, taking the residue instead of the quotient.
 
-Read against `uniformBudget_prodLensFinFst` this is the contrast the product world exists to
+Read against `UniformBudget.prodLensFinFst` this is the contrast the product world exists to
 exhibit. A reading confined to the first factor is owned at that factor's own budget plus
 `O (log n₂)`, however wild the second factor is. A reading of the *whole* world is not: it prices
 the observer at half of `KE` of the second factor's rule, so over any family of second factors whose
@@ -3748,8 +3733,8 @@ theorem CbHu_prodWorldFin_ge_fst {n₁ n₂ : ℕ} (U₁ : Perm (Fin n₁)) (U�
     calc Nat.card ↥(orbit (Perm (Fin n₁)) (ℓ₁ 0))
         ≤ Nat.card ↥(orbit (Perm (Fin (n₁ * n₂))) (liftFst (ℓ₁ 0) n₂)) :=
           card_orbit_le_liftFst _ hn₂
-      _ ≤ _ := CbHu_ge_of_uniform (permCarries_prodLensFinFst hcar hn₂)
-                (uniformBudget_prodLensFinFst hbud)
+      _ ≤ _ := CbHu_ge_of_uniform (PermCarries.prodLensFinFst hcar hn₂)
+                (UniformBudget.prodLensFinFst hbud)
 
 end Collapse
 
@@ -5671,19 +5656,19 @@ habitat **hosts** the bounded checker for the Gödel sentence of number `g`: its
 have room for the recursor of the concrete `poly(g) = g²` proof-code budget of [Decoupling] §6.3, so
 `g² + 1 ≤ 2 ^ κ` and every candidate proof code `p ≤ M_chk ≤ g²` is a macro state.
 
-(Distinct from `CategoricalThreshold.hostsAt`, the [Decoupling] §6 work-budget predicate
+(Distinct from `ALT.hostsAt`, the [Decoupling] §6 work-budget predicate
 `capacity n ≤ w`; this is its concrete downstream consequence in the habitat's own state count, and
 `hostsThreshold_of_capacity` is the bridge between the two.) -/
 def hostsThreshold (κ g : ℕ) : Prop := g ^ 2 + 1 ≤ 2 ^ κ
 
 /-- **Above the capacity threshold the habitat hosts the checker.** Whenever the κ macro bits meet
 [Decoupling] §6.3's linear capacity `capacity n = 2 n` for the Gödel sentence of number `g`
-(`n := ⌈log₂ (g + 1)⌉` — precisely `CategoricalThreshold.hostsAt κ g`), the habitat's `2 ^ κ` macro
+(`n := ⌈log₂ (g + 1)⌉` — precisely `ALT.hostsAt κ g`), the habitat's `2 ^ κ` macro
 states host the depth-`g²` bounded recursor. Pure arithmetic on the imported [Decoupling] §6.3
 bound — this section is its consumer, not its prover. -/
 theorem hostsThreshold_of_capacity {κ g : ℕ}
-    (h : GodelInternalization.capacity (Nat.clog 2 (g + 1)) ≤ κ) : hostsThreshold κ g := by
-  refine (GodelInternalization.capacity_bound g (g ^ 2) le_rfl).trans ?_
+    (h : ALT.capacity (Nat.clog 2 (g + 1)) ≤ κ) : hostsThreshold κ g := by
+  refine (ALT.capacity_bound g (g ^ 2) le_rfl).trans ?_
   exact Nat.pow_le_pow_right (by norm_num) h
 
 /-! #### The full world, packed and priced
@@ -6128,7 +6113,7 @@ theorem witness_world {ι_J : Type*} [Fintype ι_J] [Nonempty (Mem ι_J Bool)] (
       ≤ CbHue (packWorld (flatWorld κ k ⇑G))
           (elen compBuilder + elen faithBuilder + elen readBuilder + elen cG
             + (15 + elen dbl) * Nat.size (Nat.pair κ k) + ((15 + elen dbl) + 30)) ∧
-    (∀ g, GodelInternalization.capacity (Nat.clog 2 (g + 1)) ≤ κ → hostsThreshold κ g) :=
+    (∀ g, ALT.capacity (Nat.clog 2 (g + 1)) ≤ κ → hostsThreshold κ g) :=
   ⟨witnessLens_surjective κ k, intertwines_witnessLens κ k ⇑G π,
     witnessWorld_margin_ge κ k ⇑G π hκ, CbHue_flatWorld_ge κ k G cG hG,
     fun _ h => hostsThreshold_of_capacity h⟩
@@ -6348,4 +6333,4 @@ theorem emergence {n m : ℕ} (U : Fin n → Fin n) (θ : Fin n → Fin m)
 
 end Emergence
 
-end PersistenceCapacity
+end ALT

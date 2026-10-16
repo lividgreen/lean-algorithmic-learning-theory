@@ -1,8 +1,3 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Mathlib.Probability.Independence.ZeroOne
@@ -64,7 +59,7 @@ constant that comes out carries **no dependence on the noise rate**.
 
 @[expose] public section
 
-namespace ParityWalk
+namespace ALT
 
 open MeasureTheory ProbabilityTheory Real
 
@@ -119,13 +114,13 @@ lemma measurable_xor {Ω : Type*} {m : MeasurableSpace Ω} {a b : Ω → Bool}
 /-! ## The parity walk -/
 
 /-- One step of the parity walk: `x ↦ ¬x ⊕ ξ`. -/
-def step (x b : Bool) : Bool := !(xor x b)
+def walkStep (x b : Bool) : Bool := !(xor x b)
 
 /-- The parity walk's orbit from `x₀` under the noise word `ξ`: the step into time `s+1` reads the
 noise bit `ξ s`. -/
 def walk (x₀ : Bool) (ξ : ℕ → Bool) : ℕ → Bool
   | 0 => x₀
-  | s + 1 => step (walk x₀ ξ s) (ξ s)
+  | s + 1 => walkStep (walk x₀ ξ s) (ξ s)
 
 @[simp] private lemma walk_zero (x₀ : Bool) (ξ : ℕ → Bool) : walk x₀ ξ 0 = x₀ := rfl
 
@@ -154,7 +149,7 @@ lemma walk_eq_xor_par (x₀ : Bool) (ξ : ℕ → Bool) (s : ℕ) : walk x₀ ξ
 /-- **The prefix parity is additive.**  A noise-parity prefix splits at any point into the parity
 up to the split and the parity of the shifted tail — the deterministic fact behind why two
 observations of the same residue class, arbitrarily far apart, differ by only a bounded window of
-tape bits (`NoisyWindowChain.obs_xor_obs_add_mul`). -/
+tape bits (`ALT.obs_xor_obs_add_mul`). -/
 theorem par_add (ξ : ℕ → Bool) (a b : ℕ) :
     par ξ (a + b) = xor (par ξ a) (par (fun i => ξ (a + i)) b) := by
   induction b with
@@ -169,7 +164,7 @@ theorem par_add (ξ : ℕ → Bool) (a b : ℕ) :
 
 /-- **The noise-parity character is a product of noise characters.**  Each step of the prefix
 parity complements one more tape bit, and each complement contributes its own noise character —
-the identity `NoisyWindowChain.chi_pairObs_lagK` is exactly this at `d = 1`. -/
+the identity `ALT.chi_pairObs_lagK` is exactly this at `d = 1`. -/
 theorem chi_par (ξ : ℕ → Bool) (d : ℕ) :
     chi (par ξ d) = ∏ i ∈ Finset.range d, zeta (ξ i) := by
   induction d with
@@ -684,7 +679,7 @@ theorem chiSum_tail (hmeas : ∀ i, Measurable (ξ i)) (hindep : iIndepFun ξ P)
 
 end Tail
 
-end ParityWalk
+end ALT
 
 end
 
@@ -693,20 +688,21 @@ end
 Both capstones are `#print axioms`-clean on the standard triple, and the guards below make that
 build-enforced. -/
 
-set_option linter.style.longLine false
 
-/-- info: 'ParityWalk.hasSubgaussianMGF_blockSignedSum' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.hasSubgaussianMGF_blockSignedSum' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms ParityWalk.hasSubgaussianMGF_blockSignedSum
+#print axioms ALT.hasSubgaussianMGF_blockSignedSum
 
-/-- info: 'ParityWalk.hasSubgaussianMGF_signedSum' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.hasSubgaussianMGF_signedSum' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms ParityWalk.hasSubgaussianMGF_signedSum
+#print axioms ALT.hasSubgaussianMGF_signedSum
 
-/-- info: 'ParityWalk.chiSum_tail_gen' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.chiSum_tail_gen' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms ParityWalk.chiSum_tail_gen
+#print axioms ALT.chiSum_tail_gen
 
-/-- info: 'ParityWalk.chiSum_tail' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.chiSum_tail' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms ParityWalk.chiSum_tail
+#print axioms ALT.chiSum_tail

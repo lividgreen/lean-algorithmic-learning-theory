@@ -1,8 +1,3 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.DeterministicDiscovery
@@ -10,13 +5,6 @@ public import ALT.SQMixtureSupermartingale
 public import ALT.SQPredictiveTransfer
 public import ALT.SQVersionSpace
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style linters (long defs/lines).
-set_option linter.style.header false
-set_option linter.style.longLine false
--- `posterior_concentration_transfer` carries `[DecidableEq ι]` for the `deterministic_discovery`
--- proof (Finset.erase over `ι`), though it is absent from the Dirac-pmf conclusion type; the
--- upstream `DeterministicDiscovery.lean` disables this same linter for the same reason.
-set_option linter.unusedDecidableInType false
 
 /-!
 # The prequential-MDL-with-SQ-pruning algorithm as a Lean object ([SQ] §4 / App A, FV-K)
@@ -39,8 +27,8 @@ only as the (already-proved) FV-E/FV-I/FV-H artifacts it cites.
 ## Constants (matched to FV-A4 `SQVersionSpace.lean` exactly)
 * prune threshold `2τ` (`sqPrune` keeps `|stat i φ − oracleAns φ| ≤ 2τ`) — FV-A4's `2τ` rule;
 * truth-survival closeness `|oracleAns φ − stat iR φ| ≤ τ` (the `emp − predR` order of FV-A4's
-  `hemp`, which is exactly `SQOracle.empirical_isSQOracle`'s `|emp − tru| ≤ τ` at `answer = oracleAns`,
-  `truth = stat iR`);
+  `hemp`, which is exactly `SQOracle.empirical_isSQOracle`'s `|emp − tru| ≤ τ` at
+  `answer = oracleAns`, `truth = stat iR`);
 * impostor separation `3τ < |stat j φ − stat iR φ|` — FV-A4's `separated_impostor_pruned` `hsep`.
 
 ## Schedule encoding
@@ -51,7 +39,8 @@ queries scheduled by `t`) of the time-`t` Bayes-consistent set.
 ## What this DOES establish
 * `consistent`, `sqPrune`, `alive`, `prunedAt` — the algorithm as a compositional `Finset` object.
 * `alive_mass_eq_Z_det` (FV-I identification): the UNpruned Bayes-consistent mass is FV-I's mixture,
-  `∑_{consistent} w = Z cands w (detFactor pred)` — this is the "identify `g` with the algorithm" item.
+  `∑_{consistent} w = Z cands w (detFactor pred)` — this is the "identify `g` with the algorithm"
+  item.
 * `truth_survives` (App A Claim 1 for the object): a realizable, `τ`-close truth index stays in
   `alive … t ω` for every `t` (reusing FV-A4's `truth_survives_pruning` at the `2τ` rule).
 * `separated_impostor_pruned_alg` (FV-A4 converse for the object): a candidate `3τ`-separated from
@@ -64,8 +53,8 @@ queries scheduled by `t`) of the time-`t` Bayes-consistent set.
 * `algorithm_discovery` (**Theorem 4.1(i) for the PRUNED algorithm**): the pruned posterior on the
   truth `iR` is `≥ 1 − δ/2`. The composition is MONOTONICITY, not "concentration ∘ damage": the
   pruned posterior is the Bayes posterior with the summation restricted to `alive n ⊆ cands`; since
-  `iR ∈ alive n` (`truth_survives`), shrinking the summation set only shrinks the denominator, so the
-  pruned quotient DOMINATES the unpruned one, which is `≥ 1 − δ/2` by
+  `iR ∈ alive n` (`truth_survives`), shrinking the summation set only shrinks the denominator, so
+  the pruned quotient DOMINATES the unpruned one, which is `≥ 1 − δ/2` by
   `posterior_concentration_transfer`. The damage bound (`algorithm_damage_le`) keeps its SEPARATE
   role — bounding the predictive distribution's perturbation — and does NOT enter part (i).
   ([SQ] §4(i) writes `w(R ∣ o_{1:T}) ≥ 1 − δ`; the machinery delivers the stronger `1 − δ/2`,
@@ -83,9 +72,7 @@ queries scheduled by `t`) of the time-`t` Bayes-consistent set.
 
 @[expose] public section
 
-namespace SQAlgorithm
-
-open SQMixtureSupermartingale
+namespace ALT
 
 variable {X : Type*} [DecidableEq X] {ι : Type*} {Q : Type*}
 
@@ -141,7 +128,7 @@ theorem truth_survives (pred : ι → (s : ℕ) → (Fin s → X) → X) (stat :
   intro t
   simp only [alive, sqPrune, consistent, Finset.mem_filter]
   refine ⟨⟨hmem, fun s _ => hreal s⟩, fun φ hφ => ?_⟩
-  exact SQVersionSpace.truth_survives_pruning (stat iR φ) (oracleAns φ) τ hτ (hclose t φ hφ)
+  exact SQBounds.truth_survives_pruning (stat iR φ) (oracleAns φ) τ hτ (hclose t φ hφ)
 
 /-- **FV-A4 converse for the object — separated impostors are pruned.** A candidate `j` whose
 statistic is `3τ`-separated from the truth `iR` on some scheduled query `φ ∈ sched t`, while the
@@ -156,11 +143,12 @@ theorem separated_impostor_pruned_alg (pred : ι → (s : ℕ) → (Fin s → X)
   intro hin
   simp only [alive, sqPrune, Finset.mem_filter] at hin
   have hle := hin.2 φ hφ
-  have hgt := SQVersionSpace.separated_impostor_pruned (stat iR φ) (stat j φ) (oracleAns φ) τ hemp hsep
+  have hgt := ALT.separated_impostor_pruned (stat iR φ) (stat j φ) (oracleAns φ) τ hemp
+      hsep
   linarith
 
 /-- **FV-H `ε_t` identification.** FV-H's accumulated one-step predictive damage
-(`SQPredictiveTransfer.accumulated_perturbation_le`) instantiated at the algorithm's OWN step
+(`ALT.accumulated_perturbation_le`) instantiated at the algorithm's OWN step
 families: survivors `alive … (t+1) ω` and the step-`t` pruned-away set `prunedAt … t ω`. The bound's
 `ε_t = (∑ prunedAt … t) / (∑ alive … (t+1) ∪ prunedAt … t)` is the algorithm's literal normalized
 pruned fraction — turning FV-H's abstract accounting into a statement about THE algorithm. -/
@@ -173,7 +161,8 @@ theorem algorithm_damage_le [DecidableEq ι] (pred : ι → (s : ℕ) → (Fin s
         ∪ prunedAt pred stat oracleAns τ sched cands t ω, ∀ x ∈ outs, 0 ≤ p t i x)
     (hp1 : ∀ t ∈ Finset.range n, ∀ i ∈ alive pred stat oracleAns τ sched cands (t + 1) ω
         ∪ prunedAt pred stat oracleAns τ sched cands t ω, ∑ x ∈ outs, p t i x = 1)
-    (hV : ∀ t ∈ Finset.range n, 0 < ∑ i ∈ alive pred stat oracleAns τ sched cands (t + 1) ω, u t i) :
+    (hV : ∀ t ∈ Finset.range n, 0 < ∑ i ∈ alive pred stat oracleAns τ sched cands (t + 1) ω, u t
+        i) :
     ∑ t ∈ Finset.range n,
         ∑ x ∈ outs,
           |(∑ i ∈ alive pred stat oracleAns τ sched cands (t + 1) ω, u t i * p t i x)
@@ -186,7 +175,7 @@ theorem algorithm_damage_le [DecidableEq ι] (pred : ι → (s : ℕ) → (Fin s
               (∑ i ∈ prunedAt pred stat oracleAns τ sched cands t ω, u t i)
                 / (∑ i ∈ alive pred stat oracleAns τ sched cands (t + 1) ω
                     ∪ prunedAt pred stat oracleAns τ sched cands t ω, u t i) :=
-  SQPredictiveTransfer.accumulated_perturbation_le n
+  ALT.accumulated_perturbation_le n
     (fun t => alive pred stat oracleAns τ sched cands (t + 1) ω)
     (fun t => prunedAt pred stat oracleAns τ sched cands t ω)
     outs u p
@@ -195,14 +184,14 @@ theorem algorithm_damage_le [DecidableEq ι] (pred : ι → (s : ℕ) → (Fin s
       exact Finset.disjoint_left.mpr fun i hi hp => (Finset.mem_sdiff.mp hp).2 hi)
     hu hp0 hp1 hV
 
-/-- **(stretch) Unpruned posterior concentration via the algorithm's Dirac pmf.** Instantiating Paper
-II's `DeterministicDiscovery.deterministic_discovery` at the algorithm's own deterministic predictor
-— the Dirac pmf `q i s x = 𝟙[pred i s (ω|_{<s}) = x]` — gives Theorem-3.1 concentration for the
-algorithm's UNpruned Bayes posterior: for `n ≥ (K(iR)·ln2 + ln(2/δ))/(2ε₀)` under per-step
+/-- **(stretch) Unpruned posterior concentration via the algorithm's Dirac pmf.** Instantiating
+Paper II's `ALT.deterministic_discovery` at the algorithm's own deterministic
+predictor — the Dirac pmf `q i s x = 𝟙[pred i s (ω|_{<s}) = x]` — gives Theorem-3.1 concentration
+for the algorithm's UNpruned Bayes posterior: for `n ≥ (K(iR)·ln2 + ln(2/δ))/(2ε₀)` under per-step
 separation `hsep`, the posterior on the true rule `iR` is `≥ 1 − δ/2`. This is the pmf-indexing
 identification ([Discovery] ↔ the algorithm); composing it with `algorithm_damage_le` into a full
 Theorem-4.1(i) statement for the PRUNED algorithm is the assembly residue (see module docstring). -/
-theorem posterior_concentration_transfer [Fintype X] [Fintype ι] [DecidableEq ι]
+theorem posterior_concentration_transfer [Fintype X] [Fintype ι]
     (pred : ι → (s : ℕ) → (Fin s → X) → X) (w : ι → ℝ) (ω : ℕ → X) (iR : ι)
     (hw : ∀ i, 0 ≤ w i) (k : ℕ) (hwR : w iR = (2 : ℝ) ^ (-(k : ℝ))) (hsumw : ∑ i, w i ≤ 1)
     (hreal : ∀ s, pred iR s (fun k => ω k) = ω s)
@@ -212,10 +201,11 @@ theorem posterior_concentration_transfer [Fintype X] [Fintype ι] [DecidableEq �
              (fun x => if pred i t (fun j => ω j) = x then (1 : ℝ) else 0))
     (hT : ((k : ℝ) * Real.log 2 + Real.log (2 / δ)) / (2 * ε₀) ≤ (n : ℝ)) :
     1 - δ / 2 ≤ w iR
-        * BayesRedundancy.Lik (fun i s x => if pred i s (fun j => ω j) = x then (1 : ℝ) else 0) ω iR n
+        * BayesRedundancy.Lik (fun i s x => if pred i s (fun j => ω j) = x then (1 : ℝ) else 0) ω iR
+            n
         / BayesRedundancy.Pbarₚ (fun i s x => if pred i s (fun j => ω j) = x then (1 : ℝ) else 0)
             w ω n :=
-  DeterministicDiscovery.deterministic_discovery
+  ALT.deterministic_discovery
     (q := fun i s x => if pred i s (fun j => ω j) = x then (1 : ℝ) else 0) (R := iR)
     (fun i s x => by split_ifs <;> norm_num)
     (fun i s => by simp [Finset.sum_ite_eq])
@@ -230,15 +220,16 @@ theorem posterior_concentration_transfer [Fintype X] [Fintype ι] [DecidableEq �
 theorem posterior_mono_of_subset (v : ι → ℝ) (S S' : Finset ι) (hsub : S' ⊆ S)
     (iR : ι) (hiR : iR ∈ S') (hnn : ∀ i ∈ S, 0 ≤ v i) (hpos : 0 < v iR) :
     v iR / (∑ i ∈ S, v i) ≤ v iR / (∑ i ∈ S', v i) := by
+  classical
   have hS'pos : 0 < ∑ i ∈ S', v i :=
     Finset.sum_pos' (fun i hi => hnn i (hsub hi)) ⟨iR, hiR, hpos⟩
   have hSge : ∑ i ∈ S', v i ≤ ∑ i ∈ S, v i :=
     Finset.sum_le_sum_of_subset_of_nonneg hsub (fun i hiS _ => hnn i hiS)
   exact div_le_div_of_nonneg_left hpos.le hS'pos hSge
 
-/-- **Bridge (FV-I ↔ [Discovery]):** the algorithm's Dirac pmf `Lik` in `posterior_concentration_transfer`
-IS FV-I's likelihood `L (detFactor pred)` — both are `∏_{s<n} 𝟙[pred i s (ω|_{<s}) = ω s]`, so the
-identification is definitional (`rfl`). -/
+/-- **Bridge (FV-I ↔ [Discovery]):** the algorithm's Dirac pmf `Lik` in
+`posterior_concentration_transfer` IS FV-I's likelihood `L (detFactor pred)` — both are
+`∏_{s<n} 𝟙[pred i s (ω|_{<s}) = ω s]`, so the identification is definitional (`rfl`). -/
 theorem Lik_qDirac_eq_L_det (pred : ι → (s : ℕ) → (Fin s → X) → X) (i : ι) (n : ℕ) (ω : ℕ → X) :
     BayesRedundancy.Lik (fun i s x => if pred i s (fun j => ω j) = x then (1 : ℝ) else 0) ω i n
       = L (detFactor pred) i n ω := rfl
@@ -251,7 +242,7 @@ weight `w iR · L iR = w iR > 0` (realizability ⇒ `L iR = 1`); `posterior_mono
 the pruned quotient dominate the unpruned one, which is `≥ 1 − δ/2` by
 `posterior_concentration_transfer` (Dirac bridge). The damage bound does NOT enter (see docstring).
 `cands = Finset.univ` matches `deterministic_discovery`'s full-`Fintype ι` normalizer. -/
-theorem algorithm_discovery [Fintype X] [Fintype ι] [DecidableEq ι]
+theorem algorithm_discovery [Fintype X] [Fintype ι]
     (pred : ι → (s : ℕ) → (Fin s → X) → X) (stat : ι → Q → ℝ) (oracleAns : Q → ℝ)
     (τ : ℝ) (hτ : 0 ≤ τ) (sched : ℕ → Finset Q) (w : ι → ℝ) (ω : ℕ → X) (iR : ι)
     (hw : ∀ i, 0 ≤ w i) (k : ℕ) (hwR : w iR = (2 : ℝ) ^ (-(k : ℝ))) (hsumw : ∑ i, w i ≤ 1)
@@ -265,6 +256,7 @@ theorem algorithm_discovery [Fintype X] [Fintype ι] [DecidableEq ι]
     1 - δ / 2 ≤ w iR * L (detFactor pred) iR n ω
         / ∑ i ∈ alive pred stat oracleAns τ sched Finset.univ n ω,
             w i * L (detFactor pred) i n ω := by
+  classical
   -- the truth's likelihood is 1 (realizability), so its weight is positive
   have hLnn : ∀ i, 0 ≤ L (detFactor pred) i n ω := by
     intro i
@@ -276,7 +268,8 @@ theorem algorithm_discovery [Fintype X] [Fintype ι] [DecidableEq ι]
   have hviR : 0 < w iR * L (detFactor pred) iR n ω := by rw [hLiR, mul_one]; exact hwiR
   -- truth survives ⇒ `iR ∈ alive n ⊆ univ`
   have htruth : iR ∈ alive pred stat oracleAns τ sched Finset.univ n ω :=
-    truth_survives pred stat oracleAns τ hτ sched Finset.univ ω iR (Finset.mem_univ iR) hreal hclose n
+    truth_survives pred stat oracleAns τ hτ sched Finset.univ ω iR (Finset.mem_univ iR) hreal hclose
+        n
   -- posterior concentration over the full class (normalizer `= ∑ univ`), via the Dirac bridge
   have hbridgeP : BayesRedundancy.Pbarₚ
       (fun i s x => if pred i s (fun j => ω j) = x then (1 : ℝ) else 0) w ω n
@@ -293,4 +286,4 @@ theorem algorithm_discovery [Fintype X] [Fintype ι] [DecidableEq ι]
     iR htruth (fun i _ => mul_nonneg (hw i) (hLnn i)) hviR
   exact le_trans hpct hmono
 
-end SQAlgorithm
+end ALT

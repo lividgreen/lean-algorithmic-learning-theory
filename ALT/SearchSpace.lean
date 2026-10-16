@@ -1,14 +1,7 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.SearchCost
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
-set_option linter.style.header false
 
 /-!
 # The search workspace: the native SPACE cost extended to all of `Nat.Partrec.Code`
@@ -57,10 +50,11 @@ a hypothesis rather than a constant: an unbounded search admits no bound uniform
 
 @[expose] public section
 
-namespace TimeCost
+namespace ALT
 
 open Nat.Partrec (Code)
 open Nat.Partrec.Code
+open TimeCost
 open CodeEvalLaws
 
 /-! ## The probe-workspace accumulator -/
@@ -351,4 +345,4 @@ theorem spaceCostP_rfind'_le {cf : Code} {S : ℕ} (a m n : ℕ)
   have hmax := probeMax_le hS t ht
   omega
 
-end TimeCost
+end ALT

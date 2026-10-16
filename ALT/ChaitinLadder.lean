@@ -1,25 +1,18 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ChaitinIncompleteness.ChaitinIncompleteness
-public import ChaitinIncompleteness.SelectorLadder
+public import ChaitinIncompleteness.TheoryProgression
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
-set_option linter.style.header false
-set_option linter.style.longLine false
 
 /-!
 # Chaitin's incompleteness theorem as a rung selector ([Inevitability] §6 Proposition 6.16)
 
-Provenance: instantiates `DeepLadder.RungSelector` (`ChaitinIncompleteness/SelectorLadder.lean`) at base `𝗥₀`, using
-`KolmogorovComplexity.chaitin_theorem` (`ChaitinIncompleteness/ChaitinIncompleteness.lean`) as the rung-picking
-principle, in the shape of the module's `hiddenSelector` — chosen via `Classical.epsilon`, since
-`RungSelector.pick` receives neither `𝗥₀ ⪯ T` nor truth in `ℕ` (those hypotheses arrive only in
-`true_pick`/`unprovable_pick`).
+Provenance: instantiates `TheoryProgression.SentenceSelector`
+(`ChaitinIncompleteness/TheoryProgression.lean`) at base `𝗥₀`, using
+`KolmogorovComplexity.chaitin_theorem` (`ChaitinIncompleteness/ChaitinIncompleteness.lean`) as the
+rung-picking principle, in the shape of the module's `hiddenSelector` — chosen via
+`Classical.epsilon`, since `SentenceSelector.pick` receives neither `𝗥₀ ⪯ T` nor truth in `ℕ` (those
+hypotheses arrive only in `true_pick`/`unprovable_pick`).
 
 ## Main results
 
@@ -36,8 +29,9 @@ principle, in the shape of the module's `hiddenSelector` — chosen via `Classic
 
 @[expose] public section
 
-namespace DeepLadder
+namespace ALT
 
+open TheoryProgression
 open Nat.Partrec Nat.Partrec.Code
 open FFL.FirstOrder FFL.FirstOrder.Arithmetic KolmogorovComplexity
 
@@ -73,7 +67,7 @@ theorem chaitinWitness_spec : codelen' (chaitinCode T) < K_bitlen (chaitinWitnes
 
 /-- The rung selector at base `𝗥₀`: Chaitin's incompleteness theorem, at the epsilon-chosen
 fixed-point code and witness. -/
-noncomputable def chaitinSelector : RungSelector (𝗥₀ : ArithmeticTheory) where
+noncomputable def chaitinSelector : SentenceSelector (𝗥₀ : ArithmeticTheory) where
   pick := chaitinPick
   true_pick T _ := by
     intro _ _
@@ -94,25 +88,25 @@ variable (T₀ : ArithmeticTheory) (d₀ : T₀.Δ₁) [(𝗥₀ : ArithmeticThe
 
 /-- The Chaitin ladder started at `T₀`, at `chaitinSelector`. -/
 noncomputable abbrev chaitinLadder (n : ℕ) : ArithmeticTheory :=
-  ladderTheory chaitinSelector T₀ d₀ n
+  progressionTheory chaitinSelector T₀ d₀ n
 
 /-- The `n`-th rung of the Chaitin ladder: the Chaitin sentence at the epsilon-chosen witness and
 fixed-point bound of `chaitinLadder n`. -/
 noncomputable abbrev chaitinRung (n : ℕ) : Sentence ℒₒᵣ :=
-  rung chaitinSelector T₀ d₀ n
+  selectedSentence chaitinSelector T₀ d₀ n
 
 /-- Every rung of the Chaitin ladder is true in `ℕ` ([Inevitability] §6 Proposition 6.16). -/
 theorem chaitin_rung_true (n : ℕ) : ℕ↓[ℒₒᵣ] ⊧ chaitinRung T₀ d₀ n :=
-  rung_true chaitinSelector T₀ d₀ n
+  selectedSentence_true chaitinSelector T₀ d₀ n
 
 /-- Every rung of the Chaitin ladder is unprovable in the theory that precedes it
 ([Inevitability] §6 Proposition 6.16). -/
 theorem chaitin_rung_unprovable (n : ℕ) : chaitinLadder T₀ d₀ n ⊬ chaitinRung T₀ d₀ n :=
-  rung_unprovable chaitinSelector T₀ d₀ n
+  selectedSentence_unprovable chaitinSelector T₀ d₀ n
 
 /-- The Chaitin ladder ascends strictly ([Inevitability] §6 Proposition 6.16). -/
 theorem chaitin_ladderTheory_lt_succ (n : ℕ) :
     chaitinLadder T₀ d₀ n ⪱ chaitinLadder T₀ d₀ (n + 1) :=
-  ladderTheory_lt_succ chaitinSelector T₀ d₀ n
+  progressionTheory_lt_succ chaitinSelector T₀ d₀ n
 
-end DeepLadder
+end ALT

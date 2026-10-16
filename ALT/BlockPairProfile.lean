@@ -1,8 +1,3 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Mathlib.Data.ZMod.Basic
@@ -44,7 +39,7 @@ public import Mathlib.Tactic.LinearCombination
 
 @[expose] public section
 
-namespace BlockPairProfile
+namespace ALT
 
 def cyclicCorr {N : ℕ} [NeZero N] (x : ZMod N → ℤ) (d : ℕ) : ℤ :=
   ∑ t : ZMod N, x t * x (t + d)
@@ -1770,7 +1765,7 @@ private lemma signAtNat_blockSign_eq_tau (M : ℕ) [NeZero (2 * (2 * M))] (j : �
     ← sign_nextBlock_eq_signAtNat_succ (blockSign (2 * (2 * M))) (⟨j, hj⟩ : Fin (2 * (2 * M)))]
   exact blockSign_mul_succ M ⟨j, hj⟩
 
-private lemma hPeven_blockSign (M : ℕ) [NeZero (2 * (2 * M))] :
+private lemma abs_sum_even_blockSign_le_one (M : ℕ) [NeZero (2 * (2 * M))] :
     ∀ J, J ≤ 2 * (2 * M) →
       |∑ j ∈ Finset.range J, if Even j then signAtNat (blockSign (2 * (2 * M))) j *
           signAtNat (blockSign (2 * (2 * M))) (j + 1) else 0| ≤ (1 : ℤ) := by
@@ -1787,7 +1782,7 @@ private lemma hPeven_blockSign (M : ℕ) [NeZero (2 * (2 * M))] :
   rw [heq]
   exact tau_partial_even_abs_le_one J
 
-private lemma hPodd_blockSign (M : ℕ) [NeZero (2 * (2 * M))] :
+private lemma abs_sum_odd_blockSign_le_one (M : ℕ) [NeZero (2 * (2 * M))] :
     ∀ J, J ≤ 2 * (2 * M) →
       |∑ j ∈ Finset.range J, if Odd j then signAtNat (blockSign (2 * (2 * M))) j *
           signAtNat (blockSign (2 * (2 * M))) (j + 1) else 0| ≤ (1 : ℤ) := by
@@ -1804,12 +1799,12 @@ private lemma hPodd_blockSign (M : ℕ) [NeZero (2 * (2 * M))] :
   rw [heq]
   exact tau_partial_odd_abs_le_one J
 
-private lemma hRemU_wordU_wordV (η : ℤ) (hη : η * η = 1) (r : ℕ) (hr : r ≤ 24) :
+private lemma abs_blockRemainder_wordU_wordV_le (η : ℤ) (hη : η * η = 1) (r : ℕ) (hr : r ≤ 24) :
     |2 * (24 : ℤ) * blockRemainder wordU wordV η 8 r -
         (r : ℤ) * (aperiodicCorr wordU 8 + aperiodicCorr wordV 8)| ≤ (14 : ℤ) * 24 := by
   rcases eq_one_or_neg_one_of_sq_eq_one hη with rfl | rfl <;> interval_cases r <;> decide
 
-private lemma hRemV_wordU_wordV (η : ℤ) (hη : η * η = 1) (r : ℕ) (hr : r ≤ 24) :
+private lemma abs_blockRemainder_wordV_wordU_le (η : ℤ) (hη : η * η = 1) (r : ℕ) (hr : r ≤ 24) :
     |2 * (24 : ℤ) * blockRemainder wordV wordU η 8 r -
         (r : ℤ) * (aperiodicCorr wordU 8 + aperiodicCorr wordV 8)| ≤ (14 : ℤ) * 24 := by
   rcases eq_one_or_neg_one_of_sq_eq_one hη with rfl | rfl <;> interval_cases r <;> decide
@@ -1823,7 +1818,8 @@ theorem cyclicCorrPrefix_blockSeq_wordU_wordV_zone (M : ℕ) [NeZero (2 * (2 * M
       (2 + 2 * 1) * (24 : ℤ) :=
   cyclicCorrPrefix_blockSeq_zone rfl wordU wordV (blockSign (2 * (2 * M))) (blockSign_sq _)
     wordU_abs_le_one wordV_abs_le_one hd1 (le_refl d) (by omega)
-    (aperiodicCorr_wordU_wordV_zone d hd1 hd7) 1 (hPeven_blockSign M) (hPodd_blockSign M) T hT
+    (aperiodicCorr_wordU_wordV_zone d hd1 hd7) 1 (abs_sum_even_blockSign_le_one M)
+      (abs_sum_odd_blockSign_le_one M) T hT
 
 /-- **The spike prefix bound, instantiated.** At the top lag `8`, every ℕ-indexed prefix's
 `2 * 24`-scaled deviation from the exact linear trend is at most `(4 * 8 + 14) * 24`, independent
@@ -1835,8 +1831,9 @@ theorem cyclicCorrPrefix_blockSeq_wordU_wordV_spike (M : ℕ) [NeZero (2 * (2 * 
         (T : ℤ) * (aperiodicCorr wordU 8 + aperiodicCorr wordV 8)| ≤ (4 * 1 * (8 : ℤ) + 14) * 24 :=
   cyclicCorrPrefix_blockSeq_spike rfl wordU wordV (blockSign (2 * (2 * M))) (blockSign_sq _)
     wordU_abs_le_one wordV_abs_le_one (by norm_num) (by norm_num)
-    aperiodicCorr_wordU_eq_wordV_spike 1 (hPeven_blockSign M) (hPodd_blockSign M) 14
-    hRemU_wordU_wordV hRemV_wordU_wordV T hT
+    aperiodicCorr_wordU_eq_wordV_spike 1 (abs_sum_even_blockSign_le_one M)
+      (abs_sum_odd_blockSign_le_one M) 14
+    abs_blockRemainder_wordU_wordV_le abs_blockRemainder_wordV_wordU_le T hT
 
 /-- **The zone window corollary, instantiated.** Every cyclic window of the `wordU`/`wordV` block
 sequence at a lag `1 ≤ d ≤ 7`, of arbitrary phase and length, deviates from zero by at most
@@ -1848,7 +1845,8 @@ theorem cyclicCorrWindow_blockSeq_wordU_wordV_zone (M : ℕ) [NeZero (2 * (2 * M
   cyclicCorrWindow_blockSeq_zone rfl wordU wordV (blockSign (2 * (2 * M))) (blockSign_sq _)
     wordU_abs_le_one wordV_abs_le_one hd1 (le_refl d) (by omega)
     (aperiodicCorr_wordU_wordV_zone d hd1 hd7) (blockSign_transition_even M)
-    (blockSign_transition_odd M) 1 (hPeven_blockSign M) (hPodd_blockSign M) p n
+    (blockSign_transition_odd M) 1 (abs_sum_even_blockSign_le_one M)
+      (abs_sum_odd_blockSign_le_one M) p n
 
 /-- **The spike window corollary, instantiated.** Every cyclic window at the top lag `8`, of
 arbitrary phase and length, has `2 * 24`-scaled trend deviation at most
@@ -1859,8 +1857,10 @@ theorem cyclicCorrWindow_blockSeq_wordU_wordV_spike (M : ℕ) [NeZero (2 * (2 * 
       2 * ((4 * 1 * (8 : ℤ) + 14) * 24) :=
   cyclicCorrWindow_blockSeq_spike rfl wordU wordV (blockSign (2 * (2 * M))) (blockSign_sq _)
     wordU_abs_le_one wordV_abs_le_one (by norm_num) (by norm_num) (blockSign_transition_even M)
-    (blockSign_transition_odd M) aperiodicCorr_wordU_eq_wordV_spike 1 (hPeven_blockSign M)
-    (hPodd_blockSign M) 14 hRemU_wordU_wordV hRemV_wordU_wordV p n
+    (blockSign_transition_odd M) aperiodicCorr_wordU_eq_wordV_spike 1
+      (abs_sum_even_blockSign_le_one M)
+    (abs_sum_odd_blockSign_le_one M) 14 abs_blockRemainder_wordU_wordV_le
+      abs_blockRemainder_wordV_wordU_le p n
 
 /-! ### The single-site instance -/
 
@@ -2641,7 +2641,8 @@ private theorem blockRemainder_antiExt_bound (s1 s2 : Fin 8 → ℤ) (hs1 : ∀ 
 /-- **The zone window corollary, at general `r`.** `cyclicCorrWindow_blockSeq_zone`'s own proof,
 with the certified pair's word facts replaced by the family's (`abs_antiExt_le_one`,
 `aperiodicCorr_antiExt_zone`) and `24` by `8 * r`; the block-transition sign facts
-(`blockSign_transition_even/odd`, `hPeven_blockSign`, `hPodd_blockSign`) are word-free and carry
+(`blockSign_transition_even/odd`, `abs_sum_even_blockSign_le_one`, `abs_sum_odd_blockSign_le_one`)
+are word-free and carry
 over unchanged. -/
 theorem cyclicCorrWindow_blockSeq_family_zone (M r : ℕ) [NeZero (2 * (2 * M))] [NeZero r]
     {d : ℕ} (hd1 : 1 ≤ d) (hd7 : d ≤ 7) (p n : ℕ) :
@@ -2652,7 +2653,8 @@ theorem cyclicCorrWindow_blockSeq_family_zone (M r : ℕ) [NeZero (2 * (2 * M))]
     (abs_antiExt_le_one seedV seedV_abs_le_one r) hd1 (le_refl d)
     (by have hr1 := NeZero.pos r; omega)
     (aperiodicCorr_antiExt_zone r (NeZero.pos r) hd1 hd7) (blockSign_transition_even M)
-    (blockSign_transition_odd M) 1 (hPeven_blockSign M) (hPodd_blockSign M) p n
+    (blockSign_transition_odd M) 1 (abs_sum_even_blockSign_le_one M)
+      (abs_sum_odd_blockSign_le_one M) p n
   push_cast at h ⊢
   linarith [h]
 
@@ -2675,7 +2677,7 @@ theorem cyclicCorrWindow_blockSeq_family_spike (M r : ℕ) [NeZero (2 * (2 * M))
     (blockSign_transition_even M) (blockSign_transition_odd M)
     (by rw [aperiodicCorr_antiExt_spike seedU seedU_sq r (by omega),
         aperiodicCorr_antiExt_spike seedV seedV_sq r (by omega)])
-    1 (hPeven_blockSign M) (hPodd_blockSign M) 32
+    1 (abs_sum_even_blockSign_le_one M) (abs_sum_odd_blockSign_le_one M) 32
     (blockRemainder_antiExt_bound seedU seedV seedU_sq seedV_sq r)
     (fun η hη plen hplen => by
       have hb := blockRemainder_antiExt_bound seedV seedU seedV_sq seedU_sq r η hη plen hplen
@@ -2703,7 +2705,7 @@ A second word pair, found by exhaustive search (`../annex/probes/e1_shifted_spik
 committed and self-asserting): length `22`, with its spike — the lag where the two words'
 aperiodic correlations agree rather than cancel — at `6` instead of the certified pair's `8`. This
 is what makes literal `2` (rather than `0`) the rule this pair identifies, since the schedule's own
-offset `a` correlates against lag `8 - a` (`BlockPairObservability.chiProd_eq_cyclicCorrWindow`),
+offset `a` correlates against lag `8 - a` (`BlockPairHost.chiProd_eq_cyclicCorrWindow`),
 and `8 - 2 = 6`. Every lemma below mirrors the certified pair's own instance section (`wordU`/
 `wordV` through `blockSeq_wordU_wordV_sq`), transposed to this pair, its length, and its spike lag;
 only the window-level bounds are stated, since the profile-class criterion needs no more. -/
@@ -2730,12 +2732,12 @@ private lemma wordV2_abs_le_one (p : Fin 22) : |wordV2 p| ≤ 1 := by fin_cases 
 private lemma aperiodicCorr_wordU2_eq_wordV2_spike :
     aperiodicCorr wordU2 6 = aperiodicCorr wordV2 6 := by decide
 
-private lemma hRemU2_wordU2_wordV2 (η : ℤ) (hη : η * η = 1) (r : ℕ) (hr : r ≤ 22) :
+private lemma abs_blockRemainder_wordU2_wordV2_le (η : ℤ) (hη : η * η = 1) (r : ℕ) (hr : r ≤ 22) :
     |2 * (22 : ℤ) * blockRemainder wordU2 wordV2 η 6 r -
         (r : ℤ) * (aperiodicCorr wordU2 6 + aperiodicCorr wordV2 6)| ≤ (10 : ℤ) * 22 := by
   rcases eq_one_or_neg_one_of_sq_eq_one hη with rfl | rfl <;> interval_cases r <;> decide
 
-private lemma hRemV2_wordU2_wordV2 (η : ℤ) (hη : η * η = 1) (r : ℕ) (hr : r ≤ 22) :
+private lemma abs_blockRemainder_wordV2_wordU2_le (η : ℤ) (hη : η * η = 1) (r : ℕ) (hr : r ≤ 22) :
     |2 * (22 : ℤ) * blockRemainder wordV2 wordU2 η 6 r -
         (r : ℤ) * (aperiodicCorr wordU2 6 + aperiodicCorr wordV2 6)| ≤ (10 : ℤ) * 22 := by
   rcases eq_one_or_neg_one_of_sq_eq_one hη with rfl | rfl <;> interval_cases r <;> decide
@@ -2750,7 +2752,8 @@ theorem cyclicCorrWindow_blockSeq_wordU2_wordV2_zone (M : ℕ) [NeZero (2 * (2 *
   cyclicCorrWindow_blockSeq_zone rfl wordU2 wordV2 (blockSign (2 * (2 * M))) (blockSign_sq _)
     wordU2_abs_le_one wordV2_abs_le_one hd1 (le_refl d) (by omega)
     (aperiodicCorr_wordU2_wordV2_zone hd1 hd8 hd6) (blockSign_transition_even M)
-    (blockSign_transition_odd M) 1 (hPeven_blockSign M) (hPodd_blockSign M) p n
+    (blockSign_transition_odd M) 1 (abs_sum_even_blockSign_le_one M)
+      (abs_sum_odd_blockSign_le_one M) p n
 
 /-- **The spike window bound, instantiated at the second certified pair.** Every cyclic window at
 the spike lag `6`, of arbitrary phase and length, has `2 * 22`-scaled trend deviation at most
@@ -2761,8 +2764,10 @@ theorem cyclicCorrWindow_blockSeq_wordU2_wordV2_spike (M : ℕ) [NeZero (2 * (2 
       2 * ((4 * 1 * (6 : ℤ) + 10) * 22) :=
   cyclicCorrWindow_blockSeq_spike rfl wordU2 wordV2 (blockSign (2 * (2 * M))) (blockSign_sq _)
     wordU2_abs_le_one wordV2_abs_le_one (by norm_num) (by norm_num) (blockSign_transition_even M)
-    (blockSign_transition_odd M) aperiodicCorr_wordU2_eq_wordV2_spike 1 (hPeven_blockSign M)
-    (hPodd_blockSign M) 10 hRemU2_wordU2_wordV2 hRemV2_wordU2_wordV2 p n
+    (blockSign_transition_odd M) aperiodicCorr_wordU2_eq_wordV2_spike 1
+      (abs_sum_even_blockSign_le_one M)
+    (abs_sum_odd_blockSign_le_one M) 10 abs_blockRemainder_wordU2_wordV2_le
+      abs_blockRemainder_wordV2_wordU2_le p n
 
 /-! ### The single-site instance -/
 
@@ -2890,4 +2895,4 @@ theorem blockSeq_wordU2_wordV2_sq (M : ℕ) [NeZero (2 * (2 * M))]
       _ = 1 * 1 := by rw [hε, hv]
       _ = 1 := by ring
 
-end BlockPairProfile
+end ALT

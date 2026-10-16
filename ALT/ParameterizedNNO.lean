@@ -1,15 +1,8 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.Tactic.Ring
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # Parameterized Natural Numbers Object + depth bound ([Decoupling], §4–§5)
@@ -67,7 +60,7 @@ interest is `r ≪ K`, where `K − r` is the genuine working-bit count.
 
 @[expose] public section
 
-namespace ParameterizedNNO
+namespace ALT
 
 open Function
 
@@ -178,4 +171,4 @@ def cyclicParamNNO (M : ℕ) : ParamNNO (ZMod (M + 1)) where
       Nat.mod_eq_of_lt k₂.isLt] at hval
     exact Fin.ext hval
 
-end ParameterizedNNO
+end ALT

@@ -1,17 +1,9 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.LearningWitness
 public import ALT.ExcessOrder
 public import ALT.GodelComplete
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
-set_option linter.style.header false
-set_option linter.style.longLine false
 
 /-!
 # The learning witness's theory conditions, made genuine at `𝗣𝗔⁻`
@@ -35,38 +27,40 @@ threshold predicate and the underivable-truth payload. This module composes that
   form (`∀ δ, 𝗣𝗔⁻ ⊢ δ → ℕ↓[ℒₒᵣ] ⊧ δ`, via `FFL.FirstOrder.models_of_provable` — strictly stronger
   than "every axiom is true", which the bare instance `ℕ↓[ℒₒᵣ] ⊧* 𝗣𝗔⁻` alone would give), and
   consistent, derived FROM that ℕ-truth (`FFL.FirstOrder.consistent_of_model` at the standard model)
-  rather than assumed separately. `theoryConditions_paMinus` proves `SubstrateClass.TheoryConditions`
-  at these four.
-* `witness_substrateL_paMinus`, `witness_substrateL_paMinus_bernoulli` — `LearningWitness.witness_substrateL`/
-  `_bernoulli` with the four `True`s replaced by the facts above, the fixed `gTS = 2` replaced by a
-  variable Gödel size, and the fixed headroom `K = k + 100` replaced by a symbolic `K = k + C` under
-  `100 ≤ C` and `GodelInternalization.capacity (Nat.clog 2 (gTS + 1)) ≤ C` — the existential `gTS` is
-  never a computed numeral, matching the discipline `ExcessOrderComplete` and GV-7 already use. Every
-  field beyond (S2)/(S3) is `witness_substrateL`'s own proof term, unchanged.
+  rather than assumed separately. `theoryConditions_paMinus` proves
+  `ALT.TheoryConditions` at these four.
+* `witness_substrateL_paMinus`, `witness_substrateL_paMinus_bernoulli` —
+  `ALT.witness_substrateL`/ `_bernoulli` with the four `True`s replaced by the facts
+  above, the fixed `gTS = 2` replaced by a variable Gödel size, and the fixed headroom `K = k + 100`
+  replaced by a symbolic `K = k + C` under `100 ≤ C` and
+  `ALT.capacity (Nat.clog 2 (gTS + 1)) ≤ C` — the existential `gTS` is never a
+  computed numeral, matching the discipline `ExcessOrderComplete` and GV-7 already use. Every field
+  beyond (S2)/(S3) is `witness_substrateL`'s own proof term, unchanged.
 * `witness_reachesThresholdWithin_paMinus`, `witness_reachesThresholdWithinAt_paMinus` — the
-  symbolic-`C`/`gTS` counterparts of `LearningWitness.witness_reachesThresholdWithin`/
-  `witness_reachesThresholdWithinAt`, composed through `SubstrateClass.substrateL_reachesThresholdWithin`
-  and the same `code_persists`/`CommittedOn` plumbing; both additionally require `2 ≤ gTS`, the
-  standing structural side condition `substrateL_reachesThresholdWithin` itself imposes.
+  symbolic-`C`/`gTS` counterparts of `ALT.witness_reachesThresholdWithin`/
+  `witness_reachesThresholdWithinAt`, composed through
+  `ALT.SubstrateL.reachesThresholdWithin` and the same `code_persists`/`CommittedOn`
+  plumbing; both additionally require `2 ≤ gTS`, the standing structural side condition
+  `SubstrateL.reachesThresholdWithin` itself imposes.
 * `witness_crossing_genuine_paMinus` — **the capstone.** ONE invocation of
-  `GodelComplete.incompleteness_of_arith 𝗣𝗔⁻` supplies a Gödel size `gTS`, threaded through both: for
-  every capacity `C` meeting the two hypotheses above, (i) the time-indexed crossing
-  (`SubstrateClass.ReachesThresholdWithinAt`) at `𝗣𝗔⁻`'s genuine conditions, at `gTS`, at headroom
-  `C` — conditional on `2 ≤ gTS`, reported rather than forced (see the seam note below); and (ii) the
-  `ExcessOrder.outgrows`-shaped payload at the SAME `gTS`, unconditionally. `C` does double duty:
-  it is `SubstrateL`'s headroom for (i) and — since `CategoricalThreshold.hostsAt C gTS` unfolds to
-  exactly `GodelInternalization.capacity (Nat.clog 2 (gTS + 1)) ≤ C` — the `Outgrows` budget `κ` for
-  (ii), with no separate lemma needed to connect them.
+  `ALT.incompleteness_of_arith 𝗣𝗔⁻` supplies a Gödel size `gTS`, threaded through both:
+  for every capacity `C` meeting the two hypotheses above, (i) the time-indexed crossing
+  (`ALT.ReachesThresholdWithinAt`) at `𝗣𝗔⁻`'s genuine conditions, at `gTS`, at headroom
+  `C` — conditional on `2 ≤ gTS`, reported rather than forced (see the seam note below); and (ii)
+  the `ALT.outgrows`-shaped payload at the SAME `gTS`, unconditionally. `C` does double
+  duty: it is `SubstrateL`'s headroom for (i) and — since `ALT.hostsAt C gTS`
+  unfolds to exactly `ALT.capacity (Nat.clog 2 (gTS + 1)) ≤ C` — the `Outgrows`
+  budget `κ` for (ii), with no separate lemma needed to connect them.
 
 ## The seam (i)/(ii) do not share, reported rather than forced
 
-(i) additionally needs `2 ≤ gTS`; (ii) does not, because `ExcessOrder.outgrows`'s own
+(i) additionally needs `2 ≤ gTS`; (ii) does not, because `ALT.outgrows`'s own
 `∀ Mchk, hostsAt κ g → g < Mchk → Mchk ≤ g² → …` shape is vacuous rather than false when no such
-`Mchk` exists (exactly `outgrows_arith`'s own device). `gTS` here is `Encodable.encode` of the actual
-Gödel sentence `exists_true_but_unprovable_sentence_of_sigma1sound 𝗣𝗔⁻` delivers — deliberately kept
-opaque, so `2 ≤ gTS` is NOT discharged: nothing in this module pins that encoding's magnitude from
-below. Both conjuncts are nonetheless stated under the ONE `∃ gTS` the capstone binds, per the
-design record's own escape hatch for exactly this mismatch.
+`Mchk` exists (exactly `outgrows_arith`'s own device). `gTS` here is `Encodable.encode` of the
+actual Gödel sentence `exists_true_but_unprovable_sentence_of_sigma1sound 𝗣𝗔⁻` delivers —
+deliberately kept opaque, so `2 ≤ gTS` is NOT discharged: nothing in this module pins that
+encoding's magnitude from below. Both conjuncts are nonetheless stated under the ONE `∃ gTS` the
+capstone binds, per the design record's own escape hatch for exactly this mismatch.
 
 ## What this does NOT establish
 
@@ -85,10 +79,10 @@ design record's own escape hatch for exactly this mismatch.
 
 @[expose] public section
 
-namespace LearningWitness
+namespace ALT
 
-open MeasureTheory ProbabilityTheory NoisyWindowChain
-open RealizabilityCCC RealizabilityRecursor
+open MeasureTheory ProbabilityTheory
+open RealizabilityCCC
 open FFL.FirstOrder FFL.FirstOrder.Arithmetic
 
 variable {k : ℕ}
@@ -131,33 +125,33 @@ theorem paMinus_consistent : PAMinusConsistent :=
 
 /-- **Stage A's capstone: the four conditions are genuinely `𝗣𝗔⁻`'s own facts, not `True`s.** -/
 theorem theoryConditions_paMinus :
-    SubstrateClass.TheoryConditions
+    ALT.TheoryConditions
       PAMinusConsistent PAMinusNSound PAMinusDelta1 PAMinusInterpretsR0 :=
   ⟨paMinus_consistent, paMinus_nsound, paMinus_delta1, paMinus_interpretsR0⟩
 
 /-! ## Stage B: the genuine membership, capacity and Gödel size symbolic -/
 
-/-- **Stage B (general form).** `LearningWitness.witness_substrateL` with the four `True`s replaced
-by Stage A's genuine `𝗣𝗔⁻` facts, `gTS = 2` replaced by a variable Gödel size, and the fixed headroom
-`K = k + 100` replaced by the symbolic `K = k + C` under `100 ≤ C` and
+/-- **Stage B (general form).** `ALT.witness_substrateL` with the four `True`s replaced
+by Stage A's genuine `𝗣𝗔⁻` facts, `gTS = 2` replaced by a variable Gödel size, and the fixed
+headroom `K = k + 100` replaced by the symbolic `K = k + C` under `100 ≤ C` and
 `capacity (⌈log₂(gTS+1)⌉) ≤ C` — (S2)'s numerals become inequalities in `C` (mechanical), (S3)'s
 capacity conjunct is exactly the second hypothesis, and every other field
-(`realizability`/`windowSufficiency`/`assumptionA`/`benignSeparation`/`e1`) is `witness_substrateL`'s
-own proof term, unchanged. -/
+(`realizability`/`windowSufficiency`/`assumptionA`/`benignSeparation`/`e1`) is
+`witness_substrateL`'s own proof term, unchanged. -/
 theorem witness_substrateL_paMinus [NeZero k] {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     [IsProbabilityMeasure P] {ξ : ℕ → Ω → Bool} (hmeas : ∀ i, Measurable (ξ i))
     (hindep : iIndepFun ξ P) {η τ : ℝ} (hη0 : 0 < η) (hη1 : η ≤ 1 / 2)
-    (hmean : ∀ u, ∫ ω, ParityWalk.zeta (ξ (u + k) ω) ∂P = 2 * η - 1) (hbudget : 2 * η ≤ τ)
+    (hmean : ∀ u, ∫ ω, ALT.zeta (ξ (u + k) ω) ∂P = 2 * η - 1) (hbudget : 2 * η ≤ τ)
     (C gTS : ℕ) (hC100 : 100 ≤ C)
-    (hCap : GodelInternalization.capacity (Nat.clog 2 (gTS + 1)) ≤ C) :
-    SubstrateClass.SubstrateL (chainUpdate (k := k)) (codeRegion k)
+    (hCap : ALT.capacity (Nat.clog 2 (gTS + 1)) ≤ C) :
+    ALT.SubstrateL (Wit.chainUpdate (k := k)) (codeRegion k)
       3 ((k : ℝ) + (C : ℝ)) (2 * ((k : ℝ) + (C : ℝ))) 1 2 3 (1 / 2) k gTS
       PAMinusConsistent PAMinusNSound PAMinusDelta1 PAMinusInterpretsR0
       (ChainRealizable k) (ChainWindowBudget k η τ) := by
   have hkR : (0 : ℝ) ≤ (k : ℝ) := Nat.cast_nonneg k
   have hCR : (100 : ℝ) ≤ (C : ℝ) := by exact_mod_cast hC100
   have hlog : Real.log (3 / (1 / 2)) ≤ 3 / (1 / 2) - 1 := Real.log_le_sub_one_of_pos (by norm_num)
-  have hCapR : (GodelInternalization.capacity (Nat.clog 2 (gTS + 1)) : ℝ) ≤ (C : ℝ) := by
+  have hCapR : (ALT.capacity (Nat.clog 2 (gTS + 1)) : ℝ) ≤ (C : ℝ) := by
     exact_mod_cast hCap
   refine
     { s1 := chainUpdate_fixes
@@ -177,19 +171,19 @@ theorem witness_substrateL_paMinus [NeZero k] {Ω : Type*} [MeasurableSpace Ω] 
     simpa using hcast
   · exact ⟨Bool, inferInstance, Measure.map (substrateTraj (k := k) ξ) P,
       pairEnsemble pairChar 0 k, samePairMean pairChar (2 * η - 1), samePairConst k, by
-        have h := mixingHoeffding_schedule (k := k) (ξ := ξ) (P := P) hmeas hindep hη0 hη1 hmean
-          0 pairChar abs_pairChar_le_one
+        have h := mixingHoeffding_substrateTraj_schedule (k := k) (ξ := ξ) (P := P) hmeas hindep
+          hη0 hη1 hmean 0 pairChar abs_pairChar_le_one
         have hz : ((0 : Fin k) : ℕ) = 0 := by simp
         rw [hz] at h
         simpa [scheduledMean, scheduledConst, hz] using h⟩
 
 /-- **Stage B, with no probabilistic hypothesis left standing.** `witness_substrateL_paMinus` at
-the Bernoulli(`η`) shift `noiseLaw`, exactly `LearningWitness.witness_substrateL_bernoulli`'s own
+the Bernoulli(`η`) shift `noiseLaw`, exactly `ALT.witness_substrateL_bernoulli`'s own
 specialization. -/
 theorem witness_substrateL_paMinus_bernoulli [NeZero k] {η τ : ℝ} (hη0 : 0 < η) (hη1 : η ≤ 1 / 2)
     (hbudget : 2 * η ≤ τ) (C gTS : ℕ) (hC100 : 100 ≤ C)
-    (hCap : GodelInternalization.capacity (Nat.clog 2 (gTS + 1)) ≤ C) :
-    SubstrateClass.SubstrateL (chainUpdate (k := k)) (codeRegion k)
+    (hCap : ALT.capacity (Nat.clog 2 (gTS + 1)) ≤ C) :
+    ALT.SubstrateL (Wit.chainUpdate (k := k)) (codeRegion k)
       3 ((k : ℝ) + (C : ℝ)) (2 * ((k : ℝ) + (C : ℝ))) 1 2 3 (1 / 2) k gTS
       PAMinusConsistent PAMinusNSound PAMinusDelta1 PAMinusInterpretsR0
       (ChainRealizable k) (ChainWindowBudget k η τ) := by
@@ -205,34 +199,35 @@ private theorem witness_headroom_paMinus (k C : ℕ) :
   rw [show ((k : ℝ) + (C : ℝ)) - (k : ℝ) = (C : ℝ) by ring]
   exact Nat.floor_natCast C
 
-/-- **The atemporal crossing, symbolic.** `LearningWitness.witness_reachesThresholdWithin`'s
+/-- **The atemporal crossing, symbolic.** `ALT.witness_reachesThresholdWithin`'s
 counterpart at `𝗣𝗔⁻`'s genuine conditions, symbolic `C`/`gTS`: composed through
-`SubstrateClass.substrateL_reachesThresholdWithin`, which additionally needs `2 ≤ gTS` — the
+`ALT.SubstrateL.reachesThresholdWithin`, which additionally needs `2 ≤ gTS` — the
 standing structural side condition every `(S3)`-bridge theorem in `SubstrateClass.lean` carries. -/
 theorem witness_reachesThresholdWithin_paMinus [NeZero k] {Ω : Type*} [MeasurableSpace Ω]
     {P : Measure Ω} [IsProbabilityMeasure P] {ξ : ℕ → Ω → Bool} (hmeas : ∀ i, Measurable (ξ i))
     (hindep : iIndepFun ξ P) {η τ : ℝ} (hη0 : 0 < η) (hη1 : η ≤ 1 / 2)
-    (hmean : ∀ u, ∫ ω, ParityWalk.zeta (ξ (u + k) ω) ∂P = 2 * η - 1) (hbudget : 2 * η ≤ τ)
+    (hmean : ∀ u, ∫ ω, ALT.zeta (ξ (u + k) ω) ∂P = 2 * η - 1) (hbudget : 2 * η ≤ τ)
     (C gTS : ℕ) (hC100 : 100 ≤ C)
-    (hCap : GodelInternalization.capacity (Nat.clog 2 (gTS + 1)) ≤ C) (hg : 2 ≤ gTS) :
-    SubstrateClass.ReachesThresholdWithin
+    (hCap : ALT.capacity (Nat.clog 2 (gTS + 1)) ≤ C) (hg : 2 ≤ gTS) :
+    ALT.ReachesThresholdWithin
       PAMinusConsistent PAMinusNSound PAMinusDelta1 PAMinusInterpretsR0 C gTS := by
-  have h := SubstrateClass.substrateL_reachesThresholdWithin
+  have h := ALT.SubstrateL.reachesThresholdWithin
     (witness_substrateL_paMinus hmeas hindep hη0 hη1 hmean hbudget C gTS hC100 hCap) hg
   rwa [witness_headroom_paMinus k C] at h
 
-/-- **The time-indexed crossing, symbolic, at every step.** `LearningWitness.witness_reachesThresholdWithinAt`'s
-counterpart: the reference codeword is pinned to `loadChain ω`'s own code cells
-(`chainUpdate_reads_code` is what makes that pin carry content), and the commitment persists because
-`chainUpdate` never writes the code region (`code_persists`, (S1)). -/
+/-- **The time-indexed crossing, symbolic, at every step.**
+`ALT.witness_reachesThresholdWithinAt`'s counterpart: the reference codeword is pinned
+to `loadChain ω`'s own code cells (`chainUpdate_reads_code` is what makes that pin carry content),
+and the commitment persists because `Wit.chainUpdate` never writes the code region (`code_persists`,
+(S1)). -/
 theorem witness_reachesThresholdWithinAt_paMinus [NeZero k] {Ω : Type*} [MeasurableSpace Ω]
     {P : Measure Ω} [IsProbabilityMeasure P] {ξ : ℕ → Ω → Bool} (hmeas : ∀ i, Measurable (ξ i))
     (hindep : iIndepFun ξ P) {η τ : ℝ} (hη0 : 0 < η) (hη1 : η ≤ 1 / 2)
-    (hmean : ∀ u, ∫ ω, ParityWalk.zeta (ξ (u + k) ω) ∂P = 2 * η - 1) (hbudget : 2 * η ≤ τ)
+    (hmean : ∀ u, ∫ ω, ALT.zeta (ξ (u + k) ω) ∂P = 2 * η - 1) (hbudget : 2 * η ≤ τ)
     (C gTS : ℕ) (hC100 : 100 ≤ C)
-    (hCap : GodelInternalization.capacity (Nat.clog 2 (gTS + 1)) ≤ C) (hg : 2 ≤ gTS)
+    (hCap : ALT.capacity (Nat.clog 2 (gTS + 1)) ≤ C) (hg : 2 ≤ gTS)
     (ω : ℕ → Bool) (t : ℕ) :
-    SubstrateClass.ReachesThresholdWithinAt (chainUpdate (k := k)) (codeRegion k)
+    ALT.ReachesThresholdWithinAt (Wit.chainUpdate (k := k)) (codeRegion k)
       (loadChain (k := k) ω) (loadChain (k := k) ω) t
       PAMinusConsistent PAMinusNSound PAMinusDelta1 PAMinusInterpretsR0 C gTS := by
   refine ⟨?_, witness_reachesThresholdWithin_paMinus hmeas hindep hη0 hη1 hmean hbudget C gTS
@@ -243,51 +238,51 @@ theorem witness_reachesThresholdWithinAt_paMinus [NeZero k] {Ω : Type*} [Measur
 /-! ## Stage C: the capstone — one incompleteness invocation, shared by threshold and payload -/
 
 /-- **The learning witness's crossing, made genuine at `𝗣𝗔⁻`.** ONE invocation of
-`GodelComplete.incompleteness_of_arith 𝗣𝗔⁻` supplies a single Gödel size `gTS`; for every capacity
+`ALT.incompleteness_of_arith 𝗣𝗔⁻` supplies a single Gödel size `gTS`; for every capacity
 `C` meeting `100 ≤ C` and `capacity (⌈log₂(gTS+1)⌉) ≤ C`:
 
 (i) **the time-indexed crossing**, at `𝗣𝗔⁻`'s genuine Stage A facts, at `gTS`, at headroom `C` —
     conditional on `2 ≤ gTS`, the seam this module's docstring names rather than forces;
-(ii) **the payload**, at the SAME `gTS`, unconditionally: `ExcessOrder.outgrows`'s own shape needs
+(ii) **the payload**, at the SAME `gTS`, unconditionally: `ALT.outgrows`'s own shape needs
      no such side condition.
 
 `C` does double duty without any connecting lemma: it is `SubstrateL`'s headroom for (i), and —
-since `CategoricalThreshold.hostsAt C gTS` unfolds to exactly `hCap`'s own inequality — the
+since `ALT.hostsAt C gTS` unfolds to exactly `hCap`'s own inequality — the
 `Outgrows` budget `κ` for (ii). -/
 theorem witness_crossing_genuine_paMinus [NeZero k] {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     [IsProbabilityMeasure P] {ξ : ℕ → Ω → Bool} (hmeas : ∀ i, Measurable (ξ i))
     (hindep : iIndepFun ξ P) {η τ : ℝ} (hη0 : 0 < η) (hη1 : η ≤ 1 / 2)
-    (hmean : ∀ u, ∫ ω, ParityWalk.zeta (ξ (u + k) ω) ∂P = 2 * η - 1) (hbudget : 2 * η ≤ τ) :
+    (hmean : ∀ u, ∫ ω, ALT.zeta (ξ (u + k) ω) ∂P = 2 * η - 1) (hbudget : 2 * η ≤ τ) :
     ∃ gTS : ℕ, ∀ C : ℕ, 100 ≤ C →
-      GodelInternalization.capacity (Nat.clog 2 (gTS + 1)) ≤ C →
+      ALT.capacity (Nat.clog 2 (gTS + 1)) ≤ C →
       (2 ≤ gTS → ∀ (ω : ℕ → Bool) (t : ℕ),
-        SubstrateClass.ReachesThresholdWithinAt (chainUpdate (k := k)) (codeRegion k)
+        ALT.ReachesThresholdWithinAt (Wit.chainUpdate (k := k)) (codeRegion k)
           (loadChain (k := k) ω) (loadChain (k := k) ω) t
           PAMinusConsistent PAMinusNSound PAMinusDelta1 PAMinusInterpretsR0 C gTS) ∧
       (∀ Mchk : ℕ, gTS < Mchk → Mchk ≤ gTS ^ 2 →
         ∃ R : ReflectiveAsm gTS, R.depth = Mchk ∧
-          CapacityLayer.FitsIn (recursorAsm R.depth) C ∧
-          ∃ M, GodelThreshold.RepresentsUnderivableTruth
+          ALT.FitsIn (recursorAsm R.depth) C ∧
+          ∃ M, ALT.RepresentsUnderivableTruth
             (Encodable.encode : Sentence ℒₒᵣ → ℕ)
             (fun δ => (𝗣𝗔⁻ : ArithmeticTheory) ⊢ δ) (fun δ => ℕ↓[ℒₒᵣ] ⊧ δ) M) := by
-  obtain ⟨gTS, hInc⟩ := GodelComplete.incompleteness_of_arith (𝗣𝗔⁻ : ArithmeticTheory)
+  obtain ⟨gTS, hInc⟩ := ALT.incompleteness_of_arith (𝗣𝗔⁻ : ArithmeticTheory)
   refine ⟨gTS, fun C hC100 hCap => ⟨fun hg ω t => ?_, fun Mchk h1 h2 => ?_⟩⟩
   · exact witness_reachesThresholdWithinAt_paMinus hmeas hindep hη0 hη1 hmean hbudget C gTS
       hC100 hCap hg ω t
   · obtain ⟨R, hdepth, hfits, himp⟩ :=
-      ExcessOrder.outgrows C (Encodable.encode : Sentence ℒₒᵣ → ℕ)
+      ALT.outgrows C (Encodable.encode : Sentence ℒₒᵣ → ℕ)
         (fun δ => (𝗣𝗔⁻ : ArithmeticTheory) ⊢ δ) (fun δ => ℕ↓[ℒₒᵣ] ⊧ δ) gTS Mchk hCap h1 h2
     exact ⟨R, hdepth, hfits, himp hInc⟩
 
-end LearningWitness
+end ALT
 
 /-! ## Axiom audit
 
 The capstone is `#print axioms`-clean on the standard triple — the whole point of the coupling is
 that no incompleteness-shaped axiom survives it, only the standard three. -/
 
-set_option linter.style.longLine false
 
-/-- info: 'LearningWitness.witness_crossing_genuine_paMinus' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.witness_crossing_genuine_paMinus' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms LearningWitness.witness_crossing_genuine_paMinus
+#print axioms ALT.witness_crossing_genuine_paMinus

@@ -1,8 +1,3 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.BlockPairHost
@@ -14,14 +9,14 @@ public import ALT.ParityWalk
 `BlockPairHost.lean` assembles a finite autonomous host carrying the certified block-pair design
 (`BlockPairProfile.lean`) as its own observation process. This module reads that process at every
 starting phase, ties it to the noisy-window-chain vocabulary (`NoisyWindowChain.lean`) three ways,
-and assembles the schedule's E1: `BirkhoffTool.MixingHoeffding` at every offset `a : Fin 8` and
+and assembles the schedule's E1: `MixingHoeffding` at every offset `a : Fin 8` and
 every bounded query `ψ`, on the finite average of the host's own per-phase Dirac laws.
 
 ## Main results
 
-* `hostTraj` — the host's own emitted observation process, from phase `c` onward.
+* `traj` — the host's own emitted observation process, from phase `c` onward.
 * `chi_designObs` — **tie (i)**: the design is `±1`-valued, so its character is its own cast.
-* `designTape`, `hostTraj_eq_obs` — **tie (ii)**: the host's process from phase `c` *is* the noisy
+* `designTape`, `traj_eq_obs` — **tie (ii)**: the host's process from phase `c` *is* the noisy
   window chain's own `obs 8` on the designed initial window, closing the tape loop.
 * `chiSum_eq_singleWindow`, `chiProd_eq_cyclicCorrWindow` — **tie (iii)**: the schedule's own
   character sums are the design's single-site and pair-correlation windows.
@@ -41,17 +36,19 @@ paper home is [Inevitability] §5 Theorem 5.8, row IN-37.
 
 @[expose] public section
 
-namespace BlockPairObservability
+namespace ALT
 
-open BlockPairProfile BlockPairHost NoisyWindowChain MeasureTheory BirkhoffTool
+namespace BlockPairHost
+
+open MeasureTheory MixingHoeffding
 
 variable (M : ℕ) [NeZero (2 * (2 * M))]
 
 /-! ## The host's own observation process -/
 
 /-- The host's own emitted observation process, from ℕ-phase `c` onward: the design read
-`hostUpdate_iterate_last`'s own right-hand side, as a function of the elapsed time. -/
-def hostTraj (c : ZMod (2 * (2 * M) * 24)) : ℕ → Bool := fun t => designObs M (c + t)
+`update_iterate_last`'s own right-hand side, as a function of the elapsed time. -/
+def traj (c : ZMod (2 * (2 * M) * 24)) : ℕ → Bool := fun t => designObs M (c + t)
 
 /-! ## Tie (i): the design is exactly `±1`-valued -/
 
@@ -69,7 +66,7 @@ private lemma blockSeq_wordU_wordV_eq_one_or_neg_one (u : ZMod (2 * (2 * M) * 24
 `true`, and `+1` where it reads `false` — so its character is its own cast, since the design is
 exactly `±1`-valued (`blockSeq_wordU_wordV_sq`). -/
 theorem chi_designObs (c : ZMod (2 * (2 * M) * 24)) :
-    ParityWalk.chi (designObs M c) =
+    ALT.chi (designObs M c) =
       (blockSeq wordU wordV (blockSign (2 * (2 * M))) c : ℝ) := by
   rcases blockSeq_wordU_wordV_eq_one_or_neg_one M c with h1 | h1
   · have hobs : designObs M c = false := by unfold designObs; rw [h1]; decide
@@ -80,32 +77,32 @@ theorem chi_designObs (c : ZMod (2 * (2 * M) * 24)) :
 /-! ## Tie (ii): the host's process is the chain's own `obs 8` -/
 
 /-- The window fed to the noisy window chain's `obs`: the design itself below the horizon `8`, and
-the tape bit `hostTape` supplies above it. -/
+the tape bit `tape` supplies above it. -/
 def designTape (c : ZMod (2 * (2 * M) * 24)) : ℕ → Bool :=
-  fun t => if t < 8 then designObs M (c + t) else hostTape M (c + t)
+  fun t => if t < 8 then designObs M (c + t) else tape M (c + t)
 
 /-- **Tie (ii).** The host's own emitted process from phase `c` *is* the noisy window chain's own
-`obs 8` on the designed initial window, extended by the tape bit `hostTape` supplies — closing the
-tape loop `hostTape`'s own docstring describes. -/
-theorem hostTraj_eq_obs (c : ZMod (2 * (2 * M) * 24)) :
-    hostTraj M c = NoisyWindowChain.obs 8 (designTape M c) := by
+`obs 8` on the designed initial window, extended by the tape bit `tape` supplies — closing the
+tape loop `tape`'s own docstring describes. -/
+theorem traj_eq_obs (c : ZMod (2 * (2 * M) * 24)) :
+    traj M c = ALT.obs 8 (designTape M c) := by
   funext t
-  change designObs M (c + (t : ZMod _)) = NoisyWindowChain.obs 8 (designTape M c) t
+  change designObs M (c + (t : ZMod _)) = ALT.obs 8 (designTape M c) t
   induction t using Nat.strong_induction_on with
   | _ t ih =>
     by_cases ht : t < 8
-    · rw [NoisyWindowChain.obs_of_lt (designTape M c) ht]
+    · rw [ALT.obs_of_lt (designTape M c) ht]
       unfold designTape
       rw [ite_eq_left ht]
     · obtain ⟨s, hs⟩ : ∃ s, t = s + 8 := ⟨t - 8, by omega⟩
       have hih := ih s (by omega)
-      have hdt : designTape M c (s + 8) = hostTape M (c + ((s + 8 : ℕ) : ZMod _)) := by
+      have hdt : designTape M c (s + 8) = tape M (c + ((s + 8 : ℕ) : ZMod _)) := by
         unfold designTape
         rw [ite_eq_right (by omega : ¬ s + 8 < 8)]
-      rw [hs, NoisyWindowChain.obs_add (by norm_num : (0 : ℕ) < 8) (designTape M c) s, hdt, ← hih]
-      have hcast2 : hostTape M (c + ((s + 8 : ℕ) : ZMod _))
+      rw [hs, ALT.obs_add (by norm_num : (0 : ℕ) < 8) (designTape M c) s, hdt, ← hih]
+      have hcast2 : tape M (c + ((s + 8 : ℕ) : ZMod _))
           = (designObs M (c + ((s + 8 : ℕ) : ZMod _)) == designObs M (c + (s : ZMod _))) := by
-        unfold hostTape
+        unfold tape
         congr 2
         push_cast
         ring
@@ -126,13 +123,13 @@ private lemma cast_add_val (c : ZMod (2 * (2 * M) * 24)) (a i : ℕ) :
 along the host's process from phase `c`, is the design's own single-site window at ℕ-phase
 `c.val + a`. -/
 theorem chiSum_eq_singleWindow (c : ZMod (2 * (2 * M) * 24)) (a n : ℕ) :
-    (∑ t ∈ Finset.range n, ParityWalk.chi (hostTraj M c (t + a))) =
+    (∑ t ∈ Finset.range n, ALT.chi (traj M c (t + a))) =
       ((singleWindow (blockSeq wordU wordV (blockSign (2 * (2 * M)))) (c.val + a) n : ℤ) : ℝ) := by
   unfold singleWindow
   push_cast
   apply Finset.sum_congr rfl
   intro t _
-  change ParityWalk.chi (designObs M (c + ((t + a : ℕ) : ZMod _))) = _
+  change ALT.chi (designObs M (c + ((t + a : ℕ) : ZMod _))) = _
   rw [show (t + a : ℕ) = (a + t : ℕ) from by ring, cast_add_val M c a t, chi_designObs]
   congr 2
   push_cast
@@ -143,15 +140,15 @@ and along the host's process from phase `c`, is the design's own cyclic correlat
 `8 − a` and ℕ-phase `c.val + a`. -/
 theorem chiProd_eq_cyclicCorrWindow (c : ZMod (2 * (2 * M) * 24)) {a : ℕ} (ha8 : a ≤ 8) (n : ℕ) :
     (∑ t ∈ Finset.range n,
-        ParityWalk.chi (hostTraj M c (t + a)) * ParityWalk.chi (hostTraj M c (t + 8))) =
+        ALT.chi (traj M c (t + a)) * ALT.chi (traj M c (t + 8))) =
       ((cyclicCorrWindow (blockSeq wordU wordV (blockSign (2 * (2 * M)))) (8 - a) (c.val + a) n :
         ℤ) : ℝ) := by
   unfold cyclicCorrWindow
   push_cast
   apply Finset.sum_congr rfl
   intro t _
-  change ParityWalk.chi (designObs M (c + ((t + a : ℕ) : ZMod _))) *
-      ParityWalk.chi (designObs M (c + ((t + 8 : ℕ) : ZMod _))) = _
+  change ALT.chi (designObs M (c + ((t + a : ℕ) : ZMod _))) *
+      ALT.chi (designObs M (c + ((t + 8 : ℕ) : ZMod _))) = _
   have hidx1 : c + ((t + a : ℕ) : ZMod (2 * (2 * M) * 24))
       = ((c.val + a + t : ℕ) : ZMod (2 * (2 * M) * 24)) := by
     rw [show (t + a : ℕ) = (a + t : ℕ) from by ring]
@@ -174,20 +171,20 @@ theorem chiProd_eq_cyclicCorrWindow (c : ZMod (2 * (2 * M) * 24)) {a : ℕ} (ha8
 constant, uniformly in `c` and `n`. -/
 private theorem deviation_bound_cross (c : ZMod (2 * (2 * M) * 24)) (ψ : Bool → Bool → ℝ)
     (hψ : ∀ u v, |ψ u v| ≤ 1) {a : ℕ} (ha1 : 1 ≤ a) (ha7 : a ≤ 7) {n : ℕ} (hn : 1 ≤ n) :
-    (n : ℝ) * |SQOracle.empiricalMean (pairEnsemble ψ a 8) n (hostTraj M c) - pairMean ψ| ≤
+    (n : ℝ) * |SQOracle.empiricalMean (pairEnsemble ψ a 8) n (traj M c) - pairMean ψ| ≤
       2 * 56 + 192 := by
-  have hSa : |∑ t ∈ Finset.range n, ParityWalk.chi (hostTraj M c (t + a))| ≤ (56 : ℝ) := by
+  have hSa : |∑ t ∈ Finset.range n, ALT.chi (traj M c (t + a))| ≤ (56 : ℝ) := by
     rw [chiSum_eq_singleWindow M c a n, ← Int.cast_abs]
     exact_mod_cast singleWindow_blockSeq_wordU_wordV_bound M (c.val + a) n
-  have hSb : |∑ t ∈ Finset.range n, ParityWalk.chi (hostTraj M c (t + 8))| ≤ (56 : ℝ) := by
+  have hSb : |∑ t ∈ Finset.range n, ALT.chi (traj M c (t + 8))| ≤ (56 : ℝ) := by
     rw [chiSum_eq_singleWindow M c 8 n, ← Int.cast_abs]
     exact_mod_cast singleWindow_blockSeq_wordU_wordV_bound M (c.val + 8) n
-  have hW : |∑ t ∈ Finset.range n, ParityWalk.chi (hostTraj M c (t + a)) *
-      ParityWalk.chi (hostTraj M c (t + 8)) - (n : ℝ) * 0| ≤ (192 : ℝ) := by
+  have hW : |∑ t ∈ Finset.range n, ALT.chi (traj M c (t + a)) *
+      ALT.chi (traj M c (t + 8)) - (n : ℝ) * 0| ≤ (192 : ℝ) := by
     rw [mul_zero, sub_zero, chiProd_eq_cyclicCorrWindow M c (by omega : a ≤ 8) n, ← Int.cast_abs]
     exact_mod_cast cyclicCorrWindow_blockSeq_wordU_wordV_zone M (by omega : 1 ≤ 8 - a)
       (by omega : 8 - a ≤ 7) (c.val + a) n
-  have h := empiricalMean_deviation_le_of_window_bounds ψ hψ a 8 hn (hostTraj M c) 0 56 192
+  have h := empiricalMean_deviation_le_of_window_bounds ψ hψ a 8 hn (traj M c) 0 56 192
     hSa hSb hW
   simpa using h
 
@@ -197,16 +194,16 @@ literal against the label), the two-offset query's `n`-scaled deviation from the
 `2 * 56 + 46` — the spike window bound divided by the trend scale `2 * 24`. -/
 private theorem deviation_bound_same (c : ZMod (2 * (2 * M) * 24)) (ψ : Bool → Bool → ℝ)
     (hψ : ∀ u v, |ψ u v| ≤ 1) {n : ℕ} (hn : 1 ≤ n) :
-    (n : ℝ) * |SQOracle.empiricalMean (pairEnsemble ψ 0 8) n (hostTraj M c) -
+    (n : ℝ) * |SQOracle.empiricalMean (pairEnsemble ψ 0 8) n (traj M c) -
         (pairMean ψ + pairCoefAB ψ * (-2 / 3))| ≤ 2 * 56 + 46 := by
-  have hSa : |∑ t ∈ Finset.range n, ParityWalk.chi (hostTraj M c (t + 0))| ≤ (56 : ℝ) := by
+  have hSa : |∑ t ∈ Finset.range n, ALT.chi (traj M c (t + 0))| ≤ (56 : ℝ) := by
     rw [chiSum_eq_singleWindow M c 0 n, ← Int.cast_abs]
     exact_mod_cast singleWindow_blockSeq_wordU_wordV_bound M (c.val + 0) n
-  have hSb : |∑ t ∈ Finset.range n, ParityWalk.chi (hostTraj M c (t + 8))| ≤ (56 : ℝ) := by
+  have hSb : |∑ t ∈ Finset.range n, ALT.chi (traj M c (t + 8))| ≤ (56 : ℝ) := by
     rw [chiSum_eq_singleWindow M c 8 n, ← Int.cast_abs]
     exact_mod_cast singleWindow_blockSeq_wordU_wordV_bound M (c.val + 8) n
-  have hW : |∑ t ∈ Finset.range n, ParityWalk.chi (hostTraj M c (t + 0)) *
-      ParityWalk.chi (hostTraj M c (t + 8)) - (n : ℝ) * (-2 / 3)| ≤ (46 : ℝ) := by
+  have hW : |∑ t ∈ Finset.range n, ALT.chi (traj M c (t + 0)) *
+      ALT.chi (traj M c (t + 8)) - (n : ℝ) * (-2 / 3)| ≤ (46 : ℝ) := by
     rw [chiProd_eq_cyclicCorrWindow M c (by omega : (0 : ℕ) ≤ 8) n]
     have haperiodic : aperiodicCorr wordU 8 + aperiodicCorr wordV 8 = -32 := by decide
     have hb := cyclicCorrWindow_blockSeq_wordU_wordV_spike M (c.val + 0) n
@@ -222,7 +219,7 @@ private theorem deviation_bound_same (c : ZMod (2 * (2 * M) * 24)) (ψ : Bool �
     rw [heq2, abs_div]
     rw [show |(48 : ℝ)| = 48 from by norm_num, div_le_iff₀ (by norm_num : (0 : ℝ) < 48)]
     linarith [hbR]
-  have h := empiricalMean_deviation_le_of_window_bounds ψ hψ 0 8 hn (hostTraj M c) (-2 / 3) 56 46
+  have h := empiricalMean_deviation_le_of_window_bounds ψ hψ 0 8 hn (traj M c) (-2 / 3) 56 46
     hSa hSb hW
   exact h
 
@@ -233,7 +230,7 @@ reading of the single-orbit E1 randomness a deterministic finite host has: one l
 phase, weighted uniformly. -/
 noncomputable def phaseLaw : Measure (ℕ → Bool) :=
   ((Fintype.card (ZMod (2 * (2 * M) * 24)) : ENNReal))⁻¹ •
-    ∑ c : ZMod (2 * (2 * M) * 24), Measure.dirac (hostTraj M c)
+    ∑ c : ZMod (2 * (2 * M) * 24), Measure.dirac (traj M c)
 
 instance phaseLaw_isProbabilityMeasure : IsProbabilityMeasure (phaseLaw M) := by
   constructor
@@ -244,7 +241,7 @@ instance phaseLaw_isProbabilityMeasure : IsProbabilityMeasure (phaseLaw M) := by
     exact_mod_cast hcard_pos.ne'
   have hcardEtop : (Fintype.card (ZMod (2 * (2 * M) * 24)) : ENNReal) ≠ ⊤ :=
     ENNReal.natCast_ne_top _
-  have hsum : (∑ c : ZMod (2 * (2 * M) * 24), (Measure.dirac (hostTraj M c)) Set.univ)
+  have hsum : (∑ c : ZMod (2 * (2 * M) * 24), (Measure.dirac (traj M c)) Set.univ)
       = (Fintype.card (ZMod (2 * (2 * M) * 24)) : ENNReal) := by
     simp [measure_univ]
   rw [hsum]
@@ -257,32 +254,33 @@ constant at every phase — gives `MixingHoeffding` under the phase law. -/
 private lemma mixingHoeffding_phaseLaw_of_forall_dirac
     (Z : ℕ → (ℕ → Bool) → ℝ) (predZ constC : ℝ)
     (h : ∀ c : ZMod (2 * (2 * M) * 24),
-      MixingHoeffding (Measure.dirac (hostTraj M c)) Z predZ constC) :
+      MixingHoeffding (Measure.dirac (traj M c)) Z predZ constC) :
     MixingHoeffding (phaseLaw M) Z predZ constC := by
   intro n τ hn hτ
+  change (phaseLaw M).real {ω | τ ≤ |SQOracle.empiricalMean Z n ω - predZ|} ≤ _
   set S : Set (ℕ → Bool) := {ω | τ ≤ |SQOracle.empiricalMean Z n ω - predZ|} with hSdef
   have hcard_pos : 0 < Fintype.card (ZMod (2 * (2 * M) * 24)) := Fintype.card_pos
   have hcardE : (Fintype.card (ZMod (2 * (2 * M) * 24)) : ENNReal) ≠ 0 := by
     exact_mod_cast hcard_pos.ne'
   have hphaseLaw_apply : (phaseLaw M) S =
       (Fintype.card (ZMod (2 * (2 * M) * 24)) : ENNReal)⁻¹ *
-        ∑ c : ZMod (2 * (2 * M) * 24), (Measure.dirac (hostTraj M c)) S := by
+        ∑ c : ZMod (2 * (2 * M) * 24), (Measure.dirac (traj M c)) S := by
     unfold phaseLaw
     rw [Measure.smul_apply, Measure.finsetSum_apply, smul_eq_mul]
   have hreal_eq : (phaseLaw M).real S =
       (Fintype.card (ZMod (2 * (2 * M) * 24)) : ℝ)⁻¹ *
-        ∑ c : ZMod (2 * (2 * M) * 24), (Measure.dirac (hostTraj M c)).real S := by
+        ∑ c : ZMod (2 * (2 * M) * 24), (Measure.dirac (traj M c)).real S := by
     unfold Measure.real
     rw [hphaseLaw_apply, ENNReal.toReal_mul, ENNReal.toReal_inv,
       ENNReal.toReal_sum (fun c _ => measure_ne_top _ S)]
     norm_cast
   rw [hreal_eq]
-  have hbound : ∀ c : ZMod (2 * (2 * M) * 24), (Measure.dirac (hostTraj M c)).real S ≤
+  have hbound : ∀ c : ZMod (2 * (2 * M) * 24), (Measure.dirac (traj M c)).real S ≤
       2 * Real.exp (-(n : ℝ) * τ ^ 2 / (2 * constC)) := fun c => h c n τ hn hτ
-  have hsum_bound : (∑ c : ZMod (2 * (2 * M) * 24), (Measure.dirac (hostTraj M c)).real S) ≤
+  have hsum_bound : (∑ c : ZMod (2 * (2 * M) * 24), (Measure.dirac (traj M c)).real S) ≤
       (Fintype.card (ZMod (2 * (2 * M) * 24)) : ℝ) *
         (2 * Real.exp (-(n : ℝ) * τ ^ 2 / (2 * constC))) := by
-    calc (∑ c : ZMod (2 * (2 * M) * 24), (Measure.dirac (hostTraj M c)).real S)
+    calc (∑ c : ZMod (2 * (2 * M) * 24), (Measure.dirac (traj M c)).real S)
         ≤ ∑ _c : ZMod (2 * (2 * M) * 24), 2 * Real.exp (-(n : ℝ) * τ ^ 2 / (2 * constC)) :=
           Finset.sum_le_sum (fun c _ => hbound c)
       _ = (Fintype.card (ZMod (2 * (2 * M) * 24)) : ℝ) *
@@ -291,7 +289,7 @@ private lemma mixingHoeffding_phaseLaw_of_forall_dirac
   have hcardR : (0 : ℝ) < (Fintype.card (ZMod (2 * (2 * M) * 24)) : ℝ) := by
     exact_mod_cast hcard_pos
   calc (Fintype.card (ZMod (2 * (2 * M) * 24)) : ℝ)⁻¹ *
-      ∑ c : ZMod (2 * (2 * M) * 24), (Measure.dirac (hostTraj M c)).real S
+      ∑ c : ZMod (2 * (2 * M) * 24), (Measure.dirac (traj M c)).real S
       ≤ (Fintype.card (ZMod (2 * (2 * M) * 24)) : ℝ)⁻¹ *
           ((Fintype.card (ZMod (2 * (2 * M) * 24)) : ℝ) *
             (2 * Real.exp (-(n : ℝ) * τ ^ 2 / (2 * constC)))) :=
@@ -314,13 +312,15 @@ theorem mixingHoeffding_schedule (a : Fin 8) (ψ : Bool → Bool → ℝ) (hψ :
   intro c
   by_cases ha0 : (a : ℕ) = 0
   · rw [ite_eq_left ha0, ite_eq_left ha0]
-    refine mixingHoeffding_dirac_of_deviation_bound (hostTraj M c) (pairEnsemble ψ (a : ℕ) 8) _
+    refine mixingHoeffding_dirac_of_deviation_bound (traj M c) (pairEnsemble ψ (a : ℕ) 8) _
       _ (by norm_num) (fun i => measurable_pairEnsemble ψ (a : ℕ) 8 i) (fun n hn => ?_)
     rw [ha0]
     exact deviation_bound_same M c ψ hψ hn
   · rw [ite_eq_right ha0, ite_eq_right ha0]
-    refine mixingHoeffding_dirac_of_deviation_bound (hostTraj M c) (pairEnsemble ψ (a : ℕ) 8) _
+    refine mixingHoeffding_dirac_of_deviation_bound (traj M c) (pairEnsemble ψ (a : ℕ) 8) _
       _ (by norm_num) (fun i => measurable_pairEnsemble ψ (a : ℕ) 8 i) (fun n hn => ?_)
     exact deviation_bound_cross M c ψ hψ (by omega) (by omega) hn
 
-end BlockPairObservability
+end BlockPairHost
+
+end ALT

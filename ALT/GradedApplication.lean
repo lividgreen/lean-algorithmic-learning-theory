@@ -1,8 +1,3 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Realizability.RealizabilityCCC
@@ -11,8 +6,6 @@ public import ALT.UniversalAt
 public import CodeLayer.PolyTime
 public import ALT.CapacityLayer
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # The graded exponential, and what applying one costs ([Decoupling] §4.5)
@@ -27,7 +20,7 @@ application.
 A grade bounds a realizer's **description length**, `Nat.size` of its Gödel index. This is not a
 free choice: it is the currency the priced universal evaluator already charges in, so a grade can
 be spent directly in that account without a conversion factor. It is also, on the nose, the
-realizer length of the counting bound (`Realizability.bitlen`) transported along the
+realizer length of the counting bound (`ALT.bitlen`) transported along the
 `Code ≃ ℕ` numbering — `grade_encode` and `bitlen_ofNat` record the identification, so the
 non-closure theorems and the grading here speak of one quantity, not two that happen to agree.
 What the identification is *about* is the measure alone: the counting bound is stated over
@@ -74,10 +67,10 @@ machine-checked affine price for applying it.
 
 @[expose] public section
 
-namespace GradedApplication
+namespace ALT
 
 open Nat.Partrec (Code)
-open TimeCost RealizabilityCCC BoundedUniversal CodeSizeArith
+open TimeCost RealizabilityCCC CodeSizeArith
 
 /-! ## The grade currency -/
 
@@ -91,15 +84,15 @@ def grade (r : ℕ) : ℕ := Nat.size (Encodable.encode (Denumerable.ofNat Code 
   rw [grade, Denumerable.encode_ofNat]
 
 /-- The grade of a code's index **is** its realizer length in the sense of the counting bound
-(`Realizability.bitlen`). The two accounts — the non-closure theorems, which measure a realizer's
+(`ALT.bitlen`). The two accounts — the non-closure theorems, which measure a realizer's
 length, and the grading here, which budgets it — use one quantity. -/
-theorem grade_encode (c : Code) : grade (Encodable.encode c) = Realizability.bitlen c := by
+theorem grade_encode (c : Code) : grade (Encodable.encode c) = ALT.bitlen c := by
   rw [grade_eq_size]; rfl
 
 /-- The same identification read the other way: the realizer length of the code a numeral names is
 that numeral's grade. -/
-theorem bitlen_ofNat (r : ℕ) : Realizability.bitlen (Denumerable.ofNat Code r) = grade r := by
-  rw [Realizability.bitlen, grade]
+theorem bitlen_ofNat (r : ℕ) : ALT.bitlen (Denumerable.ofNat Code r) = grade r := by
+  rw [ALT.bitlen, grade]
 
 /-! ## The graded exponential -/
 
@@ -169,25 +162,25 @@ def appInput (r x τ : ℕ) : ℕ := Nat.pair (Nat.pair r x) τ
 
 /-- **The application run**: the configuration the reference dynamics reaches after `τ` steps from
 the initial configuration of `r` on `x`. This — not the algebra's decode — is what gets priced. -/
-def appRun (r x τ : ℕ) : ℕ := BoundedInterp.stepUFn^[τ] (BoundedInterp.initConfig r x)
+def appRun (r x τ : ℕ) : ℕ := stepUFn^[τ] (initConfig r x)
 
 /-- Has the application run finished after `τ` steps? -/
-def appHalted (r x τ : ℕ) : Bool := BoundedInterp.isHalt (appRun r x τ)
+def appHalted (r x τ : ℕ) : Bool := isHalt (appRun r x τ)
 
 /-- The value a finished application run holds. -/
-def appValue (r x τ : ℕ) : ℕ := BoundedInterp.haltVal (appRun r x τ)
+def appValue (r x τ : ℕ) : ℕ := haltVal (appRun r x τ)
 
 /-- **The run computes the application** (soundness half). If the run has finished, its value is a
 genuine value of the algebra's application `r · x`. -/
 theorem appValue_mem_ap {r x τ : ℕ} (h : appHalted r x τ = true) : appValue r x τ ∈ ap r x :=
-  BoundedInterp.machine_sound r x h
+  machine_sound r x h
 
 /-- **The run computes the application** (completeness half). Every value the algebra's application
 `r · x` produces is reached by the run, at some number of steps. -/
 theorem exists_appRun_of_mem_ap {r x v : ℕ} (h : v ∈ ap r x) :
     ∃ τ, appHalted r x τ = true ∧ appValue r x τ = v := by
   obtain ⟨τ, hhalt, hval⟩ :=
-    BoundedInterp.machine_complete (c := Denumerable.ofNat Code r) (n := x) h
+    machine_complete (c := Denumerable.ofNat Code r) (n := x) h
   rw [Denumerable.encode_ofNat] at hhalt hval
   exact ⟨τ, hhalt, hval⟩
 
@@ -208,9 +201,9 @@ theorem appRun_of_halted {r x τ : ℕ} (h : appHalted r x τ = true) (j : ℕ) 
   induction j with
   | zero => rfl
   | succ i ih =>
-      have hstep : appRun r x (τ + (i + 1)) = BoundedInterp.stepUFn (appRun r x (τ + i)) :=
+      have hstep : appRun r x (τ + (i + 1)) = stepUFn (appRun r x (τ + i)) :=
         Function.iterate_succ_apply' _ _ _
-      rw [hstep, ih, BoundedInterp.stepUFn_halt h]
+      rw [hstep, ih, stepUFn_halt h]
 
 /-- **The run's width hypothesis is not vacuous.** On an application that finishes, the widths of
 the configurations the run passes through are bounded uniformly: the initial segment is finite, and
@@ -265,12 +258,12 @@ produced; those are outputs of the computation rather than functions of the code
 grade bounds them. That is why the workspace account below is relative to a named width hypothesis
 and not derived from the grade alone. -/
 theorem appConfig_size_le {r x g : ℕ} (hg : grade r ≤ g) :
-    Nat.size (BoundedInterp.initConfig r x) ≤ 8 * g + 8 * Nat.size x + 14 := by
+    Nat.size (initConfig r x) ≤ 8 * g + 8 * Nat.size x + 14 := by
   rw [grade_eq_size] at hg
   have h1 := size_pair_le r x
   have h2 := size_pair_le (Nat.pair r x) 0
   have h3 := size_pair_le 0 (Nat.pair (Nat.pair r x) 0)
-  have hinit : BoundedInterp.initConfig r x = Nat.pair 0 (Nat.pair (Nat.pair r x) 0) := rfl
+  have hinit : initConfig r x = Nat.pair 0 (Nat.pair (Nat.pair r x) 0) := rfl
   rw [hinit]
   simp only [Nat.size_zero] at h2 h3
   omega
@@ -381,7 +374,7 @@ the ungraded exponential, in element count or in realizer length; a graded expon
 capacity object again, with the grade as its budget. What is bought is not closure — the morphisms
 priced out are genuinely absent — but a filtration whose every level fits. -/
 theorem gradedExp_fitsIn {A B : Asm} (g : ℕ) (hB : Modest B) :
-    CapacityLayer.FitsIn (gradedExp g A B) g := by
+    ALT.FitsIn (gradedExp g A B) g := by
   classical
   -- every element's chosen realizer is a code of grade `≤ g`, hence a numeral below `2 ^ g`
   have hlt : ∀ f : (gradedExp g A B).carrier, f.2.choose < 2 ^ g :=
@@ -402,4 +395,4 @@ theorem gradedExp_fitsIn {A B : Asm} (g : ℕ) (hB : Modest B) :
       ≤ Nat.card (Fin (2 ^ g)) := Nat.card_le_card_of_injective _ hinj
     _ = 2 ^ g := by simp
 
-end GradedApplication
+end ALT

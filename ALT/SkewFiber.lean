@@ -1,15 +1,8 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Mathlib.Algebra.BigOperators.Fin
 public import ALT.PersistenceCapacity
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # The skew-product fiber: an evolving population, priced by emergence ([Inevitability] §6)
@@ -102,13 +95,13 @@ combinatorial skeleton only, with no numbered result claimed machine-checked.
 
 @[expose] public section
 
-namespace SkewFiber
+namespace ALT
 
-open PersistenceCapacity Decoupling AdditiveComplexity CodeEvalLaws
+open AdditiveComplexity CodeEvalLaws
 open Equiv MulAction
 
 -- `•` on the recurrent-core reading is the relabelling action `U • ℓ = ℓ ∘ U⁻¹`; the same local
--- instance `PersistenceCapacity.emergence` is stated under.
+-- instance `ALT.emergence` is stated under.
 attribute [local instance] arrowAction
 
 /-! ## The skew product, tabulated -/
@@ -189,7 +182,7 @@ theorem primrec_skewAppend : Primrec fun q : List ℕ × List ℕ => skewAppend 
       ((Primrec.list_getD 0).comp (Primrec.fst.comp hfst) (Primrec.nat_div.comp hq hw')))
 
 /-- A lens table's entry at a flat index, read through the raw natural number, not a `Fin`. -/
-theorem lensTable_getD {N m : ℕ} (ℓ : Fin N → Fin m) {q : ℕ} (h : q < N) :
+theorem lensTable_getD_of_lt {N m : ℕ} (ℓ : Fin N → Fin m) {q : ℕ} (h : q < N) :
     (lensTable ℓ).getD q 0 = (ℓ ⟨q, h⟩ : ℕ) := by
   rw [lensTable]
   exact getD_map_finRange (fun j : Fin N => ((ℓ j : Fin m) : ℕ)) ⟨q, h⟩
@@ -211,7 +204,7 @@ theorem lensTable_skewWorldFin (S : Fin n₁ → Fin n₁) (F : Fin n₁ → Fin
   have hqlt : q < n₁ * n₂ := List.mem_range.mp hq
   have hn₂ : 0 < n₂ := Nat.pos_of_ne_zero fun h => by simp [h] at hqlt
   have hdiv : q / n₂ < n₁ := Nat.div_lt_of_lt_mul (by rwa [Nat.mul_comm] at hqlt)
-  rw [dite_eq_left hqlt, lensTable_getD _ hqlt, lensTable_getD _ hdiv]
+  rw [dite_eq_left hqlt, lensTable_getD_of_lt _ hqlt, lensTable_getD_of_lt _ hdiv]
   have hidx : (⟨q, hqlt⟩ : Fin (n₁ * n₂))
       = finProdFinEquiv (⟨q / n₂, hdiv⟩, ⟨q % n₂, Nat.mod_lt _ hn₂⟩) := by
     have hmd : q % n₂ + n₂ * (q / n₂) = q := Nat.mod_add_div q n₂
@@ -396,7 +389,7 @@ private theorem lensTable_getD_fiberFlat {n₁ n₂ : ℕ} (G : Fin n₁ → Fin
     (lensTable (fiberFlat G)).getD ((i : ℕ) * n₂ + w) 0 = (G i w : ℕ) := by
   have hval : (i : ℕ) * n₂ + w = (finProdFinEquiv (i, w) : ℕ) := by
     rw [finProdFinEquiv_apply_val]; ring
-  rw [hval, lensTable_getD _ (finProdFinEquiv (i, w)).isLt, fiberFlat_apply]
+  rw [hval, lensTable_getD_of_lt _ (finProdFinEquiv (i, w)).isLt, fiberFlat_apply]
 
 /-- **`powFiber`'s successor step, in raw values**: the new copy's contribution is read off the
 low `n₂` bits and the accumulated `P` copies off the rest — `skewWorldFin`'s own weave, replayed on
@@ -715,7 +708,7 @@ theorem KE_skewWorldFin_powFiber_le (S : Fin n₁ → Fin n₁) (F : Fin n₁ �
   omega
 
 set_option linter.style.longLine false in
-/-- info: 'SkewFiber.KE_skewWorldFin_powFiber_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.KE_skewWorldFin_powFiber_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms KE_skewWorldFin_powFiber_le
 
@@ -1072,7 +1065,7 @@ theorem frames_separate_of_settled [NeZero P] (S : Fin n₁ → Fin n₁) (fit :
 /-! ### The pricing assembly -/
 
 /-- **The evolving fiber's guest, priced** ([Inevitability] §6) — the skew-product construction
-assembled onto `PersistenceCapacity.emergence`.
+assembled onto `ALT.emergence`.
 
 Given a base rule `S` with a code, the evolutionary fiber step with a code, the fittest-reading
 frame with a code, and — as a **named, imported hypothesis** — that flowing into the recurrent core
@@ -1140,7 +1133,7 @@ theorem fiber_emergence_pricing_predictive [NeZero P] (S : Fin n₁ → Fin n₁
 constant, and the frame swapped.
 
 That it transports at all is the reusable fact. `skewCode`'s pricing and
-`PersistenceCapacity.emergence` are parametric in the fiber rule and in the frame, so the assembly
+`ALT.emergence` are parametric in the fiber rule and in the frame, so the assembly
 never depended on reading a codeword; only the imported coverage hypothesis did. The guest here is
 `Fin n₁`-valued rather than `Fin C`-valued — it carries the fittest candidate's prediction of the
 base — and the budget is unchanged at `elen cS + elen cF + elen cθ + O(1)`.
@@ -1173,4 +1166,4 @@ theorem predFrame_emergence_pricing [NeZero P] (S : Fin n₁ → Fin n₁) (fit 
 
 end Evolution
 
-end SkewFiber
+end ALT

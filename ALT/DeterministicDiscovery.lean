@@ -1,18 +1,7 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Learning.BayesRedundancy
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
-set_option linter.style.header false
-set_option linter.style.longLine false
-set_option linter.unusedSectionVars false
-set_option linter.unusedFintypeInType false
-set_option linter.unusedDecidableInType false
 
 /-!
 # Unconditional posterior concentration — [Discovery] Theorem 3.1 (realizable-deterministic)
@@ -41,13 +30,14 @@ cumulative separation is `n·ε₀`, so `Lik i n ≤ exp(−2 n ε₀)`, and
 
 ## Separation form and discovery time
 * **Separation (per-step):** `hsep : ∀ i ≠ R, ∀ t < n, ε₀ ≤ D_H²(δ_{ω_t}, q_i(·|ω_{<t}))`.
-* **Discovery time:** `T_discover = (K(R)·ln 2 + ln(2/δ)) / (2 ε₀)`; `n ≥ T_discover ⇒ wpost ≥ 1 − δ/2`.
+* **Discovery time:** `T_discover = (K(R)·ln 2 + ln(2/δ)) / (2 ε₀)`;
+  `n ≥ T_discover ⇒ wpost ≥ 1 − δ/2`.
 -/
 
 
 @[expose] public section
 
-namespace DeterministicDiscovery
+namespace ALT
 
 open scoped BigOperators
 open BayesRedundancy
@@ -55,6 +45,7 @@ open BayesRedundancy
 variable {A : Type*} [Fintype A] [DecidableEq A] {ι : Type*} [Fintype ι] [DecidableEq ι]
   {q : ι → ℕ → A → ℝ} {w : ι → ℝ} {ω : ℕ → A} {R : ι}
 
+omit [Fintype ι] [DecidableEq ι] in
 /-- **Per-step likelihood decay.** `q_i(ω_t) ≤ exp(−2·D_H²_{i,t})`, where
 `D_H²_{i,t} = sqHellinger (δ_{ω_t}) (q_i(·))`. Since `√(q_i(ω_t)) = 1 − D_H²_{i,t}`
 (`hellinger_point_mass`), `q_i(ω_t) = (1−D)² ≤ exp(−D)² = exp(−2D)` using `1 − D ≤ exp(−D)`. -/
@@ -72,6 +63,7 @@ theorem q_self_le_exp (hnn : ∀ i s x, 0 ≤ q i s x) (hpmf : ∀ i s, ∑ x, q
   calc (1 - D) * (1 - D) ≤ Real.exp (-D) * Real.exp (-D) := mul_le_mul h1 h1 h0 (Real.exp_pos _).le
     _ = Real.exp (-2 * D) := by rw [← Real.exp_add]; congr 1; ring
 
+omit [Fintype ι] [DecidableEq ι] in
 /-- **Competitor likelihood decay.** `Lik i n ≤ exp(−2 ∑_{t<n} D_H²_{i,t})` — the product of the
 per-step bounds (`Finset.prod_le_prod₀`, `Real.exp_sum`). No separation assumed yet. -/
 theorem competitor_likelihood_decay (hnn : ∀ i s x, 0 ≤ q i s x) (hpmf : ∀ i s, ∑ x, q i s x = 1)
@@ -89,9 +81,10 @@ theorem competitor_likelihood_decay (hnn : ∀ i s x, 0 ≤ q i s x) (hpmf : ∀
     _ = Real.exp (-2 * ∑ t ∈ Finset.range n,
           sqHellinger (fun x => if x = ω t then 1 else 0) (q i t)) := by rw [← Finset.mul_sum]
 
-/-- **Posterior lower bound.** Under realizability and a cumulative separation `S` of every competitor
-(`hsep : ∀ i ≠ R, S ≤ ∑_{t<n} D_H²_{i,t}`), the posterior shortfall is exponentially small:
-`1 − wpost ≤ 2^{K(R)}·exp(−2 S)`. Uses `1 − wpost = (∑_{i≠R} w_i Lik_i n)/P̄(n)`, the decay
+omit [DecidableEq ι] in
+/-- **Posterior lower bound.** Under realizability and a cumulative separation `S` of every
+competitor (`hsep : ∀ i ≠ R, S ≤ ∑_{t<n} D_H²_{i,t}`), the posterior shortfall is exponentially
+small: `1 − wpost ≤ 2^{K(R)}·exp(−2 S)`. Uses `1 − wpost = (∑_{i≠R} w_i Lik_i n)/P̄(n)`, the decay
 `Lik_i n ≤ exp(−2 S)`, `∑ w ≤ 1`, and `P̄(n) ≥ w R = 2^{−K(R)}` (`mixture_regret`). -/
 theorem posterior_lower_bound (hnn : ∀ i s x, 0 ≤ q i s x) (hpmf : ∀ i s, ∑ x, q i s x = 1)
     (hw : ∀ i, 0 ≤ w i) (k : ℕ) (hwR : w R = (2 : ℝ) ^ (-(k : ℝ))) (hsumw : ∑ i, w i ≤ 1)
@@ -99,6 +92,7 @@ theorem posterior_lower_bound (hnn : ∀ i s x, 0 ≤ q i s x) (hpmf : ∀ i s, 
     (hsep : ∀ i, i ≠ R →
       S ≤ ∑ t ∈ Finset.range n, sqHellinger (fun x => if x = ω t then 1 else 0) (q i t)) :
     1 - w R * Lik q ω R n / Pbarₚ q w ω n ≤ (2 : ℝ) ^ (k : ℝ) * Real.exp (-2 * S) := by
+  classical
   have hwRpos : 0 < w R := by rw [hwR]; positivity
   have hPwR : w R ≤ Pbarₚ q w ω n := by
     have := mixture_regret (fun i => Lik q ω i n) w R (fun i => Lik_nonneg hnn i n) hw
@@ -132,9 +126,11 @@ theorem posterior_lower_bound (hnn : ∀ i s x, 0 ≤ q i s x) (hpmf : ∀ i s, 
     _ = (2 : ℝ) ^ (k : ℝ) * Real.exp (-2 * S) := by
         rw [hwR, Real.rpow_neg (by norm_num), div_eq_mul_inv, inv_inv, mul_comm]
 
+omit [DecidableEq ι] in
 /-- **Theorem 3.1 (unconditional, realizable-deterministic).** For per-step separation `ε₀` and
-`n ≥ T_discover = (K(R)·ln 2 + ln(2/δ)) / (2 ε₀)`, the prequential posterior concentrates on the true
-rule: `wpost = w R · Lik R n / P̄(n) ≥ 1 − δ/2`. The hypotheses are **only** the model + realizability
+`n ≥ T_discover = (K(R)·ln 2 + ln(2/δ)) / (2 ε₀)`, the prequential posterior concentrates on the
+true rule: `wpost = w R · Lik R n / P̄(n) ≥ 1 − δ/2`. The hypotheses are **only** the model +
+realizability
 + separation — no Grünwald–Mehta, no Markov, no posterior-of-close. -/
 theorem deterministic_discovery (hnn : ∀ i s x, 0 ≤ q i s x) (hpmf : ∀ i s, ∑ x, q i s x = 1)
     (hw : ∀ i, 0 ≤ w i) (k : ℕ) (hwR : w R = (2 : ℝ) ^ (-(k : ℝ))) (hsumw : ∑ i, w i ≤ 1)
@@ -143,6 +139,7 @@ theorem deterministic_discovery (hnn : ∀ i s x, 0 ≤ q i s x) (hpmf : ∀ i s
       ε₀ ≤ sqHellinger (fun x => if x = ω t then 1 else 0) (q i t))
     (hT : ((k : ℝ) * Real.log 2 + Real.log (2 / δ)) / (2 * ε₀) ≤ (n : ℝ)) :
     1 - δ / 2 ≤ w R * Lik q ω R n / Pbarₚ q w ω n := by
+  classical
   -- per-step separation ⇒ cumulative `≥ n·ε₀`.
   have hcum : ∀ i, i ≠ R → (n : ℝ) * ε₀
       ≤ ∑ t ∈ Finset.range n, sqHellinger (fun x => if x = ω t then 1 else 0) (q i t) := by
@@ -162,4 +159,4 @@ theorem deterministic_discovery (hnn : ∀ i s x, 0 ≤ q i s x) (hpmf : ∀ i s
     rw [hlog]; nlinarith [h2]
   linarith [hpost, hbound]
 
-end DeterministicDiscovery
+end ALT

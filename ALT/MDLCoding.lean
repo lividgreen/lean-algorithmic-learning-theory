@@ -1,17 +1,9 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Mathlib.Data.Nat.Digits.Lemmas
 public import ALT.MDLDominance
 public import AIT.KolmogorovComplexity
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
-set_option linter.style.header false
-set_option linter.style.longLine false
 
 /-!
 # Lookup-table coding bound — [Discovery], Theorem 2.1 eq. (2)
@@ -34,9 +26,10 @@ A concrete lossless code `tableEnc` storing each symbol in a fixed `⌈log₂ O�
 * `tableEnc_injective` : it is lossless;
 * `tableEnc_length_ge` : `n · log₂ O ≤ (tableEnc s).length` — **off-by-one-free**, the only gap is
   the genuine `⌈log₂ O⌉ ≥ log₂ O` ceiling (a real coding cost, not a proof artefact);
-* `ltable_lower_bound` : `MDLDominance.Ltable O n ≤ (tableEnc s).length`, i.e. the §2.2 `Ltable = L`
+* `ltable_lower_bound` : `ALT.Ltable O n ≤ (tableEnc s).length`, i.e. the §2.2 `Ltable = L`
   (in natural-log units) is a genuine lower bound on this code's length. (Bits ≥ nats, since
-  `log₂ x = ln x / ln 2 ≥ ln x` as `ln 2 < 1`; the base-change factor is the O(1) the paper absorbs.)
+  `log₂ x = ln x / ln 2 ≥ ln x` as `ln 2 < 1`; the base-change factor is the O(1) the paper
+  absorbs.)
 
 `Nat.clog 2 O` is `⌈log₂ O⌉`; the bound uses `Nat.le_pow_clog` (`O ≤ 2^⌈log₂ O⌉`). No `sorry`.
 -/
@@ -44,7 +37,7 @@ A concrete lossless code `tableEnc` storing each symbol in a fixed `⌈log₂ O�
 
 @[expose] public section
 
-namespace MDLCoding
+namespace ALT
 
 open scoped BigOperators
 
@@ -95,7 +88,8 @@ lemma logb_le_tableWidth : Real.logb 2 (Fintype.card A) ≤ (tableWidth A : ℝ)
   · rw [Real.logb_le_iff_le_rpow (by norm_num) (by exact_mod_cast h), Real.rpow_natCast]
     exact_mod_cast Nat.le_pow_clog Nat.one_lt_two (Fintype.card A)
 
-/-- Natural log ≤ base-2 log (since `ln 2 < 1`); used to relate the bit length to `Ltable`'s nats. -/
+/-- Natural log ≤ base-2 log (since `ln 2 < 1`); used to relate the bit length to `Ltable`'s nats.
+-/
 lemma log_le_logb_two (O : ℕ) : Real.log O ≤ Real.logb 2 O := by
   rcases Nat.eq_zero_or_pos O with h | h
   · subst h; simp [Real.logb]
@@ -112,11 +106,11 @@ theorem tableEnc_length_ge (s : Fin n → A) :
   push_cast
   nlinarith [logb_le_tableWidth A, Nat.cast_nonneg (α := ℝ) n]
 
-/-- **Connection to `MDLDominance.Ltable`.** The §2.2 eq. (2) quantity `Ltable |A| n = n·log|A|`
+/-- **Connection to `ALT.Ltable`.** The §2.2 eq. (2) quantity `Ltable |A| n = n·log|A|`
 (natural-log units) is a genuine lower bound on the modeled table code's length. -/
 theorem ltable_lower_bound (s : Fin n → A) :
-    MDLDominance.Ltable (Fintype.card A) n ≤ ((tableEnc A n s).length : ℝ) := by
-  rw [tableEnc_length, MDLDominance.Ltable]
+    ALT.Ltable (Fintype.card A) n ≤ ((tableEnc A n s).length : ℝ) := by
+  rw [tableEnc_length, ALT.Ltable]
   push_cast
   nlinarith [log_le_logb_two (Fintype.card A), logb_le_tableWidth A, Nat.cast_nonneg (α := ℝ) n]
 
@@ -171,7 +165,7 @@ theorem exists_long_codeword (enc : (Fin n → A) → List Bool) (henc : Functio
 /-! ## Rule-based two-part code — [Discovery], Theorem 2.1 eq. (1) (upper bound)
 
 Provenance: [Discovery] §2.2 eq. (1), `MDL₂(rule) ≤ Lrule = r + 2·log₂ r +
-c₃ + log₂|O| + log₂ n + O(1)`. `MDLDominance.Lrule` takes this as a definition; here we build an
+c₃ + log₂|O| + log₂ n + O(1)`. `ALT.Lrule` takes this as a definition; here we build an
 explicit two-part code and bound its length, so `Lrule` is a proved upper bound on a real code.
 
 The substance is the **self-delimiting** length prefix: a program of `r` bits whose length is a
@@ -180,7 +174,7 @@ costs `r + 2·log₂ r + O(1)` — the `2 log r` term of `Kmin`.
 
 ### Units (flagged)
 This is a genuine *binary* (`MDL₂`) code, so its length is in **bits** (`Real.logb 2`).
-`MDLDominance.Lrule`/`Kmin` are written in `Real.log` (nats). Bits = nats / `ln 2` and `ln 2 < 1`,
+`ALT.Lrule`/`Kmin` are written in `Real.log` (nats). Bits = nats / `ln 2` and `ln 2 < 1`,
 so the bit cost is the *larger* of the two: the bound here is `≤ r + 2·log₂ r + log₂|O| + log₂ n +
 O(1)`, the faithful MDL₂ cost. (We do NOT claim `≤` the natural-log `Lrule`, which is smaller; the
 per-term base-change factor is the O(1)-per-log the paper's `O(·)` absorbs, and dominance is
@@ -203,7 +197,8 @@ lemma natLog_le_logb (m : ℕ) : (Nat.log 2 m : ℝ) ≤ Real.logb 2 m := by
     exact_mod_cast Nat.pow_log_le_self 2 h.ne'
 
 /-- Elias-γ code of `m`: `⌊log₂ m⌋` zeros followed by the binary digits of `m`
-(length `2·⌊log₂ m⌋ + 1` for `m ≥ 1`). Self-delimiting: the zero-run marks where the digits start. -/
+(length `2·⌊log₂ m⌋ + 1` for `m ≥ 1`). Self-delimiting: the zero-run marks where the digits start.
+-/
 def eliasγ (m : ℕ) : List Bool :=
   List.replicate (Nat.log 2 m) false ++ (Nat.digits 2 m).reverse.map (· != 0)
 
@@ -219,7 +214,8 @@ lemma eliasγ_length_le (m : ℕ) : (eliasγ m).length ≤ 2 * Nat.log 2 m + 1 :
 def selfDelim (p : List Bool) : List Bool := eliasγ p.length ++ p
 
 /-- **Self-delimiting length bound** `(selfDelim p).length ≤ |p| + 2·log₂|p| + 1`. The `2·log₂|p|`
-is the cost of framing an a-priori-unknown-length program — the `Kmin` `2 log r` term, content-checked. -/
+is the cost of framing an a-priori-unknown-length program — the `Kmin` `2 log r` term,
+content-checked. -/
 theorem selfDelim_length_le (p : List Bool) :
     ((selfDelim p).length : ℝ) ≤ (p.length : ℝ) + 2 * Real.logb 2 p.length + 1 := by
   have h1 : (selfDelim p).length ≤ p.length + (2 * Nat.log 2 p.length + 1) := by
@@ -235,8 +231,8 @@ of bit-length `r = |p|` is the self-delimiting code `selfDelim p`, whose length 
 bits-form capacity threshold `KminBits r 1`. So Cor 2.2's `2 log r` overhead is a *real* code
 length, not an assertion — exactly as eq.(1)/eq.(2) ground `MDLDominance`. -/
 theorem selfDelim_realizes_KminBits (p : List Bool) :
-    ((selfDelim p).length : ℝ) ≤ CapacityThreshold.KminBits (p.length : ℝ) 1 := by
-  unfold CapacityThreshold.KminBits
+    ((selfDelim p).length : ℝ) ≤ ALT.KminBits (p.length : ℝ) 1 := by
+  unfold ALT.KminBits
   exact selfDelim_length_le p
 
 /-- Plain binary encoding of `m` (no framing), length `≤ log₂ m + 1`. -/
@@ -324,7 +320,8 @@ close the residual: the program is recovered even with a **trailing data field**
 Elias-γ decoder: read the leading zero-run to get `⌊log₂|p|⌋`, hence the γ-prefix length; split off
 the prefix and recover `|p|` from its binary digits (`recoverNat`); then split `p` from `data`. This
 makes `ruleCode` a genuinely lossless two-part code, not merely a length bound. (Nonemptiness is
-required and flagged: `selfDelim [] = []`, so an empty program cannot be delimited from the data.) -/
+required and flagged: `selfDelim [] = []`, so an empty program cannot be delimited from the data.)
+-/
 
 /-- Decode a binary-digit block (the Elias-γ payload) back to its natural number: undo
 `(Nat.digits 2 m).reverse.map (·≠0)`. -/
@@ -343,8 +340,8 @@ theorem recoverNat_digitPart (m : ℕ) :
     interval_cases d <;> rfl
   rw [hmap, Nat.ofDigits_digits]
 
-/-- For `m ≥ 1` the digit block starts with `true` (the MSB is `1`): the zero-run ends exactly at the
-γ-payload, so the leading-zero count recovers `⌊log₂ m⌋`. -/
+/-- For `m ≥ 1` the digit block starts with `true` (the MSB is `1`): the zero-run ends exactly at
+the γ-payload, so the leading-zero count recovers `⌊log₂ m⌋`. -/
 theorem digitPart_cons (m : ℕ) (hm : 1 ≤ m) :
     ∃ rest, (Nat.digits 2 m).reverse.map (· != 0) = true :: rest := by
   have hne : Nat.digits 2 m ≠ [] := by rw [Nat.digits_ne_nil_iff_ne_zero]; omega
@@ -368,7 +365,8 @@ theorem eliasγ_length_eq (m : ℕ) (hm : 1 ≤ m) : (eliasγ m).length = 2 * Na
   rw [List.length_append, List.length_replicate, List.length_map, List.length_reverse,
       Nat.length_digits 2 m (by norm_num) (by omega)]; omega
 
-/-- The decoder reads `⌊log₂|p|⌋` from the leading zero-run of `selfDelim p ++ data` (nonempty `p`). -/
+/-- The decoder reads `⌊log₂|p|⌋` from the leading zero-run of `selfDelim p ++ data` (nonempty `p`).
+-/
 theorem takeWhile_selfDelim (p data : List Bool) (hp : p ≠ []) :
     (selfDelim p ++ data).takeWhile (fun b => !b) = List.replicate (Nat.log 2 p.length) false := by
   obtain ⟨rest, hrest⟩ := digitPart_cons p.length (List.length_pos_iff.mpr hp)
@@ -418,13 +416,13 @@ theorem twoPart_injOn :
 
 /-! ## Capstone: dominance between actual code lengths (Theorem 2.1)
 
-Combining the two derived coding bounds — eq. (1) `lrule_upper_bound` and eq. (2) `tableEnc_length_ge`
-— with a regime margin gives the headline of Theorem 2.1 at the level of *actual binary codes*: the
-rule-based two-part code is strictly shorter than the lookup table.
+Combining the two derived coding bounds — eq. (1) `lrule_upper_bound` and eq. (2)
+`tableEnc_length_ge` — with a regime margin gives the headline of Theorem 2.1 at the level of
+*actual binary codes*: the rule-based two-part code is strictly shorter than the lookup table.
 
 ### Units (route A)
 Both coding bounds are in **bits** (`Real.logb 2`), so we prove the dominance arithmetic directly in
-bits (a logb-2 analogue of `MDLDominance.mdl_dominance`'s natural-log proof). The only estimate is
+bits (a logb-2 analogue of `ALT.mdl_dominance`'s natural-log proof). The only estimate is
 `Real.logb 2 n ≤ n − 1` for integer `n ≥ 1` (`logb_two_nat_le_sub_one`, via `n ≤ 2^(n−1)`), the bit
 analogue of `Real.log n ≤ n − 1`. We do NOT route through `mdl_dominance` itself: its `r` (a raw bit
 count) and its `Ltable = n log O` (a log term) scale differently under base change, so a clean
@@ -501,8 +499,8 @@ theorem binCode_injective : Function.Injective binCode := by
 theorem binCode_ne_nil (m : ℕ) (hm : 1 ≤ m) : binCode m ≠ [] := by
   simp only [binCode, ne_eq, List.map_eq_nil_iff, Nat.digits_eq_nil_iff_eq_zero]; omega
 
-/-- The rule code of a generating `Code` `c`: the program is `c`'s binary index (shifted by `1` so it
-is nonzero, hence a nonempty program), framed self-delimitingly, followed by the data field. -/
+/-- The rule code of a generating `Code` `c`: the program is `c`'s binary index (shifted by `1` so
+it is nonzero, hence a nonempty program), framed self-delimitingly, followed by the data field. -/
 def ruleEncode (c : Nat.Partrec.Code) (O n : ℕ) : List Bool :=
   ruleCode (binCode (Encodable.encode c + 1)) O n
 
@@ -525,10 +523,10 @@ theorem ruleEncode_lossless {c₁ c₂ : Nat.Partrec.Code} {x₁ x₂ O n : ℕ}
 
 omit [Nonempty A] in
 /-- **Theorem 2.1 (codes), linked to the generated sequence.** When the program `c` *generates* the
-sequence `s` (`hgen : Computes c (encode s)` — the paper's premise, so both sides describe the *same*
-`s`: the table encodes `s` directly and losslessly via `tableEnc_injective`, the rule encodes `s` via
-`c` losslessly via `ruleEncode_lossless`), the rule-based code of `s` is strictly shorter than the
-lookup-table code of `s`, under the same regime margin. The length comparison reuses
+sequence `s` (`hgen : Computes c (encode s)` — the paper's premise, so both sides describe the
+*same* `s`: the table encodes `s` directly and losslessly via `tableEnc_injective`, the rule encodes
+`s` via `c` losslessly via `ruleEncode_lossless`), the rule-based code of `s` is strictly shorter
+than the lookup-table code of `s`, under the same regime margin. The length comparison reuses
 `mdl_dominance_codes`; `hgen` is the modelling premise that fixes the *common* sequence (it is not
 needed for the length inequality itself, only to make "same `s` on both sides" honest). -/
 theorem mdl_dominance_codes_generated [Encodable A] (c : Nat.Partrec.Code) (s : Fin n → A)
@@ -541,4 +539,4 @@ theorem mdl_dominance_codes_generated [Encodable A] (c : Nat.Partrec.Code) (s : 
   unfold ruleEncode
   exact mdl_dominance_codes A n (binCode (Encodable.encode c + 1)) s _hO hn hReg
 
-end MDLCoding
+end ALT

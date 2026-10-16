@@ -1,14 +1,7 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # Sample complexity ([SQ], §4 Theorem 4.1(i)) — the ε₀-absorption
@@ -57,7 +50,7 @@ Theorem 4.1: B1 multiplies an `O(r)` cost into an already-`O(r·log(1/δ))` wind
 
 @[expose] public section
 
-namespace SampleComplexity
+namespace ALT
 
 /-- Theorem 4.1(i) sample complexity, via the §4 "Remark on ε₀" absorption: the imported [Discovery]
 Thm 3.1 discovery bound `O((r + log(1/δ))/ε₀)` (proof step (a)) collapses to the *stated*
@@ -100,4 +93,4 @@ theorem sample_complexity_r2
     _ ≤ a * c * (2 * r ^ 2 * L) := mul_le_mul_of_nonneg_left hquad hac
     _ = 2 * a * c * r ^ 2 * L := by ring
 
-end SampleComplexity
+end ALT

@@ -1,36 +1,29 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
-public import CellularAutomata.MemoryWidth
+public import Nonautonomous.ReachabilityWidth
 public import ALT.Persistence.Core
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # The finite-world identification: the memory width is the component count
 ([Guests] §7 Proposition 7.18's boundary paragraph; [Persistence] §4, Proposition 4.1)
 
 At a finite carrier `X` under the constant stage family — [Guests] Definition 7.1's own degenerate
-case — the memory width of `MemoryWidth.lean` and the component count of `Persistence/Core.lean`'s
-static-lens stratum are readings of the SAME quantity: `memWidth U (fun _ => Set.univ) t` equals
-`Nat.card (Quotient (PersistenceCapacity.orbitSetoid U))` at every stage `t`.
-So [Persistence]'s L2 capacity, `log₂ #components(U)`, is `log₂` of [Guests]' width at this
-degenerate case — a relation between COUNTS, kept apart deliberately from a relation between
+case — the memory width of `ReachabilityWidth.lean` and the component count of
+`Persistence/Core.lean`'s static-lens stratum are readings of the SAME quantity:
+`width U (fun _ => Set.univ) t` equals `Nat.card (Quotient (ALT.orbitSetoid U))` at
+every stage `t`. So [Persistence]'s L2 capacity, `log₂ #components(U)`, is `log₂` of [Guests]' width
+at this degenerate case — a relation between COUNTS, kept apart deliberately from a relation between
 capacities: no result below claims the width itself IS a capacity.
 
-The identification is NOT that the merge quotient (`GrowingCore.MergeQuot`) is the component
-quotient (`PersistenceCapacity.orbitSetoid`'s quotient) — it is not, and the two-state swap
+The identification is NOT that the merge quotient (`Nonautonomous.MergeQuot`) is the component
+quotient (`ALT.orbitSetoid`'s quotient) — it is not, and the two-state swap
 (`Bool`, `Bool.not`) is the guard witness: one component, two merge classes, since `Merges` asks
 for eventual EQUALITY of iterates and the swap's iterates alternate forever.
-What coincides is one level up: at a finite carrier the induced law `GrowingCore.mergeLaw` is a
-BIJECTION of the merge quotient (`mergeLaw_bijective`), so `MemoryWidth.Reaches` there is symmetric
-(`reaches_symm`) — "lies on the same orbit of a permutation" — and its largest antichain is a
-transversal of those orbits, one per orbit.
+What coincides is one level up: at a finite carrier the induced law `Nonautonomous.mergeLaw` is a
+BIJECTION of the merge quotient (`mergeLaw_bijective`), so `Nonautonomous.Reaches` there is
+symmetric (`reaches_symm`) — "lies on the same orbit of a permutation" — and its largest antichain
+is a transversal of those orbits, one per orbit.
 Each orbit of `mergeLaw` over the merge quotient corresponds to exactly one component of `U`'s own
 transition graph over `X` (`reaches_mergeMk_iff_orbitRel`); a component whose cycle has length `L`
 carries `L` merge classes, all folded into that one orbit — which is why the width, an ORBIT count,
@@ -50,7 +43,7 @@ is the smaller of the two quantities the merge quotient and the component quotie
   classes are `Reaches`-related exactly when the states themselves lie in the same component of
   `U`'s transition graph.
 * `memWidth_eq_nat_card_orbitSetoid` — **the identification**: at a finite carrier and every
-  stage `t`, `memWidth U (fun _ => Set.univ) t` equals `Nat.card (Quotient (orbitSetoid U))`, cast
+  stage `t`, `width U (fun _ => Set.univ) t` equals `Nat.card (Quotient (orbitSetoid U))`, cast
   to `ℕ∞`.
 * `exists_finiteWorld_component_ne_merge_card` — **the guard**: the two-state swap has exactly one
   component and exactly two merge classes, while the identification above still computes the same
@@ -71,9 +64,9 @@ artifact.
 
 @[expose] public section
 
-namespace FiniteWorldWidth
+namespace ALT
 
-open GrowingCore MemoryWidth PersistenceCapacity
+open Nonautonomous
 
 variable {X : Type*}
 
@@ -141,9 +134,9 @@ private theorem orbitRel_imp_reaches_mergeMk {U : X → X} [Finite X] {s t : X} 
     Reaches U (mergeMk U s) (mergeMk U t) := by
   induction h with
   | rel x y hxy => subst hxy; simpa using reaches_mergeMk_iterate U x 1
-  | refl x => exact reaches_refl U _
+  | refl x => exact Reaches.refl U _
   | symm _ _ _ ih => exact reaches_symm U ih
-  | trans _ _ _ _ _ ih₁ ih₂ => exact reaches_trans ih₁ ih₂
+  | trans _ _ _ _ _ ih₁ ih₂ => exact Reaches.trans ih₁ ih₂
 
 /-- The converse leg, needing no finiteness: a `Reaches` witness on the merge classes is a common
 image after some number of steps, hence an eventual merge that `merges_imp_orbitRel` already reads
@@ -167,17 +160,17 @@ theorem reaches_mergeMk_iff_orbitRel (U : X → X) [Finite X] (s t : X) :
 [Persistence] §4, Proposition 4.1, L2): at a finite carrier and the constant stage family —
 Definition 7.1's own degenerate case — the memory width equals the component count, at every stage.
 The two objects were never put beside each other before this module: `orbitSetoid` reads
-`Persistence/Core.lean`'s own transition graph on `X`, and `memWidth` reads `MemoryWidth.lean`'s
+`Persistence/Core.lean`'s own transition graph on `X`, and `width` reads `ReachabilityWidth.lean`'s
 antichain width on the merge quotient — related here through `reaches_mergeMk_iff_orbitRel` and a
 chosen transversal of each side's classes, never through the merge quotient BEING the component
 quotient, which `exists_finiteWorld_component_ne_merge_card` below shows it is not. -/
 theorem memWidth_eq_nat_card_orbitSetoid (U : X → X) [Finite X] (t : ℕ) :
-    memWidth U (fun _ => Set.univ) t = (Nat.card (Quotient (orbitSetoid U)) : ℕ∞) := by
+    width U (fun _ => Set.univ) t = (Nat.card (Quotient (orbitSetoid U)) : ℕ∞) := by
   classical
   let reachSetoid : Setoid (MergeQuot U) :=
-    { r := Reaches U, iseqv := ⟨reaches_refl U, reaches_symm U, reaches_trans⟩ }
+    { r := Reaches U, iseqv := ⟨Reaches.refl U, reaches_symm U, Reaches.trans⟩ }
   set Q : Set (MergeQuot U) := Set.range (Quotient.out (s := reachSetoid)) with hQ
-  have hstage : mergeStage U (fun _ => (Set.univ : Set X)) t = Set.univ := by
+  have hstage : mergeFiber U (fun _ => (Set.univ : Set X)) t = Set.univ := by
     change mergeMk U '' Set.univ = Set.univ
     rw [Set.image_univ]
     exact Set.range_eq_univ.mpr Quotient.mk_surjective
@@ -189,12 +182,12 @@ theorem memWidth_eq_nat_card_orbitSetoid (U : X → X) [Finite X] (t : ℕ) :
         Quotient.mk reachSetoid (Quotient.out c2) := Quotient.sound hrel
     rw [Quotient.out_eq, Quotient.out_eq] at hc
     exact congrArg (Quotient.out (s := reachSetoid)) hc
-  have hcover : ∀ q ∈ mergeStage U (fun _ => (Set.univ : Set X)) t, ∃ p ∈ Q, Reaches U p q := by
+  have hcover : ∀ q ∈ mergeFiber U (fun _ => (Set.univ : Set X)) t, ∃ p ∈ Q, Reaches U p q := by
     intro q _
     refine ⟨Quotient.out (Quotient.mk reachSetoid q), ⟨_, rfl⟩, ?_⟩
     exact Quotient.exact (Quotient.out_eq (Quotient.mk reachSetoid q))
-  have hwidth : memWidth U (fun _ => Set.univ) t = Q.encard :=
-    memWidth_eq_encard_of_isRootAntichain (hstage ▸ Set.subset_univ Q) hanti hcover
+  have hwidth : width U (fun _ => Set.univ) t = Q.encard :=
+    width_eq_encard_of_is_root_antichain (hstage ▸ Set.subset_univ Q) hanti hcover
   have hQinj : Function.Injective (Quotient.out (s := reachSetoid)) := by
     intro c1 c2 h
     have := congrArg (Quotient.mk reachSetoid) h
@@ -240,8 +233,8 @@ theorem card_orbitSetoid_bool_not : Nat.card (Quotient (orbitSetoid Bool.not)) =
   exact Nat.card_eq_one_iff_unique.mpr ⟨hsub, ⟨Quotient.mk _ true⟩⟩
 
 /-- The two-state swap has exactly **two merge classes**: `Bool.not` is injective, so no two
-distinct states ever merge — the same fact `MemoryWidth`'s own guard (a) uses inside its proof,
-stated here for what it separates. -/
+distinct states ever merge — the same fact `ReachabilityWidth`'s own guard (a) uses inside its
+proof, stated here for what it separates. -/
 theorem card_mergeQuot_bool_not : Nat.card (MergeQuot Bool.not) = 2 := by
   have hinj : Function.Injective (mergeMk Bool.not) := mergeMk_injective_of_injective (by decide)
   have hbij : Function.Bijective (mergeMk Bool.not) := ⟨hinj, Quotient.mk_surjective⟩
@@ -255,39 +248,41 @@ theorem exists_finiteWorld_component_ne_merge_card :
     ∃ (X : Type) (_ : Finite X) (U : X → X) (t : ℕ),
       Nat.card (Quotient (orbitSetoid U)) = 1 ∧
       Nat.card (MergeQuot U) = 2 ∧
-      memWidth U (fun _ => Set.univ) t = 1 := by
+      width U (fun _ => Set.univ) t = 1 := by
   refine ⟨Bool, inferInstance, Bool.not, 0, card_orbitSetoid_bool_not, card_mergeQuot_bool_not, ?_⟩
   rw [memWidth_eq_nat_card_orbitSetoid, card_orbitSetoid_bool_not]; rfl
 
-end FiniteWorldWidth
+end ALT
 
 /-! ## Axiom audit
 
 Every capstone above is `#print axioms`-clean on the standard triple, and the guards below make
 that build-enforced. -/
 
-set_option linter.style.longLine false
 
-/-- info: 'FiniteWorldWidth.mergeLaw_bijective' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.mergeLaw_bijective' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms FiniteWorldWidth.mergeLaw_bijective
+#print axioms ALT.mergeLaw_bijective
 
-/-- info: 'FiniteWorldWidth.reaches_symm' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.reaches_symm' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms FiniteWorldWidth.reaches_symm
+#print axioms ALT.reaches_symm
 
-/-- info: 'FiniteWorldWidth.merges_imp_orbitRel' depends on axioms: [propext, Quot.sound] -/
+/-- info: 'ALT.merges_imp_orbitRel' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms FiniteWorldWidth.merges_imp_orbitRel
+#print axioms ALT.merges_imp_orbitRel
 
-/-- info: 'FiniteWorldWidth.reaches_mergeMk_iff_orbitRel' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.reaches_mergeMk_iff_orbitRel' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms FiniteWorldWidth.reaches_mergeMk_iff_orbitRel
+#print axioms ALT.reaches_mergeMk_iff_orbitRel
 
-/-- info: 'FiniteWorldWidth.memWidth_eq_nat_card_orbitSetoid' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.memWidth_eq_nat_card_orbitSetoid' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms FiniteWorldWidth.memWidth_eq_nat_card_orbitSetoid
+#print axioms ALT.memWidth_eq_nat_card_orbitSetoid
 
-/-- info: 'FiniteWorldWidth.exists_finiteWorld_component_ne_merge_card' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.exists_finiteWorld_component_ne_merge_card' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms FiniteWorldWidth.exists_finiteWorld_component_ne_merge_card
+#print axioms ALT.exists_finiteWorld_component_ne_merge_card

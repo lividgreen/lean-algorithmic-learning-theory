@@ -1,18 +1,7 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.DeterministicDiscovery
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
-set_option linter.style.header false
-set_option linter.style.longLine false
-set_option linter.unusedSectionVars false
-set_option linter.unusedFintypeInType false
-set_option linter.unusedDecidableInType false
 
 /-!
 # Genuine ε₀-Hellinger + the ε₀→query-separation bridge — [Discovery] §3.3 (FV-15)
@@ -22,24 +11,25 @@ inherited `1/ε₀` factor) and [SQ] §3 / Appendix A Claim 1 (the SQ mean-gap `
 rule). Two micro-targets, both routed in-house on `BayesRedundancy.sqHellinger`:
 
 ## Target A — ε₀ as a GENUINE Hellinger quantity
-Where `EpsilonZeroBound.eps0 = M.inf' hM sep` carries an ABSTRACT real `sep : ι → ℝ` (the
+Where `ALT.eps0 = M.inf' hM sep` carries an ABSTRACT real `sep : ι → ℝ` (the
 measure-theoretic Hellinger deferred, FV-8), here `sep` is *instantiated* with the real
 `sqHellinger`, and the positive-definiteness the abstract route could not state is now proved:
 
-* `sqHellinger_pos_of_ne` — for finite nonneg `p ≠ q`, `0 < sqHellinger p q` (square-root injectivity,
-  pointwise). This is the fact `EpsilonZeroBound.eps0_pos` had to *assume* as `0 < sep i`.
+* `sqHellinger_pos_of_ne` — for finite nonneg `p ≠ q`, `0 < sqHellinger p q` (square-root
+  injectivity, pointwise). This is the fact `ALT.eps0_pos` had to *assume* as
+  `0 < sep i`.
 * `eps0H M hM truth P := M.inf' hM (fun i => sqHellinger truth (P i))` — ε₀ instantiated: the least
   squared-Hellinger separation of the truth's predictive pmf from each competitor's, over the class.
   `eps0H_pos` (from `sqHellinger_pos_of_ne`, under pairwise-distinctness — no assumed `0 < sep`),
   `eps0H_le` (`ε₀ ≤` each competitor's separation, `Finset.inf'_le`).
-* `hsep_of_eps0H` — the reconnection to `DeterministicDiscovery.deterministic_discovery`'s `hsep`
+* `hsep_of_eps0H` — the reconnection to `ALT.deterministic_discovery`'s `hsep`
   shape: a per-step `eps0H`-floor `ε₀ ≤ eps0H (univ.erase R) … (δ_{ω t}) (q · t)` at every step
   discharges the per-instance `∀ i ≠ R, ∀ t, ε₀ ≤ sqHellinger (δ_{ω t}) (q i t)` (in the
-  realizable-deterministic case the truth's step-`t` pmf IS the point mass `δ_{ω t}`). `discovery_of_eps0H`
-  then feeds it straight into Theorem 3.1 — so `eps0H` genuinely drives discovery, not merely mirrors
-  the shape of `eps0`.
+  realizable-deterministic case the truth's step-`t` pmf IS the point mass `δ_{ω t}`).
+  `discovery_of_eps0H` then feeds it straight into Theorem 3.1 — so `eps0H` genuinely drives
+  discovery, not merely mirrors the shape of `eps0`.
 
-`EpsilonZeroBound.eps0` is UNTOUCHED (its FV-8 guards stay intact); `eps0H` supersedes it by
+`ALT.eps0` is UNTOUCHED (its FV-8 guards stay intact); `eps0H` supersedes it by
 instantiation.
 
 ## Target B — the ε₀ → query-separation bridge ([SQ] §3 / App A grounding)
@@ -52,8 +42,8 @@ The chain `squared-Hellinger ≥ ε₀  ⟹  a [−1,1] query with mean gap ≥ 
 * `identifiable_of_sqHellinger` — the bridge: `sqHellinger p q ≥ ε₀ ⟹ ∃` a `[−1,1]` query with
   `mean gap ≥ 2·ε₀`. Hence `separates_of_sqHellinger`: distinct rules with squared-Hellinger
   separation `ε₀` are **2τ-identifiable for any `τ < ε₀`** — i.e.
-  `SQObjects.Separates (2τ) meanAns φ p q` (`2τ < |meanAns φ p − meanAns φ q|`), stated in FV-J/FV-L's
-  answer-functional vocabulary via the local `meanAns φ p = E_p[φ] = ∑ₓ p x·φ x`.
+  `SQObjects.Separates (2τ) meanAns φ p q` (`2τ < |meanAns φ p − meanAns φ q|`), stated in
+  FV-J/FV-L's answer-functional vocabulary via the local `meanAns φ p = E_p[φ] = ∑ₓ p x·φ x`.
 
 ## FIDELITY BOUNDARY — the √ε₀ ("mean-level") reading vs. the certified ε₀
 [SQ]'s Remark on ε₀ (§4) and Appendix A Claim 1 match the SQ tolerance as `τ ≲ √ε₀`
@@ -62,12 +52,12 @@ identifiability only at `τ < ε₀`** — the guaranteed mean gap is `2·ε₀`
 only *lower* bound available from squared Hellinger is `TV ≥ D_H² = ε₀` (`sqHellinger_le_tv`). The
 `√ε₀` scale is the OTHER direction, `TV ≤ √2·√(D_H²)` (an *upper* bound on TV), which coincides with
 the TV scale only in the local / small-perturbation regime `TV ≈ √(D_H²)`; it is NOT derivable from
-`D_H² ≥ ε₀` in general (e.g. one pmf placing ≈0 mass where the other places `ε` gives `TV ≈ D_H² ≈ ε`,
-so `mean gap ≈ 2ε₀`, quadratically below `√ε₀`). So the `τ ≲ √ε₀` matching — and the `1/ε₀` sample
-factor it yields — genuinely rests on a **mean-level separation assumption**, not on the
-squared-Hellinger `ε₀` alone. From `ε₀` alone the honest certified matching is `τ < ε₀` (sample
-factor `1/ε₀²`). Everything below is proved at the honest `2·ε₀` / `τ < ε₀` scale; the papers' `√ε₀`
-reading is stated with exactly that mean-level qualifier ([SQ] §4, Remark on ε₀).
+`D_H² ≥ ε₀` in general (e.g. one pmf placing ≈0 mass where the other places `ε` gives
+`TV ≈ D_H² ≈ ε`, so `mean gap ≈ 2ε₀`, quadratically below `√ε₀`). So the `τ ≲ √ε₀` matching — and
+the `1/ε₀` sample factor it yields — genuinely rests on a **mean-level separation assumption**, not
+on the squared-Hellinger `ε₀` alone. From `ε₀` alone the honest certified matching is `τ < ε₀`
+(sample factor `1/ε₀²`). Everything below is proved at the honest `2·ε₀` / `τ < ε₀` scale; the
+papers' `√ε₀` reading is stated with exactly that mean-level qualifier ([SQ] §4, Remark on ε₀).
 
 Everything is elementary (Mathlib calculus + `Finset`); no `sorry`.
 -/
@@ -75,15 +65,15 @@ Everything is elementary (Mathlib calculus + `Finset`); no `sorry`.
 
 @[expose] public section
 
-namespace HellingerBridge
+namespace ALT
 
 open scoped BigOperators
-open BayesRedundancy DeterministicDiscovery
+open BayesRedundancy
 
 /-! ## Target A — ε₀ as a genuine Hellinger quantity -/
 
 /-- **Positive-definiteness of squared Hellinger.** For finite nonnegative `p ≠ q`,
-`0 < sqHellinger p q`. This is what the abstract-`sep` route (`EpsilonZeroBound.eps0_pos`) had to
+`0 < sqHellinger p q`. This is what the abstract-`sep` route (`ALT.eps0_pos`) had to
 *assume* (`0 < sep i`): a competitor with a distinct predictive pmf is strictly separated. Proof:
 at a point `x₀` where `p x₀ ≠ q x₀`, square-root injectivity on `[0,∞)` gives
 `√(p x₀) ≠ √(q x₀)`, so that summand `(√p − √q)²` is strictly positive; the rest are `≥ 0`. -/
@@ -99,7 +89,7 @@ theorem sqHellinger_pos_of_ne {α : Type*} [Fintype α] (p q : α → ℝ)
   have hne : Real.sqrt (p x₀) - Real.sqrt (q x₀) ≠ 0 := sub_ne_zero.mpr hs
   exact lt_of_le_of_ne (sq_nonneg _) (Ne.symm (pow_ne_zero 2 hne))
 
-/-- **ε₀ as a genuine squared-Hellinger quantity** (mirrors `EpsilonZeroBound.eps0`'s `Finset.inf'`
+/-- **ε₀ as a genuine squared-Hellinger quantity** (mirrors `ALT.eps0`'s `Finset.inf'`
 shape, truth-vs-competitor): the least squared-Hellinger separation of the truth's predictive pmf
 `truth` from each competitor's `P i`, over the finite nonempty class `M`. Where `eps0` carries an
 abstract `sep : ι → ℝ`, this instantiates `sep i := sqHellinger truth (P i)`. -/
@@ -232,4 +222,4 @@ theorem separates_of_sqHellinger {α : Type*} [Fintype α] (p q : α → ℝ)
   unfold meanAns
   linarith [hgap]
 
-end HellingerBridge
+end ALT

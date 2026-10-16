@@ -1,14 +1,7 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.PersistenceCapacity
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # The structural category of decoupled simulations ([Decoupling] §4.5)
@@ -65,9 +58,8 @@ not vacuously satisfied only by identities.
 
 @[expose] public section
 
-namespace DecoupledSimulation
+namespace ALT
 
-open PersistenceCapacity
 
 variable {C W C' W' C'' W'' : Type*}
 
@@ -191,4 +183,4 @@ theorem counter_simulates :
 
 end Counter
 
-end DecoupledSimulation
+end ALT

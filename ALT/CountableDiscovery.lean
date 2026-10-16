@@ -1,18 +1,7 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Learning.BayesRedundancy
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
-set_option linter.style.header false
-set_option linter.style.longLine false
-set_option linter.unusedSectionVars false
-set_option linter.unusedFintypeInType false
-set_option linter.unusedDecidableInType false
 
 /-!
 # Countable discovery — [Discovery] Theorem 3.1 over a countable hypothesis class
@@ -26,36 +15,39 @@ theorem to a countable `ι`: the sums over the hypothesis index become `tsum`/`�
 stays genuinely finite (`[Fintype A]`).
 
 ## What carries over and what is re-proved
-The mathematics is the finite argument with `∑'` for `∑` over `ι`; the finite `deterministic_discovery`
-is untouched and still builds (this file is strictly additive). The genuinely index-free ingredient
-`Lik` (`Learning/BayesRedundancy.lean`) and the alphabet-only facts `sqHellinger`,
-`hellinger_point_mass` are reused as-is. The small per-hypothesis facts (`lik_nonneg`,
-`lik_realizable`, `q_self_le_exp`, `competitor_likelihood_decay`) are **re-proved here verbatim**:
-their finite-file counterparts sit under that file's `[Fintype ι]` section variable, which Lean's
-section-variable auto-inclusion bakes into their signatures (the `unusedSectionVars` linter is off
-there), so they are not directly applicable to a non-finite `ι`. The proofs are unchanged — only the
-ambient `[Fintype ι]` is dropped. (The interpretive companions `telescope` / `cumulative_hellinger`,
-eq. 4, are off the discovery critical path and are left in the finite file.)
+The mathematics is the finite argument with `∑'` for `∑` over `ι`; the finite
+`deterministic_discovery` is untouched and still builds (this file is strictly additive). The
+genuinely index-free ingredient `Lik` (`Learning/BayesRedundancy.lean`) and the alphabet-only facts
+`sqHellinger`, `hellinger_point_mass` are reused as-is. The small per-hypothesis facts
+(`lik_nonneg`, `lik_realizable`, `q_self_le_exp_countable`,
+`competitor_likelihood_decay_countable`) are **re-proved here verbatim**: their finite-file
+counterparts sit under that file's `[Fintype ι]` section variable, which Lean's section-variable
+auto-inclusion bakes into their signatures (the `unusedSectionVars` linter is off there), so they
+are not directly applicable to a non-finite `ι`.
+The proofs are unchanged — only the ambient `[Fintype ι]` is dropped. (The interpretive companions
+`telescope` / `cumulative_hellinger`, eq. 4, are off the discovery critical path and are left in the
+finite file.)
 
 ## What is PROVED (no `sorry`, no deep import)
 * `Lik_le_one`, `summable_w_lik`, `countable_posterior_lower_bound`, and the capstone
-  `countable_discovery` — the exact analogue of `DeterministicDiscovery.deterministic_discovery` over a
-  countable `ι`. The hypotheses are **only** the model (pmf `q`, prior `w` with `w R = 2^{−K(R)}`,
-  `Summable w`, `∑' w ≤ 1`), realizability (`q R s (ω s) = 1`), and per-step `ε₀`-separation. No
-  Grünwald–Mehta import, no Markov, no posterior-of-close.
+  `countable_discovery` — the exact analogue of `ALT.deterministic_discovery`
+  over a countable `ι`. The hypotheses are **only** the model (pmf `q`, prior `w` with
+  `w R = 2^{−K(R)}`, `Summable w`, `∑' w ≤ 1`), realizability (`q R s (ω s) = 1`), and per-step
+  `ε₀`-separation. No Grünwald–Mehta import, no Markov, no posterior-of-close.
 
 ## The countability ingredients (everything else is the finite argument verbatim)
 * `Lik_le_one` + `Summable w` ⇒ `Summable (i ↦ w_i · Lik_i n)` (`Summable.of_nonneg_of_le`).
 * the mixture mass splits off the true term: `P̄(n) = w_R + ∑'_i ite (i=R) 0 (w_i Lik_i n)`
   (`Summable.tsum_eq_add_tsum_ite`), so `P̄(n) ≥ w_R = 2^{−K(R)} > 0`.
-* the competitor tail is bounded termwise by `w_i · exp(−2 S)` and summed via `Summable.tsum_le_tsum`
+* the competitor tail is bounded termwise by `w_i · exp(−2 S)` and summed via
+  `Summable.tsum_le_tsum`
   + `tsum_mul_right`, using `∑' w ≤ 1` — exactly the finite `Finset.sum_le_sum` chain with `∑'`.
 -/
 
 
 @[expose] public section
 
-namespace CountableDiscovery
+namespace ALT
 
 open scoped BigOperators
 open BayesRedundancy
@@ -63,21 +55,25 @@ open BayesRedundancy
 variable {A : Type*} [Fintype A] [DecidableEq A] {ι : Type*} [DecidableEq ι]
   {q : ι → ℕ → A → ℝ} {w : ι → ℝ} {ω : ℕ → A} {R : ι}
 
-/-! ## Per-hypothesis facts (re-proved without `[Fintype ι]`; proofs identical to the finite file) -/
+/-! ## Per-hypothesis facts (re-proved without `[Fintype ι]`; proofs identical to the finite file)
+-/
 
-/-- `0 ≤ Lik i n` (every factor is a probability). Verbatim `BayesRedundancy.Lik_nonneg`, without the
-ambient `[Fintype ι]`. -/
+omit [Fintype A] [DecidableEq A] [DecidableEq ι] in
+/-- `0 ≤ Lik i n` (every factor is a probability). Verbatim `BayesRedundancy.Lik_nonneg`, without
+the ambient `[Fintype ι]`. -/
 lemma lik_nonneg (hnn : ∀ i s x, 0 ≤ q i s x) (i : ι) (n : ℕ) : 0 ≤ Lik q ω i n :=
   Finset.prod_nonneg (fun s _ => hnn i s (ω s))
 
+omit [Fintype A] [DecidableEq A] [DecidableEq ι] in
 /-- Realizable-deterministic: the true rule's likelihood is identically `1`. Verbatim
 `BayesRedundancy.Lik_realizable`, without the ambient `[Fintype ι]`. -/
 lemma lik_realizable (hreal : ∀ s, q R s (ω s) = 1) (n : ℕ) : Lik q ω R n = 1 :=
   Finset.prod_eq_one (fun s _ => hreal s)
 
+omit [DecidableEq ι] in
 /-- **Per-step likelihood decay.** `q_i(ω_t) ≤ exp(−2·D_H²_{i,t})`. Verbatim
-`DeterministicDiscovery.q_self_le_exp`, without the ambient `[Fintype ι]`. -/
-theorem q_self_le_exp (hnn : ∀ i s x, 0 ≤ q i s x) (hpmf : ∀ i s, ∑ x, q i s x = 1)
+`ALT.q_self_le_exp`, without the ambient `[Fintype ι]`. -/
+theorem q_self_le_exp_countable (hnn : ∀ i s x, 0 ≤ q i s x) (hpmf : ∀ i s, ∑ x, q i s x = 1)
     (i : ι) (t : ℕ) :
     q i t (ω t) ≤ Real.exp (-2 * sqHellinger (fun x => if x = ω t then 1 else 0) (q i t)) := by
   set D := sqHellinger (fun x => if x = ω t then 1 else 0) (q i t) with hD
@@ -91,10 +87,11 @@ theorem q_self_le_exp (hnn : ∀ i s x, 0 ≤ q i s x) (hpmf : ∀ i s, ∑ x, q
   calc (1 - D) * (1 - D) ≤ Real.exp (-D) * Real.exp (-D) := mul_le_mul h1 h1 h0 (Real.exp_pos _).le
     _ = Real.exp (-2 * D) := by rw [← Real.exp_add]; congr 1; ring
 
+omit [DecidableEq ι] in
 /-- **Competitor likelihood decay.** `Lik i n ≤ exp(−2 ∑_{t<n} D_H²_{i,t})`. Verbatim
-`DeterministicDiscovery.competitor_likelihood_decay`, without the ambient `[Fintype ι]`. -/
-theorem competitor_likelihood_decay (hnn : ∀ i s x, 0 ≤ q i s x) (hpmf : ∀ i s, ∑ x, q i s x = 1)
-    (i : ι) (n : ℕ) :
+`ALT.competitor_likelihood_decay`, without the ambient `[Fintype ι]`. -/
+theorem competitor_likelihood_decay_countable (hnn : ∀ i s x, 0 ≤ q i s x)
+    (hpmf : ∀ i s, ∑ x, q i s x = 1) (i : ι) (n : ℕ) :
     Lik q ω i n
       ≤ Real.exp (-2 * ∑ t ∈ Finset.range n,
           sqHellinger (fun x => if x = ω t then 1 else 0) (q i t)) := by
@@ -102,7 +99,8 @@ theorem competitor_likelihood_decay (hnn : ∀ i s x, 0 ≤ q i s x) (hpmf : ∀
   calc ∏ s ∈ Finset.range n, q i s (ω s)
       ≤ ∏ s ∈ Finset.range n,
           Real.exp (-2 * sqHellinger (fun x => if x = ω s then 1 else 0) (q i s)) :=
-        Finset.prod_le_prod₀ (fun s _ => hnn i s (ω s)) (fun s _ => q_self_le_exp hnn hpmf i s)
+        Finset.prod_le_prod₀ (fun s _ => hnn i s (ω s))
+          (fun s _ => q_self_le_exp_countable hnn hpmf i s)
     _ = Real.exp (∑ s ∈ Finset.range n,
           -2 * sqHellinger (fun x => if x = ω s then 1 else 0) (q i s)) := (Real.exp_sum _ _).symm
     _ = Real.exp (-2 * ∑ t ∈ Finset.range n,
@@ -110,6 +108,7 @@ theorem competitor_likelihood_decay (hnn : ∀ i s x, 0 ≤ q i s x) (hpmf : ∀
 
 /-! ## Countable mixture mass and the discovery theorem -/
 
+omit [DecidableEq A] [DecidableEq ι] in
 /-- **Each prefix likelihood is `≤ 1`.** Every factor `q_i(ω_s | ω_{<s})` is a pmf value, hence
 `≤ 1` (`Finset.single_le_sum` against `∑_x q = 1`); the product over `s < n` is therefore `≤ 1`
 (`Finset.prod_le_one₀`). This is the only new fact the countable comparison test needs. -/
@@ -125,6 +124,7 @@ countable analogue of `BayesRedundancy.Pbarₚ` (a `tsum` over `ι` in place of 
 noncomputable def Pbarₚ' (q : ι → ℕ → A → ℝ) (w : ι → ℝ) (ω : ℕ → A) (t : ℕ) : ℝ :=
   ∑' i, w i * Lik q ω i t
 
+omit [DecidableEq A] [DecidableEq ι] in
 /-- **The mixture summand is summable.** `0 ≤ w_i · L_i(n) ≤ w_i` (since `0 ≤ L_i ≤ 1`,
 `Lik_le_one`), so summability follows from the Kraft-summable prior `Summable w` by comparison
 (`Summable.of_nonneg_of_le`). -/
@@ -135,13 +135,14 @@ theorem summable_w_lik (hnn : ∀ i s x, 0 ≤ q i s x) (hpmf : ∀ i s, ∑ x, 
     (fun i => mul_nonneg (hw i) (lik_nonneg hnn i n))
     (fun i => mul_le_of_le_one_right (hw i) (Lik_le_one hnn hpmf i n))
 
+omit [DecidableEq ι] in
 /-- **Posterior lower bound (countable).** The countable analogue of
-`DeterministicDiscovery.posterior_lower_bound`: under realizability and a cumulative separation `S`
+`ALT.posterior_lower_bound`: under realizability and a cumulative separation `S`
 of every competitor, the posterior shortfall is exponentially small,
 `1 − wpost ≤ 2^{K(R)}·exp(−2 S)`. The proof is the finite one with `∑'` for `∑`: the true term is
-split off by `Summable.tsum_eq_add_tsum_ite` (giving `P̄(n) = w_R + N` with `N ≥ 0`, so `P̄(n) ≥ w_R`),
-and the competitor tail `N` is bounded termwise by `w_i·exp(−2 S)` and summed (`Summable.tsum_le_tsum`,
-`tsum_mul_right`, `∑' w ≤ 1`). -/
+split off by `Summable.tsum_eq_add_tsum_ite` (giving `P̄(n) = w_R + N` with `N ≥ 0`, so
+`P̄(n) ≥ w_R`), and the competitor tail `N` is bounded termwise by `w_i·exp(−2 S)` and summed
+(`Summable.tsum_le_tsum`, `tsum_mul_right`, `∑' w ≤ 1`). -/
 theorem countable_posterior_lower_bound
     (hnn : ∀ i s x, 0 ≤ q i s x) (hpmf : ∀ i s, ∑ x, q i s x = 1)
     (hw : ∀ i, 0 ≤ w i) (k : ℕ) (hwR : w R = (2 : ℝ) ^ (-(k : ℝ)))
@@ -150,6 +151,7 @@ theorem countable_posterior_lower_bound
     (hsep : ∀ i, i ≠ R →
       S ≤ ∑ t ∈ Finset.range n, sqHellinger (fun x => if x = ω t then 1 else 0) (q i t)) :
     1 - w R * Lik q ω R n / Pbarₚ' q w ω n ≤ (2 : ℝ) ^ (k : ℝ) * Real.exp (-2 * S) := by
+  classical
   have hwRpos : 0 < w R := by rw [hwR]; positivity
   have hLikR : Lik q ω R n = 1 := lik_realizable hreal n
   have hsummable := summable_w_lik (w := w) (ω := ω) hnn hpmf hw hsumw n
@@ -187,7 +189,7 @@ theorem countable_posterior_lower_bound
           · rw [ite_eq_left hiR]; exact mul_nonneg (hw i) (Real.exp_pos _).le
           · rw [ite_eq_right hiR]
             have hdecay : Lik q ω i n ≤ Real.exp (-2 * S) :=
-              le_trans (competitor_likelihood_decay hnn hpmf i n)
+              le_trans (competitor_likelihood_decay_countable hnn hpmf i n)
                 (Real.exp_le_exp.mpr (by linarith [hsep i hiR]))
             exact mul_le_mul_of_nonneg_left hdecay (hw i)
       _ = (∑' i, w i) * Real.exp (-2 * S) := tsum_mul_right
@@ -199,12 +201,13 @@ theorem countable_posterior_lower_bound
     _ = (2 : ℝ) ^ (k : ℝ) * Real.exp (-2 * S) := by
         rw [hwR, Real.rpow_neg (by norm_num), div_eq_mul_inv, inv_inv, mul_comm]
 
+omit [DecidableEq ι] in
 /-- **Theorem 3.1 (unconditional, realizable-deterministic) — countable hypothesis class.** The
-countable analogue of `DeterministicDiscovery.deterministic_discovery`, over the Kolmogorov-weighted
+countable analogue of `ALT.deterministic_discovery`, over the Kolmogorov-weighted
 prior `w(R') = 2^{−K(R')}` of §1.1 (`Summable w`, `∑' w ≤ 1`). For per-step separation `ε₀` and
-`n ≥ T_discover = (K(R)·ln 2 + ln(2/δ)) / (2 ε₀)`, the prequential posterior concentrates on the true
-rule: `wpost = w R · Lik R n / P̄(n) ≥ 1 − δ/2`. Hypotheses are **only** the model + realizability +
-separation — no Grünwald–Mehta, no Markov, no posterior-of-close. -/
+`n ≥ T_discover = (K(R)·ln 2 + ln(2/δ)) / (2 ε₀)`, the prequential posterior concentrates on the
+true rule: `wpost = w R · Lik R n / P̄(n) ≥ 1 − δ/2`. Hypotheses are **only** the model +
+realizability + separation — no Grünwald–Mehta, no Markov, no posterior-of-close. -/
 theorem countable_discovery (hnn : ∀ i s x, 0 ≤ q i s x) (hpmf : ∀ i s, ∑ x, q i s x = 1)
     (hw : ∀ i, 0 ≤ w i) (k : ℕ) (hwR : w R = (2 : ℝ) ^ (-(k : ℝ)))
     (hsumw : Summable w) (hsumw1 : ∑' i, w i ≤ 1)
@@ -213,6 +216,7 @@ theorem countable_discovery (hnn : ∀ i s x, 0 ≤ q i s x) (hpmf : ∀ i s, �
       ε₀ ≤ sqHellinger (fun x => if x = ω t then 1 else 0) (q i t))
     (hT : ((k : ℝ) * Real.log 2 + Real.log (2 / δ)) / (2 * ε₀) ≤ (n : ℝ)) :
     1 - δ / 2 ≤ w R * Lik q ω R n / Pbarₚ' q w ω n := by
+  classical
   -- per-step separation ⇒ cumulative `≥ n·ε₀`.
   have hcum : ∀ i, i ≠ R → (n : ℝ) * ε₀
       ≤ ∑ t ∈ Finset.range n, sqHellinger (fun x => if x = ω t then 1 else 0) (q i t) := by
@@ -233,4 +237,4 @@ theorem countable_discovery (hnn : ∀ i s x, 0 ≤ q i s x) (hpmf : ∀ i s, �
     rw [hlog]; nlinarith [h2]
   linarith [hpost, hbound]
 
-end CountableDiscovery
+end ALT

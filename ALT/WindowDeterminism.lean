@@ -1,15 +1,8 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Mathlib.Data.Fintype.Pigeonhole
 public import Mathlib.Data.Fintype.Pi
 
-set_option linter.style.header false
-set_option linter.style.longLine false
 
 /-!
 # Exact window sufficiency forces eventual periodicity
@@ -43,7 +36,7 @@ predictor `f` on a window of fixed length `k`.
 
 @[expose] public section
 
-namespace WindowDeterminism
+namespace ALT
 
 variable {X : Type*} [Fintype X] {k : ℕ}
 
@@ -151,12 +144,13 @@ theorem exists_eventually_periodic (hk : 0 < k) (f : (Fin k → X) → X) {o : �
     have hxle : (x : ℕ) ≤ N := Nat.lt_succ_iff.mp x.isLt
     omega
 
-/-- info: 'WindowDeterminism.eq_of_window_eq' depends on axioms: [propext, Quot.sound] -/
+/-- info: 'ALT.eq_of_window_eq' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms eq_of_window_eq
 
-/-- info: 'WindowDeterminism.exists_eventually_periodic' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.exists_eventually_periodic' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms exists_eventually_periodic
 
-end WindowDeterminism
+end ALT

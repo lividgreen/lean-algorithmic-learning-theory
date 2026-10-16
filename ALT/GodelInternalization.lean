@@ -1,8 +1,3 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.GodelCore
@@ -10,9 +5,6 @@ public import ALT.ParameterizedNNO
 public import Mathlib.AlgebraicTopology.SimplexCategory.Basic
 public import Mathlib.Tactic.Linarith
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
-set_option linter.style.header false
-set_option linter.style.longLine false
 
 /-!
 # Internalizing the bounded proof relation ([Decoupling] §6.3, Theorem 6.3, Levels L2a/L2b)
@@ -23,7 +15,7 @@ counterpart), §6.1–6.3 (Definition 6.1, Theorem 6.2, Theorem 6.3 the internal
 
 This extends the Level-1 Gödel skeleton (`ALT/GodelCore.lean`, `…GodelThreshold.lean`,
 `…Reflective.lean`) to the **concrete §6.3 internalization**, machine-checking an explicit capacity
-polynomial. Gödel incompleteness stays the imported black box (the `GodelThreshold.Incompleteness`
+polynomial. Gödel incompleteness stays the imported black box (the `ALT.Incompleteness`
 hypothesis, discharged from Foundation in `ALT/GodelComplete.lean`); we do NOT re-prove it.
 By Proposition 4.5 the whole construction lives in the finite-product + bounded-recursor fragment
 `Rep₀(S)` — **no Cartesian-closed structure** is used here.
@@ -38,7 +30,7 @@ Capacities are **bit-lengths**: hosting depth `M_chk` costs working memory `|s_w
 The explicit capacity polynomial is `capacity n := 2 * n` (§6.3: `|s_work| = poly(n)`): with
 `M_chk ≤ g^2` (a concrete `poly(g)`) we prove `M_chk + 1 ≤ 2 ^ (capacity n)` by `Nat`/`omega`
 reasoning, and tie the necessity direction to the sharp pigeonhole
-`ParameterizedNNO.depth_succ_le_two_pow`.
+`ParamNNO.depth_succ_le_two_pow`.
 The bounded search ranges over `ProofCode M_chk := {p // p ≤ M_chk}` (a `Fintype`) and is the finite
 fold along the orbit of the bounded recursor `cyclicParamNNO M_chk` — no exponential.
 
@@ -50,7 +42,7 @@ fold along the orbit of the bounded recursor `cyclicParamNNO M_chk` — no expon
   total (a `Fintype` fold) and `Decide φ = true ↔ ∀ p ≤ M_chk, ¬Prf(φ,p)`.
 * `decide_eq_true_iff_orbit`: the same fold expressed along the **recursor orbit** of
   `cyclicParamNNO M_chk` (`ProofCode` enumerated by the recursor orbit, valued by `ZMod.val`).
-* `decide_godel` (the L2b ∧ L3 capstone): from `GodelThreshold.Incompleteness` (imported Gödel) and
+* `decide_godel` (the L2b ∧ L3 capstone): from `ALT.Incompleteness` (imported Gödel) and
   the soundness field, `Decide(G_{T_S}) = true` — Rep(S) decides bounded non-provability.
 * `capacity_bound`: explicit `M_chk + 1 ≤ 2 ^ (capacity n)` for `M_chk ≤ g^2` (capacity polynomial).
 * `proofCodes_embed`: `ProofCode M_chk ↪ S_work` once `M_chk + 1 ≤ 2^{|s_work|}` (i.e. `ProofCode
@@ -61,15 +53,15 @@ fold along the orbit of the bounded recursor `cyclicParamNNO M_chk` — no expon
 * `internalization` (Theorem 6.3, L1 ∧ L2b ∧ capacity bundled): the concrete §6.3 statement.
 
 ## What this does NOT establish (flagged)
-* NOT Gödel incompleteness — imported (`GodelThreshold.Incompleteness`); discharged in
+* NOT Gödel incompleteness — imported (`ALT.Incompleteness`); discharged in
   `ALT/GodelComplete.lean`. NOT the exponential / Cartesian closure (Proposition 4.5: unused).
 * `Formula` is kept abstract (the L2a *carving* of `Formula := {c ≤ M_chk ∧ Wff c}` as a subobject
   of `S_work` is a modeling choice deferred to the concrete witness); `gnum`/`Derivable` abstract.
 * The concrete discharge of the `BoundedChecker` interface lives on the Foundation side
   (`ALT/GodelChecker.lean`, `paMinus_decides_bounded_nonprovability` — the axiom-clean `𝗣𝗔⁻`
   capstone; the earlier `𝗜𝚺₁` witnesses are retired): it cannot share this file
-  because Foundation's root `Matrix.map` collides with umbrella-Mathlib's (the same Mathlib/Foundation
-  import divide that keeps the Foundation-side files separate).
+  because Foundation's root `Matrix.map` collides with umbrella-Mathlib's (the same
+  Mathlib/Foundation import divide that keeps the Foundation-side files separate).
 
 ## Hypotheses: paper-stated vs added
 * Paper-stated / faithful: the §6.3 `Prf`/`Decide` construction; Proposition 5.4; the two budgets;
@@ -81,9 +73,8 @@ fold along the orbit of the bounded recursor `cyclicParamNNO M_chk` — no expon
 
 @[expose] public section
 
-namespace GodelInternalization
+namespace ALT
 
-open ParameterizedNNO
 
 /-! ### The proof-code index set and its recursor orbit -/
 
@@ -149,38 +140,38 @@ variable (C : BoundedChecker)
 /-- §6.3 L2b — the decision morphism `Decide(φ) = ⋀_{p ≤ M_chk} ¬Prf(φ, p)`. Total by construction:
 a decidable `Fintype` fold over `ProofCode M_chk` (finite products + bounded recursor — no
 exponential, Proposition 4.5). -/
-def Decide (φ : C.Formula) : Bool :=
+def BoundedChecker.Decide (φ : C.Formula) : Bool :=
   decide (∀ p : ProofCode C.Mchk, C.Prf φ p.val = false)
 
-/-- `Decide φ = true ↔ no proof code within budget is accepted` — the defining property of the L2b
-bounded-non-provability decision. -/
-theorem decide_eq_true_iff (φ : C.Formula) :
-    Decide C φ = true ↔ ∀ p, p ≤ C.Mchk → C.Prf φ p = false := by
-  rw [Decide, decide_eq_true_eq]
+/-- `C.Decide φ = true ↔ no proof code within budget is accepted` — the defining property of the
+L2b bounded-non-provability decision. -/
+theorem BoundedChecker.decide_eq_true_iff (φ : C.Formula) :
+    BoundedChecker.Decide C φ = true ↔ ∀ p, p ≤ C.Mchk → C.Prf φ p = false := by
+  rw [BoundedChecker.Decide, decide_eq_true_eq]
   exact ⟨fun h p hp => h ⟨p, hp⟩, fun h p => h p.1 p.2⟩
 
 /-- The L2b fold as a finite fold **along the recursor orbit** of `cyclicParamNNO M_chk`:
-`Decide φ = true` iff `¬Prf(φ, p)` for every `p` enumerated as `ZMod.val` of an orbit element. This
-is the precise §6.3 sense in which the bounded search is "a single finite fold along the orbit of
-the bounded recursor `N_{M_chk}`". -/
-theorem decide_eq_true_iff_orbit (φ : C.Formula) :
-    Decide C φ = true ↔
+`C.Decide φ = true` iff `¬Prf(φ, p)` for every `p` enumerated as `ZMod.val` of an orbit element.
+This is the precise §6.3 sense in which the bounded search is "a single finite fold along the orbit
+of the bounded recursor `N_{M_chk}`". -/
+theorem BoundedChecker.decide_eq_true_iff_orbit (φ : C.Formula) :
+    BoundedChecker.Decide C φ = true ↔
       ∀ k : Fin (C.Mchk + 1), C.Prf φ (ZMod.val ((cyclicParamNNO C.Mchk).orbit k)) = false := by
-  rw [decide_eq_true_iff]
+  rw [BoundedChecker.decide_eq_true_iff]
   simp only [cyclicParamNNO_orbit_val]
   exact ⟨fun h k => h k.val (by omega), fun h m hm => h ⟨m, by omega⟩⟩
 
-/-- §6.3 L2b ∧ L3 (the capstone): from the imported Gödel fact `GodelThreshold.Incompleteness` (a
+/-- §6.3 L2b ∧ L3 (the capstone): from the imported Gödel fact `Incompleteness` (a
 representable sentence `G`, true and **not derivable**) and the checker's soundness, the decision
 morphism returns `true` on `G`: Rep(S) **decides bounded non-provability** of `G_{T_S}`. The step
 from "no bounded proof" (decided here) to "no proof of any length" is L3, the imported theorem —
 used only as the hypothesis `¬ Derivable G`. -/
-theorem decide_godel (True_ : C.Formula → Prop) (gTS : ℕ)
-    (hInc : GodelThreshold.Incompleteness C.gnum C.Derivable True_ gTS) :
-    ∃ G, C.gnum G = gTS ∧ True_ G ∧ Decide C G = true := by
+theorem BoundedChecker.decide_godel (True_ : C.Formula → Prop) (gTS : ℕ)
+    (hInc : Incompleteness C.gnum C.Derivable True_ gTS) :
+    ∃ G, C.gnum G = gTS ∧ True_ G ∧ BoundedChecker.Decide C G = true := by
   obtain ⟨G, hg, htrue, hnd⟩ := hInc
   refine ⟨G, hg, htrue, ?_⟩
-  rw [decide_eq_true_iff]
+  rw [BoundedChecker.decide_eq_true_iff]
   intro p _
   by_contra h
   exact hnd (C.sound G p (by simpa using h))
@@ -210,10 +201,10 @@ candidate proof code `p ≤ M_chk` (hence the workspace to *hold* one candidate 
 was previously flagged "not yet bounded") fits in `capacity n = 2n` work bits, `n := Nat.clog 2
 (g+1)`, given the concrete budget `M_chk ≤ g^2`. So the per-proof workspace is `poly(n)` — indeed
 within the *same* `2n` as the syntax objects and the recursor — and the two-sidedness of Proposition
-5.4 is tight up to a constant, not open at the verification step. (The remaining `Δ₀`/poly-time check
-of a held candidate, Buss 1986, runs in `poly(n)` scratch — paper-level.) The *assembly* of these
-per-constituent bounds into the scratch bound of the enumeration itself is machine-checked in
-`CheckerWorkspace.checker_scratch_closure` — the loop over all `M_chk + 1` candidates runs in a
+5.4 is tight up to a constant, not open at the verification step. (The remaining `Δ₀`/poly-time
+check of a held candidate, Buss 1986, runs in `poly(n)` scratch — paper-level.) The *assembly* of
+these per-constituent bounds into the scratch bound of the enumeration itself is machine-checked in
+`checker_scratch_closure` — the loop over all `M_chk + 1` candidates runs in a
 workspace bounded independently of `M_chk` — with the per-candidate check entering there as its
 `hstep` hypothesis, exactly the paper-level input named above. -/
 theorem proofcode_workspace_bound (g Mchk : ℕ) (hM : Mchk ≤ g ^ 2) {p : ℕ} (hp : p ≤ Mchk) :
@@ -256,14 +247,14 @@ L1), under imported incompleteness at `gTS = g`:
 * **(capacity)** `M_chk + 1 ≤ 2 ^ (capacity n)`, `n := Nat.clog 2 (g+1)`: hosted by `poly(n)` bits.
 Uses finite products + the bounded recursor only (Proposition 4.5); incompleteness imported
 (L3/L4). -/
-theorem internalization (True_ : C.Formula → Prop) (g : ℕ)
+theorem BoundedChecker.internalization (True_ : C.Formula → Prop) (g : ℕ)
     (hidx : g ≤ C.Mchk) (hpoly : C.Mchk ≤ g ^ 2)
-    (hInc : GodelThreshold.Incompleteness C.gnum C.Derivable True_ g) :
+    (hInc : Incompleteness C.gnum C.Derivable True_ g) :
     ∃ G, C.gnum G = g ∧ True_ G ∧
       g ≤ C.Mchk ∧
-      Decide C G = true ∧
+      BoundedChecker.Decide C G = true ∧
       C.Mchk + 1 ≤ 2 ^ capacity (Nat.clog 2 (g + 1)) := by
-  obtain ⟨G, hg, htrue, hdec⟩ := decide_godel C True_ g hInc
+  obtain ⟨G, hg, htrue, hdec⟩ := BoundedChecker.decide_godel C True_ g hInc
   exact ⟨G, hg, htrue, hidx, hdec, capacity_bound g C.Mchk hpoly⟩
 
-end GodelInternalization
+end ALT

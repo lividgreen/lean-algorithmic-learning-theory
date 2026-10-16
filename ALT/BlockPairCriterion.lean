@@ -1,8 +1,3 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.BlockPairOverlap
@@ -16,40 +11,42 @@ public import ALT.TapeHostSchedule
 `TapeHostWitness.lean`/`TapeHostOverlap.lean` state the block-pair pipeline over an arbitrary
 observation sequence and window-deviation profile. This module certifies that the certified
 block-pair design (`BlockPairProfile.designObs`, via `BlockPairHost`) meets that profile at the
-SAME window constants `BlockPairObservability.deviation_bound_same`/`deviation_bound_cross`
-already establish (`designObs_profile`), ties the general host to the certified one at that
-instance (`hostTape_eq`, `hostUpdate_eq`, `hostSubUpdate_eq`), records the tape's own derived
-density (`blockPair_density`), and instantiates the class-level overlap
-(`TapeHostOverlap.tapeHost_overlap`) at the certified design to get the certified host into BOTH
-route-classes at the coupled numeral standard (`blockPair_overlap_coupled`) — alongside, not in
-place of, `BlockPairOverlap.hostWitness_overlap`'s own registered [Inevitability] §5 Theorem 5.8
-boundary at the decoupled numerals.
+SAME window constants `BlockPairHost.deviation_bound_same`/`BlockPairHost.deviation_bound_cross`
+already establish (`BlockPairHost.designObs_profile`), ties the general host to the certified one at
+that instance (`BlockPairHost.tape_eq_tapeHost_tape`, `BlockPairHost.update_eq`,
+`BlockPairHost.subUpdate_eq`), records the tape's own derived density (`blockPair_density`), and
+instantiates the class-level overlap (`TapeHost.overlap`) at the certified design to get the
+certified host into BOTH route-classes at the coupled numeral standard (`blockPair_overlap_coupled`)
+— alongside, not in place of, `BlockPairHost.witness_overlap`'s own registered [Inevitability] §5
+Theorem 5.8 boundary at the decoupled numerals.
 
 ## Main results
 
-* `designObs_profile` — the certified design meets `TapeHostObservability.Profile` at `S = 56`,
+* `BlockPairHost.designObs_profile` — the certified design meets `Profile` at `S = 56`,
   the zero/`-2/3` correlations and `192`/`46` window bounds `BlockPairObservability`'s own
-  `deviation_bound_cross`/`deviation_bound_same` already establish.
-* `hostTape_eq`, `hostUpdate_eq`, `hostSubUpdate_eq` — the certified host IS the general host at
-  `o := designObs M`, `N := 2 * (2 * M) * 24`.
+  `BlockPairHost.deviation_bound_cross`/`BlockPairHost.deviation_bound_same` already establish.
+* `BlockPairHost.tape_eq_tapeHost_tape`, `BlockPairHost.update_eq`, `BlockPairHost.subUpdate_eq` —
+  the certified host IS the general host at `o := BlockPairHost.designObs M`,
+  `N := 2 * (2 * M) * 24`.
 * `blockPair_density` — the certified design's own tape density: `2 · #{tape = true} = 32 · M`,
-  from `TapeHostWitness.tape_density` and `blockSeq_wordU_wordV_correlation`'s lag-`8` value
+  from `TapeHost.tape_density` and `blockSeq_wordU_wordV_correlation`'s lag-`8` value
   `-64 · M`.
-* `blockPair_noiseCount` — `TapeHostFiber.noiseCount_tapeStream_bounds` at the certified design's
+* `blockPair_noiseCount` — `TapeHost.noiseCount_tapeStream_bounds` at the certified design's
   own profile and density `η = 1/6`: the fiber-facing noise count tracks `n/6` within `23`.
 * `blockPair_overlap_coupled` — **the certified instance of the class-level overlap**: the
-  certified host is simultaneously a member of `𝒮_E` and of `𝒮_L`, at `TapeHostOverlap.
-  tapeHost_overlap`'s own coupled numeral standard, from the certified design's profile at
+  certified host is simultaneously a member of `𝒮_E` and of `𝒮_L`, at `TapeHost.overlap`'s
+  own coupled numeral standard, from the certified design's profile at
   `η = 1/6`.
-* `hostTraj_eq` — the certified host's own trajectory IS `TapeHostObservability.hostTraj` at
-  `o := designObs M` (definitional, as `hostTape_eq`/`hostUpdate_eq` are).
+* `BlockPairHost.traj_eq` — the certified host's own trajectory IS `TapeHost.traj` at
+  `o := BlockPairHost.designObs M` (definitional, as
+  `BlockPairHost.tape_eq_tapeHost_tape`/`BlockPairHost.update_eq` are).
 * `blockPair_identifies` — **the affordable regime's worked example, at the certified design**:
-  `TapeHostSchedule.schedSurvivors`'s `2τ`-pruning rule isolates the true literal from the
+  `schedSurvivors`'s `2τ`-pruning rule isolates the true literal from the
   certified design's own profile, at `τ = 1/3` and every horizon past `912`.
 
 ## Scope
 
-`blockPair_overlap_coupled` is NOT `BlockPairOverlap.hostWitness_overlap` restated: that theorem
+`blockPair_overlap_coupled` is NOT `BlockPairHost.witness_overlap` restated: that theorem
 stays untouched, byte-identical, registering [Inevitability] §5 Theorem 5.8's own boundary at the
 DECOUPLED numerals (class `g(T_S) = 2` at `K = 108`, crossing at the excess Gödel size). This
 module's own capstone is the coupled standard `TapeHostOverlap`'s class-level constructor forces —
@@ -62,30 +59,28 @@ Anchors: [Inevitability] §5 Theorem 5.8, rows IN-14, IN-37, IN-38.
 
 @[expose] public section
 
-namespace BlockPairCriterion
-
-open BlockPairProfile BlockPairHost BlockPairObservability
+namespace ALT
 
 /-! ## The certified design meets the profile -/
 
-/-- **The certified design meets `TapeHostObservability.Profile`.** At every phase `c` and offset
+/-- **The certified design meets `Profile`.** At every phase `c` and offset
 `a : Fin 8`, the single-site window bound is `56` and the pair-correlation bound against the
 declared correlation is `192` off the rule's own literal and `46` on it — exactly
-`BlockPairObservability.deviation_bound_cross`/`deviation_bound_same`'s own `hSa`/`hSb`/`hW`
+`BlockPairHost.deviation_bound_cross`/`BlockPairHost.deviation_bound_same`'s own `hSa`/`hSb`/`hW`
 derivations, restated as the profile's two fields. -/
-theorem designObs_profile (M : ℕ) [NeZero (2 * (2 * M))] :
-    TapeHostObservability.Profile (BlockPairHost.designObs M) 56
+theorem BlockPairHost.designObs_profile (M : ℕ) [NeZero (2 * (2 * M))] :
+    Profile (BlockPairHost.designObs M) 56
       (fun a => if (a : ℕ) = 0 then -2 / 3 else 0)
       (fun a => if (a : ℕ) = 0 then 46 else 192) where
   single := fun c n => by
     change |∑ t ∈ Finset.range n,
-        ParityWalk.chi (BlockPairObservability.hostTraj M c (t + 0))| ≤ (56 : ℝ)
-    rw [BlockPairObservability.chiSum_eq_singleWindow M c 0 n, ← Int.cast_abs]
+        ALT.chi (BlockPairHost.traj M c (t + 0))| ≤ (56 : ℝ)
+    rw [BlockPairHost.chiSum_eq_singleWindow M c 0 n, ← Int.cast_abs]
     exact_mod_cast singleWindow_blockSeq_wordU_wordV_bound M (c.val + 0) n
   pair := fun c a n => by
     have ea : ∀ t : ℕ,
         BlockPairHost.designObs M (c + (t : ℕ) + ((a : ℕ) : ZMod (2 * (2 * M) * 24)))
-          = BlockPairObservability.hostTraj M c (t + (a : ℕ)) := by
+          = BlockPairHost.traj M c (t + (a : ℕ)) := by
       intro t
       change BlockPairHost.designObs M (c + (t : ℕ) + ((a : ℕ) : ZMod (2 * (2 * M) * 24)))
           = BlockPairHost.designObs M (c + ((t + (a : ℕ) : ℕ) : ZMod (2 * (2 * M) * 24)))
@@ -94,7 +89,7 @@ theorem designObs_profile (M : ℕ) [NeZero (2 * (2 * M))] :
       ring
     have e8 : ∀ t : ℕ,
         BlockPairHost.designObs M (c + (t : ℕ) + ((8 : ℕ) : ZMod (2 * (2 * M) * 24)))
-          = BlockPairObservability.hostTraj M c (t + 8) := by
+          = BlockPairHost.traj M c (t + 8) := by
       intro t
       change BlockPairHost.designObs M (c + (t : ℕ) + ((8 : ℕ) : ZMod (2 * (2 * M) * 24)))
           = BlockPairHost.designObs M (c + ((t + 8 : ℕ) : ZMod (2 * (2 * M) * 24)))
@@ -104,7 +99,7 @@ theorem designObs_profile (M : ℕ) [NeZero (2 * (2 * M))] :
     simp_rw [ea, e8]
     by_cases ha0 : (a : ℕ) = 0
     · rw [ite_eq_left ha0, ite_eq_left ha0, ha0]
-      rw [BlockPairObservability.chiProd_eq_cyclicCorrWindow M c (by omega : (0 : ℕ) ≤ 8) n]
+      rw [BlockPairHost.chiProd_eq_cyclicCorrWindow M c (by omega : (0 : ℕ) ≤ 8) n]
       have haperiodic : aperiodicCorr wordU 8 + aperiodicCorr wordV 8 = -32 := by decide
       have hb := cyclicCorrWindow_blockSeq_wordU_wordV_spike M (c.val + 0) n
       rw [haperiodic] at hb
@@ -121,25 +116,25 @@ theorem designObs_profile (M : ℕ) [NeZero (2 * (2 * M))] :
       linarith [hbR]
     · rw [ite_eq_right ha0, ite_eq_right ha0, mul_zero, sub_zero]
       have ha7 : (a : ℕ) ≤ 8 := by omega
-      rw [BlockPairObservability.chiProd_eq_cyclicCorrWindow M c ha7 n, ← Int.cast_abs]
+      rw [BlockPairHost.chiProd_eq_cyclicCorrWindow M c ha7 n, ← Int.cast_abs]
       exact_mod_cast cyclicCorrWindow_blockSeq_wordU_wordV_zone M
         (by omega : 1 ≤ 8 - (a : ℕ)) (by omega : 8 - (a : ℕ) ≤ 7) (c.val + (a : ℕ)) n
 
 /-! ## The ties between the general and certified hosts -/
 
-/-- The certified host's tape IS the general host's tape at `o := designObs M`. -/
-theorem hostTape_eq (M : ℕ) [NeZero (2 * (2 * M))] :
-    BlockPairHost.hostTape M = TapeHost.tape (BlockPairHost.designObs M) := rfl
+/-- The certified host's tape IS the general host's tape at `o := BlockPairHost.designObs M`. -/
+theorem BlockPairHost.tape_eq_tapeHost_tape (M : ℕ) [NeZero (2 * (2 * M))] :
+    BlockPairHost.tape M = TapeHost.tape (BlockPairHost.designObs M) := rfl
 
-/-- The certified host's update IS the general host's update at `o := designObs M`. -/
-theorem hostUpdate_eq (M : ℕ) [NeZero (2 * (2 * M))] :
-    BlockPairHost.hostUpdate M = TapeHost.tapeUpdate (BlockPairHost.designObs M) := rfl
+/-- The certified host's update IS the general host's update at `o := BlockPairHost.designObs M`. -/
+theorem BlockPairHost.update_eq (M : ℕ) [NeZero (2 * (2 * M))] :
+    BlockPairHost.update M = TapeHost.tapeUpdate (BlockPairHost.designObs M) := rfl
 
 /-- The certified witness's substrate update IS the general witness's substrate update at
-`N := 2 * (2 * M) * 24`, `o := designObs M`. -/
-theorem hostSubUpdate_eq (M : ℕ) [NeZero (2 * (2 * M))] :
-    BlockPairWitness.hostSubUpdate M
-      = TapeHostWitness.hostSubUpdate (2 * (2 * M) * 24) (BlockPairHost.designObs M) := by
+`N := 2 * (2 * M) * 24`, `o := BlockPairHost.designObs M`. -/
+theorem BlockPairHost.subUpdate_eq (M : ℕ) [NeZero (2 * (2 * M))] :
+    BlockPairHost.subUpdate M
+      = TapeHost.subUpdate (2 * (2 * M) * 24) (BlockPairHost.designObs M) := by
   funext s x
   cases x with
   | inl i => rfl
@@ -158,23 +153,23 @@ private lemma sum_mul_sub_eq_cyclicCorr {N : ℕ} [NeZero N] (x : ZMod N → ℤ
   rw [hcomp]
   exact Finset.sum_congr rfl (fun i _ => mul_comm (x (i + 8)) (x i))
 
-/-- **The tape's own derived density.** From `TapeHostWitness.tape_density` and the certified
+/-- **The tape's own derived density.** From `TapeHost.tape_density` and the certified
 pair's own exact lag-`8` correlation `-64 · M` (`blockSeq_wordU_wordV_correlation`): `N = 96 · M`,
 so `2 · #{tape = true} = 96 · M - 64 · M = 32 · M` — a density of `1/6`, IN-14's/IN-37's `η`. -/
 theorem blockPair_density (M : ℕ) [NeZero (2 * (2 * M))] :
     (2 * (Finset.univ.filter (fun u : ZMod (2 * (2 * M) * 24) =>
       TapeHost.tape (BlockPairHost.designObs M) u = true)).card : ℝ) = 32 * (M : ℝ) := by
-  have hden := TapeHostWitness.tape_density (2 * (2 * M) * 24) (BlockPairHost.designObs M)
-  have hchi : ∀ u : ZMod (2 * (2 * M) * 24), ParityWalk.chi (BlockPairHost.designObs M u)
+  have hden := TapeHost.tape_density (2 * (2 * M) * 24) (BlockPairHost.designObs M)
+  have hchi : ∀ u : ZMod (2 * (2 * M) * 24), ALT.chi (BlockPairHost.designObs M u)
       = (blockSeq wordU wordV (blockSign (2 * (2 * M))) u : ℝ) :=
-    BlockPairObservability.chi_designObs M
+    BlockPairHost.chi_designObs M
   have hzeq := sum_mul_sub_eq_cyclicCorr (blockSeq wordU wordV (blockSign (2 * (2 * M))))
   have hcast : ((∑ u : ZMod (2 * (2 * M) * 24), blockSeq wordU wordV (blockSign (2 * (2 * M))) u
       * blockSeq wordU wordV (blockSign (2 * (2 * M))) (u - 8) : ℤ) : ℝ)
       = ((cyclicCorr (blockSeq wordU wordV (blockSign (2 * (2 * M)))) 8 : ℤ) : ℝ) := by
     exact_mod_cast hzeq
-  have hsum_eq : (∑ u : ZMod (2 * (2 * M) * 24), ParityWalk.chi (BlockPairHost.designObs M u) *
-      ParityWalk.chi (BlockPairHost.designObs M (u - 8)))
+  have hsum_eq : (∑ u : ZMod (2 * (2 * M) * 24), ALT.chi (BlockPairHost.designObs M u) *
+      ALT.chi (BlockPairHost.designObs M (u - 8)))
       = ((cyclicCorr (blockSeq wordU wordV (blockSign (2 * (2 * M)))) 8 : ℤ) : ℝ) := by
     rw [← hcast]
     push_cast
@@ -185,18 +180,18 @@ theorem blockPair_density (M : ℕ) [NeZero (2 * (2 * M))] :
 
 /-! ## The fiber-facing noise count, at the certified density -/
 
-/-- **The certified instance of `TapeHostFiber.noiseCount_tapeStream_bounds`.**
-`designObs_profile`'s own window bounds at `a = 0` (`ρ 0 = -2/3`, `W 0 = 46`) meet
+/-- **The certified instance of `TapeHost.noiseCount_tapeStream_bounds`.**
+`BlockPairHost.designObs_profile`'s own window bounds at `a = 0` (`ρ 0 = -2/3`, `W 0 = 46`) meet
 `ρ 0 = 2η - 1` at `η = 1/6` exactly, so the fiber-facing noise count on the certified design
 tracks `n/6` within half of `46`. -/
 theorem blockPair_noiseCount (M : ℕ) [NeZero (2 * (2 * M))] (c : ZMod (2 * (2 * M) * 24))
     (n : ℕ) :
-    |(WitnessMixture.noiseCount
-        (TapeHostFiber.tapeStream (BlockPairHost.designObs M) c) 8 n : ℝ) -
+    |(ALT.noiseCount
+        (TapeHost.tapeStream (BlockPairHost.designObs M) c) 8 n : ℝ) -
       (n : ℝ) * (1 / 6)| ≤ 23 := by
   have hρ0 : (if (0 : ℕ) = 0 then (-2 / 3 : ℝ) else 0) = 2 * (1 / 6 : ℝ) - 1 := by norm_num
-  have hb := TapeHostFiber.noiseCount_tapeStream_bounds (BlockPairHost.designObs M)
-    (designObs_profile M) hρ0 c n
+  have hb := TapeHost.noiseCount_tapeStream_bounds (BlockPairHost.designObs M)
+    (BlockPairHost.designObs_profile M) hρ0 c n
   norm_num at hb
   exact hb
 
@@ -204,52 +199,54 @@ theorem blockPair_noiseCount (M : ℕ) [NeZero (2 * (2 * M))] (c : ZMod (2 * (2 
 
 /-- **The certified instance of the class-level overlap.** At `η = 1/6` (`blockPair_density`'s own
 tape density), the certified block-pair host is simultaneously a member of `𝒮_E` and of `𝒮_L`, at
-`TapeHostOverlap.tapeHost_overlap`'s own coupled numeral standard — an independent witness of the
-coupling standard alongside, not in place of, `BlockPairOverlap.hostWitness_overlap`'s registered
+`TapeHost.overlap`'s own coupled numeral standard — an independent witness of the
+coupling standard alongside, not in place of, `BlockPairHost.witness_overlap`'s registered
 decoupled boundary. -/
 theorem blockPair_overlap_coupled :
     ∃ gTS, ∀ (M : ℕ) [NeZero (2 * (2 * M))] (τ : ℝ), 2 * (1 / 6 : ℝ) ≤ τ → ∀ (K : ℝ),
-      (8 : ℝ) + GodelInternalization.capacity (Nat.clog 2 (gTS + 1)) ≤ K →
-      CategoricalThreshold.hostsAt (TapeHostOverlap.hostFrameBits (2 * (2 * M) * 24)) gTS →
-      SubstrateClass.SubstrateE
-        (TapeHostWitness.hostSubUpdate (2 * (2 * M) * 24) (BlockPairHost.designObs M))
-        (TapeHostWitness.hostCodeRegion (2 * (2 * M) * 24)) 3 K (2 * K) 1 2 3 (1 / 2) 8 gTS
+      (8 : ℝ) + ALT.capacity (Nat.clog 2 (gTS + 1)) ≤ K →
+      ALT.hostsAt (TapeHost.frameBits (2 * (2 * M) * 24)) gTS →
+      ALT.SubstrateE
+        (TapeHost.subUpdate (2 * (2 * M) * 24) (BlockPairHost.designObs M))
+        (TapeHost.codeRegion (2 * (2 * M) * 24)) 3 K (2 * K) 1 2 3 (1 / 2) 8 gTS
         True True True True
-        (SubstrateEmergence.GrowsLawfulGuestOf
-          (TapeHostOverlap.hostPacked (2 * (2 * M) * 24) (BlockPairHost.designObs M))
-          (TapeHostOverlap.hostFrame (2 * (2 * M) * 24) (BlockPairHost.designObs M)))
-        (SubstrateEmergence.GrownGuestReachesThresholdAt
-          (TapeHostOverlap.hostFrameBits (2 * (2 * M) * 24)) gTS) ∧
-      SubstrateClass.SubstrateL
-        (TapeHostWitness.hostSubUpdate (2 * (2 * M) * 24) (BlockPairHost.designObs M))
-        (TapeHostWitness.hostCodeRegion (2 * (2 * M) * 24)) 3 K (2 * K) 1 2 3 (1 / 2) 8 gTS
+        (ALT.GrowsLawfulGuestOf
+          (TapeHost.packed (2 * (2 * M) * 24) (BlockPairHost.designObs M))
+          (TapeHost.frame (2 * (2 * M) * 24) (BlockPairHost.designObs M)))
+        (ALT.GrownGuestReachesThresholdAt
+          (TapeHost.frameBits (2 * (2 * M) * 24)) gTS) ∧
+      ALT.SubstrateL
+        (TapeHost.subUpdate (2 * (2 * M) * 24) (BlockPairHost.designObs M))
+        (TapeHost.codeRegion (2 * (2 * M) * 24)) 3 K (2 * K) 1 2 3 (1 / 2) 8 gTS
         True True True True
-        (TapeHostWitness.HostRealizable (2 * (2 * M) * 24) (BlockPairHost.designObs M))
-        (LearningWitness.ChainWindowBudget 8 (1 / 6) τ) := by
-  obtain ⟨gTS, hgTS⟩ := TapeHostOverlap.tapeHost_overlap
+        (TapeHost.Realizable (2 * (2 * M) * 24) (BlockPairHost.designObs M))
+        (ALT.ChainWindowBudget 8 (1 / 6) τ) := by
+  obtain ⟨gTS, hgTS⟩ := TapeHost.overlap
   refine ⟨gTS, fun M _ τ hτ K hK hhost => ?_⟩
-  exact hgTS (2 * (2 * M) * 24) (BlockPairHost.designObs M) _ _ _ (designObs_profile M)
+  exact hgTS (2 * (2 * M) * 24) (BlockPairHost.designObs M) _ _ _
+    (BlockPairHost.designObs_profile M)
     (1 / 6) τ (by norm_num) hτ K hK hhost
 
 /-! ## The affordable regime's worked example, at the certified design -/
 
-/-- The certified host's own trajectory IS the general host's `hostTraj` at `o := designObs M` —
-definitional, as `hostTape_eq`/`hostUpdate_eq` are. -/
-theorem hostTraj_eq (M : ℕ) [NeZero (2 * (2 * M))] (c : ZMod (2 * (2 * M) * 24)) :
-    BlockPairObservability.hostTraj M c
-      = TapeHostObservability.hostTraj (BlockPairHost.designObs M) c := rfl
+/-- The certified host's own trajectory IS the general host's `BlockPairHost.traj` at
+`o := BlockPairHost.designObs M` —
+definitional, as `BlockPairHost.tape_eq_tapeHost_tape`/`BlockPairHost.update_eq` are. -/
+theorem BlockPairHost.traj_eq (M : ℕ) [NeZero (2 * (2 * M))] (c : ZMod (2 * (2 * M) * 24)) :
+    BlockPairHost.traj M c
+      = TapeHost.traj (BlockPairHost.designObs M) c := rfl
 
 /-- **The affordable regime's worked example, at the certified design.** [Inevitability] §6's
 "a possible affordable regime" paragraph, at a witness: on the certified block-pair host,
-`TapeHostSchedule.schedSurvivors`'s `2τ`-pruning rule isolates the true literal `0` at `τ = 1/3`
-and every horizon `n > 912` — `designObs_profile`'s own window bounds (`S = 56`, `Wm = 192`) meet
-`TapeHostSchedule.schedSurvivors_eq_singleton`'s three conditions with equality
+`schedSurvivors`'s `2τ`-pruning rule isolates the true literal `0` at `τ = 1/3`
+and every horizon `n > 912` — `BlockPairHost.designObs_profile`'s own window bounds (`S = 56`,
+`Wm = 192`) meet `schedSurvivors_eq_singleton`'s three conditions with equality
 (`2 * (1/6) ≤ 1/3`, `0 ≤ 1/3`, `3 * (1/3) + 0 ≤ 1`), the certified tape density `η = 1/6`
 (`blockPair_density`) sitting exactly at the schedule's own tolerance boundary. -/
 theorem blockPair_identifies (M : ℕ) [NeZero (2 * (2 * M))] (c : ZMod (2 * (2 * M) * 24))
     {n : ℕ} (hn : 912 < n) :
-    TapeHostSchedule.schedSurvivors (1 / 3) n (BlockPairObservability.hostTraj M c) = {0} := by
-  rw [hostTraj_eq]
+    schedSurvivors (1 / 3) n (BlockPairHost.traj M c) = {0} := by
+  rw [BlockPairHost.traj_eq]
   have hW : ∀ a : Fin 8, (if (a : ℕ) = 0 then (46 : ℝ) else 192) ≤ 192 := by
     intro a
     by_cases ha : (a : ℕ) = 0
@@ -264,20 +261,21 @@ theorem blockPair_identifies (M : ℕ) [NeZero (2 * (2 * M))] (c : ZMod (2 * (2 
     have hnR : (912 : ℝ) < (n : ℝ) := by exact_mod_cast hn
     norm_num
     linarith [hnR]
-  exact TapeHostSchedule.schedSurvivors_eq_singleton (BlockPairHost.designObs M)
-    (designObs_profile M) 192 hW (by norm_num) (by norm_num) hρ0 hρ (by norm_num) (by norm_num)
+  exact schedSurvivors_eq_singleton (BlockPairHost.designObs M)
+    (BlockPairHost.designObs_profile M) 192 hW (by norm_num) (by norm_num) hρ0 hρ (by norm_num)
+      (by norm_num)
     (by norm_num) (by norm_num) c (by omega) hn'
 
 /-- **`blockPair_identifies`, re-derived at the sharp identification window.** The certified
 design's own three margins — `2 * (1/3) - 2 * (1/6) = 1/3`, `2 * (1/3) - 0 = 2/3`,
 `1 - 0 - 2 * (1/3) = 1/3` — have minimum `1/3`, the same threshold the landed theorem's single
 `τ`-wide budget already used, so the horizon is unchanged: `912` stands under
-`TapeHostSchedule.schedSurvivors_eq_singleton_sharp` exactly as under the landed
+`schedSurvivors_eq_singleton_sharp` exactly as under the landed
 `schedSurvivors_eq_singleton`. -/
 theorem blockPair_identifies_sharp (M : ℕ) [NeZero (2 * (2 * M))] (c : ZMod (2 * (2 * M) * 24))
     {n : ℕ} (hn : 912 < n) :
-    TapeHostSchedule.schedSurvivors (1 / 3) n (BlockPairObservability.hostTraj M c) = {0} := by
-  rw [hostTraj_eq]
+    schedSurvivors (1 / 3) n (BlockPairHost.traj M c) = {0} := by
+  rw [BlockPairHost.traj_eq]
   have hW : ∀ a : Fin 8, (if (a : ℕ) = 0 then (46 : ℝ) else 192) ≤ 192 := by
     intro a
     by_cases ha : (a : ℕ) = 0
@@ -297,8 +295,9 @@ theorem blockPair_identifies_sharp (M : ℕ) [NeZero (2 * (2 * M))] (c : ZMod (2
     have hnR : (912 : ℝ) < (n : ℝ) := by exact_mod_cast hn
     norm_num
     linarith [hnR]
-  exact TapeHostSchedule.schedSurvivors_eq_singleton_sharp (BlockPairHost.designObs M)
-    (designObs_profile M) 192 hW (by norm_num) (by norm_num) hρ0 hρ (by norm_num) (by norm_num)
+  exact schedSurvivors_eq_singleton_sharp (BlockPairHost.designObs M)
+    (BlockPairHost.designObs_profile M) 192 hW (by norm_num) (by norm_num) hρ0 hρ (by norm_num)
+      (by norm_num)
     (by norm_num) (by norm_num) c (by omega) hn'
 
-end BlockPairCriterion
+end ALT

@@ -1,14 +1,7 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.Decoupling
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # Accretive decoupling: the equivalence on a growing code region ([Inevitability] §6)
@@ -60,7 +53,7 @@ running instance below. The stage-indexed family is doing work; its *proof* is a
   faithful reading, disjoint stages, and the limit region *not* read-only. Without it every
   statement above would be satisfied by the constant family and the extension would be the old
   lemma in new clothes.
-* `seqWrite` / `seqDecode_hereditary` — **the committing substrate** ([Inevitability] §6,
+* `seqWriteNat` / `seqDecode_hereditary` — **the committing substrate** ([Inevitability] §6,
   `accretive_decoupling_iff`'s first theorem consumer): an arbitrary stream, one entry per stage,
   committed onto the same append-only tape; every entry it writes is held under every later
   commitment, at a footprint (`tapeRegion_bijective`) in bijection with the stream's own prefix,
@@ -79,11 +72,11 @@ stage, which is untouched here.
 
 @[expose] public section
 
-namespace Decoupling
+namespace ALT
 
 -- "Same shared-memory algebra … and nothing more": one witness per excluded territory.
 assert_not_exists Nat.Partrec.Code
-assert_not_exists PersistenceCapacity.emergence
+assert_not_exists ALT.emergence
 assert_not_exists MeasureTheory.Measure
 
 variable {ι V M : Type*}
@@ -110,14 +103,14 @@ theorem mem_stagesFrom {Ω : ℕ → Set (Mem ι V)} {t : ℕ} {s : Mem ι V} (h
 
 /-- `stagesFrom Ω t` is update-closed: advancing a stage keeps you at stage `t` or later. This is
 Proposition 3.4's closure hypothesis, supplied by `Advances`. -/
-theorem advances_stagesFrom {U : Mem ι V → Mem ι V} {Ω : ℕ → Set (Mem ι V)} (hadv : Advances U Ω)
+theorem Advances.stagesFrom {U : Mem ι V → Mem ι V} {Ω : ℕ → Set (Mem ι V)} (hadv : Advances U Ω)
     (t : ℕ) : ∀ s ∈ stagesFrom Ω t, U s ∈ stagesFrom Ω t :=
   fun _ ⟨j, hj⟩ => ⟨j + 1, hadv (t + j) _ hj⟩
 
 /-- On `stagesFrom Ω t` the update is read-only on the *single* region `R t`. **This is the only
 place growth is used**: a state at a later stage is only guaranteed read-only on that later stage's
 region, and monotonicity is what puts `R t` inside it. -/
-theorem accretes_stagesFrom {U : Mem ι V → Mem ι V} {R : ℕ → Set ι} {Ω : ℕ → Set (Mem ι V)}
+theorem Accretes.stagesFrom {U : Mem ι V → Mem ι V} {R : ℕ → Set ι} {Ω : ℕ → Set (Mem ι V)}
     (hR : Monotone R) (hacc : Accretes U R Ω) (t : ℕ) :
     ∀ s ∈ stagesFrom Ω t, ∀ a ∈ R t, U s a = s a :=
   fun _ ⟨j, hj⟩ a ha => hacc (t + j) _ hj a (hR (Nat.le_add_right t j) ha)
@@ -134,7 +127,7 @@ theorem accretive_fixes_iterate {U : Mem ι V → Mem ι V} {R : ℕ → Set ι}
     (hR : Monotone R) (hadv : Advances U Ω) (hacc : Accretes U R Ω) :
     ∀ t k, ∀ s ∈ Ω t, ∀ a ∈ R t, (U^[k] s) a = s a :=
   fun t k s hs a ha =>
-    fixes_iterate_on (advances_stagesFrom hadv t) (accretes_stagesFrom hR hacc t) k s
+    fixes_iterate_on (Advances.stagesFrom hadv t) (Accretes.stagesFrom hR hacc t) k s
       (mem_stagesFrom hs) a ha
 
 /-- Sufficiency, staged: a model read off the region written by stage `t` survives every later
@@ -307,13 +300,13 @@ end GrowingCode
 
 /-! ## An arbitrary committed stream
 
-`tapeWrite` commits a single fixed symbol, `1`, at each stage. `seqWrite` generalizes it to commit
-an arbitrary stream `c : ℕ → ℕ`, one entry per stage — [Inevitability] §6, Proposition 6.2's first
-theorem consumer. `tapeRegion`, `tapeStage` and `tapeDecode` never mention what was written, only
-where, so they are reused verbatim; only the write itself changes. What survives is exactly what
-Proposition 6.2 gives: every committed cell held under every later step, at a footprint equal to
-the stream's own prefix length. What the stream's entries *are* — successive law-codes, or how they
-are chosen — is paper-side, not claimed here.
+`tapeWrite` commits a single fixed symbol, `1`, at each stage. `seqWriteNat` generalizes it to
+commit an arbitrary stream `c : ℕ → ℕ`, one entry per stage — [Inevitability] §6, Proposition 6.2's
+first theorem consumer. `tapeRegion`, `tapeStage` and `tapeDecode` never mention what was written,
+only where, so they are reused verbatim; only the write itself changes. What survives is exactly
+what Proposition 6.2 gives: every committed cell held under every later step, at a footprint equal
+to the stream's own prefix length. What the stream's entries *are* — successive law-codes, or how
+they are chosen — is paper-side, not claimed here.
 -/
 
 section SequentialCommit
@@ -323,64 +316,64 @@ variable (c : ℕ → ℕ)
 /-- Commit stream `c`, one entry per stage: bump the counter in cell `0`, write `c`'s `s 0`-th entry
 at the fresh cell just past the written region, and leave every other cell alone. Reduces to
 `tapeWrite` at the constant stream `fun _ => 1`. -/
-def seqWrite (c : ℕ → ℕ) (s : Mem ℕ ℕ) : Mem ℕ ℕ :=
+def seqWriteNat (c : ℕ → ℕ) (s : Mem ℕ ℕ) : Mem ℕ ℕ :=
   fun a => if a = 0 then s 0 + 1 else if a = s 0 + 1 then c (s 0) else s a
 
 /-- The blank state before any commitment: counter `0`, every cell `0`. -/
 def seqStart : Mem ℕ ℕ := fun _ => 0
 
-/-- `seqWrite c` advances the stage exactly as `tapeWrite` does: the counter bump does not depend
+/-- `seqWriteNat c` advances the stage exactly as `tapeWrite` does: the counter bump does not depend
 on what is written. -/
-theorem advances_seqWrite : Advances (seqWrite c) tapeStage := by
+theorem advances_seqWriteNat : Advances (seqWriteNat c) tapeStage := by
   intro t s hs
   rw [mem_tapeStage] at hs ⊢
-  simp [seqWrite, hs]
+  simp [seqWriteNat, hs]
 
-/-- `seqWrite c` accretes on the same region as `tapeWrite`, by the same argument: at stage `t` it
-touches only the counter and the fresh cell `t + 1`, both outside `{1, …, t}`. -/
-theorem accretes_seqWrite : Accretes (seqWrite c) tapeRegion tapeStage := by
+/-- `seqWriteNat c` accretes on the same region as `tapeWrite`, by the same argument: at stage `t`
+it touches only the counter and the fresh cell `t + 1`, both outside `{1, …, t}`. -/
+theorem accretes_seqWriteNat : Accretes (seqWriteNat c) tapeRegion tapeStage := by
   intro t s hs a ha
   rw [mem_tapeStage] at hs
   rw [mem_tapeRegion] at ha
-  simp only [seqWrite]
+  simp only [seqWriteNat]
   rw [ite_eq_right (by omega), ite_eq_right (by omega)]
 
 /-- The canonical run from the blank state: after `t` commitments the counter reads `t`, and cell
 `a` holds the `(a - 1)`-th entry of `c` for every written cell `1 ≤ a ≤ t`, `0` elsewhere. -/
-theorem seqWrite_iterate_seqStart (t : ℕ) :
-    (seqWrite c)^[t] seqStart =
+theorem seqWriteNat_iterate_seqStart (t : ℕ) :
+    (seqWriteNat c)^[t] seqStart =
       fun a => if a = 0 then t else if 1 ≤ a ∧ a ≤ t then c (a - 1) else 0 := by
   induction t with
   | zero => funext a; simp only [Function.iterate_zero_apply, seqStart]; split_ifs <;> omega
   | succ n ih =>
     rw [Function.iterate_succ_apply', ih]
     funext a
-    simp only [seqWrite]
+    simp only [seqWriteNat]
     split_ifs with h1 h2 h3 h4 h5 h6 <;> first | omega | (congr 1; omega)
 
 /-- The canonical run lands in stage `t`, so `accretive_persists` applies to it. -/
-theorem mem_tapeStage_seqWrite_iterate (t : ℕ) : (seqWrite c)^[t] seqStart ∈ tapeStage t := by
-  rw [mem_tapeStage, seqWrite_iterate_seqStart]
+theorem mem_tapeStage_seqWriteNat_iterate (t : ℕ) : (seqWriteNat c)^[t] seqStart ∈ tapeStage t := by
+  rw [mem_tapeStage, seqWriteNat_iterate_seqStart]
   simp
 
 /-- **The committing substrate** ([Inevitability] §6, Proposition 6.2's first theorem consumer):
-every symbol `seqWrite` commits is held under every later commitment, forever. For every stage `t`
-and every later step `k`, the reading of the code region written by stage `t` is exactly the
+every symbol `seqWriteNat` commits is held under every later commitment, forever. For every stage
+`t` and every later step `k`, the reading of the code region written by stage `t` is exactly the
 stream's own prefix — cell `a` holds `c (a - 1)` for `1 ≤ a ≤ t`, `0` elsewhere — no matter how many
 further commitments have since been made.
 
-Proof: `accretive_persists` at the canonical run, `(seqWrite c)^[t] seqStart`, which
-`mem_tapeStage_seqWrite_iterate` places in stage `t`; the run identification then evaluates both
+Proof: `accretive_persists` at the canonical run, `(seqWriteNat c)^[t] seqStart`, which
+`mem_tapeStage_seqWriteNat_iterate` places in stage `t`; the run identification then evaluates both
 sides. This is the accretive equivalence consumed, not reproved — everything about *what* the
 stream commits, or how, stays outside this file. -/
 theorem seqDecode_hereditary (t k : ℕ) :
-    tapeDecode t ((seqWrite c)^[t + k] seqStart) =
+    tapeDecode t ((seqWriteNat c)^[t + k] seqStart) =
       fun a => if 1 ≤ a ∧ a ≤ t then c (a - 1) else 0 := by
-  have hstage := mem_tapeStage_seqWrite_iterate c t
-  have hpersist := accretive_persists tapeRegion_monotone (advances_seqWrite c)
-    (accretes_seqWrite c) (fun u => (faithful_tapeDecode u).dependsOn) t k _ hstage
+  have hstage := mem_tapeStage_seqWriteNat_iterate c t
+  have hpersist := accretive_persists tapeRegion_monotone (advances_seqWriteNat c)
+    (accretes_seqWriteNat c) (fun u => (faithful_tapeDecode u).dependsOn) t k _ hstage
   rw [show t + k = k + t from by omega, Function.iterate_add_apply, hpersist,
-    seqWrite_iterate_seqStart]
+    seqWriteNat_iterate_seqStart]
   funext a
   simp only [tapeDecode]
   split_ifs with h1 h2 <;> first | rfl | omega
@@ -403,4 +396,4 @@ theorem tapeRegion_bijective (t : ℕ) :
 
 end SequentialCommit
 
-end Decoupling
+end ALT

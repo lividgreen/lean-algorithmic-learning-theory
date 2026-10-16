@@ -1,8 +1,3 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Realizability.Realizability
@@ -10,9 +5,6 @@ public import Realizability.RealizabilityCCC
 public import ALT.ParameterizedNNO
 public import ALT.GodelThreshold
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
-set_option linter.style.header false
-set_option linter.style.longLine false
 
 /-!
 # Rep(S) unified on ONE carrier: the bounded recursor as an object of the realizability CCC (FV-13)
@@ -33,7 +25,7 @@ universal property `exp_universal`, over Kleene's first PCA on `Nat.Partrec.Code
 recursor of §5 is exhibited as an **object** `recursorAsm M : Asm` (carrier `ZMod (M+1)`), with its
 `zero`/`succ` genuine `Asm`-**morphisms** (`zeroMor`/`succMor`, realized by codes — functions as
 data), and the §5 `ParamNNO` orbit structure living on that object's carrier. The unified
-`ReflectiveAsm gTS` thus asserts Definition 6.1 on ONE carrier, and `reflectiveAsm_satisfiable`
+`ReflectiveAsm gTS` thus asserts Definition 6.1 on ONE carrier, and `reflectiveAsmSatisfiable`
 discharges it for every `gTS`.
 
 ## Boundary
@@ -46,9 +38,9 @@ The recursor successor is realized concretely; its iterates' distinctness (the d
 
 @[expose] public section
 
-namespace RealizabilityRecursor
+namespace ALT
 
-open RealizabilityCCC ParameterizedNNO Nat.Partrec CategoryTheory
+open RealizabilityCCC Nat.Partrec CategoryTheory
 
 /-! ### The bounded recursor as an object of the realizability CCC `Asm` -/
 
@@ -98,7 +90,7 @@ def zeroMor (M : ℕ) : terminalAsm ⟶ recursorAsm M :=
 terminal object, binary products, and the exponential transpose universal property (all cited from
 FV-12) — AND it contains a bounded-recursor *object* `recursorAsm depth` of depth `> gTS`, whose
 `zero`/`succ` are genuine `Asm`-morphisms equal (pointwise) to the §5 `ParamNNO` structure maps on
-the SAME carrier `ZMod (depth+1)`. Unlike `RepFintype.Reflective` (a trivially-true finite-closure
+the SAME carrier `ZMod (depth+1)`. Unlike `Reflective` (a trivially-true finite-closure
 `Prop` plus a *separate* recursor), every conjunct here is about one categorical object. -/
 structure ReflectiveAsm (gTS : ℕ) where
   /-- (i-a) terminal object of `Asm`. -/
@@ -121,8 +113,8 @@ structure ReflectiveAsm (gTS : ℕ) where
   `succ_eq`/`zero_eq` tie it to `zero`/`succ`, so the two readings are one object. -/
   orbit : ParamNNO (ZMod (depth + 1))
   /-- the recursor object's own depth parameter is the structure depth, so the §5 depth bound
-  (`orbit.orbit_injective`) witnesses `gTS < orbit.depth` — exactly the Level-1 indexing precondition
-  the §6 Consequence needs (used in `reflectiveAsm_representsUnderivableTruth`). -/
+  (`orbit.orbit_injective`) witnesses `gTS < orbit.depth` — exactly the Level-1 indexing
+  precondition the §6 Consequence needs (used in `ReflectiveAsm.representsUnderivableTruth`). -/
   orbit_depth : orbit.depth = depth
   /-- (iii) the recursor morphisms ARE the `ParamNNO` structure maps on the shared carrier
   `ZMod (depth+1) = (recursorAsm depth).carrier` (pointwise — `succ.1` is `succMor`, `orbit.succ`
@@ -135,7 +127,7 @@ the FV-12 universal properties of `Asm`; the recursor object is `recursorAsm (gT
 `zeroMor`/`succMor`, and the orbit is `cyclicParamNNO (gTS+1)` on the same carrier `ZMod (gTS+2)`.
 The successor/zero morphisms equal the orbit maps definitionally (`rfl`), so this is genuinely ONE
 object that is both Cartesian closed and a bounded recursor — not two disjoint stand-ins. -/
-def reflectiveAsm_satisfiable (gTS : ℕ) : ReflectiveAsm gTS where
+def reflectiveAsmSatisfiable (gTS : ℕ) : ReflectiveAsm gTS where
   terminal A := trackable_toTerminal A
   fst A B := ⟨leftCode, fst_tracks A B⟩
   snd A B := ⟨rightCode, snd_tracks A B⟩
@@ -152,20 +144,21 @@ def reflectiveAsm_satisfiable (gTS : ℕ) : ReflectiveAsm gTS where
 
 /-- **The genuine single-carrier object yields the §6 Consequence** (closes the seam that the
 consequence previously flowed only through `ALT/Reflective.lean`'s trivially-true `Type`-CCC
-stand-in, FV-5). From a `ReflectiveAsm gTS` — Definition 6.1 on the ONE Cartesian-closed realizability
-category `Asm` (FV-12/FV-13), carrying a bounded-recursor *object* of depth `> gTS` — together with
-imported incompleteness for the subsystem's theory at `gTS`, the subsystem represents a sentence that
-is true-but-underivable in its internal logic. The recursor object's `ParamNNO` (whose
-`orbit_injective` is the §5 depth bound) supplies the Level-1 indexing threshold via
-`GodelThreshold.reflective_of_depth`. Unlike `ReflectiveAssembly.reflective_representsUnderivableTruth`,
-the CCC here is genuine and on the same carrier as the recursor — no trivially-true unused conjunct. -/
-theorem reflectiveAsm_representsUnderivableTruth
+stand-in, FV-5). From a `ReflectiveAsm gTS` — Definition 6.1 on the ONE Cartesian-closed
+realizability category `Asm` (FV-12/FV-13), carrying a bounded-recursor *object* of depth `> gTS` —
+together with imported incompleteness for the subsystem's theory at `gTS`, the subsystem represents
+a sentence that is true-but-underivable in its internal logic. The recursor object's `ParamNNO`
+(whose `orbit_injective` is the §5 depth bound) supplies the Level-1 indexing threshold via
+`reflective_of_depth`. Unlike
+`ReflectiveType.representsUnderivableTruth`, the CCC here is genuine and on the same
+carrier as the recursor — no trivially-true unused conjunct. -/
+theorem ReflectiveAsm.representsUnderivableTruth
     {Sentence : Type*} (gnum : Sentence → ℕ) (Derivable True_ : Sentence → Prop) (gTS : ℕ)
     (R : ReflectiveAsm gTS)
-    (hInc : GodelThreshold.Incompleteness gnum Derivable True_ gTS) :
-    ∃ M, GodelThreshold.RepresentsUnderivableTruth gnum Derivable True_ M :=
+    (hInc : Incompleteness gnum Derivable True_ gTS) :
+    ∃ M, RepresentsUnderivableTruth gnum Derivable True_ M :=
   ⟨R.orbit.depth,
-    GodelThreshold.reflective_of_depth gnum Derivable True_ R.orbit gTS
+    reflective_of_depth gnum Derivable True_ R.orbit gTS
       (by rw [R.orbit_depth]; exact R.depth_gt) hInc⟩
 
-end RealizabilityRecursor
+end ALT

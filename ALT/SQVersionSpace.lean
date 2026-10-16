@@ -1,14 +1,7 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Learning.SQBounds
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # Positive arithmetic core of SQ version-space pruning ([SQ] §3.4 / §4(b) / Appendix A)
@@ -72,9 +65,9 @@ stay here.
 
 @[expose] public section
 
-namespace SQVersionSpace
+namespace ALT
 
-open ParityCounterexample Filter
+open SQBounds Filter
 
 /-- **T2b — separated impostors are pruned** (Appendix A "the SQ handle"; pruning is effective): a
 candidate `R'` whose predicted mean `predR'` is `> 3τ`-separated from the truth `predR` IS pruned —
@@ -116,4 +109,4 @@ theorem separated_impostor_pruned_noisy
   have h2 : |emp - predR| ≤ |emp - a| + |a - predR| := abs_sub_le emp a predR
   linarith
 
-end SQVersionSpace
+end ALT

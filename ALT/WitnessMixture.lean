@@ -1,15 +1,8 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.FlooredMixture
 public import ALT.LearningWitness
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # The floored mixture on the witness's own trajectory ([Inevitability] §6)
@@ -61,7 +54,7 @@ miss at the noise rate.
   at `s = 0`, leaving the noise-free prefix as the only hypothesis.
 * `singleNoiseBit`, `witness_singleNoiseBit_not_coleader` — the guard: a fixed instance where the
   witness does not supply co-leadership at a later restart point.
-* `integral_noiseCount` — the noise count's mean, `ηn`, under `LearningWitness.noiseLaw`.
+* `integral_noiseCount` — the noise count's mean, `ηn`, under `ALT.noiseLaw`.
 * `witness_integral_floorSurprise_le` — **the expectation corollary**.
 
 ## Scope
@@ -80,9 +73,11 @@ an instance where it fails — and it is discharged for free only at the run's o
 
 @[expose] public section
 
-namespace WitnessMixture
+namespace ALT
 
-open MeasureTheory ProbabilityTheory NoisyWindowChain WeightedFiber
+open WVec
+
+open MeasureTheory ProbabilityTheory
 
 /-! ## The miss indicator and the noise count -/
 
@@ -309,7 +304,7 @@ variable {k : ℕ}
 private lemma measurable_obs_coord [NeZero k] (u : ℕ) :
     Measurable fun ω : ℕ → Bool => obs k ω u :=
   (measurable_pi_apply u).comp
-    (measurable_traj (ξ := fun i (ω : ℕ → Bool) => ω i)
+    (measurable_chainTraj (ξ := fun i (ω : ℕ → Bool) => ω i)
       (Nat.one_le_iff_ne_zero.mpr (NeZero.ne k)) fun i => measurable_pi_apply i)
 
 /-- Each miss bit is measurable in the noise stream: it reads two observations, each a parity walk
@@ -321,7 +316,7 @@ theorem measurable_witMiss [NeZero k] (t : ℕ) (i : Fin k) :
     funext ω; rw [witMiss_eq_not_xor]
   rw [h]
   exact (Measurable.of_discrete (f := fun c : Bool => !c)).comp
-    (ParityWalk.measurable_xor (measurable_obs_coord _) (measurable_obs_coord _))
+    (ALT.measurable_xor (measurable_obs_coord _) (measurable_obs_coord _))
 
 /-- The finite tuple the surprise count factors through. -/
 private def witTuple (k n : ℕ) (ω : ℕ → Bool) : Fin n → Fin k → Bool :=
@@ -378,14 +373,14 @@ private lemma measurable_noiseIndicator (j : ℕ) :
 
 /-- One noise coordinate's mean under the Bernoulli(`p`) shift: the fire probability itself. -/
 private lemma integral_noiseIndicator (p : unitInterval) (j : ℕ) :
-    ∫ ω : ℕ → Bool, (if ω j then (1 : ℝ) else 0) ∂(LearningWitness.noiseLaw p) = (p : ℝ) := by
-  have hmap : (LearningWitness.noiseLaw p).map (fun ω : ℕ → Bool => ω j)
+    ∫ ω : ℕ → Bool, (if ω j then (1 : ℝ) else 0) ∂(ALT.noiseLaw p) = (p : ℝ) := by
+  have hmap : (ALT.noiseLaw p).map (fun ω : ℕ → Bool => ω j)
       = ProbabilityTheory.bernoulliMeasure true false p :=
     Measure.infinitePi_map_eval _ j
   have hfm : Measurable fun c : Bool => if c then (1 : ℝ) else 0 := Measurable.of_discrete
   have hsm : AEStronglyMeasurable (fun c : Bool => if c then (1 : ℝ) else 0)
-      ((LearningWitness.noiseLaw p).map fun ω : ℕ → Bool => ω j) := hfm.aestronglyMeasurable
-  have h : ∫ ω : ℕ → Bool, (if ω j then (1 : ℝ) else 0) ∂(LearningWitness.noiseLaw p)
+      ((ALT.noiseLaw p).map fun ω : ℕ → Bool => ω j) := hfm.aestronglyMeasurable
+  have h : ∫ ω : ℕ → Bool, (if ω j then (1 : ℝ) else 0) ∂(ALT.noiseLaw p)
       = ∫ c : Bool, (if c then (1 : ℝ) else 0)
           ∂(ProbabilityTheory.bernoulliMeasure true false p) := by
     rw [← hmap, integral_map (measurable_pi_apply j).aemeasurable hsm]
@@ -409,10 +404,10 @@ private lemma measurable_noiseCount (k n : ℕ) :
 /-- **The noise count's mean is `ηn`** under the witness's own Bernoulli(`η`) shift: `n` coordinate
 indicators, each of mean `η`, by linearity. -/
 theorem integral_noiseCount (p : unitInterval) (k n : ℕ) :
-    ∫ ω, (noiseCount ω k n : ℝ) ∂(LearningWitness.noiseLaw p) = (p : ℝ) * n := by
-  have h : ∫ ω, (noiseCount ω k n : ℝ) ∂(LearningWitness.noiseLaw p)
+    ∫ ω, (noiseCount ω k n : ℝ) ∂(ALT.noiseLaw p) = (p : ℝ) * n := by
+  have h : ∫ ω, (noiseCount ω k n : ℝ) ∂(ALT.noiseLaw p)
       = ∫ ω, ∑ t ∈ Finset.range n, (if ω (t + k) then (1 : ℝ) else 0)
-          ∂(LearningWitness.noiseLaw p) :=
+          ∂(ALT.noiseLaw p) :=
     integral_congr_ae (Filter.Eventually.of_forall fun ω => noiseCount_eq_sum ω k n)
   rw [h, integral_finsetSum _ fun t _ =>
     integrable_of_bounded (measurable_noiseIndicator (t + k)) (c := 1) fun ω => by
@@ -422,7 +417,7 @@ theorem integral_noiseCount (p : unitInterval) (k n : ℕ) :
 
 /-- **The floored mixture on the witness's own trajectory, in expectation.**
 
-The pathwise capstone averaged under `LearningWitness.noiseLaw`, the Bernoulli(`η`) shift that makes
+The pathwise capstone averaged under `ALT.noiseLaw`, the Bernoulli(`η`) shift that makes
 the witness's whole hypothesis block inhabited. The integrand is a cylinder function of finitely
 many noise coordinates, hence measurable and bounded; the right-hand side is
 `integral_noiseCount`'s `ηn` carried through by linearity.
@@ -433,7 +428,7 @@ also gets, and `2kηn` is what the learning branch pays for a true rule that mis
 theorem witness_integral_floorSurprise_le [NeZero k] (p : unitInterval) (b : ℕ) (θ : ℚ)
     (hbudget : 2 * ((k : ℚ) - 1) ≤ θ * 2 ^ b) (n : ℕ) :
     ∫ ω, ((floorSurpriseSet (witMiss k ω) b θ n).card : ℝ) * (θ : ℝ)
-        ∂(LearningWitness.noiseLaw p)
+        ∂(ALT.noiseLaw p)
       ≤ 4 * ((k : ℝ) - 1) + 2 * (k : ℝ) * (p : ℝ) * n := by
   have hpath : ∀ ω : ℕ → Bool,
       ((floorSurpriseSet (witMiss k ω) b θ n).card : ℝ) * (θ : ℝ)
@@ -442,7 +437,7 @@ theorem witness_integral_floorSurprise_le [NeZero k] (p : unitInterval) (b : ℕ
     exact_mod_cast witness_floorSurprise_card_mul_le ω b θ hbudget n
   have hleft : Integrable
       (fun ω : ℕ → Bool => ((floorSurpriseSet (witMiss k ω) b θ n).card : ℝ) * (θ : ℝ))
-      (LearningWitness.noiseLaw p) := by
+      (ALT.noiseLaw p) := by
     refine integrable_of_bounded ((measurable_floorSurpriseCard b θ n).mul_const _)
       (c := (n : ℝ) * |(θ : ℝ)|) fun ω => ?_
     rw [norm_mul, Real.norm_natCast, Real.norm_eq_abs]
@@ -451,7 +446,7 @@ theorem witness_integral_floorSurprise_le [NeZero k] (p : unitInterval) (b : ℕ
     exact mul_le_mul_of_nonneg_right hcard (abs_nonneg _)
   have hright : Integrable
       (fun ω : ℕ → Bool => 4 * ((k : ℝ) - 1) + 2 * (k : ℝ) * (noiseCount ω k n : ℝ))
-      (LearningWitness.noiseLaw p) :=
+      (ALT.noiseLaw p) :=
     (integrable_const _).add
       ((integrable_of_bounded (measurable_noiseCount k n) (c := (n : ℝ)) fun ω => by
         rw [Real.norm_natCast]
@@ -469,36 +464,43 @@ theorem witness_integral_floorSurprise_le [NeZero k] (p : unitInterval) (b : ℕ
 
 end Expectation
 
-end WitnessMixture
+end ALT
 
-/-- info: 'WitnessMixture.witness_floorSurprise_card_mul_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.witness_floorSurprise_card_mul_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WitnessMixture.witness_floorSurprise_card_mul_le
+#print axioms ALT.witness_floorSurprise_card_mul_le
 
-/-- info: 'WitnessMixture.witness_floorSurprise_card_lt' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.witness_floorSurprise_card_lt' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WitnessMixture.witness_floorSurprise_card_lt
+#print axioms ALT.witness_floorSurprise_card_lt
 
-/-- info: 'WitnessMixture.witness_floorSurprise_bound_ge_n_of_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.witness_floorSurprise_bound_ge_n_of_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WitnessMixture.witness_floorSurprise_bound_ge_n_of_le
+#print axioms ALT.witness_floorSurprise_bound_ge_n_of_le
 
-/-- info: 'WitnessMixture.witness_floorSurprise_card_lt_of_rate' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.witness_floorSurprise_card_lt_of_rate' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WitnessMixture.witness_floorSurprise_card_lt_of_rate
+#print axioms ALT.witness_floorSurprise_card_lt_of_rate
 
-/-- info: 'WitnessMixture.witness_toDist_wRun_sub_bayesFrom_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.witness_toDist_wRun_sub_bayesFrom_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WitnessMixture.witness_toDist_wRun_sub_bayesFrom_le
+#print axioms ALT.witness_toDist_wRun_sub_bayesFrom_le
 
-/-- info: 'WitnessMixture.witness_toDist_wRun_sub_bayesRun_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.witness_toDist_wRun_sub_bayesRun_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WitnessMixture.witness_toDist_wRun_sub_bayesRun_le
+#print axioms ALT.witness_toDist_wRun_sub_bayesRun_le
 
-/-- info: 'WitnessMixture.witness_singleNoiseBit_not_coleader' depends on axioms: [propext, Quot.sound] -/
+/-- info: 'ALT.witness_singleNoiseBit_not_coleader' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WitnessMixture.witness_singleNoiseBit_not_coleader
+#print axioms ALT.witness_singleNoiseBit_not_coleader
 
-/-- info: 'WitnessMixture.witness_integral_floorSurprise_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.witness_integral_floorSurprise_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WitnessMixture.witness_integral_floorSurprise_le
+#print axioms ALT.witness_integral_floorSurprise_le

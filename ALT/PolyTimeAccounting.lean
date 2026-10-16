@@ -1,14 +1,7 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # Poly-time accounting ([SQ], §4 Theorem 4.1) — thin bookkeeping
@@ -55,7 +48,7 @@ equates to the part-(i) order — not the sample-complexity claim of part (i) di
 
 @[expose] public section
 
-namespace PolyTimeAccounting
+namespace ALT
 
 /-- Theorem 4.1 complexity accounting (§4 proof step (c)): a search window bounded by
 `O(r·log(1/δ))` times a per-step cost bounded by `O(r)` gives total work `O(r²·log(1/δ))`, with
@@ -80,4 +73,4 @@ theorem polytime_accounting
       ≤ (a * r * Real.log (1 / δ)) * (b * r) := mul_le_mul hT hc hc0 hA
     _ = a * b * r ^ 2 * Real.log (1 / δ) := by ring
 
-end PolyTimeAccounting
+end ALT

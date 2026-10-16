@@ -1,38 +1,31 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
+public import Mathlib.Algebra.Order.Group.Indicator
 public import Mathlib.Analysis.Normed.Group.Indicator
 public import Mathlib.Analysis.Normed.Group.Tannery
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
-set_option linter.style.header false
-set_option linter.style.longLine false
-set_option linter.unusedSectionVars false
-set_option linter.unusedFintypeInType false
-set_option linter.unusedDecidableInType false
 
 /-!
-# Extensional `[R]`-concentration — [Discovery] Proposition 3.2 over the near-twin-rich countable class
+# Extensional `[R]`-concentration — [Discovery] Proposition 3.2 over the near-twin-rich countable
+class
 
 Provenance: [Discovery] §3.3, **Proposition 3.2**. This is the honest,
 non-vacuous countable-class discovery statement that *drops per-step separation entirely* (so it is
-non-empty on exactly the all-programs class where the per-step-separated `CountableDiscovery.countable_discovery`
-is vacuous). It is a **fresh development** — indicator likelihoods, no separation — not an extension
-of `ALT/CountableDiscovery.lean`; it reuses only that file's Kraft-summable-prior *pattern*
-(`Summable w`, `∑' w ≤ 1` is not even needed — the tail is dominated by `w` directly).
+non-empty on exactly the all-programs class where the per-step-separated
+`ALT.countable_discovery` is vacuous). It is a **fresh development** — indicator
+likelihoods, no separation — not an extension of `ALT/CountableDiscovery.lean`; it reuses only that
+file's Kraft-summable-prior *pattern* (`Summable w`, `∑' w ≤ 1` is not even needed — the tail is
+dominated by `w` directly).
 
 ## The statement
-In the realizable deterministic case the likelihood of a hypothesis `i` after `n` observations is the
-`0/1` indicator `L_i(n) = 1[i consistent with o_{1:n}]`. The on-trajectory equivalence class is
+In the realizable deterministic case the likelihood of a hypothesis `i` after `n` observations is
+the `0/1` indicator `L_i(n) = 1[i consistent with o_{1:n}]`. The on-trajectory equivalence class is
 `[R] = {i : ∀ n, consistent i n}` (`inR`). The prequential-MDL posterior on `[R]`,
 `postR n = P_{[R]} / Z_n` with `Z_n = P_{[R]} + tail_n`, rises monotonically to `1`:
-* `Zmass_eq_PR_add_tail` — `Z_n = P_{[R]} + tail_n` (the consistent set splits as `[R] ⊔ (consistent ∖ [R])`);
-* `tail_tendsto_zero` — the crux: every off-`[R]` competitor is falsified at a finite branching time,
-  so `tail_n → 0` (dominated convergence against the summable prior `w`);
+* `Zmass_eq_PR_add_tail` — `Z_n = P_{[R]} + tail_n` (the consistent set splits as
+  `[R] ⊔ (consistent ∖ [R])`);
+* `tail_tendsto_zero` — the crux: every off-`[R]` competitor is falsified at a finite branching
+  time, so `tail_n → 0` (dominated convergence against the summable prior `w`);
 * `postR_monotone` — `postR` is monotone (`tail` is antitone in `n`);
 * `postR_tendsto_one` / `extensional_R_concentration` — the capstone `postR n ↗ 1`.
 
@@ -47,14 +40,15 @@ true rule `R ∈ [R]` with `0 < w R`. No separation hypothesis of any kind. `ι`
 
 @[expose] public section
 
-namespace ExtensionalDiscovery
+namespace ALT
 
 open scoped BigOperators Topology
 open Filter
 
 variable {ι : Type*}
 
-/-- Membership in the on-trajectory equivalence class `[R]`: `i` reproduces the trajectory forever. -/
+/-- Membership in the on-trajectory equivalence class `[R]`: `i` reproduces the trajectory forever.
+-/
 def inR (consistent : ι → ℕ → Prop) (i : ι) : Prop := ∀ n, consistent i n
 
 /-- Surviving mixture mass `Z_n = ∑'_i 1[i consistent with o_{1:n}]·w_i`: total prior of hypotheses
@@ -77,7 +71,8 @@ noncomputable def postR (w : ι → ℝ) (consistent : ι → ℕ → Prop) (n :
 
 variable {w : ι → ℝ} {consistent : ι → ℕ → Prop}
 
-/-! ## Summability of the three indicator families (all dominated by the Kraft-summable prior `w`) -/
+/-! ## Summability of the three indicator families (all dominated by the Kraft-summable prior `w`)
+-/
 
 lemma summable_consistent (hsumw : Summable w) (n : ℕ) :
     Summable ({i | consistent i n}.indicator w) :=
@@ -204,7 +199,8 @@ theorem postR_monotone (hw : ∀ i, 0 ≤ w i) (hsumw : Summable w)
 /-! ## Capstone — Proposition 3.2 -/
 
 /-- **The posterior on `[R]` rises to `1`: `postR n → 1`.** The denominator `P_{[R]} + tail_n →
-P_{[R]} ≠ 0` (step 4), and the constant numerator `P_{[R]}` gives `postR n → P_{[R]}/P_{[R]} = 1`. -/
+P_{[R]} ≠ 0` (step 4), and the constant numerator `P_{[R]}` gives `postR n → P_{[R]}/P_{[R]} =
+1`. -/
 theorem postR_tendsto_one (hw : ∀ i, 0 ≤ w i) (hsumw : Summable w)
     (hanti : ∀ i m n, m ≤ n → consistent i n → consistent i m)
     {R : ι} (hR : inR consistent R) (hwR : 0 < w R) :
@@ -233,4 +229,4 @@ theorem extensional_R_concentration (hw : ∀ i, 0 ≤ w i) (hsumw : Summable w)
     Monotone (postR w consistent) ∧ Tendsto (postR w consistent) atTop (𝓝 1) :=
   ⟨postR_monotone hw hsumw hanti hR hwR, postR_tendsto_one hw hsumw hanti hR hwR⟩
 
-end ExtensionalDiscovery
+end ALT

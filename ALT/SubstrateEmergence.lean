@@ -1,22 +1,14 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.SubstrateClass
 public import ALT.PersistenceCapacity
 public import ALT.AccretingExcess
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
-set_option linter.style.longLine false
 
 /-!
 # The class-level `𝒮_E` constructor ([Inevitability] §2 Definition 2.3)
 
-`BlockPairOverlap.hostWitness_substrateE` builds `𝒮_E` membership for one host, and its proof is
+`BlockPairHost.witness_substrateE` builds `𝒮_E` membership for one host, and its proof is
 host-specific in exactly one field — the read-only code region (`s1`); every other field is a
 statement about `(κ, gTS)` alone, or about a packed update `(U, θ)` alone, with the host's own
 name entering nowhere. This module extracts that observation as a theorem: for ANY decoupled
@@ -28,7 +20,7 @@ sufficient capacity," read as a theorem rather than a remark.
 The tie between the packed update and the system's own update is BY CONSTRUCTION: `SubstrateE`'s
 two emergence fields are carried `Prop` parameters, so a constructor over an untied endofunction
 would type-check against them and prove nothing about `U` itself. `packedUpdate` is defined FROM
-`U` and the packing equivalence, mirroring `BlockPairOverlap.hostPacked`'s own shape.
+`U` and the packing equivalence, mirroring `BlockPairHost.packed`'s own shape.
 
 ## Main results
 
@@ -67,11 +59,11 @@ Anchors: [Inevitability] §2 Definition 2.3, §5 Remark 5.6, §5 Theorem 5.8, [G
 
 @[expose] public section
 
-namespace SubstrateEmergence
+namespace ALT
 
 open Equiv MulAction
-open RealizabilityCCC RealizabilityRecursor
-open PersistenceCapacity Decoupling AdditiveComplexity
+open RealizabilityCCC
+open AdditiveComplexity
 open FFL.FirstOrder FFL.FirstOrder.Arithmetic
 
 attribute [local instance] arrowAction
@@ -80,21 +72,21 @@ attribute [local instance] arrowAction
 
 /-- **The system's own update, packed onto a numeral carrier.** Defined FROM `U` and the packing
 equivalence `e`, so the growth clause built on it is a statement about `U` itself, never about an
-unrelated `Fin n` map — `BlockPairOverlap.hostPacked`'s own shape, at a general carrier and a
+unrelated `Fin n` map — `BlockPairHost.packed`'s own shape, at a general carrier and a
 general packing. -/
-def packedUpdate {ι V : Type*} {n : ℕ} (e : Decoupling.Mem ι V ≃ Fin n)
-    (U : Decoupling.Mem ι V → Decoupling.Mem ι V) : Fin n → Fin n :=
+def packedUpdate {ι V : Type*} {n : ℕ} (e : ALT.Mem ι V ≃ Fin n)
+    (U : ALT.Mem ι V → ALT.Mem ι V) : Fin n → Fin n :=
   fun s => e (U (e.symm s))
 
-private lemma packedUpdate_apply {ι V : Type*} {n : ℕ} (e : Decoupling.Mem ι V ≃ Fin n)
-    (U : Decoupling.Mem ι V → Decoupling.Mem ι V) (x : Decoupling.Mem ι V) :
+private lemma packedUpdate_apply {ι V : Type*} {n : ℕ} (e : ALT.Mem ι V ≃ Fin n)
+    (U : ALT.Mem ι V → ALT.Mem ι V) (x : ALT.Mem ι V) :
     packedUpdate e U (e x) = e (U x) := by
   rw [packedUpdate, Equiv.symm_apply_apply]
 
 /-- **Orbits survive the packing**: `t` steps of the packed update from a packed state are the
 packing of `t` steps of the system's own update. -/
-theorem packedUpdate_iterate {ι V : Type*} {n : ℕ} (e : Decoupling.Mem ι V ≃ Fin n)
-    (U : Decoupling.Mem ι V → Decoupling.Mem ι V) (t : ℕ) (x : Decoupling.Mem ι V) :
+theorem packedUpdate_iterate {ι V : Type*} {n : ℕ} (e : ALT.Mem ι V ≃ Fin n)
+    (U : ALT.Mem ι V → ALT.Mem ι V) (t : ℕ) (x : ALT.Mem ι V) :
     (packedUpdate e U)^[t] (e x) = e (U^[t] x) := by
   induction t with
   | zero => simp
@@ -103,59 +95,60 @@ theorem packedUpdate_iterate {ι V : Type*} {n : ℕ} (e : Decoupling.Mem ι V �
 
 /-- **A packed bijection is a bijection.** `packedUpdate e U` is `e ∘ U ∘ e.symm`, a composite of
 bijections whenever `U` is one. -/
-theorem packedUpdate_bijective {ι V : Type*} {n : ℕ} (e : Decoupling.Mem ι V ≃ Fin n)
-    {U : Decoupling.Mem ι V → Decoupling.Mem ι V} (hU : Function.Bijective U) :
+theorem packedUpdate_bijective {ι V : Type*} {n : ℕ} (e : ALT.Mem ι V ≃ Fin n)
+    {U : ALT.Mem ι V → ALT.Mem ι V} (hU : Function.Bijective U) :
     Function.Bijective (packedUpdate e U) :=
   e.bijective.comp (hU.comp e.symm.bijective)
 
 /-! ## The growth clause, at [Guests] Theorem 6.1's own shape -/
 
 /-- **The growth clause** ([Guests] §6 Theorem 6.1's own shape, [Inevitability] §2 Definition 2.3's
-first clause), parametric in the packed update `U` and the frame `θ` — `BlockPairOverlap.
-HostGrowsLawfulGuest`'s body at a general `(U, θ)`. Parametric in the codes `cU`, `cθ`: owned at
+first clause), parametric in the packed update `U` and the frame `θ` —
+`BlockPairHost.GrowsLawfulGuest`'s body at a general `(U, θ)`. Parametric in the codes `cU`, `cθ`:
+owned at
 the update's own description cost, no absolute cheapness claimed. -/
 def GrowsLawfulGuestOf {n m : ℕ} (U : Fin n → Fin n) (θ : Fin n → Fin m) : Prop :=
-  PersistenceCapacity.Carries U (PersistenceCapacity.emergeLens U θ) ∧
+  ALT.Carries U (ALT.emergeLens U θ) ∧
     ∀ cU cθ : Nat.Partrec.Code,
-      cU.eval 0 = Part.some (PersistenceCapacity.lensCode U) →
-      cθ.eval 0 = Part.some (PersistenceCapacity.lensCode θ) →
-      Nat.card ↥(orbit (Perm ↥(PersistenceCapacity.core U))
-          (PersistenceCapacity.coreLens U (PersistenceCapacity.emergeLens U θ 0)))
-        ≤ PersistenceCapacity.CbHue U
-            (AdditiveComplexity.elen PersistenceCapacity.emergeBuilder + AdditiveComplexity.elen cU
+      cU.eval 0 = Part.some (ALT.lensCode U) →
+      cθ.eval 0 = Part.some (ALT.lensCode θ) →
+      Nat.card ↥(orbit (Perm ↥(ALT.core U))
+          (ALT.coreLens U (ALT.emergeLens U θ 0)))
+        ≤ ALT.CbHue U
+            (AdditiveComplexity.elen ALT.emergeBuilder + AdditiveComplexity.elen cU
               + AdditiveComplexity.elen cθ + 30)
 
 /-- **The growth clause, discharged from surjectivity off the update's own iterate.**
 [Guests] §6 Theorem 6.1: a reference frame surjective off the `n`-th iterate reads a full model off
-the recurrent core, and both conjuncts of `GrowsLawfulGuestOf` are `PersistenceCapacity.emergence`
+the recurrent core, and both conjuncts of `GrowsLawfulGuestOf` are `ALT.emergence`
 applied to `(U, θ)`. -/
 theorem growsLawfulGuestOf_of_surj {n m : ℕ} {U : Fin n → Fin n} {θ : Fin n → Fin m}
     (hsurj : Function.Surjective (fun s => θ (U^[n] s))) :
     GrowsLawfulGuestOf U θ :=
-  ⟨PersistenceCapacity.carries_emergeLens U θ hsurj,
-    fun cU cθ hU hθ => (PersistenceCapacity.emergence U θ cU cθ hsurj hU hθ).2⟩
+  ⟨ALT.carries_emergeLens U θ hsurj,
+    fun cU cθ hU hθ => (ALT.emergence U θ cU cθ hsurj hU hθ).2⟩
 
 /-! ## The crossing clause: a Gödel size every sufficiently large capacity hosts -/
 
 /-- **The crossing clause** ([Inevitability] §5 Theorem 5.1(a)'s own standard), parametric in the
-capacity `κ` — `BlockPairOverlap.HostGrownGuestReachesThreshold`'s body at a general `κ`. -/
+capacity `κ` — `BlockPairHost.GrownGuestReachesThreshold`'s body at a general `κ`. -/
 def GrownGuestReachesThresholdAt (κ gTS : ℕ) : Prop :=
-  (∀ g, CategoricalThreshold.hostsAt κ g → PersistenceCapacity.hostsThreshold κ g) ∧
-    (∀ Mchk, CategoricalThreshold.hostsAt κ gTS → gTS < Mchk → Mchk ≤ gTS ^ 2 →
+  (∀ g, ALT.hostsAt κ g → ALT.hostsThreshold κ g) ∧
+    (∀ Mchk, ALT.hostsAt κ gTS → gTS < Mchk → Mchk ≤ gTS ^ 2 →
       ∃ R : ReflectiveAsm gTS, R.depth = Mchk ∧
-        CapacityLayer.FitsIn (recursorAsm R.depth) κ ∧
-        ∃ N, GodelThreshold.RepresentsUnderivableTruth (Encodable.encode : Sentence ℒₒᵣ → ℕ)
+        ALT.FitsIn (recursorAsm R.depth) κ ∧
+        ∃ N, ALT.RepresentsUnderivableTruth (Encodable.encode : Sentence ℒₒᵣ → ℕ)
           (fun δ => (𝗣𝗔⁻ : ArithmeticTheory) ⊢ δ) (fun δ => ℕ↓[ℒₒᵣ] ⊧ δ) N)
 
 /-- **A Gödel size fixed once, that every sufficiently hosting capacity represents** —
-`BlockPairOverlap.hostGrownGuestReachesThreshold`'s content with the host's own bit count
-generalized to an arbitrary `κ`. From `AccretingWitness.outgrows_paMinus_uniform`'s own `gTS`,
+`BlockPairHost.grownGuestReachesThreshold`'s content with the host's own bit count
+generalized to an arbitrary `κ`. From `ALT.outgrows_paMinus_uniform`'s own `gTS`,
 obtained outside any particular capacity. -/
 theorem grownGuestReachesThresholdAt_uniform :
     ∃ gTS, ∀ κ, GrownGuestReachesThresholdAt κ gTS := by
-  obtain ⟨gTS, hgTS⟩ := AccretingWitness.outgrows_paMinus_uniform
+  obtain ⟨gTS, hgTS⟩ := ALT.outgrows_paMinus_uniform
   refine ⟨gTS, fun κ => ?_⟩
-  exact ⟨fun g h => PersistenceCapacity.hostsThreshold_of_capacity h,
+  exact ⟨fun g h => ALT.hostsThreshold_of_capacity h,
     fun Mchk h1 h2 h3 => hgTS κ Mchk h1 h2 h3⟩
 
 /-! ## The constructor -/
@@ -163,21 +156,22 @@ theorem grownGuestReachesThresholdAt_uniform :
 /-- **The class-level `𝒮_E` constructor.** For any decoupled `(U, R)`, any packing `e` onto a
 numeral carrier, and any frame `θ` surjective off the packed update's own `n`-th iterate, the
 numeral conditions `(S2)`/`(S3)` and one crossing hypothesis at the packed update's own capacity
-`κ` together give `SubstrateE`. `hostWitness_substrateE`'s proof is this theorem's proof term with
-the host's own names substituted for the hypotheses: `s1` is `hfix`, `s2`/`s3` are the carried
-numeral conditions, `growsLawfulGuest` is `growsLawfulGuestOf_of_surj` applied to `hsurj`, and
+`κ` together give `SubstrateE`. `BlockPairHost.witness_substrateE`'s proof is this theorem's proof
+term with the host's own names substituted for the hypotheses: `s1` is `hfix`, `s2`/`s3` are the
+carried numeral conditions, `growsLawfulGuest` is `growsLawfulGuestOf_of_surj` applied to `hsurj`,
+and
 `grownGuestReachesThreshold` is `hE` itself. -/
-theorem substrateE_of_emergence {ι V : Type*} (U : Decoupling.Mem ι V → Decoupling.Mem ι V)
-    (R : Set ι) (hfix : Decoupling.Fixes U R) {n κ : ℕ} (e : Decoupling.Mem ι V ≃ Fin n)
+theorem substrateE_of_emergence {ι V : Type*} (U : ALT.Mem ι V → ALT.Mem ι V)
+    (R : Set ι) (hfix : ALT.Fixes U R) {n κ : ℕ} (e : ALT.Mem ι V ≃ Fin n)
     (θ : Fin n → Fin (2 ^ κ))
     (hsurj : Function.Surjective (fun s => θ ((packedUpdate e U)^[n] s)))
     (r K L c₀ c₁ c₂ δ : ℝ) (sCodeSize gTS : ℕ)
     (Consistent NSound Delta1Axiomatized InterpretsR0 : Prop)
-    (hS2 : SubstrateClass.RegimeWithDepth r K L c₀ c₁ c₂ δ)
-    (hS3 : SubstrateClass.ReflectiveCapacity K sCodeSize gTS
+    (hS2 : ALT.RegimeWithDepth r K L c₀ c₁ c₂ δ)
+    (hS3 : ALT.ReflectiveCapacity K sCodeSize gTS
       Consistent NSound Delta1Axiomatized InterpretsR0)
     (hE : GrownGuestReachesThresholdAt κ gTS) :
-    SubstrateClass.SubstrateE U R r K L c₀ c₁ c₂ δ sCodeSize gTS
+    ALT.SubstrateE U R r K L c₀ c₁ c₂ δ sCodeSize gTS
       Consistent NSound Delta1Axiomatized InterpretsR0
       (GrowsLawfulGuestOf (packedUpdate e U) θ) (GrownGuestReachesThresholdAt κ gTS) :=
   { s1 := hfix
@@ -200,21 +194,21 @@ because the adjective invites it: nothing about survival (`SubstrateE` carries n
 the honesty of `R` — the constructor takes `R` as given, and an inert region is `Fixes` for a
 trivial reason ([Decoupling] §2 Definition 2.1's own vacuity remark); nothing about which frame is
 cheap. -/
-theorem substrateE_of_perm {ι V : Type*} (U : Decoupling.Mem ι V → Decoupling.Mem ι V)
-    (R : Set ι) (hfix : Decoupling.Fixes U R) (hbij : Function.Bijective U)
-    {n κ : ℕ} (e : Decoupling.Mem ι V ≃ Fin n) (θ : Fin n → Fin (2 ^ κ))
+theorem substrateE_of_perm {ι V : Type*} (U : ALT.Mem ι V → ALT.Mem ι V)
+    (R : Set ι) (hfix : ALT.Fixes U R) (hbij : Function.Bijective U)
+    {n κ : ℕ} (e : ALT.Mem ι V ≃ Fin n) (θ : Fin n → Fin (2 ^ κ))
     (hθ : Function.Surjective θ)
     (r K L c₀ c₁ c₂ δ : ℝ) (sCodeSize gTS : ℕ)
     (Consistent NSound Delta1Axiomatized InterpretsR0 : Prop)
-    (hS2 : SubstrateClass.RegimeWithDepth r K L c₀ c₁ c₂ δ)
-    (hS3 : SubstrateClass.ReflectiveCapacity K sCodeSize gTS
+    (hS2 : ALT.RegimeWithDepth r K L c₀ c₁ c₂ δ)
+    (hS3 : ALT.ReflectiveCapacity K sCodeSize gTS
       Consistent NSound Delta1Axiomatized InterpretsR0)
     (hE : GrownGuestReachesThresholdAt κ gTS) :
-    SubstrateClass.SubstrateE U R r K L c₀ c₁ c₂ δ sCodeSize gTS
+    ALT.SubstrateE U R r K L c₀ c₁ c₂ δ sCodeSize gTS
       Consistent NSound Delta1Axiomatized InterpretsR0
       (GrowsLawfulGuestOf (packedUpdate e U) θ) (GrownGuestReachesThresholdAt κ gTS) :=
   substrateE_of_emergence U R hfix e θ
     (hθ.comp ((packedUpdate_bijective e hbij).iterate n).surjective)
     r K L c₀ c₁ c₂ δ sCodeSize gTS Consistent NSound Delta1Axiomatized InterpretsR0 hS2 hS3 hE
 
-end SubstrateEmergence
+end ALT

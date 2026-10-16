@@ -1,15 +1,8 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.RedundantFiber
 public import ALT.WitnessMixture
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # A noise-gated damage schedule, and the absorption it buys ([Inevitability] §6, IN-25)
@@ -21,21 +14,21 @@ schedule can land on every one of its own surprises, at every length. This file 
 weaker gate: one on the substrate's own noise stream directly, with no run, no weight vector and no
 schedule anywhere in its statement, so it names the same set of times before and after any damage.
 That is `NoiseGated`, and `noiseGated_iff_witMiss` is the reason it is worth a name at all — it is
-exactly the noisy witness's own miss condition (`WitnessMixture.witMiss_zero`), read as a schedule
+exactly the noisy witness's own miss condition (`ALT.witMiss_zero`), read as a schedule
 constraint rather than a run property.
 
-A schedule confined to a noise-gated set inherits `WitnessMixture.noiseCount`'s own bound
-(`noiseGated_card_le`), and confining a `P`-fold carrier's damage that way is enough to guarantee an
+A schedule confined to a noise-gated set inherits `ALT.noiseCount`'s own bound
+(`NoiseGated.card_le`), and confining a `P`-fold carrier's damage that way is enough to guarantee an
 untouched copy, by the same pigeonhole step `RedundantFiber.lean` already proves
-(`exists_untouched_copy_of_noiseGated`). The same route closes Theorem 6.6(v)'s own conclusion
-directly (`compPredFrame_eq_next_of_noiseGated`), reusing `RedundantFiber.lean`'s touch-bound
+(`NoiseGated.exists_untouched_copy`). The same route closes Theorem 6.6(v)'s own conclusion
+directly (`NoiseGated.compPredFrame_eq_next`), reusing `RedundantFiber.lean`'s touch-bound
 argument rather than duplicating it.
 
 Between the noise-free branch and one merely bounded per horizon sits a third class: a stream that
 fires at most `m` times in total (`QuietFrom`). Its noise count is capped by the same `m` at *every*
-horizon at once (`noiseCount_le_of_quietFrom`), so a single redundancy condition — not one per
-horizon — already buys the composite's survival there (`exists_untouched_copy_of_quietFrom`,
-`compPredFrame_eq_next_of_quietFrom`): a lifetime statement on a branch strictly between the two
+horizon at once (`QuietFrom.noiseCount_le`), so a single redundancy condition — not one per
+horizon — already buys the composite's survival there (`QuietFrom.exists_untouched_copy`,
+`QuietFrom.compPredFrame_eq_next`): a lifetime statement on a branch strictly between the two
 Theorem 6.6(iii) names ([Inevitability] §6, Theorem 6.6(v″)). `quietStream` packages a designed
 instance of this class, and `sourceStep`/`sourceOut` package a counter automaton emitting it, so
 the class is witnessed rather than merely named.
@@ -44,22 +37,22 @@ the class is witnessed rather than merely named.
 
 * `NoiseGated` — a hit schedule is gated when every one of its times sits on a fired noise bit.
 * `noiseGated_iff_witMiss` — the gate **is** the noisy witness's own true-candidate miss condition.
-* `noiseGated_card_le` — a gated schedule inside a horizon is no larger than the noise count there.
-* `exists_untouched_copy_of_noiseGated` — a `P`-fold carrier survives a gated schedule whenever the
+* `NoiseGated.card_le` — a gated schedule inside a horizon is no larger than the noise count there.
+* `NoiseGated.exists_untouched_copy` — a `P`-fold carrier survives a gated schedule whenever the
   redundancy exceeds the per-event copy cost times the noise count.
-* `compPredFrame_eq_next_of_noiseGated` — the composite reads the base's own next state under a
+* `NoiseGated.compPredFrame_eq_next` — the composite reads the base's own next state under a
   gated schedule of that redundancy, the same conclusion the realizable branch reaches, reached
   from the gate instead.
-* `noiseGated_eq_empty_of_quiet` — **the boundary.** On a noise-free stream the only gated schedule
+* `NoiseGated.eq_empty_of_quiet` — **the boundary.** On a noise-free stream the only gated schedule
   is the empty one: a noise-gated host does no damage at all there, and a noise-free stream is
   exactly the branch whose surprise count is the lifetime-free anchor `4(C−1)/θ`.
 * `QuietFrom` — a stream that has fired at most `m` times in total, at the same offset `NoiseGated`
   reads at.
-* `noiseCount_le_of_quietFrom` — under `QuietFrom`, the noise count is capped by `m` at every
+* `QuietFrom.noiseCount_le` — under `QuietFrom`, the noise count is capped by `m` at every
   horizon at once.
-* `exists_untouched_copy_of_quietFrom`, `compPredFrame_eq_next_of_quietFrom` — the uniformization:
+* `QuietFrom.exists_untouched_copy`, `QuietFrom.compPredFrame_eq_next` — the uniformization:
   one redundancy condition, `c · m < P`, serves every horizon's conclusion, a lifetime statement
-  rather than the honestly per-horizon one `compPredFrame_eq_next_of_noiseGated` supplies on its
+  rather than the honestly per-horizon one `NoiseGated.compPredFrame_eq_next` supplies on its
   own.
 * `quietStream` — the designed eventually-quiet stream at parameters `k, m`, firing on exactly
   `[k, k + m)`.
@@ -84,15 +77,15 @@ None of this moves Theorem 6.6's own hypothesis. The theorem still names (DM1)/(
 whether a host's damage in fact takes the noise-gated shape is not a question this file answers —
 it is a further, and strictly narrower, reading than the paper's own. What this file supplies is a
 gate stated on the noise stream itself, its count, and the precise sense in which it is weaker than
-what (DM1) buys: `noiseGated_eq_empty_of_quiet` shows the gate has no content on the very branch the
+what (DM1) buys: `NoiseGated.eq_empty_of_quiet` shows the gate has no content on the very branch the
 lifetime-free bound covers, so this is a variant repair, not a strengthening, of Theorem 6.6(v).
-`compPredFrame_eq_next_of_noiseGated` inherits that same boundary: it is a parallel route to the
+`NoiseGated.compPredFrame_eq_next` inherits that same boundary: it is a parallel route to the
 theorem's own conclusion, honestly per-horizon rather than lifetime-free, not a replacement for the
 realizable branch's.
 
 The eventually-quiet material carries the identical boundary, one level up: `QuietFrom` is stated
 on the stream alone, still names nothing about a run or a schedule, and its uniformization is a
-reading of `exists_untouched_copy_of_noiseGated`/`compPredFrame_eq_next_of_noiseGated`, not a new
+reading of `NoiseGated.exists_untouched_copy`/`NoiseGated.compPredFrame_eq_next`, not a new
 argument. What it does not supply is the composition this file's own uniform bound and a designed
 instance's own realizability are stitched together into a single per-horizon-free survival
 statement over an *arbitrary* eventually-quiet stream and an *arbitrary* gated schedule on it —
@@ -103,9 +96,8 @@ substrate, stay paper-level, exactly the sense in which (v″) names its own rem
 
 @[expose] public section
 
-namespace DamageGate
+namespace ALT
 
-open WitnessMixture WeightedFiber
 
 /-! ## The gate -/
 
@@ -127,7 +119,7 @@ theorem noiseGated_iff_witMiss {k : ℕ} [NeZero k] (ξ : ℕ → Bool) (H : Fin
 
 /-- **A gated schedule is no larger than the noise count.** Every element of `H` inside the horizon
 `n` is a fired noise bit there, so `H` embeds into the noise-count set directly. -/
-theorem noiseGated_card_le {k : ℕ} (ξ : ℕ → Bool) {H : Finset ℕ} {n : ℕ}
+theorem NoiseGated.card_le {k : ℕ} (ξ : ℕ → Bool) {H : Finset ℕ} {n : ℕ}
     (hH : H ⊆ Finset.range n) (hgate : NoiseGated k ξ H) : H.card ≤ noiseCount ξ k n := by
   rw [noiseCount]
   refine Finset.card_le_card fun s hs => ?_
@@ -140,18 +132,18 @@ theorem noiseGated_card_le {k : ℕ} (ξ : ℕ → Bool) {H : Finset ℕ} {n : �
 ([Inevitability] §6, IN-25 — the gate's own absorption bound). At most `c` copies touched per hit,
 confined to a noise-gated schedule inside the horizon `n`: once `P` exceeds `c` times the noise
 count there, the union of touched copies is too small to cover every slot, and some copy is never
-touched. Routed through `RedundantFiber.exists_untouched_copy` via `noiseGated_card_le`, the same
+touched. Routed through `RedundantFiber.exists_untouched_copy` via `NoiseGated.card_le`, the same
 pigeonhole step Stage C already proves. -/
-theorem exists_untouched_copy_of_noiseGated {P : ℕ} [NeZero P] {k n c : ℕ} (ξ : ℕ → Bool)
+theorem NoiseGated.exists_untouched_copy {P : ℕ} [NeZero P] {k n c : ℕ} (ξ : ℕ → Bool)
     {H : Finset ℕ} (hH : H ⊆ Finset.range n) (hgate : NoiseGated k ξ H)
     (col : ℕ → Finset (Fin P)) (hcol : ∀ t, (col t).card ≤ c)
     (hP : c * noiseCount ξ k n < P) :
     ∃ i₀ : Fin P, ∀ t ∈ H, i₀ ∉ col t := by
-  refine WeightedFiber.exists_untouched_copy H col ?_
+  refine ALT.exists_untouched_copy H col ?_
   have hunion : (H.biUnion col).card ≤ H.card * c :=
     le_trans Finset.card_biUnion_le
       (le_trans (Finset.sum_le_sum fun t _ => hcol t) (by rw [Finset.sum_const, smul_eq_mul]))
-  have hHc : H.card ≤ noiseCount ξ k n := noiseGated_card_le ξ hH hgate
+  have hHc : H.card ≤ noiseCount ξ k n := NoiseGated.card_le ξ hH hgate
   calc (H.biUnion col).card ≤ H.card * c := hunion
     _ ≤ noiseCount ξ k n * c := Nat.mul_le_mul_right c hHc
     _ = c * noiseCount ξ k n := Nat.mul_comm _ _
@@ -161,14 +153,14 @@ theorem exists_untouched_copy_of_noiseGated {P : ℕ} [NeZero P] {k n c : ℕ} (
 Theorem 6.6(v), IN-28). `RedundantFiber.compPredFrame_eq_next_of_realizable_budget` reaches
 `RedundantFiber.compPredFrame_eq_next_of_touch_bound`'s touch bound from the realizable branch's
 surprise count; this reaches the identical touch bound from `NoiseGated` instead, via
-`noiseGated_card_le`, and calls the same touch-bound theorem to close — the argument neither route
+`NoiseGated.card_le`, and calls the same touch-bound theorem to close — the argument neither route
 duplicates. The bound is over `noiseCount ξ k n`, a quantity of the horizon `n` itself rather than a
 schedule-independent constant, so what this route delivers is honestly per-horizon — the shape the
 noisy branch's own rate takes (clause (iii)), not the realizable branch's lifetime-free anchor.
-**Not a strengthening of the damage model:** `noiseGated_eq_empty_of_quiet` already shows the gate
+**Not a strengthening of the damage model:** `NoiseGated.eq_empty_of_quiet` already shows the gate
 is empty on a noise-free stream, so this capstone has no content there — a parallel route to
 Theorem 6.6(v), not a better one. -/
-theorem compPredFrame_eq_next_of_noiseGated {n₁ C P W : ℕ} [NeZero C] [NeZero P] {hW : 2 ≤ W}
+theorem NoiseGated.compPredFrame_eq_next {n₁ C P W : ℕ} [NeZero C] [NeZero P] {hW : 2 ≤ W}
     (S : Fin n₁ → Fin n₁) (dec : Fin C → Fin n₁ → Fin n₁) (x₀ : Fin n₁)
     {c₀ : Fin C} (hc₀ : ∀ s, dec c₀ (S^[s] x₀) = S (S^[s] x₀))
     (v₀ : Fin P → WVec C W) {k n c : ℕ} (ξ : ℕ → Bool)
@@ -182,7 +174,7 @@ theorem compPredFrame_eq_next_of_noiseGated {n₁ C P W : ℕ} [NeZero C] [NeZer
   have hunion : (H.biUnion col).card ≤ H.card * c :=
     le_trans Finset.card_biUnion_le
       (le_trans (Finset.sum_le_sum fun t _ => hcol t) (by rw [Finset.sum_const, smul_eq_mul]))
-  have hHc : H.card ≤ noiseCount ξ k n := noiseGated_card_le ξ hH hgate
+  have hHc : H.card ≤ noiseCount ξ k n := NoiseGated.card_le ξ hH hgate
   calc (H.biUnion col).card ≤ H.card * c := hunion
     _ ≤ noiseCount ξ k n * c := Nat.mul_le_mul_right c hHc
     _ = c * noiseCount ξ k n := Nat.mul_comm _ _
@@ -192,10 +184,10 @@ theorem compPredFrame_eq_next_of_noiseGated {n₁ C P W : ℕ} [NeZero C] [NeZer
 On a stream quiet throughout the horizon, the only schedule confined to it that is also noise-gated
 is the empty one: a noise-gated host does no damage at all there. That noise-free stream is exactly
 the branch whose surprise count is the lifetime-free anchor `4(C−1)/θ`
-(`WitnessMixture.witness_floorSurprise_card_mul_le` at `noiseCount = 0`), so the gate and that bound
+(`ALT.witness_floorSurprise_card_mul_le` at `noiseCount = 0`), so the gate and that bound
 have content on disjoint branches — this is a variant repair of Theorem 6.6(v), not a strengthening
 of it. -/
-theorem noiseGated_eq_empty_of_quiet {k n : ℕ} {ξ : ℕ → Bool} {H : Finset ℕ}
+theorem NoiseGated.eq_empty_of_quiet {k n : ℕ} {ξ : ℕ → Bool} {H : Finset ℕ}
     (hquiet : ∀ t < n, ξ (t + k) = false) (hH : H ⊆ Finset.range n)
     (hgate : NoiseGated k ξ H) : H = ∅ := by
   refine Finset.eq_empty_iff_forall_notMem.mpr fun s hs => ?_
@@ -207,10 +199,10 @@ theorem noiseGated_eq_empty_of_quiet {k n : ℕ} {ξ : ℕ → Bool} {H : Finset
 
 /-! ## The eventually-quiet class, and its lifetime-free redundancy
 
-Between the noise-free branch `noiseGated_eq_empty_of_quiet` covers and the honestly per-horizon
-`compPredFrame_eq_next_of_noiseGated` sits a third class: streams that fire finitely often overall
+Between the noise-free branch `NoiseGated.eq_empty_of_quiet` covers and the honestly per-horizon
+`NoiseGated.compPredFrame_eq_next` sits a third class: streams that fire finitely often overall
 rather than not at all. `QuietFrom` names it directly on the stream, with no run and no schedule,
-exactly as `NoiseGated` does — `noiseCount_le_of_quietFrom` is the uniform-in-horizon bound that
+exactly as `NoiseGated` does — `QuietFrom.noiseCount_le` is the uniform-in-horizon bound that
 makes a single redundancy condition serve every horizon at once ([Inevitability] §6, Theorem
 6.6(v″)). -/
 
@@ -223,7 +215,7 @@ def QuietFrom (k m : ℕ) (ξ : ℕ → Bool) : Prop := ∀ s, ξ (s + k) = true
 /-- **The uniform count.** Under `QuietFrom`, the noise count at *every* horizon `n` is capped by
 the same `m` — the fired times all sit below `m`, so extending the horizon past `m` never grows the
 count further ([Inevitability] §6, Theorem 6.6(v″), IN-13). -/
-theorem noiseCount_le_of_quietFrom {k m : ℕ} {ξ : ℕ → Bool} (hq : QuietFrom k m ξ) (n : ℕ) :
+theorem QuietFrom.noiseCount_le {k m : ℕ} {ξ : ℕ → Bool} (hq : QuietFrom k m ξ) (n : ℕ) :
     noiseCount ξ k n ≤ m := by
   rw [noiseCount]
   calc ((Finset.range n).filter fun t => ξ (t + k)).card
@@ -234,21 +226,21 @@ theorem noiseCount_le_of_quietFrom {k m : ℕ} {ξ : ℕ → Bool} (hq : QuietFr
 
 /-- **The composite survives a gated schedule under `QuietFrom`, at one redundancy for every
 horizon at once.** `c * m < P` already covers `c * noiseCount ξ k n < P` at every `n`
-(`noiseCount_le_of_quietFrom`), so `exists_untouched_copy_of_noiseGated`'s conclusion holds
+(`QuietFrom.noiseCount_le`), so `NoiseGated.exists_untouched_copy`'s conclusion holds
 uniformly — the fixed redundancy is a lifetime statement, not a per-horizon one
 ([Inevitability] §6, Theorem 6.6(v″)). -/
-theorem exists_untouched_copy_of_quietFrom {P : ℕ} [NeZero P] {k m c : ℕ} {ξ : ℕ → Bool}
+theorem QuietFrom.exists_untouched_copy {P : ℕ} [NeZero P] {k m c : ℕ} {ξ : ℕ → Bool}
     (hq : QuietFrom k m ξ) (hP : c * m < P) {n : ℕ} {H : Finset ℕ} (hH : H ⊆ Finset.range n)
     (hgate : NoiseGated k ξ H) (col : ℕ → Finset (Fin P)) (hcol : ∀ t, (col t).card ≤ c) :
     ∃ i₀ : Fin P, ∀ t ∈ H, i₀ ∉ col t :=
-  exists_untouched_copy_of_noiseGated ξ hH hgate col hcol
-    (lt_of_le_of_lt (Nat.mul_le_mul_left c (noiseCount_le_of_quietFrom hq n)) hP)
+  NoiseGated.exists_untouched_copy ξ hH hgate col hcol
+    (lt_of_le_of_lt (Nat.mul_le_mul_left c (QuietFrom.noiseCount_le hq n)) hP)
 
-/-- **The same uniformization of `compPredFrame_eq_next_of_noiseGated`** — one redundancy
+/-- **The same uniformization of `NoiseGated.compPredFrame_eq_next`** — one redundancy
 condition, `c * m < P`, serving every horizon's conclusion at once, exactly (v)'s form reached from
 the eventually-quiet class rather than from a per-horizon noise count ([Inevitability] §6,
 Theorem 6.6(v″)). -/
-theorem compPredFrame_eq_next_of_quietFrom {n₁ C P W : ℕ} [NeZero C] [NeZero P] {hW : 2 ≤ W}
+theorem QuietFrom.compPredFrame_eq_next {n₁ C P W : ℕ} [NeZero C] [NeZero P] {hW : 2 ≤ W}
     (S : Fin n₁ → Fin n₁) (dec : Fin C → Fin n₁ → Fin n₁) (x₀ : Fin n₁)
     {c₀ : Fin C} (hc₀ : ∀ s, dec c₀ (S^[s] x₀) = S (S^[s] x₀))
     (v₀ : Fin P → WVec C W) {k m c : ℕ} {ξ : ℕ → Bool} (hq : QuietFrom k m ξ) (hP : c * m < P)
@@ -257,8 +249,8 @@ theorem compPredFrame_eq_next_of_quietFrom {n₁ C P W : ℕ} [NeZero C] [NeZero
     ∃ T : ℕ, ∀ t, T ≤ t →
       compPredFrame S dec (S^[t] x₀) (compRun W (predMiss S dec x₀) v₀ H col land t)
         = S (S^[t] x₀) :=
-  compPredFrame_eq_next_of_noiseGated (hW := hW) S dec x₀ hc₀ v₀ ξ hH hgate col hcol
-    (lt_of_le_of_lt (Nat.mul_le_mul_left c (noiseCount_le_of_quietFrom hq n)) hP) land
+  NoiseGated.compPredFrame_eq_next (hW := hW) S dec x₀ hc₀ v₀ ξ hH hgate col hcol
+    (lt_of_le_of_lt (Nat.mul_le_mul_left c (QuietFrom.noiseCount_le hq n)) hP) land
 
 /-! ## A designed instance, strictly between the two named branches
 
@@ -381,76 +373,87 @@ theorem sourceStep_not_injective {k m : ℕ} (hm : 1 ≤ m) :
     simpa [Fin.val_last] using this
   omega
 
-end DamageGate
+end ALT
 
-/-- info: 'DamageGate.noiseGated_iff_witMiss' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.noiseGated_iff_witMiss' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms DamageGate.noiseGated_iff_witMiss
+#print axioms ALT.noiseGated_iff_witMiss
 
-/-- info: 'DamageGate.noiseGated_card_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.NoiseGated.card_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms DamageGate.noiseGated_card_le
+#print axioms ALT.NoiseGated.card_le
 
-/-- info: 'DamageGate.exists_untouched_copy_of_noiseGated' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.NoiseGated.exists_untouched_copy' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms DamageGate.exists_untouched_copy_of_noiseGated
+#print axioms ALT.NoiseGated.exists_untouched_copy
 
-/-- info: 'DamageGate.noiseGated_eq_empty_of_quiet' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.NoiseGated.eq_empty_of_quiet' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms DamageGate.noiseGated_eq_empty_of_quiet
+#print axioms ALT.NoiseGated.eq_empty_of_quiet
 
-/-- info: 'DamageGate.compPredFrame_eq_next_of_noiseGated' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.NoiseGated.compPredFrame_eq_next' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms DamageGate.compPredFrame_eq_next_of_noiseGated
+#print axioms ALT.NoiseGated.compPredFrame_eq_next
 
-/-- info: 'DamageGate.noiseCount_le_of_quietFrom' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.QuietFrom.noiseCount_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms DamageGate.noiseCount_le_of_quietFrom
+#print axioms ALT.QuietFrom.noiseCount_le
 
-/-- info: 'DamageGate.exists_untouched_copy_of_quietFrom' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.QuietFrom.exists_untouched_copy' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms DamageGate.exists_untouched_copy_of_quietFrom
+#print axioms ALT.QuietFrom.exists_untouched_copy
 
-/-- info: 'DamageGate.compPredFrame_eq_next_of_quietFrom' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.QuietFrom.compPredFrame_eq_next' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms DamageGate.compPredFrame_eq_next_of_quietFrom
+#print axioms ALT.QuietFrom.compPredFrame_eq_next
 
-/-- info: 'DamageGate.quietFrom_quietStream' depends on axioms: [propext, Quot.sound] -/
+/-- info: 'ALT.quietFrom_quietStream' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms DamageGate.quietFrom_quietStream
+#print axioms ALT.quietFrom_quietStream
 
-/-- info: 'DamageGate.witMiss_quietStream_zero_iff' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.witMiss_quietStream_zero_iff' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms DamageGate.witMiss_quietStream_zero_iff
+#print axioms ALT.witMiss_quietStream_zero_iff
 
-/-- info: 'DamageGate.noiseGated_quietStream_iff' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.noiseGated_quietStream_iff' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms DamageGate.noiseGated_quietStream_iff
+#print axioms ALT.noiseGated_quietStream_iff
 
-/-- info: 'DamageGate.witMiss_quietStream_zero_of_pos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.witMiss_quietStream_zero_of_pos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms DamageGate.witMiss_quietStream_zero_of_pos
+#print axioms ALT.witMiss_quietStream_zero_of_pos
 
-/-- info: 'DamageGate.finite_setOf_witMiss_quietStream' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.finite_setOf_witMiss_quietStream' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms DamageGate.finite_setOf_witMiss_quietStream
+#print axioms ALT.finite_setOf_witMiss_quietStream
 
-/-- info: 'DamageGate.val_iterate_sourceStep' depends on axioms: [propext, Quot.sound] -/
+/-- info: 'ALT.val_iterate_sourceStep' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms DamageGate.val_iterate_sourceStep
+#print axioms ALT.val_iterate_sourceStep
 
-/-- info: 'DamageGate.sourceOut_iterate_sourceStep_zero' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.sourceOut_iterate_sourceStep_zero' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms DamageGate.sourceOut_iterate_sourceStep_zero
+#print axioms ALT.sourceOut_iterate_sourceStep_zero
 
-/-- info: 'DamageGate.sourceStep_iterate_eq_last' depends on axioms: [propext, Quot.sound] -/
+/-- info: 'ALT.sourceStep_iterate_eq_last' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms DamageGate.sourceStep_iterate_eq_last
+#print axioms ALT.sourceStep_iterate_eq_last
 
-/-- info: 'DamageGate.sourceStep_last' depends on axioms: [propext, Quot.sound] -/
+/-- info: 'ALT.sourceStep_last' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms DamageGate.sourceStep_last
+#print axioms ALT.sourceStep_last
 
-/-- info: 'DamageGate.sourceStep_not_injective' depends on axioms: [propext, Quot.sound] -/
+/-- info: 'ALT.sourceStep_not_injective' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms DamageGate.sourceStep_not_injective
+#print axioms ALT.sourceStep_not_injective

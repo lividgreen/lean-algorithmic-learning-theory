@@ -1,14 +1,7 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.QuantizationRate
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # The floored mixture: normal form, event bound, no accumulation, convergence ([Inevitability] §6)
@@ -61,7 +54,8 @@ predictions are all abstracted into `M`, so the results hold of any instantiatio
   any horizon satisfies `card · θ ≤ 4(C−1) + 2C · missCount i₀ n` for **every** candidate `i₀` in
   the pool — quantified over the whole pool, not chosen as an argmin, which is the presentation the
   bound is imported in. The horizon never reaches the right side by itself, only through one
-  candidate's own errors, the same product form as `BayesRedundancy.surprise_card_mul_le`; the leak
+  candidate's own errors, the same product form as
+  `BayesRedundancy.errorTimes_card_mul_le`; the leak
   is priced against the *threshold* and against the reference's errors, never against elapsed time.
   This is the mixture-currency instance of the agnostic weighted-majority bound of Littlestone and
   Warmuth (1994); the theorem's own docstring carries the citation and says exactly what is proved
@@ -200,7 +194,9 @@ characterizes, contrasts with, or bears on.
 
 @[expose] public section
 
-namespace WeightedFiber
+namespace ALT
+
+open WVec
 
 section Normal
 
@@ -727,7 +723,7 @@ def wrongMass (M : ℕ → Fin C → Bool) (b t : ℕ) : ℚ :=
   ∑ i, if M t i then toDist (raw (wRun (2 ^ b) (missFit M) t)) i else 0
 
 /-- The steps, before `n`, at which the wrong mass strictly exceeds the threshold `θ`. The
-membership condition is strict, as in `BayesRedundancy.surpriseSet`. -/
+membership condition is strict, as in `BayesRedundancy.errorTimes`. -/
 def floorSurpriseSet (M : ℕ → Fin C → Bool) (b : ℕ) (θ : ℚ) (n : ℕ) : Finset ℕ :=
   (Finset.range n).filter fun t => θ < wrongMass M b t
 
@@ -1509,7 +1505,8 @@ private theorem card_mul_le_of_hitting_surprises (M : ℕ → Fin C → Bool) (b
 the whole run by a right-hand side that mentions the horizon only through **one** candidate's miss
 count — and that candidate is arbitrary, quantified over the whole pool rather than chosen as an
 argmin. The horizon never occurs on the right by itself, the same product-form presentation as
-`BayesRedundancy.surprise_card_mul_le`; a consumer instantiates at whichever candidate misses least.
+`BayesRedundancy.errorTimes_card_mul_le`; a consumer instantiates at whichever candidate misses
+least.
 
 This is the mixture-currency instance of the agnostic weighted-majority bound: Littlestone &
 Warmuth, *The weighted majority algorithm*, Information and Computation **108** (1994), Corollary
@@ -1744,8 +1741,8 @@ theorem floorSurprise_vacuous_at_badW_budget {M : ℕ → Fin 2 → Bool} {iR : 
 /-- **The annihilated update is the clip in action.** `weighted_fiber_not_exactly_bayes`'s
 two-candidate, budget-`2` instance is the all-miss family at `b = 1`: from step `1` onwards the
 floored run sits at `badW = (2,1)` forever, the competitor's every miss absorbed by the floor.
-`badProject` is that fixed point exhibited one step at a time; the normal form gives it for all
-`t ≥ 1` at once. -/
+`project_bayesStep_badFit_eq_badW` is that fixed point exhibited one step at a time; the normal form
+gives it for all `t ≥ 1` at once. -/
 theorem raw_wRun_allMiss_eq_badW {t : ℕ} (ht : 1 ≤ t) :
     raw (wRun (2 ^ 1) (missFit (allMiss (0 : Fin 2))) t) = badW := by
   funext i
@@ -3172,7 +3169,6 @@ auxiliary sequence. -/
 
 section PredictiveFiber
 
-open SkewFiber
 
 /-- **The skew product's start over a base point**: the base at `x₀`, the fiber at its own all-ones
 vector. Nothing is written into the fiber — one reserved quantum per candidate is the uniform
@@ -3282,4 +3278,4 @@ theorem argmaxFrame_wWorld_eventually_const_of_faithful [NeZero C] {b : ℕ} (hb
 
 end PredictiveFiber
 
-end WeightedFiber
+end ALT

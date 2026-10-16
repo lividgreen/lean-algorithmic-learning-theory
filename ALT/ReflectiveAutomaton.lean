@@ -1,17 +1,9 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.Decoupling
 public import ALT.GodelInternalization
 public import ALT.ParameterizedNNO
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
-set_option linter.style.header false
-set_option linter.style.longLine false
 
 /-!
 # The reflective decision automaton ([Decoupling] §6.5, Proposition 6.5, FV-19)
@@ -35,25 +27,24 @@ work cell holds `Sum.inr (k, b)` — a step counter `k` and the running verdict 
 * `step_fixes_code` / `decodeCode_faithful` — §3 D1/D2 on this machine: the code region `{false}`
   is read-only and the decoder is faithful on it;
 * `automaton_persists` — the decoded sentence survives every iteration, routed through the
-  Decoupling Lemma (`Decoupling.model_persists`), not a bespoke re-proof;
+  Decoupling Lemma (`ALT.model_persists`), not a bespoke re-proof;
 * `automaton_run` — after `M_chk + 1` steps the read-out Boolean is exactly the §6.3 decision
-  `GodelInternalization.Decide C φ` (an invariant induction: after `j` steps the work cell holds
+  `ALT.BoundedChecker.Decide C φ` (an invariant induction: after `j` steps the work cell holds
   `Sum.inr (j, decide (∀ p < j, Prf φ p = false))`);
 * `automaton_decides_godel` — combining the two, under imported incompleteness at `g` the automaton
   halts reading `true` on a sentence that is true in the standard model but underivable: the
   reflective subsystem **is a decision automaton** for the Gödel phenomenon of §6.
 
-`GodelThreshold.Incompleteness` is the imported Gödel black box (§6.2), consumed only as a
-hypothesis; the checker `C : GodelInternalization.BoundedChecker` is the abstract §6.3 interface,
+`ALT.Incompleteness` is the imported Gödel black box (§6.2), consumed only as a
+hypothesis; the checker `C : ALT.BoundedChecker` is the abstract §6.3 interface,
 discharged concretely on the Foundation side.
 -/
 
 
 @[expose] public section
 
-namespace ReflectiveAutomaton
+namespace ALT.BoundedChecker
 
-open GodelInternalization
 
 variable (C : BoundedChecker)
 
@@ -63,7 +54,7 @@ abbrev Val (C : BoundedChecker) : Type := C.Formula ⊕ (ℕ × Bool)
 
 /-- §6.5 machine state: the two-cell shared memory of §3 with cells indexed by `Bool`
 (`false` = code cell, `true` = work cell). -/
-abbrev State (C : BoundedChecker) : Type := Decoupling.Mem Bool (Val C)
+abbrev State (C : BoundedChecker) : Type := Mem Bool (Val C)
 
 /-- The work-cell update given the current code and work cells. On a well-formed configuration
 (code `Sum.inl φ`, work `Sum.inr (k, b)`) with the counter within budget (`k ≤ M_chk`), it folds one
@@ -97,7 +88,7 @@ def decodeCode (C : BoundedChecker) (s : State C) : Val C := s false
 /-! ### D1/D2 on the machine ([Decoupling] §3) -/
 
 /-- §3 D1 — the code region `{false}` is **read-only** under `step`, by construction. -/
-theorem step_fixes_code : Decoupling.Fixes (step C) ({false} : Set Bool) := by
+theorem step_fixes_code : Fixes (step C) ({false} : Set Bool) := by
   intro s a ha
   rw [Set.mem_singleton_iff] at ha
   subst ha
@@ -105,7 +96,7 @@ theorem step_fixes_code : Decoupling.Fixes (step C) ({false} : Set Bool) := by
 
 /-- §3 D2 — the code decoder is **faithful** on `{false}`: equal decode ⟺ agreement on the code
 region. -/
-theorem decodeCode_faithful : Decoupling.Faithful (decodeCode C) ({false} : Set Bool) := by
+theorem decodeCode_faithful : Faithful (decodeCode C) ({false} : Set Bool) := by
   intro s t
   constructor
   · intro h a ha
@@ -121,10 +112,10 @@ theorem decodeCode_nonconstant : ∃ s t : State C, decodeCode C s ≠ decodeCod
   ⟨fun _ => Sum.inr (0, true), fun _ => Sum.inr (0, false), by simp [decodeCode]⟩
 
 /-- §3 (Lemma 3.1, sufficiency) on the machine — the decoded sentence **persists across every
-iteration**, obtained through the Decoupling Lemma (`Decoupling.model_persists`) from
+iteration**, obtained through the Decoupling Lemma (`model_persists`) from
 `step_fixes_code` and faithfulness, not a bespoke re-proof. -/
 theorem automaton_persists : ∀ k s, decodeCode C ((step C)^[k] s) = decodeCode C s :=
-  Decoupling.model_persists (step_fixes_code C) (decodeCode_faithful C).dependsOn
+  model_persists (step_fixes_code C) (decodeCode_faithful C).dependsOn
 
 /-! ### The run ([Decoupling] §6.5 / §6.3) -/
 
@@ -152,9 +143,9 @@ theorem decide_and_not (P : ℕ → Bool) (j : ℕ) :
     rw [hj] at hjf
     exact absurd hjf (by decide)
 
-/-- **Run invariant** ([Decoupling] §6.5): after `j ≤ M_chk + 1` steps from `init C φ`, the work cell is
-`Sum.inr (j, decide (∀ p < j, Prf φ p = false))` — the counter is `j` and the verdict is the partial
-conjunction over the first `j` proof codes. -/
+/-- **Run invariant** ([Decoupling] §6.5): after `j ≤ M_chk + 1` steps from `init C φ`, the work
+cell is `Sum.inr (j, decide (∀ p < j, Prf φ p = false))` — the counter is `j` and the verdict is the
+partial conjunction over the first `j` proof codes. -/
 theorem step_run_invariant (φ : C.Formula) :
     ∀ j, j ≤ C.Mchk + 1 →
       ((step C)^[j] (init C φ)) true
@@ -170,7 +161,7 @@ theorem step_run_invariant (φ : C.Formula) :
     intro hj
     have hjm : j ≤ C.Mchk := by omega
     have hcode : ((step C)^[j] (init C φ)) false = Sum.inl φ :=
-      Decoupling.fixes_iterate (step_fixes_code C) j (init C φ) false
+      Fixes.iterate (step_fixes_code C) j (init C φ) false
         (Set.mem_singleton_iff.mpr rfl)
     have hwork := ih (by omega)
     rw [Function.iterate_succ_apply']
@@ -181,7 +172,7 @@ theorem step_run_invariant (φ : C.Formula) :
     rw [ite_eq_left hjm, decide_and_not (C.Prf φ) j]
 
 /-- **§6.5, Proposition 6.5 (the run).** After `M_chk + 1` steps the read-out Boolean is exactly the
-§6.3 bounded-non-provability decision `GodelInternalization.Decide C φ`. -/
+§6.3 bounded-non-provability decision `Decide C φ`. -/
 theorem automaton_run (φ : C.Formula) :
     readout C ((step C)^[C.Mchk + 1] (init C φ)) = Decide C φ := by
   have hinv := step_run_invariant C φ (C.Mchk + 1) (le_refl _)
@@ -200,7 +191,7 @@ reflective automaton halts after `M_chk + 1` steps reading `true` on a sentence 
 the standard model and underivable in the internal logic: representational reflection **is a
 decision automaton** for the §6 Gödel phenomenon. -/
 theorem automaton_decides_godel (True_ : C.Formula → Prop) (g : ℕ)
-    (hInc : GodelThreshold.Incompleteness C.gnum C.Derivable True_ g) :
+    (hInc : Incompleteness C.gnum C.Derivable True_ g) :
     ∃ G, C.gnum G = g ∧ True_ G ∧
       readout C ((step C)^[C.Mchk + 1] (init C G)) = true := by
   obtain ⟨G, hgnum, htrue, hdec⟩ := decide_godel C True_ g hInc
@@ -208,4 +199,4 @@ theorem automaton_decides_godel (True_ : C.Formula → Prop) (g : ℕ)
   rw [automaton_run C G]
   exact hdec
 
-end ReflectiveAutomaton
+end ALT.BoundedChecker

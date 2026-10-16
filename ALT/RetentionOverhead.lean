@@ -1,21 +1,14 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.CapacityThreshold
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # Retention capacity overhead ([Discovery], §4.4 eq. (4))
 
 Provenance: [Discovery], §4.3 (conditional-regeneration architecture,
 Def 4.1 / Prop 4.2) and §4.4 (capacity overhead, eq. (4)), with the persistent-code cost
-`|s_code| = r + 2 log r` reused from `CapacityThreshold.Kmin` (the §2.2 model cost at `c₃ = 0`).
+`|s_code| = r + 2 log r` reused from `ALT.Kmin` (the §2.2 model cost at `c₃ = 0`).
 
 Status: PROVED as pure real-arithmetic statements. This is the *arithmetic core* of the §4.4
 capacity-overhead claim only.
@@ -47,7 +40,7 @@ capacity-overhead claim only.
 * Added (concrete instance): `3 ≤ r` is the concrete C3 buffer (`r ≥ c₂ ≥ 3`, same as the
   warm-up), which forces `log(r/δ) ≥ 1`. The explicit constant `c₆ + c₇ + 3` is a concrete
   witness for the `O(·)`; the paper asserts only the *existence* of such a constant. Same
-  concrete-instance pattern as `CapacityThreshold.representable_of_C1`.
+  concrete-instance pattern as `ALT.representable_of_C1`.
 
 `Real.log` is the natural logarithm; constant base-change factors are absorbed into `c₆, c₇`,
 as in the paper's "O(·) with constants traceable in principle" convention.
@@ -56,9 +49,7 @@ as in the paper's "O(·) with constants traceable in principle" convention.
 
 @[expose] public section
 
-namespace RetentionOverhead
-
-open CapacityThreshold
+namespace ALT
 
 /-- Capacity overhead of the conditional-regeneration architecture ([Discovery] §4.4 eq. (4)):
 the persistent code `|s_code| = r + 2 log r = Kmin r 0`, plus working memory `c₆·r` (sufficient
@@ -104,4 +95,4 @@ theorem overhead_bigO (r δ c₆ c₇ : ℝ)
              mul_nonneg (by linarith : (0 : ℝ) ≤ Real.log (r / δ)) (by linarith : (0 : ℝ) ≤ r - 1),
              hlog, hℓ1]
 
-end RetentionOverhead
+end ALT

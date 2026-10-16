@@ -1,16 +1,9 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Mathlib.CategoryTheory.Monoidal.Closed.Types
 public import Mathlib.Combinatorics.Quiver.ReflQuiver
 public import Mathlib.Basic.Finite.Prod
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # Cartesian-closedness of a stand-in for Rep(S) ([Decoupling] §4)
@@ -21,7 +14,7 @@ Provenance: [Decoupling], §4.1 (objects/morphisms of `Rep(S)`),
 (cartesian-closed = monoidal-closed over the cartesian monoidal structure).
 
 Status: PROVED. This is the CCC/exponential machinery `Rep(S)` needs, exhibited on a **stand-in**
-(`Type u`) — the CCC conjunct for the eventual full-`Reflective` assembly.
+(`Type u`) — the CCC conjunct for the eventual full-`ReflectiveType` assembly.
 
 ## Stand-in status (read this — `Type u` is NOT `Rep(S)`)
 `Rep(S)`'s objects are finite types `⊆ {0,1}^|s_work|` and its morphisms are `s_code`-implemented
@@ -42,10 +35,11 @@ Superseded as the genuine carrier by `RepFintype.lean` (the finite-set CCC, FV-1
   products, exponentials).
 * `expCurrying`: §4.3 — the exponential's evaluation/currying universal property, as the bijection
   `(A ⊗ Y ⟶ X) ≃ (Y ⟶ (A ⟹ X))`.
-* `functionsAsData`: §4.5 — morphisms `A → B` correspond to the global elements of the exponential
-  object `(A ⟹ B)`, i.e. "morphisms of Rep(S) are *described by* elements of an object of Rep(S)".
-* `exp_finite`: §4.4 (miniature of "[State ⇒ State] has ≈ 2²⁰⁰ elements") — for finite objects the
-  exponential has finitely many global elements ("finitely many programs").
+* `functionsAsDataType`: §4.5 — morphisms `A → B` correspond to the global elements of the
+  exponential object `(A ⟹ B)`, i.e. "morphisms of Rep(S) are *described by* elements of an object
+  of Rep(S)".
+* `exp_finite_type`: §4.4 (miniature of "[State ⇒ State] has ≈ 2²⁰⁰ elements") — for finite
+  objects the exponential has finitely many global elements ("finitely many programs").
 
 ## What this does NOT establish (flagged / other steps)
 * NOT full `Rep(S)`: no `s_code`/`s_work`, no program-equivalence classes, no computability /
@@ -66,7 +60,7 @@ Superseded as the genuine carrier by `RepFintype.lean` (the finite-set CCC, FV-1
 
 @[expose] public section
 
-namespace RepSCCC
+namespace ALT
 
 open CategoryTheory MonoidalCategory MonoidalClosed Limits
 
@@ -85,17 +79,17 @@ noncomputable def expCurrying (A X Y : Type u) : (A ⊗ Y ⟶ X) ≃ (Y ⟶ (iho
 /-- §4.5, **functions as data**: morphisms `A → B` are in bijection with the global elements of the
 exponential object `(A ⟹ B)` (maps from the unit `𝟙_`, the terminal object). This is exactly
 "morphisms of Rep(S) are *described by* elements of a specific object of Rep(S)". -/
-noncomputable def functionsAsData (A B : Type u) :
+noncomputable def functionsAsDataType (A B : Type u) :
     (A ⟶ B) ≃ (𝟙_ (Type u) ⟶ (ihom A).obj B) :=
   (Iso.homCongr (ρ_ A).symm (Iso.refl B)).trans ((ihom.adjunction A).homEquiv (𝟙_ (Type u)) B)
 
 /-- §4.4 (miniature of "[State ⇒ State] has ≈ 2²⁰⁰ elements"): for finite objects the exponential
 has finitely many global elements — finitely many "programs". -/
-theorem exp_finite (m n : ℕ) : Finite (𝟙_ (Type) ⟶ (ihom (Fin m)).obj (Fin n)) := by
+theorem exp_finite_type (m n : ℕ) : Finite (𝟙_ (Type) ⟶ (ihom (Fin m)).obj (Fin n)) := by
   have hfin : Finite (Fin m ⟶ Fin n) :=
     Finite.of_injective (fun g : Fin m ⟶ Fin n => (g : Fin m → Fin n))
       (fun _ _ h => ConcreteCategory.hom_injective (DFunLike.coe_injective h))
   exact Finite.of_equiv _ ((Iso.homCongr (ρ_ (Fin m)).symm (Iso.refl (Fin n))).trans
       ((ihom.adjunction (Fin m)).homEquiv (𝟙_ (Type)) (Fin n)))
 
-end RepSCCC
+end ALT

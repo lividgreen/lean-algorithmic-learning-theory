@@ -1,8 +1,3 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.AccretingExcess
@@ -145,6 +140,11 @@ public import ALT.WeightedFiber
 public import ALT.WindowDeterminism
 public import ALT.WitnessMixture
 
+-- Not used by the development: a Mathlib tool module in the closure asserts that
+-- `Lake.Workspace` is absent from its own imports, and `#check_assertions!` below reads that
+-- witness as vacuous unless the name exists in this module's environment.
+import Lake.Config.Workspace
+
 /-!
 # ALT — Algorithmic Learning Theory in Lean 4
 
@@ -193,12 +193,17 @@ which discharge the Gödel incompleteness hypothesis against upstream
 `FormalizedFormalLogic/Foundation`. So `ALT` is the single library root, and
 the build and the API docs cover the development through it alone.
 
-Several modules state a dependency boundary in their docstring ("deliberately a
-leaf", "stays deliberately light", "cross-referenced but NOT imported") and hold
-themselves to it with `assert_not_exists` on a characteristic declaration of the
-excluded territory. An assertion whose witness name does not exist anywhere is
-vacuous, so the root re-checks them all below: since this module's import closure
-is the whole development, every such witness must resolve here.
+Every declaration of the development stands under the namespace `ALT`, by the object it is
+about: a definition in the namespace of its principal object, a theorem in the namespace of the
+predicate its name carries and its hypothesis has, and everything else at `ALT.` with its words.
+No namespace below `ALT` is the name of a module.
+
+Several modules state a dependency boundary in their docstring ("stays deliberately
+light", "cross-referenced but NOT imported") and hold themselves to it with
+`assert_not_exists` on a characteristic declaration of the excluded territory. An
+assertion whose witness name does not exist anywhere is vacuous, so the root
+re-checks them all below: since this module's import closure is the whole
+development, every such witness must resolve here.
 -/
 
 -- Silent when every `assert_not_exists` witness in the closure exists; warns, naming the module,

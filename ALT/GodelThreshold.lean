@@ -1,15 +1,8 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.GodelCore
 public import ALT.ParameterizedNNO
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # Gödel threshold skeleton ([Decoupling] §5.3 + §6)
@@ -19,9 +12,9 @@ condition) and §6 (Definition 6.1 representational reflection, Theorem 6.2 cate
 Pure propositional/predicate logic, in the spirit of `ALT/ChainDependencyAudit.lean`.
 
 The abstract predicates and the threshold lemma now live in the order-only `ALT/GodelCore.lean`
-(`GodelThreshold.Representable`, `…RepresentsUnderivableTruth`, `…Incompleteness`,
+(`ALT.DepthRepresentable`, `…RepresentsUnderivableTruth`, `…Incompleteness`,
 `…godel_threshold`) — so the Foundation side (`ALT/GodelComplete.lean`) imports and discharges the
-*literal* `GodelThreshold.Incompleteness` symbol that this file's results assume. This file adds
+*literal* `ALT.Incompleteness` symbol that this file's results assume. This file adds
 the part that genuinely needs Mathlib: the NNO-tied `reflective_of_depth`.
 
 Status: PROVED as pure logic. The incompleteness theorem itself is an imported HYPOTHESIS in the
@@ -29,10 +22,10 @@ threshold lemma; it is discharged from the Foundation port in `ALT/GodelComplete
 
 ## What this DOES establish
 * `reflective_of_depth`: the Theorem 6.2 form, tied to the NNO — a subsystem whose
-  `ParameterizedNNO.ParamNNO` has depth strictly exceeding `gTS` (exactly Def 6.1's `M > g(T_S)`),
+  `ALT.ParamNNO` has depth strictly exceeding `gTS` (exactly Def 6.1's `M > g(T_S)`),
   under incompleteness, represents-an-underivable-truth.
 
-(For `Representable`/`RepresentsUnderivableTruth`/`Incompleteness`/`godel_threshold`, see
+(For `DepthRepresentable`/`RepresentsUnderivableTruth`/`Incompleteness`/`godel_threshold`, see
 `ALT/GodelCore.lean`.)
 
 ## What this does NOT establish (flagged / other steps)
@@ -55,17 +48,17 @@ threshold lemma; it is discharged from the Foundation port in `ALT/GodelComplete
 
 @[expose] public section
 
-namespace GodelThreshold
+namespace ALT
 
 variable {Sentence : Type*} (gnum : Sentence → ℕ) (Derivable True_ : Sentence → Prop)
 
 /-- Theorem 6.2 form, tied to the NNO: a subsystem whose parameterized NNO has depth strictly
 exceeding the Gödel number (`g(T_S) < M`, exactly Def 6.1's `M > g(T_S)`), under incompleteness,
-represents an underivable truth. `P.depth` is the depth `M` of `ParameterizedNNO.ParamNNO`. -/
+represents an underivable truth. `P.depth` is the depth `M` of `ParamNNO`. -/
 theorem reflective_of_depth {W : Type*} [Fintype W]
-    (P : ParameterizedNNO.ParamNNO W) (gTS : ℕ) (hM : gTS < P.depth)
+    (P : ParamNNO W) (gTS : ℕ) (hM : gTS < P.depth)
     (hInc : Incompleteness gnum Derivable True_ gTS) :
     RepresentsUnderivableTruth gnum Derivable True_ P.depth :=
   godel_threshold gnum Derivable True_ P.depth gTS (le_of_lt hM) hInc
 
-end GodelThreshold
+end ALT

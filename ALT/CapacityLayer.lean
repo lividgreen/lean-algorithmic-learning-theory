@@ -1,8 +1,3 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Mathlib.Basic.Finite.Sum
@@ -11,11 +6,6 @@ public import ALT.RealizabilityRecursor
 public import Realizability.RealizabilityCoproduct
 public import Realizability.RealizabilitySubobject
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
-set_option linter.style.header false
-set_option linter.style.longLine false
--- Definitional `show` (unfolding an assembly's carrier to a defeq goal) is idiomatic here.
-set_option linter.style.show false
 
 /-!
 # Rep(S) "up to capacity": the finite full subcategory and the honest non-closure (FV-14)
@@ -38,17 +28,17 @@ This file makes "up to capacity" precise on the genuine realizability CCC `Asm` 
 The *cardinality* side of "global closure fails" is machine-checked below. The **realizer-length**
 side of §4.3 (a generic exponential element needs a realizer of length `~2^{|s_work|}`, by the
 Shannon/Li–Vitányi counting bound) rests on a **categorical treatment of Kolmogorov complexity**,
-which does not exist (the paper records this as an open *method*; cf. `KolmogorovComplexity.lean` for
-the non-categorical counting infrastructure). So FV-14 earns the element-count non-closure, not the
-realizer-length non-closure.
+which does not exist (the paper records this as an open *method*; cf. `KolmogorovComplexity.lean`
+for the non-categorical counting infrastructure). So FV-14 earns the element-count non-closure, not
+the realizer-length non-closure.
 -/
 
 
 @[expose] public section
 
-namespace CapacityLayer
+namespace ALT
 
-open RealizabilityCCC RealizabilityRecursor CategoryTheory
+open RealizabilityCCC CategoryTheory
 
 /-- §4.1/§4.3 — the **capacity predicate** on the realizability CCC `Asm` ("up to capacity"): the
 object's carrier is finite and encodes into `s` work bits (`≤ 2^s` elements, i.e. ⊆ `{0,1}^s`). -/
@@ -59,15 +49,15 @@ fits in any larger budget `s' ≥ s` (`Nat.card A ≤ 2^s ≤ 2^{s'}`). -/
 theorem FitsIn.mono {A : Asm} {s s' : ℕ} (h : FitsIn A s) (hss : s ≤ s') : FitsIn A s' :=
   ⟨h.1, h.2.trans (Nat.pow_le_pow_right (by norm_num) hss)⟩
 
-/-- §4.2/§4.3 — **Rep(S) is the finite full subcategory** of the realizability CCC `Asm`: the objects
-that fit in the work memory `s`, with all `Asm`-morphisms between them. A genuine
+/-- §4.2/§4.3 — **Rep(S) is the finite full subcategory** of the realizability CCC `Asm`: the
+objects that fit in the work memory `s`, with all `Asm`-morphisms between them. A genuine
 `CategoryTheory.Category` (full subcategory), of which the FV-12 CCC `Asm` is the un-capacitated
 ambient. -/
 abbrev RepS (s : ℕ) := ObjectProperty.FullSubcategory (fun A : Asm => FitsIn A s)
 
 /-- §5.4/§6.3 — the **bounded-recursor object fits**: `recursorAsm M` (carrier `ZMod (M+1)`) encodes
-into `s` work bits exactly when `M + 1 ≤ 2^s` — the FV-8 capacity arithmetic (`prop_5_4`), now on the
-unified `Asm` carrier (FV-13). At the degree-2 budget this is the linear `2n` capacity. -/
+into `s` work bits exactly when `M + 1 ≤ 2^s` — the FV-8 capacity arithmetic (`prop_5_4`), now on
+the unified `Asm` carrier (FV-13). At the degree-2 budget this is the linear `2n` capacity. -/
 theorem recursorAsm_fitsIn (M s : ℕ) (h : M + 1 ≤ 2 ^ s) : FitsIn (recursorAsm M) s := by
   refine ⟨inferInstance, ?_⟩
   have hcard : Nat.card (recursorAsm M).carrier = M + 1 := by
@@ -75,8 +65,8 @@ theorem recursorAsm_fitsIn (M s : ℕ) (h : M + 1 ≤ 2 ^ s) : FitsIn (recursorA
   rw [hcard]; exact h
 
 /-- §4.2/§4.3 — **products stay within the capacity filtration.** If `A` fits in `sₐ` work bits and
-`B` in `s_b`, then `A × B` fits in `sₐ + s_b` (`|A × B| = |A|·|B|`): the controlled growth that makes
-`Rep(S) = colim_d Rep(S)_{≤d}` a genuine filtration rather than a single closed level. -/
+`B` in `s_b`, then `A × B` fits in `sₐ + s_b` (`|A × B| = |A|·|B|`): the controlled growth that
+makes `Rep(S) = colim_d Rep(S)_{≤d}` a genuine filtration rather than a single closed level. -/
 theorem prodAsm_fitsIn {A B : Asm} {sa sb : ℕ} (hA : FitsIn A sa) (hB : FitsIn B sb) :
     FitsIn (prodAsm A B) (sa + sb) := by
   obtain ⟨hAf, hAc⟩ := hA
@@ -88,8 +78,8 @@ theorem prodAsm_fitsIn {A B : Asm} {sa sb : ℕ} (hA : FitsIn A sa) (hB : FitsIn
   rw [hcard, pow_add]
   exact Nat.mul_le_mul hAc hBc
 
-/-- [Decoupling] §4.2 — **coproducts stay within the capacity filtration.** If `A` fits in `sₐ` work bits
-and `B` in `s_b`, then the tagged-union coproduct `A ⊕ B` fits in `max sₐ s_b + 1`
+/-- [Decoupling] §4.2 — **coproducts stay within the capacity filtration.** If `A` fits in `sₐ` work
+bits and `B` in `s_b`, then the tagged-union coproduct `A ⊕ B` fits in `max sₐ s_b + 1`
 (`|A ⊕ B| = |A| + |B| ≤ 2^{sₐ} + 2^{s_b} ≤ 2·2^{max sₐ s_b} = 2^{max sₐ s_b + 1}`): the additive
 companion to `prodAsm_fitsIn`, keeping `Rep(S) = colim_d Rep(S)_{≤d}` a genuine filtration under
 finite coproducts. -/
@@ -113,7 +103,7 @@ theorem coprodAsm_fitsIn {A B : Asm} {sa sb : ℕ}
 /-- [Decoupling] §4.2 — the terminal object fits in `0` work bits (`|𝟙| = 1 ≤ 2^0`). -/
 theorem terminalAsm_fitsIn : FitsIn terminalAsm 0 := by
   refine ⟨inferInstanceAs (Finite PUnit), ?_⟩
-  show Nat.card PUnit ≤ 2 ^ 0
+  change Nat.card PUnit ≤ 2 ^ 0
   simp [Nat.card_eq_fintype_card]
 
 /-- [Decoupling] §4.2 — **comprehension subobjects cost no capacity.** The comprehension subobject
@@ -137,11 +127,11 @@ theorem boolAsm_fitsIn : FitsIn RealizabilitySubobject.boolAsm 1 := by
   exact h
 
 /-- [Decoupling] §4.2 — **the power object `[T ⇒ Bool]` fits in `s` work bits iff `|T| ≤ s`.** The
-realizability exponential into the classifier has carrier the trackable functions `T → Bool`, which —
-`T` being a finite object out of which every function is a morphism (`AllTrackable`) — is *all* of
-`T → Bool`, so `|[T ⇒ Bool]| = 2^{|T|}`; then `2^{|T|} ≤ 2^s ↔ |T| ≤ s`. This is the exact-cardinality
-higher-order threshold of §4.2: power objects exist within capacity only for objects at most one
-element per work bit. -/
+realizability exponential into the classifier has carrier the trackable functions `T → Bool`, which
+— `T` being a finite object out of which every function is a morphism (`AllTrackable`) — is *all* of
+`T → Bool`, so `|[T ⇒ Bool]| = 2^{|T|}`; then `2^{|T|} ≤ 2^s ↔ |T| ≤ s`. This is the
+exact-cardinality higher-order threshold of §4.2: power objects exist within capacity only for
+objects at most one element per work bit. -/
 theorem powAsm_fitsIn_iff (A : Asm) [Fintype A.carrier]
     (hA : RealizabilitySubobject.AllTrackable A) (s : ℕ) :
     FitsIn (expAsm A RealizabilitySubobject.boolAsm) s ↔ Fintype.card A.carrier ≤ s := by
@@ -170,12 +160,12 @@ theorem powAsm_fitsIn_iff (A : Asm) [Fintype A.carrier]
 
 /-- §4.3 — **global Cartesian closure FAILS on capacity (cardinality) grounds.** For every capacity
 `s ≥ 1` there is a fitting object `α` (`|α| = 2^s ≤ 2^s`) whose exponential — the function space
-`α → α`, with `|α → α| = |α|^{|α|} = (2^s)^{2^s}` (§4.3's `|T₂|^{|T₁|}`) — **overflows** `2^s`. So no
-fixed work memory is closed under the exponential, even though each exponential remains a perfectly
-good finite set. (This `α → α` is exactly §4.3's function-space exponential `|T₂|^{|T₁|}`. For finite
-assemblies every function is trackable, so the realizability exponential `expAsm α α` has the *same*
-carrier `α → α` and overflows identically — that coincidence is true but not separately formalized
-here, so we state the non-closure about the function space, the §4.3 quantity.) -/
+`α → α`, with `|α → α| = |α|^{|α|} = (2^s)^{2^s}` (§4.3's `|T₂|^{|T₁|}`) — **overflows** `2^s`. So
+no fixed work memory is closed under the exponential, even though each exponential remains a
+perfectly good finite set. (This `α → α` is exactly §4.3's function-space exponential `|T₂|^{|T₁|}`.
+For finite assemblies every function is trackable, so the realizability exponential `expAsm α α` has
+the *same* carrier `α → α` and overflows identically — that coincidence is true but not separately
+formalized here, so we state the non-closure about the function space, the §4.3 quantity.) -/
 theorem exp_card_overflow (s : ℕ) (hs : 1 ≤ s) :
     ∃ (α : Type) (_ : Fintype α), Nat.card α ≤ 2 ^ s ∧ 2 ^ s < Nat.card (α → α) := by
   refine ⟨Fin (2 ^ s), inferInstance, ?_, ?_⟩
@@ -187,4 +177,4 @@ theorem exp_card_overflow (s : ℕ) (hs : 1 ≤ s) :
     rw [Nat.card_eq_fintype_card, Fintype.card_fun, Fintype.card_fin]
     exact Nat.lt_pow_self hk
 
-end CapacityLayer
+end ALT

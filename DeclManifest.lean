@@ -18,8 +18,9 @@ module belongs to the selected package, the declaration's full name and that mod
 
 The argument selects the package: `alt` is the module `ALT` and everything under it;
 `classical` is everything under the eight library roots of `classical_upstream`
-(`classicalRoots` below); `automata` is the module `CellularAutomata` and everything under it
-(package `elementary_cellular_automata`).  One process serves one package, because of the single
+(`classicalRoots` below); `automata` is the modules `Nonautonomous` and `ECA` and
+everything under them (package `elementary_cellular_automata`).  One process serves one package,
+because of the single
 extension-loading import per process (next section).  The named-condition test of the
 hypothesis section recognizes a Prop-valued definition of ANY of the three packages as "our own",
 so a row does not depend on which package's run produced it.
@@ -197,7 +198,7 @@ def classicalRoots : List Name :=
    `Realizability, `ShannonInfo]
 
 /-- Library roots of the package `elementary_cellular_automata`. -/
-def automataRoots : List Name := [`CellularAutomata]
+def automataRoots : List Name := [`Nonautonomous, `ECA]
 
 /-- Default output path of a package (the manifests are consumed outside this workspace). -/
 def defaultOutput (pkg : String) : System.FilePath :=

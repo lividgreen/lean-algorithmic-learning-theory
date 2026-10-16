@@ -1,15 +1,8 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Learning.BayesRedundancy
 public import ALT.PersistenceCapacity
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # The surprise budget: a learner's damage debt against a host's margin ([Inevitability] §6)
@@ -17,11 +10,11 @@ set_option linter.style.header false
 A guest learning its host mispredicts only finitely often: the number of `ε`-surprises over its
 *entire existence* is bounded by the true rule's description length alone, with no separation
 hypothesis and no dependence on the horizon ([Discovery] §3.3, Proposition 3.3, machine-checked as
-`BayesRedundancy.surprise_card_le`). If each surprise damages the guest's memory by a bounded number
-of cells, the guest's total damage debt is therefore a *constant*. On the other side, a settled
-reading has a **robustness margin** — a radius within which a perturbation of an attractor state
-leaves the decoded value unchanged ([Persistence] §10.1, `PersistenceCapacity.HasMargin`) — and that
-margin is paid for in carried content by the repair tax.
+`BayesRedundancy.errorTimes_card_le`). If each surprise damages the guest's memory by a bounded
+number of cells, the guest's total damage debt is therefore a *constant*. On the other side, a
+settled reading has a **robustness margin** — a radius within which a perturbation of an attractor
+state leaves the decoded value unchanged ([Persistence] §10.1, `ALT.HasMargin`) —
+and that margin is paid for in carried content by the repair tax.
 
 This file joins the three: the event count, the margin, and the tax. The joining is the content —
 each ingredient is already machine-checked in its own development, and nothing had connected them.
@@ -42,7 +35,7 @@ below are conditional on it, by design.
   the host never separates two states in Hamming distance, damage accumulates additively, so a
   margin at least the total debt keeps the damaged reading equal to the undamaged one at every step,
   whatever the arrival pattern.
-* `survives_of_corrects` — **or, given one-step erasure, the *per-event* radius suffices** and the
+* `Corrects.survives` — **or, given one-step erasure, the *per-event* radius suffices** and the
   total debt plays no role at all. A host that undoes a `c`-cell perturbation in a single step never
   lets damage accumulate, so `radius ≤ margin` is the whole condition.
 * `survives_of_invariant` — **or, given a set the host and the damage cannot leave, on which the
@@ -54,9 +47,9 @@ below are conditional on it, by design.
   **not** by itself imply survival.
 * `capacity_price` — the margin the debt demands is bought in expressiveness: by the repair tax, a
   reading with margin at least the debt has at most `|Mem| / |Ball_debt|` distinguishable values.
-* `survives_of_invariant_of_corrects` — **and the third repair's hypothesis is met for free, once
+* `Corrects.survives_of_invariant` — **and the third repair's hypothesis is met for free, once
   the first two hold together.** `Corrects` and `HammingNonexpansive` at the same radius `c ≥ 1`
-  force the ω-limit set down to a lone fixed point (`exists_fixedPoint_of_corrects`), and the ball
+  force the ω-limit set down to a lone fixed point (`Corrects.exists_fixedPoint`), and the ball
   of radius `c` about it is then exactly the invariant set the third repair needs — degenerate only
   once `c` reaches the cell count (`joint_dependence_boundary`).
 
@@ -82,7 +75,7 @@ timing hypothesis, which is what pricing the race as a budget exists to avoid.
 
 `settles_traj_of_settles` and its purely dynamical form `settles_traj_of_readOnly` answer a
 different question from the three repairs above: given only that the undamaged reading is
-*eventually* constant along every orbit ([Persistence] §10.1, `PersistenceCapacity.Settles`), the
+*eventually* constant along every orbit ([Persistence] §10.1, `ALT.Settles`), the
 damaged reading is eventually constant too. That is **not** a fourth repair — it does not conclude
 that the damaged and undamaged readings agree, only that each stops changing on its own.
 `settles_traj_not_agreement` is why the distinction matters: it exhibits a host, a region, a damage
@@ -99,10 +92,10 @@ and neither implies the other.
 `Corrects` and `HammingNonexpansive` constrain the host's dynamics in different ways, and neither
 implies the other (`majWorld_corrects`/`majWorld_not_nonexpansive` witness one direction;
 `nonexpansive_satisfiable` the other). Held together, at any radius `c ≥ 1`, they force the ω-limit
-set to a single point (`omegaLimit_subsingleton_of_corrects`, `exists_fixedPoint_of_corrects`): two
-distinct core points cannot both survive `hammingDist_image_lt_of_corrects`'s strict contraction,
+set to a single point (`Corrects.omegaLimit_subsingleton`, `Corrects.exists_fixedPoint`): two
+distinct core points cannot both survive `Corrects.hammingDist_image_lt`'s strict contraction,
 applied enough times to drive a bounded natural number below zero. The ball of radius `c` about
-that point is then exactly the third repair's invariant set (`survives_of_invariant_of_corrects`).
+that point is then exactly the third repair's invariant set (`Corrects.survives_of_invariant`).
 
 So the third repair is a genuine *alternative* to the first two only while they do not both hold;
 once they do, it is what the first two are secretly buying. `joint_dependence_boundary` witnesses
@@ -121,9 +114,8 @@ arrival patterns, which is the point of a budget.
 
 @[expose] public section
 
-namespace SurpriseBudget
+namespace ALT
 
-open PersistenceCapacity Decoupling
 
 /-! ## The debt: [Discovery]'s event count, priced in cells -/
 
@@ -154,7 +146,7 @@ number of cells the guest is ever perturbed in is at most `radius · K(R)·ln 2 
 of the horizon `n`, of the guest's lifetime, and of the host's state count.
 
 The right-hand side is [Discovery] §3.3, Proposition 3.3 ([Discovery] eq. (7),
-`BayesRedundancy.surprise_card_le`) multiplied by the per-event radius, and that bound carries no
+`BayesRedundancy.errorTimes_card_le`) multiplied by the per-event radius, and that bound carries no
 separation hypothesis — which is why the debt exists at all on classes where a chronological
 discovery rate provably does not. -/
 theorem debt_le {A J : Type*} [Fintype A] [DecidableEq A] [Fintype J]
@@ -162,11 +154,11 @@ theorem debt_le {A J : Type*} [Fintype A] [DecidableEq A] [Fintype J]
     (hq : ∀ i s x, 0 ≤ q i s x) (hw : ∀ i, 0 ≤ w i) (hreal : ∀ s, q R s (ω s) = 1)
     (hsumw : ∑ i, w i = 1) (hqsum : ∀ i s, ∑ x, q i s x = 1)
     (k : ℕ) (hwR : w R = (2 : ℝ) ^ (-(k : ℝ))) {ε : ℝ} (hε : 0 < ε) (n : ℕ)
-    (D : Damage ι V) (hD : D.surprises = BayesRedundancy.surpriseSet q w ω ε n) :
+    (D : Damage ι V) (hD : D.surprises = BayesRedundancy.errorTimes q w ω ε n) :
     ((D.radius * D.surprises.card : ℕ) : ℝ) ≤ D.radius * ((k : ℝ) * Real.log 2 / (2 * ε)) := by
   have hcount : ((D.surprises.card : ℕ) : ℝ) ≤ (k : ℝ) * Real.log 2 / (2 * ε) := by
     rw [hD]
-    exact BayesRedundancy.surprise_card_le hq hw hreal hsumw hqsum k hwR hε n
+    exact BayesRedundancy.errorTimes_card_le hq hw hreal hsumw hqsum k hwR hε n
   push_cast
   exact mul_le_mul_of_nonneg_left hcount (Nat.cast_nonneg _)
 
@@ -192,7 +184,7 @@ def traj (U : Mem ι V → Mem ι V) (D : Damage ι V) : ℕ → Mem ι V → Me
 
 omit [Fintype ι] [DecidableEq V] in
 /-- The undamaged trajectory stays on the attractor: `ω(B)` is invariant. -/
-private theorem iterate_mem_omegaLimit [Finite ι] [Finite V] {U : Mem ι V → Mem ι V}
+private theorem iterate_mem_omegaLimit_of_mem [Finite ι] [Finite V] {U : Mem ι V → Mem ι V}
     {B : Set (Mem ι V)} (hB : ∀ s ∈ B, U s ∈ B) {s : Mem ι V} (hs : s ∈ omegaLimit U B) (t : ℕ) :
     U^[t] s ∈ omegaLimit U B := by
   induction t with
@@ -208,15 +200,15 @@ def HammingNonexpansive (U : Mem ι V → Mem ι V) : Prop :=
   ∀ x y, hammingDist (U x) (U y) ≤ hammingDist x y
 
 /-- The surprises strictly before time `t`. -/
-private def spent (D : Damage ι V) (t : ℕ) : ℕ := (D.surprises ∩ Finset.range t).card
+private def Damage.spent (D : Damage ι V) (t : ℕ) : ℕ := (D.surprises ∩ Finset.range t).card
 
-private theorem spent_zero (D : Damage ι V) : spent D 0 = 0 := by simp [spent]
+private theorem spent_zero (D : Damage ι V) : Damage.spent D 0 = 0 := by simp [Damage.spent]
 
-private theorem spent_le (D : Damage ι V) (t : ℕ) : spent D t ≤ D.surprises.card :=
+private theorem spent_le (D : Damage ι V) (t : ℕ) : Damage.spent D t ≤ D.surprises.card :=
   Finset.card_le_card Finset.inter_subset_left
 
 private theorem spent_succ_of_mem {D : Damage ι V} {t : ℕ} (ht : t ∈ D.surprises) :
-    spent D (t + 1) = spent D t + 1 := by
+    Damage.spent D (t + 1) = Damage.spent D t + 1 := by
   have hins : D.surprises ∩ Finset.range (t + 1) = insert t (D.surprises ∩ Finset.range t) := by
     ext u
     simp only [Finset.mem_inter, Finset.mem_range, Finset.mem_insert, Nat.lt_succ_iff_lt_or_eq]
@@ -227,11 +219,11 @@ private theorem spent_succ_of_mem {D : Damage ι V} {t : ℕ} (ht : t ∈ D.surp
     · rintro (rfl | ⟨hu, hlt⟩)
       · exact ⟨ht, Or.inr rfl⟩
       · exact ⟨hu, Or.inl hlt⟩
-  simp only [spent, hins]
+  simp only [Damage.spent, hins]
   exact Finset.card_insert_of_notMem (by simp)
 
 private theorem spent_succ_of_not_mem {D : Damage ι V} {t : ℕ} (ht : t ∉ D.surprises) :
-    spent D (t + 1) = spent D t := by
+    Damage.spent D (t + 1) = Damage.spent D t := by
   have hins : D.surprises ∩ Finset.range (t + 1) = D.surprises ∩ Finset.range t := by
     ext u
     simp only [Finset.mem_inter, Finset.mem_range, Nat.lt_succ_iff_lt_or_eq]
@@ -241,7 +233,7 @@ private theorem spent_succ_of_not_mem {D : Damage ι V} {t : ℕ} (ht : t ∉ D.
       · exact absurd hu ht
     · rintro ⟨hu, hlt⟩
       exact ⟨hu, Or.inl hlt⟩
-  simp only [spent, hins]
+  simp only [Damage.spent, hins]
 
 /-- **Damage accumulates, it does not amplify** — provided the host is non-expansive. After `t`
 steps the damaged trajectory is within `radius` times the number of surprises *spent so far* of the
@@ -249,7 +241,7 @@ undamaged one. Non-expansiveness is used at every step: without it a single earl
 grow without bound and the sum on the right is no bound at all. -/
 private theorem hammingDist_traj_le {U : Mem ι V → Mem ι V} (hne : HammingNonexpansive U)
     (D : Damage ι V) (s : Mem ι V) (t : ℕ) :
-    hammingDist (U^[t] s) (traj U D t s) ≤ D.radius * spent D t := by
+    hammingDist (U^[t] s) (traj U D t s) ≤ D.radius * Damage.spent D t := by
   induction t with
   | zero => simp [spent_zero]
   | succ t ih =>
@@ -258,7 +250,7 @@ private theorem hammingDist_traj_le {U : Mem ι V → Mem ι V} (hne : HammingNo
             + hammingDist (U (traj U D t s)) (D.perturb t (U (traj U D t s))) := by
         rw [Function.iterate_succ_apply', traj_succ]
         exact hammingDist_triangle _ _ _
-      have hcarry : hammingDist (U (U^[t] s)) (U (traj U D t s)) ≤ D.radius * spent D t :=
+      have hcarry : hammingDist (U (U^[t] s)) (U (traj U D t s)) ≤ D.radius * Damage.spent D t :=
         le_trans (hne _ _) ih
       by_cases ht : t ∈ D.surprises
       · have hhit := D.bounded t (U (traj U D t s))
@@ -287,7 +279,7 @@ theorem survives_of_margin [Finite V] {U : Mem ι V → Mem ι V} {B : Set (Mem 
   have hdist : hammingDist (U^[t] s) (traj U D t s) ≤ E :=
     le_trans (hammingDist_traj_le hne D s t)
       (le_trans (Nat.mul_le_mul_left _ (spent_le D t)) hdebt)
-  exact hm _ (iterate_mem_omegaLimit hB hs t) _ hdist
+  exact hm _ (iterate_mem_omegaLimit_of_mem hB hs t) _ hdist
 
 /-! ### The other repair: a host that erases each hit before the next lands
 
@@ -305,7 +297,7 @@ def Corrects (U : Mem ι V → Mem ι V) (B : Set (Mem ι V)) (c : ℕ) : Prop :
 
 /-- Under one-step correction the damage never accumulates: at every step the damaged trajectory is
 within a *single* event radius of the undamaged one, however many hits have landed. -/
-private theorem traj_mem_hball_of_corrects [Finite V] {U : Mem ι V → Mem ι V}
+private theorem Corrects.traj_mem_hball [Finite V] {U : Mem ι V → Mem ι V}
     {B : Set (Mem ι V)} {c : ℕ} (hB : ∀ s ∈ B, U s ∈ B) (hcorr : Corrects U B c)
     (D : Damage ι V) (hrad : D.radius ≤ c)
     {s : Mem ι V} (hs : s ∈ omegaLimit U B) (t : ℕ) :
@@ -313,7 +305,7 @@ private theorem traj_mem_hball_of_corrects [Finite V] {U : Mem ι V → Mem ι V
   induction t with
   | zero => simp
   | succ t ih =>
-      have hcl : U^[t] s ∈ omegaLimit U B := iterate_mem_omegaLimit hB hs t
+      have hcl : U^[t] s ∈ omegaLimit U B := iterate_mem_omegaLimit_of_mem hB hs t
       have hfix : U (traj U D t s) = U (U^[t] s) :=
         hcorr _ hcl _ (le_trans ih hrad)
       rw [Function.iterate_succ_apply', traj_succ, hfix]
@@ -328,13 +320,13 @@ This matters for what §6 should claim. `majWorld_corrects` shows the majority-v
 worked margin witness of [Persistence] §10.1 — satisfies this and *not* non-expansiveness
 (`majWorld_not_nonexpansive`). So on the corpus's own example the total-debt inequality is not the
 operative condition; the per-event one is. -/
-theorem survives_of_corrects [Finite V] {U : Mem ι V → Mem ι V} {B : Set (Mem ι V)}
+theorem Corrects.survives [Finite V] {U : Mem ι V → Mem ι V} {B : Set (Mem ι V)}
     {v : Mem ι V → M} {c E : ℕ} (hB : ∀ s ∈ B, U s ∈ B) (hcorr : Corrects U B c)
     (hm : HasMargin U B v E) (D : Damage ι V) (hrad : D.radius ≤ c) (hrE : D.radius ≤ E)
     {s : Mem ι V} (hs : s ∈ omegaLimit U B) (t : ℕ) :
     traj U D t s ∈ B ∧ v (traj U D t s) = v (U^[t] s) :=
-  hm _ (iterate_mem_omegaLimit hB hs t) _
-    (le_trans (traj_mem_hball_of_corrects hB hcorr D hrad hs t) hrE)
+  hm _ (iterate_mem_omegaLimit_of_mem hB hs t) _
+    (le_trans (Corrects.traj_mem_hball hB hcorr D hrad hs t) hrE)
 
 /-! ### Generalizing one-step erasure: correction within a window
 
@@ -345,10 +337,10 @@ state the correction promise says nothing about, exactly as `badWorld` compounds
 non-expansiveness's absence. So the family additionally needs the hits **spaced** more than `T`
 apart; `correctsWithin_needs_spaced` below shows that hypothesis is not optional either.
 
-Outside the windows a hit opens, this is *stronger* than `survives_of_corrects`: the trajectories
+Outside the windows a hit opens, this is *stronger* than `Corrects.survives`: the trajectories
 agree exactly, not merely under the same reading, and the conclusion needs no `HasMargin` at all.
 Inside a window the two damaged and undamaged trajectories genuinely separate — nothing here claims
-otherwise, and `traj_mem_hball_of_corrects`'s every-step bound does not generalize to `T > 1`. -/
+otherwise, and `Corrects.traj_mem_hball`'s every-step bound does not generalize to `T > 1`. -/
 
 /-- **Erasure within `T` steps**: a `c`-cell perturbation of an attractor state is undone after `T`
 further updates. `Corrects` is exactly the case `T = 1` (`correctsWithin_one_iff_corrects`). -/
@@ -364,7 +356,7 @@ theorem correctsWithin_one_iff_corrects {U : Mem ι V → Mem ι V} {B : Set (Me
 /-- **Hits land more than `T` apart.** The spacing a within-`T` correction needs: any two
 surprises, in arrival order, are separated by more than `T` steps — room for the window the earlier
 one opens to close before the later one lands. -/
-def Spaced (D : Damage ι V) (T : ℕ) : Prop :=
+def Damage.Spaced (D : Damage ι V) (T : ℕ) : Prop :=
   ∀ a ∈ D.surprises, ∀ b ∈ D.surprises, a < b → a + T < b
 
 theorem traj_add_of_quiet (U : Mem ι V → Mem ι V) (D : Damage ι V) (x : Mem ι V) {a : ℕ} (n : ℕ)
@@ -393,16 +385,16 @@ one-step repair). If every surprise up to `t` clears its window before `t` — t
 `hclean`, which the theorem needs only at `t` itself, not along the whole history — the damaged and
 undamaged trajectories coincide exactly at `t`, not merely in a shared reading.
 
-The proof takes the *last* surprise `u` before `t`. `Spaced` supplies exactly the same
+The proof takes the *last* surprise `u` before `t`. `Damage.Spaced` supplies exactly the same
 "window closes before the next hit" hypothesis at `u`, one level down, so strong induction gives
 `traj U D u s = U^[u] s`: the trajectory up to and including `u` is undamaged. The hit at `u` then
 lands as a fresh `c`-cell perturbation of the attractor point `U^[u+1] s`, `CorrectsWithin` erases
 it within `T` further steps, and `u` being the *last* surprise below `t` means nothing else perturbs
 the run from `u + 1` to `t`, so the erased state coasts on plain `U`-steps the rest of the way. -/
-theorem traj_eq_of_correctsWithin_of_spaced [Finite V]
+theorem CorrectsWithin.traj_eq_of_spaced [Finite V]
     {U : Mem ι V → Mem ι V} {B : Set (Mem ι V)} {c T : ℕ}
     (hB : ∀ s ∈ B, U s ∈ B) (hcorr : CorrectsWithin U B c T)
-    (D : Damage ι V) (hrad : D.radius ≤ c) (hsp : Spaced D T)
+    (D : Damage ι V) (hrad : D.radius ≤ c) (hsp : Damage.Spaced D T)
     {s : Mem ι V} (hs : s ∈ omegaLimit U B) {t : ℕ}
     (hclean : ∀ u ∈ D.surprises, u < t → u + T < t) :
     traj U D t s = U^[t] s := by
@@ -423,7 +415,7 @@ theorem traj_eq_of_correctsWithin_of_spaced [Finite V]
           (Finset.mem_inter.mpr ⟨hv, Finset.mem_range.mpr hvt⟩)
       have hucleen : ∀ w ∈ D.surprises, w < u → w + T < u := fun w hw hwu => hsp w hw u humem hwu
       have hutraj : traj U D u s = U^[u] s := ih u hult hucleen
-      have hcore' : U^[u + 1] s ∈ omegaLimit U B := iterate_mem_omegaLimit hB hs (u + 1)
+      have hcore' : U^[u + 1] s ∈ omegaLimit U B := iterate_mem_omegaLimit_of_mem hB hs (u + 1)
       have hpert : traj U D (u + 1) s = D.perturb u (U^[u + 1] s) := by
         rw [traj_succ, hutraj, Function.iterate_succ_apply']
       have hclose : hammingDist (U^[u + 1] s) (traj U D (u + 1) s) ≤ c := by
@@ -454,16 +446,16 @@ theorem traj_eq_of_correctsWithin_of_spaced [Finite V]
       simpa using h
 
 /-- **The within-`T` repair, given spacing, needs no margin at all.** Under `CorrectsWithin` and
-`Spaced`, any reading `v` agrees on the damaged and undamaged trajectories at every clean time `t`
-— an immediate corollary of the exact state equality, unlike `survives_of_corrects`, which needs
-`HasMargin` to turn a Hamming bound into a reading equality. -/
-theorem survives_of_correctsWithin [Finite V] {U : Mem ι V → Mem ι V} {B : Set (Mem ι V)}
+`Damage.Spaced`, any reading `v` agrees on the damaged and undamaged trajectories at every clean
+time `t` — an immediate corollary of the exact state equality, unlike `Corrects.survives`, which
+needs `HasMargin` to turn a Hamming bound into a reading equality. -/
+theorem CorrectsWithin.survives [Finite V] {U : Mem ι V → Mem ι V} {B : Set (Mem ι V)}
     {v : Mem ι V → M} {c T : ℕ} (hB : ∀ s ∈ B, U s ∈ B) (hcorr : CorrectsWithin U B c T)
-    (D : Damage ι V) (hrad : D.radius ≤ c) (hsp : Spaced D T)
+    (D : Damage ι V) (hrad : D.radius ≤ c) (hsp : Damage.Spaced D T)
     {s : Mem ι V} (hs : s ∈ omegaLimit U B) {t : ℕ}
     (hclean : ∀ u ∈ D.surprises, u < t → u + T < t) :
     v (traj U D t s) = v (U^[t] s) :=
-  congrArg v (traj_eq_of_correctsWithin_of_spaced hB hcorr D hrad hsp hs hclean)
+  congrArg v (CorrectsWithin.traj_eq_of_spaced hB hcorr D hrad hsp hs hclean)
 
 /-! ### A third repair: an invariant set on which the reading does not move
 
@@ -480,7 +472,7 @@ schedule actually uses, since the theorem is uniform over damage schedules. If t
 any two points of `B'`, the damaged and undamaged trajectories read the same value at every step,
 for any arrival pattern and any total debt.
 
-Unlike `survives_of_margin` and `survives_of_corrects`, this needs no `HasMargin`, no Hamming
+Unlike `survives_of_margin` and `Corrects.survives`, this needs no `HasMargin`, no Hamming
 distance, and no finiteness of `V`: once `traj U D t s` and `U^[t] s` are both shown to lie in `B'`,
 `hv` supplies the equality directly, with no accumulation argument at all. -/
 theorem survives_of_invariant {U : Mem ι V → Mem ι V} {B' : Set (Mem ι V)} {v : Mem ι V → M}
@@ -560,7 +552,7 @@ cell where they disagree onto `z`'s own value there, landing within `hball c s`
 (`hammingDist_update_le_one`, using `1 ≤ c`), where `Corrects` fixes the image at `U s`; the
 overwritten point is itself strictly closer to `z` (`hammingDist_update_lt`), and non-expansiveness
 carries that gain through the step untouched. -/
-theorem hammingDist_image_lt_of_corrects [Finite V] {U : Mem ι V → Mem ι V} {B : Set (Mem ι V)}
+theorem Corrects.hammingDist_image_lt [Finite V] {U : Mem ι V → Mem ι V} {B : Set (Mem ι V)}
     {c : ℕ} (hc : 1 ≤ c) (hcorr : Corrects U B c) (hne : HammingNonexpansive U)
     {s z : Mem ι V} (hs : s ∈ omegaLimit U B) (hsz : s ≠ z) :
     hammingDist (U s) (U z) < hammingDist s z := by
@@ -577,10 +569,10 @@ theorem hammingDist_image_lt_of_corrects [Finite V] {U : Mem ι V → Mem ι V} 
 
 /-- **The recurrent core collapses to a single point** ([Inevitability] §6, Proposition 6.1(iii)'s
 joint-dependence mechanism). Two distinct core points cannot both
-survive `hammingDist_image_lt_of_corrects` applied `hammingDist s z + 1` times: each application
+survive `Corrects.hammingDist_image_lt` applied `hammingDist s z + 1` times: each application
 strictly drops a natural number, and injectivity on the core (`omegaLimit_bijOn`) keeps the
 iterates apart throughout, driving a bounded quantity below zero. -/
-theorem omegaLimit_subsingleton_of_corrects [Finite V] {U : Mem ι V → Mem ι V} {B : Set (Mem ι V)}
+theorem Corrects.omegaLimit_subsingleton [Finite V] {U : Mem ι V → Mem ι V} {B : Set (Mem ι V)}
     {c : ℕ} (hc : 1 ≤ c) (hB : ∀ s ∈ B, U s ∈ B) (hcorr : Corrects U B c)
     (hne : HammingNonexpansive U) :
     (omegaLimit U B).Subsingleton := by
@@ -594,7 +586,8 @@ theorem omegaLimit_subsingleton_of_corrects [Finite V] {U : Mem ι V → Mem ι 
     | succ k ih =>
         rw [Function.iterate_succ_apply', Function.iterate_succ_apply']
         intro hcontra
-        exact ih (hinj (iterate_mem_omegaLimit hB hs k) (iterate_mem_omegaLimit hB hz k) hcontra)
+        exact ih (hinj (iterate_mem_omegaLimit_of_mem hB hs k)
+          (iterate_mem_omegaLimit_of_mem hB hz k) hcontra)
   have hdrop : ∀ k, hammingDist (U^[k] s) (U^[k] z) + k ≤ hammingDist s z := by
     intro k
     induction k with
@@ -602,21 +595,18 @@ theorem omegaLimit_subsingleton_of_corrects [Finite V] {U : Mem ι V → Mem ι 
     | succ k ih =>
         have hlt : hammingDist (U^[k + 1] s) (U^[k + 1] z) < hammingDist (U^[k] s) (U^[k] z) := by
           rw [Function.iterate_succ_apply', Function.iterate_succ_apply']
-          exact hammingDist_image_lt_of_corrects hc hcorr hne (iterate_mem_omegaLimit hB hs k)
+          exact Corrects.hammingDist_image_lt hc hcorr hne (iterate_mem_omegaLimit_of_mem hB hs k)
             (hne_iter k)
         omega
   have hbound := hdrop (hammingDist s z + 1)
   omega
 
-omit [DecidableEq V] in
--- `Fintype ι` supplies `Finite (Mem ι V)` for `exists_image_stable_le` below via `Finite ι`, but
--- never appears in this declaration's own STATEMENT, which the linter cannot see through.
-set_option linter.unusedFintypeInType false in
+omit [DecidableEq V] [Fintype ι] in
 /-- The ω-limit set of a nonempty `U`-closed set is nonempty — reproved locally from the public
 `exists_image_stable_le` rather than reaching into `PersistenceCapacity`'s file-private
 stabilization lemmas: the point `U^[N] b`, for `b` a witness of `B` and `N` a stabilization index,
 lies in every `(U^[t]) '' B`, forward by `hN` and backward by peeling `U` off `U^[N - t] b`. -/
-private theorem omegaLimit_nonempty_of_nonempty [Finite V] {U : Mem ι V → Mem ι V}
+private theorem omegaLimit_nonempty_of_nonempty [Finite ι] [Finite V] {U : Mem ι V → Mem ι V}
     {B : Set (Mem ι V)} (hB : ∀ s ∈ B, U s ∈ B) (hBne : B.Nonempty) :
     (omegaLimit U B).Nonempty := by
   obtain ⟨N, -, hN⟩ := exists_image_stable_le U hB
@@ -640,13 +630,13 @@ mechanism). On a nonempty `U`-closed `B`, `Corrects`-radius `c ≥ 1`
 together with `HammingNonexpansive` force the ω-limit set down to a single state `s₀`, and `s₀` is
 a fixed point of `U` — the ω-limit set is `U`-invariant (`omegaLimit_bijOn`), so `U s₀` is trapped
 in a singleton alongside `s₀` itself. -/
-theorem exists_fixedPoint_of_corrects [Finite V] {U : Mem ι V → Mem ι V} {B : Set (Mem ι V)}
+theorem Corrects.exists_fixedPoint [Finite V] {U : Mem ι V → Mem ι V} {B : Set (Mem ι V)}
     {c : ℕ} (hc : 1 ≤ c) (hB : ∀ s ∈ B, U s ∈ B) (hcorr : Corrects U B c)
     (hne : HammingNonexpansive U) (hBne : B.Nonempty) :
     ∃ s₀, omegaLimit U B = {s₀} ∧ U s₀ = s₀ := by
   obtain ⟨s₀, hs₀⟩ := omegaLimit_nonempty_of_nonempty hB hBne
   have hsingle : omegaLimit U B = {s₀} :=
-    (omegaLimit_subsingleton_of_corrects hc hB hcorr hne).eq_singleton_of_mem hs₀
+    (Corrects.omegaLimit_subsingleton hc hB hcorr hne).eq_singleton_of_mem hs₀
   refine ⟨s₀, hsingle, ?_⟩
   have hmem : U s₀ ∈ omegaLimit U B := (omegaLimit_bijOn U hB).mapsTo hs₀
   rw [hsingle, Set.mem_singleton_iff] at hmem
@@ -655,7 +645,7 @@ theorem exists_fixedPoint_of_corrects [Finite V] {U : Mem ι V → Mem ι V} {B 
 /-- Half of `survives_of_invariant`'s hypothesis, once `s₀` is `U`'s lone fixed core point:
 `Corrects` sends every point of `hball c s₀` to `U s₀`, which is `s₀` itself, and `s₀` sits at the
 centre of its own ball. -/
-private theorem corrects_hball_closed {U : Mem ι V → Mem ι V} {B : Set (Mem ι V)} {c : ℕ}
+private theorem Corrects.hball_closed {U : Mem ι V → Mem ι V} {B : Set (Mem ι V)} {c : ℕ}
     {s₀ : Mem ι V} (hs₀ : s₀ ∈ omegaLimit U B) (hfix : U s₀ = s₀) (hcorr : Corrects U B c) :
     ∀ s ∈ hball c s₀, U s ∈ hball c s₀ := by
   intro s hs
@@ -667,9 +657,9 @@ private theorem corrects_hball_closed {U : Mem ι V → Mem ι V} {B : Set (Mem 
 
 /-- The other half of `survives_of_invariant`'s hypothesis: `hball c s₀` absorbs any damage of the
 host's own image, uniformly over `Damage` schedules of radius at most `c` — every such point maps to
-`s₀` under `U` (as in `corrects_hball_closed`), and `D.bounded` keeps the perturbation within `c` of
+`s₀` under `U` (as in `Corrects.hball_closed`), and `D.bounded` keeps the perturbation within `c` of
 `s₀`. -/
-private theorem corrects_hball_damage_closed {U : Mem ι V → Mem ι V} {B : Set (Mem ι V)} {c : ℕ}
+private theorem Corrects.hball_damage_closed {U : Mem ι V → Mem ι V} {B : Set (Mem ι V)} {c : ℕ}
     {s₀ : Mem ι V} (hs₀ : s₀ ∈ omegaLimit U B) (hfix : U s₀ = s₀) (hcorr : Corrects U B c)
     (D : Damage ι V) (hrad : D.radius ≤ c) :
     ∀ t, ∀ s ∈ hball c s₀, D.perturb t (U s) ∈ hball c s₀ := by
@@ -681,7 +671,7 @@ private theorem corrects_hball_damage_closed {U : Mem ι V → Mem ι V} {B : Se
 
 /-- **The third repair's hypothesis is met, once the first two hold together** ([Inevitability] §6,
 Proposition 6.1(iii)'s joint-dependence payoff). Once `s₀` is
-the lone fixed point `Corrects` and `HammingNonexpansive` force (`exists_fixedPoint_of_corrects`),
+the lone fixed point `Corrects` and `HammingNonexpansive` force (`Corrects.exists_fixedPoint`),
 `hball c s₀` is exactly the invariant set `survives_of_invariant` asks for: any reading constant on
 it agrees, at every step and under any damage schedule of radius at most `c`, on the damaged and
 undamaged trajectories — no margin, no further use of non-expansiveness at this step, and no
@@ -692,14 +682,14 @@ can pull together for redundancy. Pulling both collapses the recurrent core, at 
 third condition is free and the first two are doing no work it does not already do — so `(ii)`'s
 margin route and `(iii)`'s erasure route apply to nearly disjoint host classes, and a reader
 choosing which disjunct to verify is choosing, not hedging. -/
-theorem survives_of_invariant_of_corrects {U : Mem ι V → Mem ι V} {B : Set (Mem ι V)}
+theorem Corrects.survives_of_invariant {U : Mem ι V → Mem ι V} {B : Set (Mem ι V)}
     {v : Mem ι V → M} {c : ℕ} {s₀ : Mem ι V} (hs₀ : s₀ ∈ omegaLimit U B) (hfix : U s₀ = s₀)
     (hcorr : Corrects U B c) (D : Damage ι V) (hrad : D.radius ≤ c)
     (hv : ∀ x ∈ hball c s₀, ∀ y ∈ hball c s₀, v x = v y)
     {s : Mem ι V} (hs : s ∈ hball c s₀) (t : ℕ) :
     traj U D t s ∈ hball c s₀ ∧ v (traj U D t s) = v (U^[t] s) :=
-  survives_of_invariant (corrects_hball_closed hs₀ hfix hcorr) D
-    (corrects_hball_damage_closed hs₀ hfix hcorr D hrad) hv hs t
+  ALT.survives_of_invariant (Corrects.hball_closed hs₀ hfix hcorr) D
+    (Corrects.hball_damage_closed hs₀ hfix hcorr D hrad) hv hs t
 
 /-! ### Settling versus agreement
 
@@ -890,7 +880,7 @@ theorem badWorld_correctsWithin : CorrectsWithin badWorld Set.univ 1 2 := by
   revert s'
   decide
 
-private theorem badDamage_not_spaced : ¬ Spaced badDamage 2 := by
+private theorem badDamage_not_spaced : ¬ Damage.Spaced badDamage 2 := by
   intro h
   have h01 : (0 : ℕ) + 2 < 1 := h 0 (by decide) 1 (by decide) (by decide)
   omega
@@ -905,17 +895,17 @@ end Counterexample
 (`badWorld_correctsWithin`), and its own schedule `badDamage` already lands its two hits one step
 apart (`badDamage_not_spaced`) — well inside that window — so no second witness is needed: the same
 host and schedule that show the budget alone does not buy survival (`badWorld_not_survives`) show
-equally that erasure-within-a-window needs `Spaced` as a genuine second hypothesis. -/
+equally that erasure-within-a-window needs `Damage.Spaced` as a genuine second hypothesis. -/
 
 /-- **Erasure within a window is not enough without spacing** ([Inevitability] §6 — the within-`T`
-repair needs `Spaced` as a genuine second hypothesis, not an artifact of the proof). `badWorld`
-erases any single-cell hit at the attractor within two steps (`badWorld_correctsWithin`), and its
-schedule's per-event radius is within that bound — yet the damaged and undamaged trajectories
-disagree at `t = 2` (`badWorld_trajectory`): the first hit perturbs the attractor `z` to `e₀`,
-`badWorld`'s own dynamics carries that in-progress correction out to `d₀₁` before the window closes,
-and the second hit — one step after the first, inside the window (`badDamage_not_spaced`) — lands on
-that mid-correction state rather than the attractor, completing the weight-three state `o` the
-reading gets wrong. -/
+repair needs `Damage.Spaced` as a genuine second hypothesis, not an artifact of the proof).
+`badWorld` erases any single-cell hit at the attractor within two steps (`badWorld_correctsWithin`),
+and its schedule's per-event radius is within that bound — yet the damaged and undamaged
+trajectories disagree at `t = 2` (`badWorld_trajectory`): the first hit perturbs the attractor `z`
+to `e₀`, `badWorld`'s own dynamics carries that in-progress correction out to `d₀₁` before the
+window closes, and the second hit — one step after the first, inside the window
+(`badDamage_not_spaced`) — lands on that mid-correction state rather than the attractor, completing
+the weight-three state `o` the reading gets wrong. -/
 theorem correctsWithin_needs_spaced :
     CorrectsWithin badWorld Set.univ 1 2 ∧
       z ∈ omegaLimit badWorld Set.univ ∧
@@ -928,7 +918,7 @@ theorem correctsWithin_needs_spaced :
 /-! ## Which repair the corpus's own witness satisfies
 
 The majority-vote world of [Persistence] §10.1 — the worked example that a positive margin exists at
-all — **erases** a one-cell perturbation in one step, so `survives_of_corrects` applies to it. It is
+all — **erases** a one-cell perturbation in one step, so `Corrects.survives` applies to it. It is
 **not** non-expansive: one cell of disagreement between two unsettled states becomes three after the
 vote. So the two repairs are genuinely different hypotheses, and on the corpus's own witness the
 operative condition is the per-event radius, not the total debt. -/
@@ -947,7 +937,7 @@ theorem majWorld_corrects : Corrects majWorld Set.univ 1 := by
 
 /-- **And it is not non-expansive.** Two states one cell apart on opposite sides of the vote are
 sent to the two constant memories, three cells apart. So `survives_of_margin`'s hypothesis excludes
-the corpus's own margin witness, and `survives_of_corrects` is the branch that covers it. -/
+the corpus's own margin witness, and `Corrects.survives` is the branch that covers it. -/
 theorem majWorld_not_nonexpansive : ¬ HammingNonexpansive majWorld := by
   intro h
   have hbad := h (fun i => i = 2) (fun i => i ≠ 0)
@@ -1219,7 +1209,7 @@ end SettlingGuards
 
 /-! ## The joint-dependence boundary: a guard family at the degenerate radius
 
-`hammingDist_image_lt_of_corrects` and its corollaries above hold at every `Corrects`-radius
+`Corrects.hammingDist_image_lt` and its corollaries above hold at every `Corrects`-radius
 `c ≥ 1`, but the invariant reading they hand `survives_of_invariant` is worth something only while
 `hball c s₀` is a PROPER subset of the state space: past that, the only reading constant on the
 ball is a constant reading outright, and a constant reading carries nothing.
@@ -1291,7 +1281,7 @@ section Price
 variable {ι V M : Type*} [Fintype ι] [DecidableEq V] [Finite V]
 
 /-- **The margin the debt demands is bought in carried content** ([Inevitability] §6, Proposition
-6.1(iv)). By the repair tax ([Persistence] §10.1, `PersistenceCapacity.repair_tax`) a reading whose
+6.1(iv)). By the repair tax ([Persistence] §10.1, `ALT.repair_tax`) a reading whose
 margin covers the debt `E` has `E`-ball-disjoint value classes, so the number of settled values it
 can distinguish is at most `|Mem| / |Ball_E|`.
 
@@ -1299,7 +1289,7 @@ How much this costs depends on which margin the guest actually needs, and that i
 host, not by the learning problem. Under `survives_of_margin` the needed margin is the whole debt,
 so a guest with more to learn — a longer rule, a finer `ε` — is pushed to a wider margin and, since
 the ball grows fast in its radius, to correspondingly fewer distinguishable values: the learning
-debt is then paid in expressiveness. Under `survives_of_corrects` the needed margin is only the
+debt is then paid in expressiveness. Under `Corrects.survives` the needed margin is only the
 per-event radius, and the price does **not** scale with what the guest has to learn. The theorem
 below is stated for any `E` below the margin and is silent on which regime applies.
 
@@ -1312,4 +1302,4 @@ theorem capacity_price {U : Mem ι V → Mem ι V} {B : Set (Mem ι V)} {v : Mem
 
 end Price
 
-end SurpriseBudget
+end ALT

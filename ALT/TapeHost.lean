@@ -1,8 +1,3 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.BlockPairHost
@@ -13,7 +8,7 @@ public import ALT.BlockPairHost
 [Inevitability] §5 Theorem 5.8.
 
 `BlockPairHost.lean` wraps the certified block-pair design into a finite autonomous host: a
-length-`8` window over a counter valued in `ZMod N`, stepped by `NoisyWindowChain.noisyStep` on a
+length-`8` window over a counter valued in `ZMod N`, stepped by `ALT.noisyStep` on a
 tape bit read off the design's own observation sequence, at a fixed period
 `N := (2 * (2 * M)) * 24`. This module restates that construction with the observation sequence
 `o : ZMod N → Bool` and the modulus `N` themselves as parameters, in place of the certified design
@@ -50,9 +45,9 @@ the machine is periodic.
 
 @[expose] public section
 
-namespace TapeHost
+namespace ALT
 
-open NoisyWindowChain
+namespace TapeHost
 
 variable {N : ℕ} [NeZero N] (o : ZMod N → Bool)
 
@@ -64,7 +59,7 @@ def tape (u : ZMod N) : Bool := o u == o (u - 8)
 /-- One step of the finite autonomous host: the window steps by the noisy window chain's own
 update on the tape bit at the counter's next position, while the counter itself advances by one. -/
 def tapeUpdate : (Fin 8 → Bool) × ZMod N → (Fin 8 → Bool) × ZMod N :=
-  fun p => (NoisyWindowChain.noisyStep 8 p.1 (tape o (p.2 + 1)), p.2 + 1)
+  fun p => (ALT.noisyStep 8 p.1 (tape o (p.2 + 1)), p.2 + 1)
 
 /-- The sequence's own length-`8` window ending at counter `c`: the oldest coordinate first. -/
 def designWindow (c : ZMod N) : Fin 8 → Bool :=
@@ -78,13 +73,13 @@ private lemma xor_not_beq (a b : Bool) : xor (!b) (a == b) = a := by
 omit [NeZero N] in
 private theorem tapeUpdate_designWindow (c : ZMod N) :
     tapeUpdate o (designWindow o c, c) = (designWindow o (c + 1), c + 1) := by
-  change (NoisyWindowChain.noisyStep 8 (designWindow o c) (tape o (c + 1)), c + 1)
+  change (ALT.noisyStep 8 (designWindow o c) (tape o (c + 1)), c + 1)
     = (designWindow o (c + 1), c + 1)
   congr 1
   funext i
-  change NoisyWindowChain.noisyStep 8 (designWindow o c) (tape o (c + 1)) i
+  change ALT.noisyStep 8 (designWindow o c) (tape o (c + 1)) i
     = o (c + 1 - 7 + ((i : ℕ) : ZMod N))
-  rw [NoisyWindowChain.noisyStep, NoisyWindowChain.windowMap]
+  rw [ALT.noisyStep, ALT.windowMap]
   by_cases h : (i : ℕ) + 1 < 8
   · rw [ite_eq_left h, dite_eq_left h]
     change o (c - 7 + (((⟨(i : ℕ) + 1, h⟩ : Fin 8) : ℕ) : ZMod N))
@@ -163,10 +158,10 @@ private theorem tapeUpdate_iterate_snd (c : ZMod N) (w : Fin 8 → Bool) (t : �
 omit [NeZero N] in
 private theorem tapeUpdate_iterate_fst_succ (c : ZMod N) (w : Fin 8 → Bool) (t : ℕ) :
     ((tapeUpdate o)^[t + 1] (w, c)).1
-      = NoisyWindowChain.noisyStep 8 ((tapeUpdate o)^[t] (w, c)).1
+      = ALT.noisyStep 8 ((tapeUpdate o)^[t] (w, c)).1
           (tape o (c + (t : ZMod N) + 1)) := by
   rw [Function.iterate_succ_apply']
-  change NoisyWindowChain.noisyStep 8 ((tapeUpdate o)^[t] (w, c)).1
+  change ALT.noisyStep 8 ((tapeUpdate o)^[t] (w, c)).1
       (tape o (((tapeUpdate o)^[t] (w, c)).2 + 1)) = _
   rw [tapeUpdate_iterate_snd]
 
@@ -211,3 +206,5 @@ theorem tapeUpdate_iterate_period_all (h8 : 8 ∣ N) (w : Fin 8 → Bool) (c : Z
   exact Prod.ext hfst hsnd
 
 end TapeHost
+
+end ALT

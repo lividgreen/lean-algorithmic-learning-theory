@@ -1,19 +1,11 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.AccretingExcess
 public import ALT.AccretiveDecoupling
 public import ALT.ChaitinLadder
-public import ChaitinIncompleteness.SelectorLadder
+public import ChaitinIncompleteness.TheoryProgression
 public import Foundation.FirstOrder.Incompleteness.Speedup
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
-set_option linter.style.header false
-set_option linter.style.longLine false
 
 /-!
 # The deep ladder: the recurrence of the crossing over each enlarged theory ([Inevitability] §6)
@@ -23,30 +15,34 @@ the corpus's crossing as a ladder: the guest crosses the internalization thresho
 current theory, evolution appends the represented reflection principle, and the enlarged host
 admits a guest that outgrows it. Among its unproved ingredients is "the recurrence of the crossing
 over each enlarged theory `T_{n+1}`". This module builds that recurrence as a corollary of two
-parametric landed facts (`AccretingWitness.eventually_hostsAt`, `ExcessOrderComplete.outgrows_arith`)
-and Foundation's per-theory incompleteness, together with `ALT/AccretiveDecoupling.lean`'s
-committing substrate, which supplies the ladder's coupling to a growing host's own written code.
+parametric landed facts (`ALT.eventually_hostsAt`,
+`ExcessOrderComplete.outgrows_arith`) and Foundation's per-theory incompleteness, together with
+`ALT/AccretiveDecoupling.lean`'s committing substrate, which supplies the ladder's coupling to a
+growing host's own written code.
 
 ## Main results
 
-* `RungSelector` / `ladderTheory` / `rung` / `rung_true` / `rung_unprovable` /
-  `ladderTheory_lt_succ` — the chain builder, parametric in a **rung selector**, with its basic
-  behavior (every rung true and unprovable in the theory that precedes it; the ladder ascends
-  strictly), live in `ChaitinIncompleteness/SelectorLadder.lean` and are used here throughout.
+* `SentenceSelector` / `progressionTheory` / `selectedSentence` / `selectedSentence_true` /
+  `selectedSentence_unprovable` / `progressionTheory_lt_succ` — the chain builder, parametric in a
+  **rung selector**, with its basic behavior (every rung true and unprovable in the theory that
+  precedes it; the ladder ascends strictly), live in `ChaitinIncompleteness/TheoryProgression.lean`
+  and are used here throughout.
 * `hiddenSelector` — the canonical rung selector at `𝗣𝗔⁻`, built from Foundation's incompleteness
   theorem via `Classical.epsilon`.
 * `explicitSelector` — the EXPLICIT rung selector at base `𝗜𝚺₁`: Foundation's own Gödel sentence of
   each theory's standard provability predicate, exhibited rather than chosen; `explicitLadder` /
   `explicitRung` instantiate the chain at it, with `explicitRung_eq_gödel` the `rfl` identification.
-* `ladder_outgrows` / `accreting_ladder` — **the recurrence itself**: at every rung `n`, the crossing
-  (`ExcessOrder.Outgrows`, unconditionally discharged) recurs, hosted eventually and forever after
-  (`AccretingWitness.eventually_hostsAt`'s pattern), exactly as [Inevitability] §6 asks.
+* `ladder_outgrows` / `accreting_ladder` — **the recurrence itself**: at every rung `n`, the
+  crossing (`ALT.Outgrows`, unconditionally discharged) recurs, hosted eventually and
+  forever after (`ALT.eventually_hostsAt`'s pattern), exactly as [Inevitability] §6
+  asks.
 * `chaitin_accreting_ladder` — the same recurrence at `ChaitinLadder`'s `chaitinSelector`
   ([Inevitability] §6 Proposition 6.16).
-* `ladder_card_le_at_budget` — the ladder's own capacity bound (`CategoricalThreshold.ladder_card_le`,
-  [Inevitability] §6 Remark 6.4), read off through the rungs' Gödel numbers.
+* `ladder_card_le_at_budget` — the ladder's own capacity bound
+  (`ALT.ladder_card_le`, [Inevitability] §6 Remark 6.4), read off through the
+  rungs' Gödel numbers.
 * `committedTheory` / `committedTheory_at_commitStep` / `ladderTheory_subset_committedTheory` — the
-  **coupling**: a padded commit schedule onto `AccretiveDecoupling.seqWrite`'s committing substrate,
+  **coupling**: a padded commit schedule onto `ALT.seqWriteNat`'s committing substrate,
   so that the ladder's theory at stage `n` is EXACTLY the code held in a growing host's written
   region at the corresponding commit step, and stays held under every later step.
 * `explicit_rung_true` / `explicit_rung_unprovable` / `explicit_accreting_ladder` /
@@ -74,16 +70,16 @@ paper-level, exactly as `CategoricalThreshold.lean`'s own ladder section already
 
 @[expose] public section
 
-namespace DeepLadder
+namespace ALT
 
-open ExcessOrder
-open RealizabilityCCC RealizabilityRecursor
-open PersistenceCapacity Decoupling AdditiveComplexity
+open TheoryProgression
+open RealizabilityCCC
+open AdditiveComplexity
 open FFL.FirstOrder FFL.FirstOrder.Arithmetic
 
 variable {B : ArithmeticTheory}
 
-variable (sel : RungSelector B) (T₀ : ArithmeticTheory) (d₀ : T₀.Δ₁)
+variable (sel : SentenceSelector B) (T₀ : ArithmeticTheory) (d₀ : T₀.Δ₁)
 
 variable [B ⪯ T₀] [ℕ↓[ℒₒᵣ] ⊧* T₀]
 
@@ -92,8 +88,9 @@ variable [B ⪯ T₀] [ℕ↓[ℒₒᵣ] ⊧* T₀]
 /-- The canonical rung selector at `𝗣𝗔⁻`, built from Foundation's incompleteness theorem via
 `Classical.epsilon`: `pick T _` does not itself assume `T` extends `𝗣𝗔⁻` or is true in `ℕ` (those
 hypotheses arrive only in `true_pick`/`unprovable_pick`), so its witness is chosen without appeal to
-`exists_true_but_unprovable_sentence_of_sigma1sound T`, which needs exactly those hypotheses to typecheck. -/
-noncomputable def hiddenSelector : RungSelector (𝗣𝗔⁻ : ArithmeticTheory) where
+`exists_true_but_unprovable_sentence_of_sigma1sound T`, which needs exactly those hypotheses to
+typecheck. -/
+noncomputable def hiddenSelector : SentenceSelector (𝗣𝗔⁻ : ArithmeticTheory) where
   pick T _ := by
     haveI : Nonempty (Sentence ℒₒᵣ) := ⟨(⊥ : Sentence ℒₒᵣ)⟩
     exact Classical.epsilon (fun δ : Sentence ℒₒᵣ => (ℕ↓[ℒₒᵣ] ⊧ δ) ∧ T ⊬ δ)
@@ -128,7 +125,8 @@ theorem models_gödel_standardProvability (T : ArithmeticTheory) [T.Δ₁] [𝗜
         ∼(T.standardProvability (ProvabilityAbstraction.gödel T.standardProvability))) :=
     models_of_provable inferInstance hspec
   simp at hmodels
-  have hBG : ℕ↓[ℒₒᵣ] ⊧ (T.standardProvability (ProvabilityAbstraction.gödel T.standardProvability)) := by
+  have hBG : ℕ↓[ℒₒᵣ] ⊧
+      (T.standardProvability (ProvabilityAbstraction.gödel T.standardProvability)) := by
     by_contra hnB
     exact hG (hmodels.mpr hnB)
   have hproof : T ⊢ ProvabilityAbstraction.gödel T.standardProvability :=
@@ -142,7 +140,7 @@ noncomputable def explicitPick (T : ArithmeticTheory) (d : T.Δ₁) : Sentence �
 
 /-- The explicit rung selector at base `𝗜𝚺₁`: at each theory, Foundation's own Gödel sentence of its
 standard provability predicate — exhibited, where `hiddenSelector`'s is chosen. -/
-noncomputable def explicitSelector : RungSelector (𝗜𝚺₁ : ArithmeticTheory) where
+noncomputable def explicitSelector : SentenceSelector (𝗜𝚺₁ : ArithmeticTheory) where
   pick := explicitPick
   true_pick T d := by
     intro _ _
@@ -154,85 +152,90 @@ noncomputable def explicitSelector : RungSelector (𝗜𝚺₁ : ArithmeticTheor
     exact ProvabilityAbstraction.unprovable_gödel
 
 /-- The explicit ladder's rung IS Foundation's Gödel sentence of the stage theory, at that theory's
-own definability data — by `rfl`, since `rung` unfolds to the selector's `pick`. -/
+own definability data — by `rfl`, since `selectedSentence` unfolds to the selector's `pick`. -/
 theorem explicitRung_eq_gödel (T₀ : ArithmeticTheory) (d₀ : T₀.Δ₁) (n : ℕ) :
-    rung explicitSelector T₀ d₀ n =
+    selectedSentence explicitSelector T₀ d₀ n =
       ProvabilityAbstraction.gödel
-        (@Theory.standardProvability ℒₒᵣ _ _ (ladderTheory explicitSelector T₀ d₀ n)
-          (ladderDelta1 explicitSelector T₀ d₀ n)) :=
+        (@Theory.standardProvability ℒₒᵣ _ _ (progressionTheory explicitSelector T₀ d₀ n)
+          (progressionDelta1 explicitSelector T₀ d₀ n)) :=
   rfl
 
 /-! ## Piece 3: the recurrence at the accreting witness, and the count on the ladder -/
 
 /-- The crossing stage of rung `n`: `eventually_hostsAt`'s `t₀`, read at the rung's own code. -/
 noncomputable def rungStage (n : ℕ) : ℕ :=
-  GodelInternalization.capacity (Nat.clog 2 (Encodable.encode (rung sel T₀ d₀ n) + 1))
+  ALT.capacity (Nat.clog 2 (Encodable.encode (selectedSentence sel T₀ d₀ n) + 1))
 
 theorem rung_incompleteness (n : ℕ) :
-    GodelThreshold.Incompleteness (Encodable.encode : Sentence ℒₒᵣ → ℕ)
-      (fun δ => ladderTheory sel T₀ d₀ n ⊢ δ) (fun δ => ℕ↓[ℒₒᵣ] ⊧ δ)
-      (Encodable.encode (rung sel T₀ d₀ n)) :=
-  ⟨rung sel T₀ d₀ n, rfl, rung_true sel T₀ d₀ n, rung_unprovable sel T₀ d₀ n⟩
+    ALT.Incompleteness (Encodable.encode : Sentence ℒₒᵣ → ℕ)
+      (fun δ => progressionTheory sel T₀ d₀ n ⊢ δ) (fun δ => ℕ↓[ℒₒᵣ] ⊧ δ)
+      (Encodable.encode (selectedSentence sel T₀ d₀ n)) :=
+  ⟨selectedSentence sel T₀ d₀ n, rfl, selectedSentence_true sel T₀ d₀ n, selectedSentence_unprovable
+      sel T₀ d₀ n⟩
 
 omit [B ⪯ T₀] [ℕ↓[ℒₒᵣ] ⊧* T₀] in
 theorem hostsAt_rung (n t : ℕ) (h : rungStage sel T₀ d₀ n ≤ t) :
-    CategoricalThreshold.hostsAt (t + 1) (Encodable.encode (rung sel T₀ d₀ n)) :=
-  CategoricalThreshold.hostsAt_mono (show rungStage sel T₀ d₀ n ≤ t + 1 by omega)
-    (CategoricalThreshold.hostsAt_enters _)
+    ALT.hostsAt (t + 1) (Encodable.encode (selectedSentence sel T₀ d₀ n)) :=
+  ALT.hostsAt_mono (show rungStage sel T₀ d₀ n ≤ t + 1 by omega)
+    (ALT.hostsAt_enters _)
 
 omit [B ⪯ T₀] [ℕ↓[ℒₒᵣ] ⊧* T₀] in
-theorem not_hostsAt_rung (n w : ℕ) (h : w < Nat.clog 2 (Encodable.encode (rung sel T₀ d₀ n) + 1)) :
-    ¬ CategoricalThreshold.hostsAt w (Encodable.encode (rung sel T₀ d₀ n)) :=
-  CategoricalThreshold.hostsAt_excludes h
+theorem not_hostsAt_rung (n w : ℕ)
+    (h : w < Nat.clog 2 (Encodable.encode (selectedSentence sel T₀ d₀ n) + 1)) :
+    ¬ ALT.hostsAt w (Encodable.encode (selectedSentence sel T₀ d₀ n)) :=
+  ALT.hostsAt_excludes h
 
 /-- **The recurrence itself**: at every rung `n`, the internalization threshold recurs,
-unconditionally discharged — `ExcessOrder.outgrows` at the rung's own code, with
+unconditionally discharged — `ALT.outgrows` at the rung's own code, with
 `rung_incompleteness` closing the incompleteness antecedent that `Outgrows` otherwise leaves
 imported. -/
 theorem ladder_outgrows (n t Mchk : ℕ)
-    (hhost : CategoricalThreshold.hostsAt (t + 1) (Encodable.encode (rung sel T₀ d₀ n)))
-    (h1 : Encodable.encode (rung sel T₀ d₀ n) < Mchk)
-    (h2 : Mchk ≤ (Encodable.encode (rung sel T₀ d₀ n)) ^ 2) :
-    ∃ R : ReflectiveAsm (Encodable.encode (rung sel T₀ d₀ n)), R.depth = Mchk ∧
-      CapacityLayer.FitsIn (recursorAsm R.depth) (t + 1) ∧
-      ∃ M, GodelThreshold.RepresentsUnderivableTruth (Encodable.encode : Sentence ℒₒᵣ → ℕ)
-        (fun δ => ladderTheory sel T₀ d₀ n ⊢ δ) (fun δ => ℕ↓[ℒₒᵣ] ⊧ δ) M := by
+    (hhost : ALT.hostsAt (t + 1) (Encodable.encode (selectedSentence sel T₀ d₀ n)))
+    (h1 : Encodable.encode (selectedSentence sel T₀ d₀ n) < Mchk)
+    (h2 : Mchk ≤ (Encodable.encode (selectedSentence sel T₀ d₀ n)) ^ 2) :
+    ∃ R : ReflectiveAsm (Encodable.encode (selectedSentence sel T₀ d₀ n)), R.depth = Mchk ∧
+      ALT.FitsIn (recursorAsm R.depth) (t + 1) ∧
+      ∃ M, ALT.RepresentsUnderivableTruth (Encodable.encode : Sentence ℒₒᵣ → ℕ)
+        (fun δ => progressionTheory sel T₀ d₀ n ⊢ δ) (fun δ => ℕ↓[ℒₒᵣ] ⊧ δ) M := by
   obtain ⟨R, hdepth, hfits, himp⟩ :=
-    ExcessOrder.outgrows (t + 1) (Encodable.encode : Sentence ℒₒᵣ → ℕ)
-      (fun δ => ladderTheory sel T₀ d₀ n ⊢ δ) (fun δ => ℕ↓[ℒₒᵣ] ⊧ δ)
-      (Encodable.encode (rung sel T₀ d₀ n)) Mchk hhost h1 h2
+    ALT.outgrows (t + 1) (Encodable.encode : Sentence ℒₒᵣ → ℕ)
+      (fun δ => progressionTheory sel T₀ d₀ n ⊢ δ) (fun δ => ℕ↓[ℒₒᵣ] ⊧ δ)
+      (Encodable.encode (selectedSentence sel T₀ d₀ n)) Mchk hhost h1 h2
   exact ⟨R, hdepth, hfits, himp (rung_incompleteness sel T₀ d₀ n)⟩
 
 /-- **The ladder's own capacity bound** ([Inevitability] §6 Remark 6.4, read through the rungs'
 Gödel numbers): a finite set of rungs, each reaching the threshold within a common budget `w`, has
-at most `2 ^ w` elements. `CategoricalThreshold.ladder_card_le` counted Gödel numbers directly; this
-transports the count along `rung`'s injectivity. -/
+at most `2 ^ w` elements. `ALT.ladder_card_le` counted Gödel numbers directly; this
+transports the count along `selectedSentence`'s injectivity. -/
 theorem ladder_card_le_at_budget (w : ℕ) (s : Finset ℕ)
-    (hs : ∀ n ∈ s, 2 ≤ Encodable.encode (rung sel T₀ d₀ n) ∧
-      CategoricalThreshold.hostsAt w (Encodable.encode (rung sel T₀ d₀ n))) :
+    (hs : ∀ n ∈ s, 2 ≤ Encodable.encode (selectedSentence sel T₀ d₀ n) ∧
+      ALT.hostsAt w (Encodable.encode (selectedSentence sel T₀ d₀ n))) :
     s.card ≤ 2 ^ w := by
-  have hinj : Function.Injective (fun n => Encodable.encode (rung sel T₀ d₀ n)) :=
-    encode_rung_injective sel T₀ d₀
+  have hinj : Function.Injective (fun n => Encodable.encode (selectedSentence sel T₀ d₀ n)) :=
+    encode_selectedSentence_injective sel T₀ d₀
   rw [← Finset.card_image_of_injective s hinj]
-  apply CategoricalThreshold.ladder_card_le
+  apply ALT.ladder_card_le
   intro g hg
   simp only [Finset.mem_image] at hg
   obtain ⟨n, hn, hgn⟩ := hg
   obtain ⟨h2, hhost⟩ := hs n hn
   subst hgn
-  exact (CategoricalThreshold.reflectiveWithin_at_capacity h2).mono hhost
+  exact (ALT.reflectiveWithin_at_capacity h2).mono hhost
 
 /-- The ladder's crossing recurrence, packaged in the shape of [Inevitability] §6's own ask: at
 every rung `n`, eventual hosting (a fixed `t₀` hosted forever after) beside the unconditional
 excess it delivers. -/
 theorem accreting_ladder (n : ℕ) :
-    (∃ t₀, ∀ t, t₀ ≤ t → CategoricalThreshold.hostsAt (t + 1) (Encodable.encode (rung sel T₀ d₀ n))) ∧
-    ∀ t Mchk, CategoricalThreshold.hostsAt (t + 1) (Encodable.encode (rung sel T₀ d₀ n)) →
-      Encodable.encode (rung sel T₀ d₀ n) < Mchk → Mchk ≤ (Encodable.encode (rung sel T₀ d₀ n)) ^ 2 →
-      ∃ R : ReflectiveAsm (Encodable.encode (rung sel T₀ d₀ n)), R.depth = Mchk ∧
-        CapacityLayer.FitsIn (recursorAsm R.depth) (t + 1) ∧
-        ∃ M, GodelThreshold.RepresentsUnderivableTruth (Encodable.encode : Sentence ℒₒᵣ → ℕ)
-          (fun δ => ladderTheory sel T₀ d₀ n ⊢ δ) (fun δ => ℕ↓[ℒₒᵣ] ⊧ δ) M :=
+    (∃ t₀, ∀ t, t₀ ≤ t → ALT.hostsAt (t + 1)
+        (Encodable.encode (selectedSentence sel T₀ d₀ n))) ∧
+    ∀ t Mchk, ALT.hostsAt (t + 1)
+        (Encodable.encode (selectedSentence sel T₀ d₀ n)) →
+      Encodable.encode (selectedSentence sel T₀ d₀ n) < Mchk → Mchk ≤
+          (Encodable.encode (selectedSentence sel T₀ d₀ n)) ^ 2 →
+      ∃ R : ReflectiveAsm (Encodable.encode (selectedSentence sel T₀ d₀ n)), R.depth = Mchk ∧
+        ALT.FitsIn (recursorAsm R.depth) (t + 1) ∧
+        ∃ M, ALT.RepresentsUnderivableTruth (Encodable.encode : Sentence ℒₒᵣ → ℕ)
+          (fun δ => progressionTheory sel T₀ d₀ n ⊢ δ) (fun δ => ℕ↓[ℒₒᵣ] ⊧ δ) M :=
   ⟨⟨rungStage sel T₀ d₀ n, fun t ht => hostsAt_rung sel T₀ d₀ n t ht⟩,
     fun t Mchk hhost h1 h2 => ladder_outgrows sel T₀ d₀ n t Mchk hhost h1 h2⟩
 
@@ -241,7 +244,7 @@ theorem accreting_ladder (n : ℕ) :
 /-- The theory a committing substrate's state carries: the base plus every sentence whose code is
 written in the region (cells `1 … s 0`); the blank `0` decodes to nothing, every sentence's code
 being positive (`encode_sentence_pos`). -/
-def committedTheory (T₀ : ArithmeticTheory) (s : Decoupling.Mem ℕ ℕ) : ArithmeticTheory :=
+def committedTheory (T₀ : ArithmeticTheory) (s : ALT.Mem ℕ ℕ) : ArithmeticTheory :=
   T₀ ∪ {φ | ∃ a, 1 ≤ a ∧ a ≤ s 0 ∧ Encodable.encode φ = s a}
 
 /-- Every sentence's code is positive: `Semiformula.toNat` ends every constructor case in `+ 1`,
@@ -252,12 +255,12 @@ theorem encode_sentence_pos (φ : Sentence ℒₒᵣ) : 0 < Encodable.encode φ 
   cases φ <;> simp only [Semiformula.toNat] <;> omega
 
 theorem committedTheory_seqStart (T₀ : ArithmeticTheory) :
-    committedTheory T₀ Decoupling.seqStart = T₀ := by
+    committedTheory T₀ ALT.seqStart = T₀ := by
   unfold committedTheory
   ext φ
   simp only [Set.mem_union, Set.mem_ofPred_eq, or_iff_left_iff_imp]
   rintro ⟨a, ha1, ha2, -⟩
-  simp only [Decoupling.seqStart] at ha2
+  simp only [ALT.seqStart] at ha2
   omega
 
 /-- The padded schedule: rung `n` is committed no earlier than its crossing stage and strictly
@@ -266,56 +269,69 @@ noncomputable def commitStep : ℕ → ℕ :=
   fun n => Nat.rec (rungStage sel T₀ d₀ 0)
     (fun k prev => max (rungStage sel T₀ d₀ (k + 1)) (prev + 1)) n
 
+omit [B ⪯ T₀] [ℕ↓[ℒₒᵣ] ⊧* T₀] in
 private theorem commitStep_zero : commitStep sel T₀ d₀ 0 = rungStage sel T₀ d₀ 0 := rfl
 
+omit [B ⪯ T₀] [ℕ↓[ℒₒᵣ] ⊧* T₀] in
 private theorem commitStep_succ (n : ℕ) :
-    commitStep sel T₀ d₀ (n + 1) = max (rungStage sel T₀ d₀ (n + 1)) (commitStep sel T₀ d₀ n + 1) := rfl
+    commitStep sel T₀ d₀ (n + 1) = max (rungStage sel T₀ d₀ (n + 1)) (commitStep sel T₀ d₀ n + 1) :=
+        rfl
 
+omit [B ⪯ T₀] [ℕ↓[ℒₒᵣ] ⊧* T₀] in
 private theorem commitStep_lt_succ (n : ℕ) :
     commitStep sel T₀ d₀ n < commitStep sel T₀ d₀ (n + 1) := by
   rw [commitStep_succ]
   exact lt_of_lt_of_le (Nat.lt_succ_self _) (le_max_right _ _)
 
+omit [B ⪯ T₀] [ℕ↓[ℒₒᵣ] ⊧* T₀] in
 theorem commitStep_strictMono : StrictMono (commitStep sel T₀ d₀) :=
   strictMono_nat_of_lt_succ (commitStep_lt_succ sel T₀ d₀)
 
+omit [B ⪯ T₀] [ℕ↓[ℒₒᵣ] ⊧* T₀] in
 theorem rungStage_le_commitStep (n : ℕ) : rungStage sel T₀ d₀ n ≤ commitStep sel T₀ d₀ n := by
   cases n with
   | zero => exact le_refl _
   | succ n => rw [commitStep_succ]; exact le_max_left _ _
 
+omit [B ⪯ T₀] [ℕ↓[ℒₒᵣ] ⊧* T₀] in
 theorem hostsAt_rung_at_commitStep (n : ℕ) :
-    CategoricalThreshold.hostsAt (commitStep sel T₀ d₀ n + 1) (Encodable.encode (rung sel T₀ d₀ n)) :=
+    ALT.hostsAt (commitStep sel T₀ d₀ n + 1)
+        (Encodable.encode (selectedSentence sel T₀ d₀ n)) :=
   hostsAt_rung sel T₀ d₀ n (commitStep sel T₀ d₀ n) (rungStage_le_commitStep sel T₀ d₀ n)
 
 open Classical in
-/-- The stream a `seqWrite` commitment writes: rung `n`'s code at its own commit step, blank (`0`)
-at every other step. -/
+/-- The stream a `seqWriteNat` commitment writes: rung `n`'s code at its own commit step, blank
+(`0`) at every other step. -/
 noncomputable def ladderStream (k : ℕ) : ℕ :=
   if h : ∃ n, commitStep sel T₀ d₀ n = k then
-    Encodable.encode (rung sel T₀ d₀ (Classical.choose h))
+    Encodable.encode (selectedSentence sel T₀ d₀ (Classical.choose h))
   else 0
 
+omit [B ⪯ T₀] [ℕ↓[ℒₒᵣ] ⊧* T₀] in
 theorem ladderStream_commitStep (n : ℕ) :
-    ladderStream sel T₀ d₀ (commitStep sel T₀ d₀ n) = Encodable.encode (rung sel T₀ d₀ n) := by
+    ladderStream sel T₀ d₀ (commitStep sel T₀ d₀ n) = Encodable.encode
+        (selectedSentence sel T₀ d₀ n) := by
   have hex : ∃ m, commitStep sel T₀ d₀ m = commitStep sel T₀ d₀ n := ⟨n, rfl⟩
   have heq : Classical.choose hex = n :=
     (commitStep_strictMono sel T₀ d₀).injective (Classical.choose_spec hex)
   simp only [ladderStream, dite_eq_left hex, heq]
 
+omit [B ⪯ T₀] [ℕ↓[ℒₒᵣ] ⊧* T₀] in
 theorem ladderStream_eq_zero (k : ℕ) (h : ∀ n, commitStep sel T₀ d₀ n ≠ k) :
     ladderStream sel T₀ d₀ k = 0 := by
   unfold ladderStream
   rw [dite_eq_right (not_exists.mpr h)]
 
+omit [B ⪯ T₀] [ℕ↓[ℒₒᵣ] ⊧* T₀] in
 /-- **EXACT**: at the commit step of rung `n` the region carries exactly the first `n` rungs — the
 ladder's theory at stage `n` is precisely the code held in the committing substrate's written
 region at that step. -/
 theorem committedTheory_at_commitStep (n : ℕ) :
     committedTheory T₀
-        ((Decoupling.seqWrite (ladderStream sel T₀ d₀))^[commitStep sel T₀ d₀ n] Decoupling.seqStart)
-      = ladderTheory sel T₀ d₀ n := by
-  rw [Decoupling.seqWrite_iterate_seqStart, ladderTheory_eq_union]
+        ((ALT.seqWriteNat (ladderStream sel T₀ d₀))^[commitStep sel T₀ d₀ n]
+            ALT.seqStart)
+      = progressionTheory sel T₀ d₀ n := by
+  rw [ALT.seqWriteNat_iterate_seqStart, progressionTheory_eq_union]
   simp only [committedTheory, ite_true]
   set t := commitStep sel T₀ d₀ n with ht
   ext φ
@@ -328,10 +344,11 @@ theorem committedTheory_at_commitStep (n : ℕ) :
       have hpos : 0 < Encodable.encode φ := encode_sentence_pos φ
       by_cases hex : ∃ i, commitStep sel T₀ d₀ i = a - 1
       · obtain ⟨i, hi⟩ := hex
-        have hival : ladderStream sel T₀ d₀ (a - 1) = Encodable.encode (rung sel T₀ d₀ i) := by
+        have hival : ladderStream sel T₀ d₀ (a - 1) = Encodable.encode
+            (selectedSentence sel T₀ d₀ i) := by
           rw [← hi]; exact ladderStream_commitStep sel T₀ d₀ i
         rw [hival] at hφ
-        have hphi : φ = rung sel T₀ d₀ i := Encodable.encode_injective hφ
+        have hphi : φ = selectedSentence sel T₀ d₀ i := Encodable.encode_injective hφ
         refine ⟨i, ?_, hphi⟩
         have hlt : commitStep sel T₀ d₀ i < t := by omega
         exact (commitStep_strictMono sel T₀ d₀).lt_iff_lt.mp hlt
@@ -353,12 +370,14 @@ theorem committedTheory_at_commitStep (n : ℕ) :
       have heq : commitStep sel T₀ d₀ i + 1 - 1 = commitStep sel T₀ d₀ i := by omega
       rw [heq, ladderStream_commitStep, hφ]
 
+omit [B ⪯ T₀] [ℕ↓[ℒₒᵣ] ⊧* T₀] in
 /-- **HELD**: every later step holds rung `n` (and everything before it) — the code committed by
 stage `n + 1` stays in the region at every later step `k`. -/
 theorem ladderTheory_subset_committedTheory (n k : ℕ) (hk : commitStep sel T₀ d₀ n < k) :
-    ladderTheory sel T₀ d₀ (n + 1) ⊆
-      committedTheory T₀ ((Decoupling.seqWrite (ladderStream sel T₀ d₀))^[k] Decoupling.seqStart) := by
-  rw [Decoupling.seqWrite_iterate_seqStart, ladderTheory_eq_union]
+    progressionTheory sel T₀ d₀ (n + 1) ⊆
+      committedTheory T₀
+          ((ALT.seqWriteNat (ladderStream sel T₀ d₀))^[k] ALT.seqStart) := by
+  rw [ALT.seqWriteNat_iterate_seqStart, progressionTheory_eq_union]
   simp only [committedTheory, ite_true]
   intro φ hφ
   simp only [Set.mem_union, Set.mem_ofPred_eq] at hφ ⊢
@@ -380,37 +399,37 @@ theorem ladderTheory_subset_committedTheory (n k : ℕ) (hk : commitStep sel T�
 /-- The explicit ladder started at `𝗜𝚺₁` with Foundation's own `Δ₁` data
 (its synthesized `𝗜𝚺₁.Δ₁` instance). -/
 noncomputable abbrev explicitLadder (n : ℕ) : ArithmeticTheory :=
-  ladderTheory explicitSelector 𝗜𝚺₁ inferInstance n
+  progressionTheory explicitSelector 𝗜𝚺₁ inferInstance n
 
 /-- The `n`-th rung of the explicit ladder from `𝗜𝚺₁`: the Gödel sentence of `explicitLadder n`. -/
 noncomputable abbrev explicitRung (n : ℕ) : Sentence ℒₒᵣ :=
-  rung explicitSelector 𝗜𝚺₁ inferInstance n
+  selectedSentence explicitSelector 𝗜𝚺₁ inferInstance n
 
 /-- Every rung of the explicit ladder is true in `ℕ` ([Inevitability] §6 Proposition 6.16). -/
 theorem explicit_rung_true (n : ℕ) : ℕ↓[ℒₒᵣ] ⊧ explicitRung n :=
-  rung_true explicitSelector 𝗜𝚺₁ inferInstance n
+  selectedSentence_true explicitSelector 𝗜𝚺₁ inferInstance n
 
 /-- Every rung of the explicit ladder is unprovable in the theory that precedes it
 ([Inevitability] §6 Proposition 6.16). -/
 theorem explicit_rung_unprovable (n : ℕ) : explicitLadder n ⊬ explicitRung n :=
-  rung_unprovable explicitSelector 𝗜𝚺₁ inferInstance n
+  selectedSentence_unprovable explicitSelector 𝗜𝚺₁ inferInstance n
 
 /-- The crossing recurrence at the explicit ladder from `𝗜𝚺₁`, at every rung
 ([Inevitability] §6 Proposition 6.16). -/
 theorem explicit_accreting_ladder (n : ℕ) :
-    (∃ t₀, ∀ t, t₀ ≤ t → CategoricalThreshold.hostsAt (t + 1) (Encodable.encode (explicitRung n))) ∧
-    ∀ t Mchk, CategoricalThreshold.hostsAt (t + 1) (Encodable.encode (explicitRung n)) →
+    (∃ t₀, ∀ t, t₀ ≤ t → ALT.hostsAt (t + 1) (Encodable.encode (explicitRung n))) ∧
+    ∀ t Mchk, ALT.hostsAt (t + 1) (Encodable.encode (explicitRung n)) →
       Encodable.encode (explicitRung n) < Mchk → Mchk ≤ (Encodable.encode (explicitRung n)) ^ 2 →
       ∃ R : ReflectiveAsm (Encodable.encode (explicitRung n)), R.depth = Mchk ∧
-        CapacityLayer.FitsIn (recursorAsm R.depth) (t + 1) ∧
-        ∃ M, GodelThreshold.RepresentsUnderivableTruth (Encodable.encode : Sentence ℒₒᵣ → ℕ)
+        ALT.FitsIn (recursorAsm R.depth) (t + 1) ∧
+        ∃ M, ALT.RepresentsUnderivableTruth (Encodable.encode : Sentence ℒₒᵣ → ℕ)
           (fun δ => explicitLadder n ⊢ δ) (fun δ => ℕ↓[ℒₒᵣ] ⊧ δ) M :=
   accreting_ladder explicitSelector 𝗜𝚺₁ inferInstance n
 
 /-- The explicit ladder's own capacity bound ([Inevitability] §6 Proposition 6.16, Remark 6.4). -/
 theorem explicit_ladder_card_le_at_budget (w : ℕ) (s : Finset ℕ)
     (hs : ∀ n ∈ s, 2 ≤ Encodable.encode (explicitRung n) ∧
-      CategoricalThreshold.hostsAt w (Encodable.encode (explicitRung n))) :
+      ALT.hostsAt w (Encodable.encode (explicitRung n))) :
     s.card ≤ 2 ^ w :=
   ladder_card_le_at_budget explicitSelector 𝗜𝚺₁ inferInstance w s hs
 
@@ -419,18 +438,18 @@ Proposition 6.16): the theory at stage `n` is exactly the code held in the writt
 corresponding commit step. -/
 theorem explicit_committedTheory_at_commitStep (n : ℕ) :
     committedTheory 𝗜𝚺₁
-        ((Decoupling.seqWrite (ladderStream explicitSelector 𝗜𝚺₁ inferInstance))^[
+        ((ALT.seqWriteNat (ladderStream explicitSelector 𝗜𝚺₁ inferInstance))^[
               commitStep explicitSelector 𝗜𝚺₁ inferInstance n]
-          Decoupling.seqStart)
+          ALT.seqStart)
       = explicitLadder n :=
   committedTheory_at_commitStep explicitSelector 𝗜𝚺₁ inferInstance n
 
 /-! ## The explicit ladder's rungs as consistency sentences -/
 
 /-- The `Δ₁`-definability data needed to state `(explicitLadder n).consistent`, read off
-`ladderDelta1` at the explicit selector. -/
+`progressionDelta1` at the explicit selector. -/
 noncomputable instance explicitLadderDelta1 (n : ℕ) : (explicitLadder n).Δ₁ :=
-  ladderDelta1 explicitSelector 𝗜𝚺₁ inferInstance n
+  progressionDelta1 explicitSelector 𝗜𝚺₁ inferInstance n
 
 /-- At every rung of the explicit ladder, `𝗜𝚺₁` proves the rung equivalent to the consistency
 sentence of the theory it extends ([Inevitability] §6 Proposition 6.16): Foundation's
@@ -439,10 +458,10 @@ Gödel sentence by `explicitRung_eq_gödel`. -/
 theorem explicitRung_iff_consistent (n : ℕ) :
     (𝗜𝚺₁ : ArithmeticTheory) ⊢ explicitRung n 🡘 (explicitLadder n).consistent := by
   have : (𝗜𝚺₁ : ArithmeticTheory) ⪯ explicitLadder n :=
-    base_le_ladderTheory explicitSelector 𝗜𝚺₁ inferInstance n
+    base_le_progressionTheory explicitSelector 𝗜𝚺₁ inferInstance n
   have : (𝗣𝗔⁻ : ArithmeticTheory) ⪯ explicitLadder n :=
     FFL.Entailment.WeakerThan.trans (inferInstance : (𝗣𝗔⁻ : ArithmeticTheory) ⪯ 𝗜𝚺₁)
-      (base_le_ladderTheory explicitSelector 𝗜𝚺₁ inferInstance n)
+      (base_le_progressionTheory explicitSelector 𝗜𝚺₁ inferInstance n)
   have heq : explicitRung n =
       ProvabilityAbstraction.gödel (@Theory.standardProvability ℒₒᵣ _ _ (explicitLadder n)
         (explicitLadderDelta1 n)) :=
@@ -455,7 +474,7 @@ theorem explicitRung_iff_consistent (n : ℕ) :
 theorem explicitLadder_proves_rung_iff_consistent (n : ℕ) :
     explicitLadder n ⊢ explicitRung n 🡘 (explicitLadder n).consistent := by
   have : (𝗜𝚺₁ : ArithmeticTheory) ⪯ explicitLadder n :=
-    base_le_ladderTheory explicitSelector 𝗜𝚺₁ inferInstance n
+    base_le_progressionTheory explicitSelector 𝗜𝚺₁ inferInstance n
   exact FFL.Entailment.WeakerThan.pbl (explicitRung_iff_consistent n)
 
 /-- The successor theory of the explicit ladder is deductively equivalent to Foundation's own
@@ -464,11 +483,11 @@ step is the consistency step, at each theory's own standard provability predicat
 theorem explicitLadder_succ_equiv_con (n : ℕ) :
     explicitLadder (n + 1) ≊ explicitLadder n ∪ (explicitLadder n).Con := by
   have hle0 : (𝗜𝚺₁ : ArithmeticTheory) ⪯ explicitLadder n :=
-    base_le_ladderTheory explicitSelector 𝗜𝚺₁ inferInstance n
+    base_le_progressionTheory explicitSelector 𝗜𝚺₁ inferInstance n
   have hunion : explicitLadder n ∪ (explicitLadder n).Con
       = insert (explicitLadder n).consistent.val (explicitLadder n) := Set.union_singleton
   have hsucc : explicitLadder (n + 1) = insert (explicitRung n) (explicitLadder n) :=
-    ladderTheory_succ explicitSelector 𝗜𝚺₁ inferInstance n
+    progressionTheory_succ explicitSelector 𝗜𝚺₁ inferInstance n
   rw [FFL.Entailment.Equiv.antisymm_iff]
   constructor
   · rw [FFL.Entailment.weakerThan_iff]
@@ -513,7 +532,7 @@ theorem explicitLadder_speedup (n : ℕ) (f : ℕ → ℕ) (hf : Computable f) :
     ∃ π : ArithmeticSentence, explicitLadder n ⊢ π ∧
       f ((explicitLadder (n + 1)).minProof π) < (explicitLadder n).minProof π := by
   have : (𝗜𝚺₁ : ArithmeticTheory) ⪯ explicitLadder n :=
-    base_le_ladderTheory explicitSelector 𝗜𝚺₁ inferInstance n
+    base_le_progressionTheory explicitSelector 𝗜𝚺₁ inferInstance n
   have hσ : explicitLadder n ⊬ explicitRung n := explicit_rung_unprovable n
   exact Arithmetic.Bootstrapping.ehrenfeucht_mycielski_speedup_arithmetic hσ f hf
 
@@ -529,16 +548,16 @@ variable (T₀ : ArithmeticTheory) (d₀ : T₀.Δ₁) [(𝗥₀ : ArithmeticThe
 ([Inevitability] §6 Proposition 6.16). -/
 theorem chaitin_accreting_ladder (n : ℕ) :
     (∃ t₀, ∀ t, t₀ ≤ t →
-        CategoricalThreshold.hostsAt (t + 1) (Encodable.encode (chaitinRung T₀ d₀ n))) ∧
-      ∀ t Mchk, CategoricalThreshold.hostsAt (t + 1) (Encodable.encode (chaitinRung T₀ d₀ n)) →
+        ALT.hostsAt (t + 1) (Encodable.encode (chaitinRung T₀ d₀ n))) ∧
+      ∀ t Mchk, ALT.hostsAt (t + 1) (Encodable.encode (chaitinRung T₀ d₀ n)) →
         Encodable.encode (chaitinRung T₀ d₀ n) < Mchk →
         Mchk ≤ (Encodable.encode (chaitinRung T₀ d₀ n)) ^ 2 →
         ∃ R : ReflectiveAsm (Encodable.encode (chaitinRung T₀ d₀ n)), R.depth = Mchk ∧
-          CapacityLayer.FitsIn (recursorAsm R.depth) (t + 1) ∧
-          ∃ M, GodelThreshold.RepresentsUnderivableTruth (Encodable.encode : Sentence ℒₒᵣ → ℕ)
+          ALT.FitsIn (recursorAsm R.depth) (t + 1) ∧
+          ∃ M, ALT.RepresentsUnderivableTruth (Encodable.encode : Sentence ℒₒᵣ → ℕ)
             (fun δ => chaitinLadder T₀ d₀ n ⊢ δ) (fun δ => ℕ↓[ℒₒᵣ] ⊧ δ) M :=
   accreting_ladder chaitinSelector T₀ d₀ n
 
 end
 
-end DeepLadder
+end ALT

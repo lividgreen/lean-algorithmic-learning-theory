@@ -1,14 +1,7 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.ParameterizedNNO
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # A second concrete `learner → CCC/NNO` instance: the modular counter
@@ -38,10 +31,10 @@ Status: PROVED as concrete `ZMod` arithmetic. A supporting instance, not the fun
   demonstrates generality; Conjecture 4.4 (the general `DecoupledLearner → CCC_NNO` functor) remains
   OPEN.
 * The representation category is still the `Type` CCC stand-in
-  (`RepSCCC.repS_cartesianClosed`), NOT a bespoke per-learner `Rep(S)`.
+  (`ALT.repS_cartesianClosed`), NOT a bespoke per-learner `Rep(S)`.
   `Rules n = State n → State n` is its (Type-level) exponential object;
   `ALT/CartesianClosed.lean` exhibits the abstract exponential's universal property
-  (`expCurrying`/`functionsAsData`) and its finiteness (`exp_finite`). This file
+  (`expCurrying`/`functionsAsDataType`) and its finiteness (`exp_finite_type`). This file
   CROSS-REFERENCES that file in prose rather than re-deriving the categorical exponential
   (Mathlib's `ihom` object is abstract, not defeq to `→`).
 * "Decoupled" is modeled minimally here (the rule `step` held as a separate datum `stepAsData`
@@ -59,9 +52,8 @@ Status: PROVED as concrete `ZMod` arithmetic. A supporting instance, not the fun
 
 @[expose] public section
 
-namespace CounterLearner
+namespace ALT.ModularCounter
 
-open ParameterizedNNO
 
 /-- A concrete decoupled learner (second instance, distinct from the Rule-30 CA): state =
 `ZMod (n+1)`, one-step update = successor (a modular counter). -/
@@ -93,7 +85,7 @@ theorem step_iterate (n k : ℕ) (s : State n) : (step n)^[k] s = s + (k : State
     push_cast
     ring
 
-/-- The functions-as-data object is finite ([Decoupling] §4.4 `exp_finite`, concretely). -/
+/-- The functions-as-data object is finite ([Decoupling] §4.4 `exp_finite_type`, concretely). -/
 instance (n : ℕ) : Fintype (Rules n) := inferInstance
 
 /-- Its cardinality: `(n+1)^(n+1)` one-step rules over a state space of `n+1` configurations. -/
@@ -114,4 +106,4 @@ theorem nno_orbit (n k : ℕ) :
   rw [step_iterate]
   simp
 
-end CounterLearner
+end ALT.ModularCounter

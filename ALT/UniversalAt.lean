@@ -1,8 +1,3 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.CodePacking
@@ -19,7 +14,7 @@ dynamics within workspace `F` of the run's own width. Three things about the sta
 deliberate.
 
 **It prices against the reference, not the witness.** The cost is charged against
-`BoundedInterp.stepUFn`, the mathematical layer that specifies what the machine does, and against
+`stepUFn`, the mathematical layer that specifies what the machine does, and against
 the widths *that* run passes through. Nothing in the definition mentions how a witness represents a
 configuration, so two witnesses with different internals are compared on the same terms.
 
@@ -31,7 +26,7 @@ computation being run, not functions of the code's shape, so nothing bounds them
 alone.
 
 **The semantics is anchored elsewhere, on purpose.** That the reference dynamics computes `eval`
-is `BoundedInterp.machine_sound` and `BoundedInterp.machine_complete`, both independent of any
+is `machine_sound` and `machine_complete`, both independent of any
 witness. Folding them into this definition would make the predicate about a particular machine
 rather than about the price of running one, so they are cited rather than absorbed.
 
@@ -43,7 +38,7 @@ far the run has gone.
 
 @[expose] public section
 
-namespace BoundedUniversal
+namespace ALT
 
 open Nat.Partrec (Code)
 open Nat.Partrec.Code
@@ -55,10 +50,10 @@ def UniversalAt (F : ℕ → ℕ) : Prop :=
   ∃ u : Code,
     (∀ p x τ : ℕ,
       val u (Nat.pair (Nat.pair p x) τ)
-        = BoundedInterp.stepUFn^[τ] (BoundedInterp.initConfig p x)) ∧
+        = stepUFn^[τ] (initConfig p x)) ∧
     (∀ p x τ W : ℕ,
       (∀ σ, σ ≤ τ →
-        Nat.size (BoundedInterp.stepUFn^[σ] (BoundedInterp.initConfig p x)) ≤ W) →
+        Nat.size (stepUFn^[σ] (initConfig p x)) ≤ W) →
       spaceCost u (Nat.pair (Nat.pair p x) τ)
         ≤ F (max W (max (Nat.size (Nat.pair p x)) (Nat.size τ))))
 
@@ -67,12 +62,12 @@ the step's own workspace law. They are upper bounds and are not claimed to be ti
 def universalCost (m : ℕ) : ℕ := 524300 * m + 131120
 
 /-- **Bounded universality holds, at an affine price, with a structural witness.** The witness is
-`CodePacking.runU` — a `prec` code built from constructors, which is what makes it priceable at
+`runU` — a `prec` code built from constructors, which is what makes it priceable at
 all. -/
 theorem universalAt_holds : UniversalAt universalCost := by
-  refine ⟨CodePacking.runU, CodePacking.val_runU, ?_⟩
+  refine ⟨runU, val_runU, ?_⟩
   intro p x τ W hW
-  have h := CodePacking.spaceCost_runU_le p x W τ hW
+  have h := spaceCost_runU_le p x W τ hW
   have h1 : W ≤ max W (max (Nat.size (Nat.pair p x)) (Nat.size τ)) := le_max_left _ _
   have h2 : Nat.size (Nat.pair p x) ≤ max W (max (Nat.size (Nat.pair p x)) (Nat.size τ)) :=
     le_trans (le_max_left _ _) (le_max_right _ _)
@@ -81,4 +76,4 @@ theorem universalAt_holds : UniversalAt universalCost := by
   rw [universalCost]
   omega
 
-end BoundedUniversal
+end ALT

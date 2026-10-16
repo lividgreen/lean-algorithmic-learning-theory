@@ -1,19 +1,12 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.ParameterizedNNO
 public import Mathlib.CategoryTheory.Limits.Shapes.IsTerminal
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
-set_option linter.style.header false
-set_option linter.style.longLine false
 
 /-!
-# Rep(S) on ONE faithful carrier: the Cartesian-closed category of FINITE sets ([Decoupling] §4, §6.1)
+# Rep(S) on ONE faithful carrier: the Cartesian-closed category of FINITE sets ([Decoupling] §4,
+§6.1)
 
 Provenance: [Decoupling] §4 (Proposition 4.3 — Rep(S) is "a full
 subcategory of finite sets, Cartesian closed up to capacity"; the realizability "functions as data"
@@ -29,8 +22,8 @@ stand-ins, not one `Rep(S)`. Here both live on ONE setting: the category of **fi
 * **Genuine finite-set CCC (not the `Type` triviality).** The Cartesian-closed operations are
   certified with finiteness *load-bearing*: the terminal object, binary products, and the
   exponential are all **finite** (`terminal_finite`, `prod_finite`, `exp_finite`), with the product
-  and exponential (currying) universal properties as explicit bijections (`prod_universal`,
-  `exp_currying`), evaluation (`eval`), and the "functions as data" identification of a morphism
+  and exponential (currying) universal properties as explicit bijections (`prodUniversal`,
+  `expCurryingType`), evaluation (`eval`), and the "functions as data" identification of a morphism
   with a point of the exponential object (`functionsAsData`). `exp_finite` — finite sets are closed
   under function spaces — is the crux that the `Type` stand-in could not express.
 * **Unification with the recursor.** The bounded recursor of §5 is itself a finite object of this
@@ -43,7 +36,7 @@ carrying realizer *codes*, the "up to capacity" filtration — is NOT modeled: t
 categorical *finite-set* shape (the genuine CCC of finite sets) and its unification with the
 recursor, not the `s_work` encoding. One consequence is that `reflective_satisfiable` here holds
 unconditionally too, for every Gödel number: with no budget in the predicate, nothing can fail it.
-The capacity-indexed counterpart is `CategoricalThreshold.ReflectiveWithin`, over the realizability
+The capacity-indexed counterpart is `ALT.ReflectiveWithin`, over the realizability
 carrier and FV-14's `FitsIn`. We certify the CCC operations **concretely** (as bijections on
 finite types) rather than via Mathlib's `MonoidalClosed FintypeCat` instance: the abstract internal
 hom `(ihom X).obj Y` does not reduce to the function type `X → Y` definitionally (a Mathlib
@@ -54,9 +47,8 @@ certification of the same content.
 
 @[expose] public section
 
-namespace RepFintype
+namespace ALT
 
-open ParameterizedNNO
 
 universe u
 
@@ -72,7 +64,7 @@ instance terminal_unique (Z : Type u) : Unique (Z → PUnit.{u + 1}) := inferIns
 theorem prod_finite (X Y : Type u) [Finite X] [Finite Y] : Finite (X × Y) := inferInstance
 
 /-- Product universal property as a bijection: `Hom(Z, X×Y) ≃ Hom(Z,X) × Hom(Z,Y)`. -/
-def prod_universal (Z X Y : Type u) : (Z → X × Y) ≃ ((Z → X) × (Z → Y)) where
+def prodUniversal (Z X Y : Type u) : (Z → X × Y) ≃ ((Z → X) × (Z → Y)) where
   toFun f := (fun z => (f z).1, fun z => (f z).2)
   invFun p z := (p.1 z, p.2 z)
   left_inv _ := rfl
@@ -83,7 +75,7 @@ stand-in could not express (finite sets are closed under function spaces). -/
 theorem exp_finite (X Y : Type u) [Finite X] [Finite Y] : Finite (X → Y) := inferInstance
 
 /-- Exponential universal property (currying): `Hom(Z×X, Y) ≃ Hom(Z, Yˣ)`. -/
-def exp_currying (Z X Y : Type u) : (Z × X → Y) ≃ (Z → (X → Y)) := Equiv.curry Z X Y
+def expCurryingType (Z X Y : Type u) : (Z × X → Y) ≃ (Z → (X → Y)) := Equiv.curry Z X Y
 
 /-- Evaluation morphism `eval : Yˣ × X → Y`. -/
 def eval (X Y : Type u) : (X → Y) × X → Y := fun p => p.1 p.2
@@ -121,22 +113,23 @@ theorem reflective_satisfiable (gTS : ℕ) : Reflective gTS :=
   ⟨fun _ _ hX hY => by have := hX; have := hY; exact inferInstance,
     gTS + 1, Nat.lt_succ_self gTS, ⟨cyclicParamNNO (gTS + 1)⟩⟩
 
-end RepFintype
+end ALT
 
 /-! ### The bounded recursor as an INITIAL object (relativized universal property, [Decoupling] §5)
 
-We upgrade the orbit-form bounded recursor (`ParameterizedNNO.ParamNNO.bounded_recursor`) to a
+We upgrade the orbit-form bounded recursor (`ALT.ParamNNO.bounded_recursor`) to a
 genuine **categorical universal property**, reusing Mathlib's `CategoryTheory.Limits.IsInitial`.
 
-**Honesty constraint (`ParameterizedNNO.no_true_nno`).** `no_true_nno` proves that *no* finite state
+**Honesty constraint (`ALT.no_true_nno`).** `ALT.no_true_nno` proves that *no* finite state
 space `W` carries a true natural-numbers object — the orbit `n ↦ succ^[n] zero` must cycle. So `N_M`
 is **not** an initial `𝟙 ⊕ (·)`-algebra (that object is `ℕ`), and we deliberately do **not** state
 initiality of an `Endofunctor.Algebra`. Instead we state initiality in the category of **depth-`≤ M`
 recursion cones**: objects are maps `h : W → A` satisfying the depth-`M` recursion, morphisms are
 "agree on the orbit `N_M`". This is a *relativized* universal property — canonical up to depth `M`,
-exactly the strength `no_true_nno` permits — and there the paper recursor is the initial object. -/
+exactly the strength `ALT.no_true_nno` permits — and there the paper recursor is the initial
+object. -/
 
-namespace ParameterizedNNO
+namespace ALT
 
 open CategoryTheory CategoryTheory.Limits
 
@@ -153,9 +146,11 @@ structure ParamNNO.RecCone (P : ParamNNO W) {A : Type*} (a : A) (f : A → A) wh
 
 /-- The **thin preorder** on recursion cones: `c ≤ c'` iff the two cones agree on the whole orbit
 `N_M` (`h (succ^[k] zero)` for every `k ≤ M`). Reflexivity/transitivity are just equality on each
-orbit point, so this is a `Preorder`; via Mathlib's `Preorder.smallCategory` it makes `RecCone P a f`
-a (thin) category whose morphisms encode exactly the depth-`M` agreement of `bounded_recursor`. -/
-instance {P : ParamNNO W} {A : Type*} {a : A} {f : A → A} : Preorder (P.RecCone a f) where
+orbit point, so this is a `Preorder`; via Mathlib's `Preorder.smallCategory` it makes
+`RecCone P a f` a (thin) category whose morphisms encode exactly the depth-`M` agreement of
+`bounded_recursor`. -/
+instance ParamNNO.instPreorderRecCone {P : ParamNNO W} {A : Type*} {a : A} {f : A → A} :
+    Preorder (P.RecCone a f) where
   le c c' := ∀ k, k ≤ P.depth → c.h (P.succ^[k] P.zero) = c'.h (P.succ^[k] P.zero)
   le_refl _ := fun _ _ => rfl
   le_trans _ _ _ h₁ h₂ := fun k hk => (h₁ k hk).trans (h₂ k hk)
@@ -170,10 +165,11 @@ noncomputable def ParamNNO.recursorCone (P : ParamNNO W) {A : Type*} (a : A) (f 
 /-- **Headline.** The paper recursor is an **initial object** of the category of
 depth-`≤ M` recursion cones: for every cone `c` there is a (unique) morphism `recursorCone ⟶ c`,
 namely the depth-`M` agreement supplied by `bounded_recursor`'s uniqueness half; uniqueness is
-automatic because the category is thin (hom-types are `Prop`s). This makes the recursor a **canonical
-object, not merely an orbit**, while respecting `no_true_nno`: the property is relativized to
-depth `≤ M`, *not* initiality among `ℕ`-algebras (no finite `W` carries a true NNO). -/
-noncomputable def ParamNNO.recursorCone_isInitial (P : ParamNNO W) {A : Type*} (a : A) (f : A → A) :
+automatic because the category is thin (hom-types are `Prop`s). This makes the recursor a
+**canonical object, not merely an orbit**, while respecting `no_true_nno`: the property is
+relativized to depth `≤ M`, *not* initiality among `ℕ`-algebras (no finite `W` carries a true NNO).
+-/
+noncomputable def ParamNNO.recursorConeIsInitial (P : ParamNNO W) {A : Type*} (a : A) (f : A → A) :
     IsInitial (P.recursorCone a f) :=
   IsInitial.ofUniqueHom
     (fun c => homOfLE fun k hk =>
@@ -193,15 +189,16 @@ theorem ParamNNO.recursorCone_canonical (P : ParamNNO W) {A : Type*} (a : A) (f 
 
 /-- The old orbit-form `bounded_recursor` is **re-derivable** from the categorical formulation, so
 the two are inter-derivable: existence is the `recursorCone` object, and uniqueness-on-`N_M` is
-initiality (each recursor becomes a cone, and the unique maps out of `recursorCone` force agreement). -/
+initiality (each recursor becomes a cone, and the unique maps out of `recursorCone` force
+agreement). -/
 theorem ParamNNO.bounded_recursor_of_isInitial (P : ParamNNO W) {A : Type*} (a : A) (f : A → A) :
     (∃ h : W → A, P.Recurses a f h) ∧
       ∀ h₁ h₂ : W → A, P.Recurses a f h₁ → P.Recurses a f h₂ →
         ∀ k, k ≤ P.depth → h₁ (P.succ^[k] P.zero) = h₂ (P.succ^[k] P.zero) := by
   refine ⟨⟨(P.recursorCone a f).h, (P.recursorCone a f).recurses⟩, ?_⟩
   intro h₁ h₂ hr₁ hr₂ k hk
-  have e₁ := leOfHom ((P.recursorCone_isInitial a f).to (⟨h₁, hr₁⟩ : P.RecCone a f)) k hk
-  have e₂ := leOfHom ((P.recursorCone_isInitial a f).to (⟨h₂, hr₂⟩ : P.RecCone a f)) k hk
+  have e₁ := leOfHom ((P.recursorConeIsInitial a f).to (⟨h₁, hr₁⟩ : P.RecCone a f)) k hk
+  have e₂ := leOfHom ((P.recursorConeIsInitial a f).to (⟨h₂, hr₂⟩ : P.RecCone a f)) k hk
   exact e₁.symm.trans e₂
 
-end ParameterizedNNO
+end ALT

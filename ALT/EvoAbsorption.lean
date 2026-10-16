@@ -1,15 +1,8 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.SkewFiber
 public import ALT.SurpriseBudget
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # Which hosts absorb a debt: the single-witness evolutionary fiber ([Inevitability] §6)
@@ -30,15 +23,15 @@ its own; that is outside what a skew product's fiber can be asked to absorb.
 The evolutionary step is **expansive** whenever selection actually does anything
 (`not_nonexpansive_of_gaGen_ne`): once two populations produce different winners, one single-slot
 change along a path between them must flip the winner, and a flip changes every one of the `P`
-slots at once. So `SurpriseBudget.survives_of_margin`'s hypothesis is unavailable except in the
+slots at once. So `ALT.survives_of_margin`'s hypothesis is unavailable except in the
 degenerate case where selection is inoperative.
 
 One-step erasure fails too, and not as a technicality: it fails **inside the construction's own
 coverage regime** (`not_corrects_of_faithful`). With variation switched off —
-`SkewFiber.surjective_fittestFrame_of_fixed`'s own setting — the fitness-minimizing codeword's
+`ALT.surjective_fittestFrame_of_fixed`'s own setting — the fitness-minimizing codeword's
 population is a fixed point, one cell off it is inside
 radius `1`, and the fold reads that one changed cell straight back, changing the fitness winner
-outright. So `SurpriseBudget.survives_of_corrects`'s hypothesis is unavailable there too, in the
+outright. So `ALT.Corrects.survives`'s hypothesis is unavailable there too, in the
 exact regime where the codeword frame's own coverage witness lives.
 
 ## The headline: coverage and a margin collide
@@ -49,13 +42,13 @@ covered by every candidate codeword is therefore impossible once `2 ≤ C`
 (`not_surjective_of_margin`): the ω-limit collapses to whichever populations reach the maximizer,
 and the codeword-valued reading can be constant on it at best.
 
-This does **not** refute `SkewFiber.fiber_emergence_pricing`'s hypothesis outright — that hypothesis
+This does **not** refute `ALT.fiber_emergence_pricing`'s hypothesis outright — that hypothesis
 is surjectivity over the *whole* skew-product carrier, not over one fiber at a fixed base state.
 What it refutes is the only way the population coordinate alone could carry that coverage:
 freezing the base and ranging over initial populations, exactly
-`SkewFiber.surjective_fittestFrame_of_fixed`'s route. Under a margin, coverage has to be charged to
+`ALT.surjective_fittestFrame_of_fixed`'s route. Under a margin, coverage has to be charged to
 the base coordinate instead — which is what
-`SkewFiber.predFrame` does.
+`ALT.predFrame` does.
 
 ## The positive half: the base-reading frame absorbs a debt at radius `P - 1`
 
@@ -63,7 +56,7 @@ the base coordinate instead — which is what
 containing a correctly-predicting member is closed under one generation, the reading — the base's
 own next state, decoded from the fittest member — is constant on it, and the margin is `P - 1`, the
 widest radius under which a perturbation is guaranteed to leave at least one untouched slot.
-`predFrame_survives` composes this with `SurpriseBudget.survives_of_invariant`: the damaged and
+`predFrame_survives` composes this with `ALT.survives_of_invariant`: the damaged and
 undamaged readings agree at every step, for any arrival pattern and any total debt, at that radius.
 
 No accumulation argument reaches this: after one step both trajectories are constant populations, so
@@ -82,9 +75,8 @@ setting is stated in each theorem's own docstring.
 
 @[expose] public section
 
-namespace EvoAbsorption
+namespace ALT
 
-open SkewFiber SurpriseBudget PersistenceCapacity Decoupling
 
 variable {n₁ P C : ℕ}
 
@@ -93,22 +85,23 @@ variable {n₁ P C : ℕ}
 section Path
 
 /-- **The interpolation from `p` to `q`**: at step `k`, the first `k` slots already agree with `q`,
-the rest still agree with `p`. `pathPop p q 0 = p` and, past `P`, `pathPop p q _ = q`. -/
-private def pathPop (p q : Pop P C) (k : ℕ) : Pop P C := fun i => if (i : ℕ) < k then q i else p i
+the rest still agree with `p`. `Pop.pathPop p q 0 = p` and, past `P`, `Pop.pathPop p q _ = q`. -/
+private def Pop.pathPop (p q : Pop P C) (k : ℕ) : Pop P C :=
+  fun i => if (i : ℕ) < k then q i else p i
 
-private theorem pathPop_zero (p q : Pop P C) : pathPop p q 0 = p := by
-  funext i; simp [pathPop]
+private theorem pathPop_zero (p q : Pop P C) : Pop.pathPop p q 0 = p := by
+  funext i; simp [Pop.pathPop]
 
-private theorem pathPop_eq_of_ge (p q : Pop P C) {k : ℕ} (hk : P ≤ k) : pathPop p q k = q := by
+private theorem pathPop_eq_of_ge (p q : Pop P C) {k : ℕ} (hk : P ≤ k) : Pop.pathPop p q k = q := by
   funext i
   have hi : (i : ℕ) < k := lt_of_lt_of_le i.isLt hk
-  simp [pathPop, hi]
+  simp [Pop.pathPop, hi]
 
 /-- **Consecutive steps of the path are one slot apart, at most.** -/
 private theorem hammingDist_pathPop_succ_le (p q : Pop P C) (k : ℕ) :
-    hammingDist (pathPop p q k) (pathPop p q (k + 1)) ≤ 1 := by
+    hammingDist (Pop.pathPop p q k) (Pop.pathPop p q (k + 1)) ≤ 1 := by
   unfold hammingDist
-  have hsub : (Finset.univ.filter fun i : Fin P => pathPop p q k i ≠ pathPop p q (k + 1) i)
+  have hsub : (Finset.univ.filter fun i : Fin P => Pop.pathPop p q k i ≠ Pop.pathPop p q (k + 1) i)
       ⊆ Finset.univ.filter fun i : Fin P => (i : ℕ) = k := by
     intro i hi
     simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hi ⊢
@@ -168,22 +161,23 @@ variable [NeZero P]
 /-- **A selection step is expansive whenever it does anything at all.** If two populations produce
 different winners, some single-slot change along a path between them already flips the winner — and
 since a generation copies the winner out to every slot, that one flip changes all `P` of them at
-once. So `SurpriseBudget.HammingNonexpansive` is unavailable to `gaGen fit vary` except when
+once. So `ALT.HammingNonexpansive` is unavailable to `gaGen fit vary` except when
 selection is constant on every input. -/
 theorem not_nonexpansive_of_gaGen_ne (fit : Fin C → ℕ) (vary : Fin P → Fin C → Fin C) (hP : 2 ≤ P)
     (h : ∃ p q, gaGen fit vary p ≠ gaGen fit vary q) :
     ¬ HammingNonexpansive (gaGen fit vary) := by
   obtain ⟨p, q, hpq⟩ := h
   intro hne
-  obtain ⟨k, -, hstep⟩ := exists_step_ne_of_ne (r := pathPop p q) (g := gaGen fit vary)
+  obtain ⟨k, -, hstep⟩ := exists_step_ne_of_ne (r := Pop.pathPop p q) (g := gaGen fit vary)
     (by rwa [pathPop_zero, pathPop_eq_of_ge p q le_rfl])
-  have hdiff : ∀ i, gaGen fit vary (pathPop p q k) i ≠ gaGen fit vary (pathPop p q (k + 1)) i :=
+  have hdiff : ∀ i, gaGen fit vary (Pop.pathPop p q k) i
+      ≠ gaGen fit vary (Pop.pathPop p q (k + 1)) i :=
     fun i hcontra => hstep (funext fun _ => hcontra)
-  have hdist : hammingDist (gaGen fit vary (pathPop p q k))
-      (gaGen fit vary (pathPop p q (k + 1))) = P := by
+  have hdist : hammingDist (gaGen fit vary (Pop.pathPop p q k))
+      (gaGen fit vary (Pop.pathPop p q (k + 1))) = P := by
     unfold hammingDist
     rw [Finset.filter_true_of_mem (fun i _ => hdiff i), Finset.card_univ, Fintype.card_fin]
-  have hle := hne (pathPop p q k) (pathPop p q (k + 1))
+  have hle := hne (Pop.pathPop p q k) (Pop.pathPop p q (k + 1))
   rw [hdist] at hle
   have hstep_le := hammingDist_pathPop_succ_le p q k
   omega
@@ -240,13 +234,13 @@ private theorem fittest_update_const_eq [NeZero P] (fit : Fin C → ℕ) (p₀ b
   rw [fittest_eq_of_ge fit _ hge, hupd0]
 
 /-- **One-step erasure fails at radius `1`, for every fitness, once variation is switched off** —
-[Inevitability] §6's own coverage regime, `SkewFiber.surjective_fittestFrame_of_fixed`'s setting.
+[Inevitability] §6's own coverage regime, `ALT.surjective_fittestFrame_of_fixed`'s setting.
 The fitness-minimizing codeword's uniform population is a fixed point, so it sits in the ω-limit of
 the whole space; one cell of it flipped to any other codeword is inside radius `1`; and the fold
 reads that flipped cell straight back as the new winner, since nothing else in the population beats
 it in fitness. So a single-cell perturbation of an attractor state already changes the next state —
-`SurpriseBudget.Corrects` is unavailable here, in exactly the regime the codeword frame's own
-coverage witness (`SkewFiber.surjective_fittestFrame_of_fixed`) lives in. -/
+`ALT.Corrects` is unavailable here, in exactly the regime the codeword frame's own
+coverage witness (`ALT.surjective_fittestFrame_of_fixed`) lives in. -/
 theorem not_corrects_of_faithful [NeZero P] (fit : Fin C → ℕ) (hC : 2 ≤ C) :
     ¬ Corrects (gaGen fit fun _ : Fin P => id) Set.univ 1 := by
   intro hcorr
@@ -319,8 +313,8 @@ theorem margin_yields_max [NeZero P] (fit : Fin C → ℕ) (vary : Fin P → Fin
 and `fit a < fit a'` at once.
 
 This is stated over the *whole* ω-limit's coverage, not the initial-population coverage
-`SkewFiber.surjective_fittestFrame_of_fixed` supplies — see the module docstring for why it does
-**not** refute `SkewFiber.fiber_emergence_pricing`'s hypothesis outright. -/
+`ALT.surjective_fittestFrame_of_fixed` supplies — see the module docstring for why it does
+**not** refute `ALT.fiber_emergence_pricing`'s hypothesis outright. -/
 theorem not_surjective_of_margin [NeZero P] (fit : Fin C → ℕ) (vary : Fin P → Fin C → Fin C)
     (hC : 2 ≤ C) (hmargin : HasMargin (gaGen fit vary) Set.univ (fittest fit) 1) :
     ¬ Function.Surjective
@@ -342,7 +336,7 @@ theorem not_surjective_of_margin [NeZero P] (fit : Fin C → ℕ) (vary : Fin P 
 
 /-- **With variation switched off, the margin fails outright, with no coverage hypothesis at
 all.** Every constant population is a fixed point of `gaGen fit fun _ => id`
-(`SkewFiber.fittest_const`), so `margin_yields_max` applies to *every* codeword — forcing every
+(`ALT.fittest_const`), so `margin_yields_max` applies to *every* codeword — forcing every
 `a` to be the strict fitness maximum over every `a' ≠ a` simultaneously, which two distinct
 codewords already contradict. -/
 theorem not_hasMargin_of_faithful [NeZero P] (fit : Fin C → ℕ) (hC : 2 ≤ C) :
@@ -379,10 +373,10 @@ next step from `x`. -/
 def predBasin : Set (Pop P C) := {p | ∃ i, dec (p i) x = S x}
 
 /-- **The reading**: the fittest member's own prediction of the base's next state — the fiber
-half of `SkewFiber.predFrame`, at the base coordinate frozen to `x`. -/
+half of `ALT.predFrame`, at the base coordinate frozen to `x`. -/
 def predReading : Pop P C → Fin n₁ := fun p => dec (fittest (predFit S dec x) p) x
 
-/-- **One correct member already makes the winner correct.** `SkewFiber.fittest_ge` carries the
+/-- **One correct member already makes the winner correct.** `ALT.fittest_ge` carries the
 one member's fitness `1` up to the fold's winner, and `predFit` never exceeds `1`, so the winner's
 fitness is pinned at exactly `1` too. This is the single fact `predBasin`'s closure, `predReading`'s
 constancy on the basin, and the margin all reduce to. -/
@@ -481,7 +475,7 @@ theorem mem_predBasin_of_correct {c : Fin C} (hc : dec c x = S x) :
 
 /-- **The debt survives, at radius `P - 1`, for any arrival pattern and any total debt**
 ([Inevitability] §6, Proposition 6.1(iii) composed with the third repair,
-`SurpriseBudget.survives_of_invariant`). Starting from the uniform population at a codeword `c`
+`ALT.survives_of_invariant`). Starting from the uniform population at a codeword `c`
 that already predicts the base correctly at `x`, the damaged and undamaged trajectories read the
 same base state at every step, for any damage schedule whose per-event radius stays at most
 `P - 1` — no accumulation bound is needed, because `predReading` is constant on the whole basin
@@ -528,46 +522,50 @@ The ten capstones above are `#print axioms`-clean on the standard triple, and th
 make that build-enforced.
 -/
 
-set_option linter.style.longLine false
 
-/-- info: 'EvoAbsorption.not_nonexpansive_of_gaGen_ne' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.not_nonexpansive_of_gaGen_ne' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms EvoAbsorption.not_nonexpansive_of_gaGen_ne
+#print axioms ALT.not_nonexpansive_of_gaGen_ne
 
-/-- info: 'EvoAbsorption.nonexpansive_of_gaGen_const' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.nonexpansive_of_gaGen_const' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms EvoAbsorption.nonexpansive_of_gaGen_const
+#print axioms ALT.nonexpansive_of_gaGen_const
 
-/-- info: 'EvoAbsorption.not_corrects_of_faithful' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.not_corrects_of_faithful' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms EvoAbsorption.not_corrects_of_faithful
+#print axioms ALT.not_corrects_of_faithful
 
-/-- info: 'EvoAbsorption.margin_yields_max' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.margin_yields_max' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms EvoAbsorption.margin_yields_max
+#print axioms ALT.margin_yields_max
 
-/-- info: 'EvoAbsorption.not_surjective_of_margin' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.not_surjective_of_margin' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms EvoAbsorption.not_surjective_of_margin
+#print axioms ALT.not_surjective_of_margin
 
-/-- info: 'EvoAbsorption.not_hasMargin_of_faithful' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.not_hasMargin_of_faithful' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms EvoAbsorption.not_hasMargin_of_faithful
+#print axioms ALT.not_hasMargin_of_faithful
 
-/-- info: 'EvoAbsorption.mapsTo_predBasin' depends on axioms: [propext, Quot.sound] -/
+/-- info: 'ALT.mapsTo_predBasin' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms EvoAbsorption.mapsTo_predBasin
+#print axioms ALT.mapsTo_predBasin
 
-/-- info: 'EvoAbsorption.predFrame_margin' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.predFrame_margin' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms EvoAbsorption.predFrame_margin
+#print axioms ALT.predFrame_margin
 
-/-- info: 'EvoAbsorption.mem_predBasin_of_correct' depends on axioms: [propext] -/
+/-- info: 'ALT.mem_predBasin_of_correct' depends on axioms: [propext] -/
 #guard_msgs (whitespace := lax) in
-#print axioms EvoAbsorption.mem_predBasin_of_correct
+#print axioms ALT.mem_predBasin_of_correct
 
-/-- info: 'EvoAbsorption.predFrame_survives' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.predFrame_survives' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms EvoAbsorption.predFrame_survives
+#print axioms ALT.predFrame_survives
 
-end EvoAbsorption
+end ALT

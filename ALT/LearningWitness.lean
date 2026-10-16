@@ -1,8 +1,3 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.NoisyWindowChain
@@ -18,10 +13,10 @@ outline", and the corpus has so far exhibited no member.  This module exhibits o
 parameters, on **one system**.
 
 The system is the noisy window chain of `ALT/NoisyWindowChain.lean`, embedded as a
-`Decoupling.Mem`-substrate.  Its memory splits into three regions — `k` code cells carrying the
-committed rule, `k` window cells, and the unconsumed noise stream — and one update `chainUpdate`
+`ALT.Mem`-substrate.  Its memory splits into three regions — `k` code cells carrying the
+committed rule, `k` window cells, and the unconsumed noise stream — and one update `Wit.chainUpdate`
 drives all three: it reads the rule off the code, applies it to the window, consumes one noise bit,
-and never writes the code.  So (S1) is `Decoupling.Fixes` by construction, and the rule persists
+and never writes the code.  So (S1) is `ALT.Fixes` by construction, and the rule persists
 along the whole orbit, which is [Decoupling]'s own picture instantiated on this witness.
 
 ## The anti-gluing device
@@ -29,7 +24,7 @@ along the whole orbit, which is [Decoupling]'s own picture instantiated on this 
 The risk this construction has to avoid is the obvious one: state the abstract class's fields at an
 abstract inhabitant and *assert* that they are about the chain.  What rules that out is the
 **realization theorem** `readObs_iterate_loadChain`: the observation read off the substrate's own
-cell along the substrate's own orbit IS `NoisyWindowChain.obs`, pointwise, with no measure theory
+cell along the substrate's own orbit IS `ALT.obs`, pointwise, with no measure theory
 in sight.  Every statistical clause below is therefore stated on `substrateTraj` — the substrate's
 own process — and proved by rewriting along that theorem.  Nothing is glued.
 
@@ -38,20 +33,20 @@ own process — and proved by rewriting along that theorem.  Nothing is glued.
 `SubstrateL` has three self-existential fields (`assumptionA`, `benignSeparation`, `e1`) and two
 `Prop` parameters, so a bare inhabitation certifies nothing: `substrateL_junk_satisfiable` proves
 exactly that, inhabiting the class with `True` for both Props, the empty family for Assumption A,
-and `BirkhoffTool.mixingHoeffding_of_nonpos` at `c := 0` for E1.  The content of the real witness
+and `ALT.mixingHoeffding_of_nonpos` at `c := 0` for E1.  The content of the real witness
 therefore lives in the NAMES its clauses are instantiated at:
 
 * `witness_substrateL` — membership in Definition 2.3's own class, with `Realizability` and
   `WindowSufficiency` instantiated at the named `ChainRealizable` and `ChainWindowBudget`;
-* `mixingHoeffding_schedule` — E1 over the learner's whole scheduled query class, on the
-  substrate's own process, at named per-branch constants;
+* `mixingHoeffding_substrateTraj_schedule` — E1 over the learner's whole scheduled query class, on
+  the substrate's own process, at named per-branch constants;
 * `substrateL_junk_satisfiable` — the guard that makes the first two carry their content.
 
 ## Main results
 
-* `chainUpdate`, `loadChain`, `readObs`, `decodeRule` — the substrate, and the reading of the rule
-  off its code region.  `chainUpdate_reads_code` proves the update genuinely consults the code;
-  `chainUpdate_fixes` and `code_persists` are (S1) and its orbit form.
+* `Wit.chainUpdate`, `loadChain`, `Wit.readObs`, `Wit.decodeRule` — the substrate, and the reading
+  of the rule off its code region. `chainUpdate_reads_code` proves the update genuinely consults the
+  code; `chainUpdate_fixes` and `code_persists` are (S1) and its orbit form.
 * `readObs_iterate_loadChain` — **the realization theorem** (above).
 * `noiseLaw`, `iIndepFun_noiseCoord`, `integral_zeta_noiseCoord` — a Bernoulli(`η`) shift making the
   whole hypothesis block inhabited at every noise rate, so the theorems below are not vacuous.
@@ -59,8 +54,8 @@ therefore lives in the NAMES its clauses are instantiated at:
   windows: the named `ε₀ = 1/2`.
 * `ChainRealizable`, `ChainWindowBudget` — the two named `Prop`s, the second carrying [SQ] §3.1's
   budget `2η ≤ τ` together with the answer displacement it prices.
-* `mixingHoeffding_schedule` — E1 over the schedule `∀ a : Fin k`, on `substrateTraj`: the
-  same-class constant `samePairConst k` at `a = 0` (the rule's own literal) and the cross-class
+* `mixingHoeffding_substrateTraj_schedule` — E1 over the schedule `∀ a : Fin k`, on `substrateTraj`:
+  the same-class constant `samePairConst k` at `a = 0` (the rule's own literal) and the cross-class
   `pairConst k η` elsewhere.
 * `witness_substrateL_of_e1` — the membership capstone abstracted over its `e1` source: every other
   field is proved unconditionally, and `witness_substrateL` re-derives from it at the schedule's own
@@ -71,10 +66,10 @@ therefore lives in the NAMES its clauses are instantiated at:
   reaching Definition 2.1's threshold end-to-end on a concrete system, and the witness's own oracle
   never `2τ`-pruning the true rule.
 * `witness_truth_survives_to` — payoff 2 at the horizon-bounded hypothesis
-  `BirkhoffTool.MixingHoeffdingTo N`, the theorem a periodic (deterministic finite) host's E1 would
-  consume; `witness_truth_survives` re-derives from it at `N := n`.
+  `MixingHoeffding.MixingHoeffdingTo N`, the theorem a periodic (deterministic finite) host's E1
+  would consume; `witness_truth_survives` re-derives from it at `N := n`.
 * `witness_reachesThresholdWithinAt` — the first payoff at EVERY step of the orbit, in
-  `SubstrateClass.ReachesThresholdWithinAt`'s time-indexed form, with the reference codeword pinned
+  `ALT.ReachesThresholdWithinAt`'s time-indexed form, with the reference codeword pinned
   to the loaded rule encoding.
 * `not_mixingHoeffding_frozen_schedule` — at `η = 0` the scheduled E1 fails at a cross-class query
   of the schedule's own shape, at every positive constant.  The noise is load-bearing for the
@@ -94,9 +89,9 @@ complexity.
 
 @[expose] public section
 
-namespace LearningWitness
+namespace ALT
 
-open MeasureTheory ProbabilityTheory NoisyWindowChain
+open MeasureTheory ProbabilityTheory
 
 /-! ## The memory, and the rule read off its code region -/
 
@@ -104,13 +99,13 @@ open MeasureTheory ProbabilityTheory NoisyWindowChain
 abbrev Idx (k : ℕ) : Type := Fin k ⊕ (Fin k ⊕ ℕ)
 
 /-- The witness's memory, in [Decoupling]'s own shape: one `Bool` per cell. -/
-abbrev Wit (k : ℕ) : Type := Decoupling.Mem (Idx k) Bool
+abbrev Wit (k : ℕ) : Type := ALT.Mem (Idx k) Bool
 
-/-- The **code region**: the cells holding the committed rule.  `chainUpdate` never writes them
+/-- The **code region**: the cells holding the committed rule.  `Wit.chainUpdate` never writes them
 (`chainUpdate_fixes`) and always reads them (`chainUpdate_reads_code`). -/
 def codeRegion (k : ℕ) : Set (Idx k) := Set.range Sum.inl
 
-/-- **The code region has exactly `k` cells.**  Nothing in `SubstrateClass.Substrate` ties its
+/-- **The code region has exactly `k` cells.**  Nothing in `ALT.Substrate` ties its
 `sCodeSize` parameter to the region it names, so the tie is stated rather than assumed: the
 membership capstone below passes `sCodeSize := k`, and this is why that is the honest value. -/
 theorem codeRegion_ncard (k : ℕ) : (codeRegion k).ncard = k := by
@@ -121,14 +116,14 @@ variable {k : ℕ}
 
 /-- **Reading the rule off the code cells**: the least index whose code cell is set, and `0` when
 none is.  A one-hot code at index `i` therefore decodes to `i`. -/
-def decodeRule [NeZero k] (s : Wit k) : Fin k :=
+def Wit.decodeRule [NeZero k] (s : Wit k) : Fin k :=
   if h : ∃ i : Fin k, s (Sum.inl i) = true then Fin.find _ h else 0
 
 /-- A one-hot code decodes to its own index. -/
 private theorem decodeRule_oneHot [NeZero k] (s : Wit k) (i : Fin k)
-    (h : ∀ j : Fin k, s (Sum.inl j) = true ↔ j = i) : decodeRule s = i := by
+    (h : ∀ j : Fin k, s (Sum.inl j) = true ↔ j = i) : Wit.decodeRule s = i := by
   have hex : ∃ j : Fin k, s (Sum.inl j) = true := ⟨i, (h i).mpr rfl⟩
-  rw [decodeRule, dite_eq_left hex]
+  rw [Wit.decodeRule, dite_eq_left hex]
   refine le_antisymm (Fin.find_le_of_pos hex ((h i).mpr rfl)) ((Fin.le_find_iff hex i).mpr ?_)
   intro m hm hp
   exact absurd ((h m).mp hp) (ne_of_lt hm)
@@ -141,20 +136,20 @@ Only the oldest-bit literal makes the noiseless window map a bijection — any o
 loses the oldest bit while its own target coordinate survives, so the uniform law on windows would
 not be stationary.  The substrate's law is therefore the literal-`0` rule, and the other `k − 1`
 literals live on the learner's side, as predictors it must rule out. -/
-def chainUpdate [NeZero k] (s : Wit k) : Wit k := fun x =>
+def Wit.chainUpdate [NeZero k] (s : Wit k) : Wit k := fun x =>
   match x with
   | Sum.inl i => s (Sum.inl i)
   | Sum.inr (Sum.inl i) =>
       if h : (i : ℕ) + 1 < k then s (Sum.inr (Sum.inl ⟨(i : ℕ) + 1, h⟩))
-      else xor (!(s (Sum.inr (Sum.inl (decodeRule s))))) (s (Sum.inr (Sum.inr 0)))
+      else xor (!(s (Sum.inr (Sum.inl (Wit.decodeRule s))))) (s (Sum.inr (Sum.inr 0)))
   | Sum.inr (Sum.inr j) => s (Sum.inr (Sum.inr (j + 1)))
 
 /-- The observation the substrate emits at the present time: its window's oldest bit. -/
-def readObs [NeZero k] (s : Wit k) : Bool := s (Sum.inr (Sum.inl 0))
+def Wit.readObs [NeZero k] (s : Wit k) : Bool := s (Sum.inr (Sum.inl 0))
 
 /-- **Loading a noise word into the memory.**  The code is one-hot at literal `0`; the window cells
 take the word's first `k` bits, which ARE the chain's initial window
-(`NoisyWindowChain.obs_of_lt`); and the rest of the word is the unconsumed noise stream. -/
+(`ALT.obs_of_lt`); and the rest of the word is the unconsumed noise stream. -/
 def loadChain [NeZero k] (ω : ℕ → Bool) : Wit k := fun x =>
   match x with
   | Sum.inl i => decide ((i : ℕ) = 0)
@@ -163,27 +158,27 @@ def loadChain [NeZero k] (ω : ℕ → Bool) : Wit k := fun x =>
 
 /-! ## (S1): the code is read-only, and the update nonetheless reads it -/
 
-/-- **(S1) by construction.**  `chainUpdate` never writes the code region — `Decoupling.Fixes`
-verbatim, the invariant [Decoupling] Lemma 3.1 and `RetentionUpperBound.retention_persists`
+/-- **(S1) by construction.**  `Wit.chainUpdate` never writes the code region — `ALT.Fixes`
+verbatim, the invariant [Decoupling] Lemma 3.1 and `ALT.retention_persists`
 consume. -/
 theorem chainUpdate_fixes [NeZero k] :
-    Decoupling.Fixes (chainUpdate (k := k)) (codeRegion k) := by
+    ALT.Fixes (Wit.chainUpdate (k := k)) (codeRegion k) := by
   rintro s _ ⟨i, rfl⟩
   rfl
 
 /-- **The committed rule persists along the whole orbit** — (S1) iterated, [Decoupling]'s own
 picture on this witness. -/
 theorem code_persists [NeZero k] (t : ℕ) (s : Wit k) (i : Fin k) :
-    (chainUpdate^[t] s) (Sum.inl i) = s (Sum.inl i) :=
-  Decoupling.fixes_iterate chainUpdate_fixes t s _ ⟨i, rfl⟩
+    (Wit.chainUpdate^[t] s) (Sum.inl i) = s (Sum.inl i) :=
+  ALT.Fixes.iterate chainUpdate_fixes t s _ ⟨i, rfl⟩
 
 /-- **The update genuinely consults its code region.**  Two memories agreeing everywhere OUTSIDE
 the code — same window, same noise — can still have different updates, because the update applies
-the literal the code names.  So "the code carries the rule" is a theorem about `chainUpdate`, not a
-comment on it; together with `chainUpdate_fixes` it is the whole decoupled picture: read-only, and
+the literal the code names. So "the code carries the rule" is a theorem about `Wit.chainUpdate`, not
+a comment on it; together with `chainUpdate_fixes` it is the whole decoupled picture: read-only, and
 read. -/
 theorem chainUpdate_reads_code [NeZero k] (hk : 2 ≤ k) :
-    ∃ s s' : Wit k, (∀ x ∉ codeRegion k, s x = s' x) ∧ chainUpdate s ≠ chainUpdate s' := by
+    ∃ s s' : Wit k, (∀ x ∉ codeRegion k, s x = s' x) ∧ Wit.chainUpdate s ≠ Wit.chainUpdate s' := by
   have h0 : (0 : ℕ) < k := by omega
   have h1 : (1 : ℕ) < k := by omega
   refine ⟨fun x => match x with
@@ -199,7 +194,7 @@ theorem chainUpdate_reads_code [NeZero k] (hk : 2 ≤ k) :
     · rfl
     · rfl
   · intro hcon
-    have hdec : decodeRule (k := k) (fun x => match x with
+    have hdec : Wit.decodeRule (k := k) (fun x => match x with
         | Sum.inl i => decide ((i : ℕ) = 0)
         | Sum.inr (Sum.inl i) => decide ((i : ℕ) = 0)
         | Sum.inr (Sum.inr _) => false) = ⟨0, h0⟩ :=
@@ -208,7 +203,7 @@ theorem chainUpdate_reads_code [NeZero k] (hk : 2 ≤ k) :
         constructor
         · intro hj; exact Fin.ext hj
         · intro hj; rw [hj]
-    have hdec' : decodeRule (k := k) (fun x => match x with
+    have hdec' : Wit.decodeRule (k := k) (fun x => match x with
         | Sum.inl i => decide ((i : ℕ) = 1)
         | Sum.inr (Sum.inl i) => decide ((i : ℕ) = 0)
         | Sum.inr (Sum.inr _) => false) = ⟨1, h1⟩ :=
@@ -219,7 +214,7 @@ theorem chainUpdate_reads_code [NeZero k] (hk : 2 ≤ k) :
         · intro hj; rw [hj]
     have hlast : ((k - 1 : ℕ) : ℕ) + 1 < k → False := by omega
     have h := congrFun hcon (Sum.inr (Sum.inl ⟨k - 1, by omega⟩))
-    rw [chainUpdate, chainUpdate] at h
+    rw [Wit.chainUpdate, Wit.chainUpdate] at h
     simp only [dite_eq_right (fun hh => hlast hh), hdec, hdec'] at h
     revert h
     simp
@@ -229,10 +224,10 @@ theorem chainUpdate_reads_code [NeZero k] (hk : 2 ≤ k) :
 /-- The full loaded-orbit invariant: the code stays one-hot at `0`, window cell `i` holds the
 observation `i` steps ahead, and noise cell `j` holds the word's `(k + t + j)`-th bit. -/
 private theorem iterate_loadChain [NeZero k] (ω : ℕ → Bool) (t : ℕ) :
-    (∀ i : Fin k, (chainUpdate^[t] (loadChain (k := k) ω)) (Sum.inl i) = decide ((i : ℕ) = 0))
-      ∧ (∀ i : Fin k, (chainUpdate^[t] (loadChain (k := k) ω)) (Sum.inr (Sum.inl i))
+    (∀ i : Fin k, (Wit.chainUpdate^[t] (loadChain (k := k) ω)) (Sum.inl i) = decide ((i : ℕ) = 0))
+      ∧ (∀ i : Fin k, (Wit.chainUpdate^[t] (loadChain (k := k) ω)) (Sum.inr (Sum.inl i))
           = obs k ω (t + (i : ℕ)))
-      ∧ (∀ j : ℕ, (chainUpdate^[t] (loadChain (k := k) ω)) (Sum.inr (Sum.inr j))
+      ∧ (∀ j : ℕ, (Wit.chainUpdate^[t] (loadChain (k := k) ω)) (Sum.inr (Sum.inr j))
           = ω (k + t + j)) := by
   have hkpos : 0 < k := Nat.pos_of_ne_zero (NeZero.ne k)
   induction t with
@@ -244,7 +239,7 @@ private theorem iterate_loadChain [NeZero k] (ω : ℕ → Bool) (t : ℕ) :
       rfl
   | succ t ih =>
     obtain ⟨ihc, ihw, ihn⟩ := ih
-    have hdec : decodeRule (chainUpdate^[t] (loadChain (k := k) ω)) = ⟨0, hkpos⟩ :=
+    have hdec : Wit.decodeRule (Wit.chainUpdate^[t] (loadChain (k := k) ω)) = ⟨0, hkpos⟩ :=
       decodeRule_oneHot _ _ fun j => by
         rw [ihc j]
         simp only [decide_eq_true_eq]
@@ -252,8 +247,8 @@ private theorem iterate_loadChain [NeZero k] (ω : ℕ → Bool) (t : ℕ) :
         · intro hj; exact Fin.ext hj
         · intro hj; rw [hj]
     refine ⟨fun i => ?_, fun i => ?_, fun j => ?_⟩
-    · rw [Function.iterate_succ_apply', chainUpdate, ihc i]
-    · rw [Function.iterate_succ_apply', chainUpdate]
+    · rw [Function.iterate_succ_apply', Wit.chainUpdate, ihc i]
+    · rw [Function.iterate_succ_apply', Wit.chainUpdate]
       by_cases h : (i : ℕ) + 1 < k
       · rw [dite_eq_left h, ihw ⟨(i : ℕ) + 1, h⟩]
         congr 1
@@ -265,30 +260,30 @@ private theorem iterate_loadChain [NeZero k] (ω : ℕ → Bool) (t : ℕ) :
         rw [hz, Nat.add_zero, Nat.add_zero, show t + 1 + (i : ℕ) = t + k by omega,
           obs_add hkpos ω t, show k + t = t + k by omega]
         cases obs k ω t <;> cases ω (t + k) <;> rfl
-    · rw [Function.iterate_succ_apply', chainUpdate, ihn (j + 1)]
+    · rw [Function.iterate_succ_apply', Wit.chainUpdate, ihn (j + 1)]
       congr 1
       omega
 
 /-- **The realization theorem.**  Reading the substrate's own observation cell along its own
-update's orbit, from its own loaded state, reproduces `NoisyWindowChain.obs` exactly — pointwise,
+update's orbit, from its own loaded state, reproduces `ALT.obs` exactly — pointwise,
 with no measure theory anywhere.
 
 This is what makes every statistical clause below a statement about the SUBSTRATE and not about an
 abstract process glued to it: E1 over the schedule is stated on `substrateTraj` and proved by
 rewriting along this identity. -/
 theorem readObs_iterate_loadChain [NeZero k] (ω : ℕ → Bool) (t : ℕ) :
-    readObs (chainUpdate^[t] (loadChain (k := k) ω)) = obs k ω t := by
+    Wit.readObs (Wit.chainUpdate^[t] (loadChain (k := k) ω)) = obs k ω t := by
   have h := (iterate_loadChain (k := k) ω t).2.1 0
-  rw [readObs, h, show ((0 : Fin k) : ℕ) = 0 from by simp, Nat.add_zero]
+  rw [Wit.readObs, h, show ((0 : Fin k) : ℕ) = 0 from by simp, Nat.add_zero]
 
 /-- The substrate's OWN observation process, read along its own orbit from its own loaded state. -/
 def substrateTraj [NeZero k] {Ω : Type*} (ξ : ℕ → Ω → Bool) (ω : Ω) : ℕ → Bool :=
-  fun t => readObs (chainUpdate^[t] (loadChain (k := k) (fun i => ξ i ω)))
+  fun t => Wit.readObs (Wit.chainUpdate^[t] (loadChain (k := k) (fun i => ξ i ω)))
 
 /-- The substrate's own process is the chain's trajectory — `readObs_iterate_loadChain`, packaged
 for rewriting under `Measure.map`. -/
-theorem substrateTraj_eq_traj [NeZero k] {Ω : Type*} (ξ : ℕ → Ω → Bool) :
-    substrateTraj (k := k) ξ = traj k ξ := by
+theorem substrateTraj_eq_chainTraj [NeZero k] {Ω : Type*} (ξ : ℕ → Ω → Bool) :
+    substrateTraj (k := k) ξ = chainTraj k ξ := by
   funext ω t
   exact readObs_iterate_loadChain _ t
 
@@ -318,17 +313,17 @@ theorem iIndepFun_noiseCoord (p : unitInterval) : iIndepFun noiseCoord (noiseLaw
 /-- **The noise character's mean is `2p − 1`** — exactly the form the chain's theorems ask for,
 so the noise rate `η` of [SQ] §3.1 is this law's own parameter. -/
 theorem integral_zeta_noiseCoord (p : unitInterval) (i : ℕ) :
-    ∫ ω, ParityWalk.zeta (noiseCoord i ω) ∂(noiseLaw p) = 2 * (p : ℝ) - 1 := by
+    ∫ ω, ALT.zeta (noiseCoord i ω) ∂(noiseLaw p) = 2 * (p : ℝ) - 1 := by
   have hmap : (noiseLaw p).map (fun ω : ℕ → Bool => ω i)
       = ProbabilityTheory.bernoulliMeasure true false p :=
     Measure.infinitePi_map_eval _ i
-  have h : ∫ ω, ParityWalk.zeta (noiseCoord i ω) ∂(noiseLaw p)
-      = ∫ b, ParityWalk.zeta b ∂(ProbabilityTheory.bernoulliMeasure true false p) := by
+  have h : ∫ ω, ALT.zeta (noiseCoord i ω) ∂(noiseLaw p)
+      = ∫ b, ALT.zeta b ∂(ProbabilityTheory.bernoulliMeasure true false p) := by
     rw [← hmap, integral_map (measurable_pi_apply i).aemeasurable
-      ParityWalk.measurable_zeta.aestronglyMeasurable]
+      ALT.measurable_zeta.aestronglyMeasurable]
     rfl
   rw [h, ProbabilityTheory.integral_bernoulliMeasure]
-  simp only [ParityWalk.zeta, smul_eq_mul]
+  simp only [ALT.zeta, smul_eq_mul]
   norm_num
   ring
 
@@ -411,9 +406,9 @@ observation process obeys that literal's rule up to the noise bit — the chain'
 the substrate rather than asserted about it. -/
 def ChainRealizable (k : ℕ) [NeZero k] : Prop :=
   ∀ ω : ℕ → Bool,
-    decodeRule (loadChain (k := k) ω) = 0 ∧
-      ∀ t : ℕ, readObs (chainUpdate^[t + k] (loadChain (k := k) ω))
-        = !(xor (readObs (chainUpdate^[t] (loadChain (k := k) ω))) (ω (t + k)))
+    Wit.decodeRule (loadChain (k := k) ω) = 0 ∧
+      ∀ t : ℕ, Wit.readObs (Wit.chainUpdate^[t + k] (loadChain (k := k) ω))
+        = !(xor (Wit.readObs (Wit.chainUpdate^[t] (loadChain (k := k) ω))) (ω (t + k)))
 
 theorem chainRealizable [NeZero k] : ChainRealizable k := by
   have hkpos : 0 < k := Nat.pos_of_ne_zero (NeZero.ne k)
@@ -475,22 +470,22 @@ Hoeffding hypothesis on the SUBSTRATE's own observation process, at the named pe
 Two branches, and they are the two the chain's own theorems cover.  At `a = 0` — the rule's own
 literal against the label it predicts — the offsets sit in one residue class at lag exactly `k`, the
 pair character is the noise character, and the constant `48k` carries no noise rate while the answer
-is displaced (`NoisyWindowChain.mixingHoeffding_noisyWindowChain_pair_lagK`).  At `a ≠ 0` the
+is displaced (`ALT.mixingHoeffding_noisyWindowChain_pair_lagK`).  At `a ≠ 0` the
 offsets sit in distinct classes, the answer is flat, and the constant is
-`pairConst k η = O(k/η)` (`NoisyWindowChain.mixingHoeffding_noisyWindowChain_pair`).  Nothing
+`pairConst k η = O(k/η)` (`ALT.mixingHoeffding_noisyWindowChain_pair`).  Nothing
 outside these two cases is scheduled: a single-literal decision list's every query reads exactly two
 observations.
 
 That this is a statement about the substrate and not about a process attached to it is
-`substrateTraj_eq_traj`, i.e. the realization theorem. -/
-theorem mixingHoeffding_schedule [NeZero k] (hmeas : ∀ i, Measurable (ξ i))
+`substrateTraj_eq_chainTraj`, i.e. the realization theorem. -/
+theorem mixingHoeffding_substrateTraj_schedule [NeZero k] (hmeas : ∀ i, Measurable (ξ i))
     (hindep : iIndepFun ξ P) {η : ℝ} (hη0 : 0 < η) (hη1 : η ≤ 1 / 2)
-    (hmean : ∀ u, ∫ ω, ParityWalk.zeta (ξ (u + k) ω) ∂P = 2 * η - 1)
+    (hmean : ∀ u, ∫ ω, ALT.zeta (ξ (u + k) ω) ∂P = 2 * η - 1)
     (a : Fin k) (ψ : Bool → Bool → ℝ) (hψ : ∀ u v, |ψ u v| ≤ 1) :
-    BirkhoffTool.MixingHoeffding (Measure.map (substrateTraj (k := k) ξ) P)
+    MixingHoeffding (Measure.map (substrateTraj (k := k) ξ) P)
       (pairEnsemble ψ (a : ℕ) k) (scheduledMean k ψ (2 * η - 1) a) (scheduledConst k η a) := by
   have hkpos : 0 < k := Nat.pos_of_ne_zero (NeZero.ne k)
-  rw [substrateTraj_eq_traj]
+  rw [substrateTraj_eq_chainTraj]
   simp only [scheduledMean, scheduledConst]
   split_ifs with h
   · -- the rule's own literal: the same-class lag-`k` pair
@@ -521,16 +516,17 @@ own docstring already flags as "carried, not proved": `e1` stays a genuine hypot
 probability space supplies it.
 
 `witness_substrateL` below re-derives from this at the schedule's own instance
-(`mixingHoeffding_schedule` at `a = 0`), statement byte-identical. -/
+(`mixingHoeffding_substrateTraj_schedule` at `a = 0`), statement byte-identical. -/
 theorem witness_substrateL_of_e1 [NeZero k] {η τ : ℝ} (hη0 : 0 ≤ η) (hbudget : 2 * η ≤ τ)
     (he1 : ∃ (X : Type) (_inst : MeasurableSpace X) (μ : MeasureTheory.Measure (ℕ → X))
-             (Z : ℕ → (ℕ → X) → ℝ) (predZ c : ℝ), BirkhoffTool.MixingHoeffding μ Z predZ c) :
-    SubstrateClass.SubstrateL (chainUpdate (k := k)) (codeRegion k)
+             (Z : ℕ → (ℕ → X) → ℝ) (predZ c : ℝ),
+               MixingHoeffding μ Z predZ c) :
+    ALT.SubstrateL (Wit.chainUpdate (k := k)) (codeRegion k)
       3 ((k : ℝ) + 100) (2 * ((k : ℝ) + 100)) 1 2 3 (1 / 2) k 2
       True True True True (ChainRealizable k) (ChainWindowBudget k η τ) := by
   have hkR : (0 : ℝ) ≤ (k : ℝ) := Nat.cast_nonneg k
   have hlog : Real.log (3 / (1 / 2)) ≤ 3 / (1 / 2) - 1 := Real.log_le_sub_one_of_pos (by norm_num)
-  have hcap : GodelInternalization.capacity (Nat.clog 2 (2 + 1)) = 4 := by decide
+  have hcap : ALT.capacity (Nat.clog 2 (2 + 1)) = 4 := by decide
   refine
     { s1 := chainUpdate_fixes
       s2 := ⟨by nlinarith, by norm_num, by norm_num, by norm_num, by norm_num, by norm_num,
@@ -550,16 +546,16 @@ theorem witness_substrateL_of_e1 [NeZero k] {η τ : ℝ} (hη0 : 0 ≤ η) (hbu
 
 /-- **A constructed member of `𝒮_L`** ([Inevitability] Definition 2.3), at named parameters.
 
-The system is the substrate above: `chainUpdate` on `Wit k`, with `codeRegion k` as its read-only
-code region and `sCodeSize := k`, the region's actual cardinality (`codeRegion_ncard` — nothing in
-`Substrate` ties the two, so the tie is stated).  The regime constants are `r = 3`, `K = k + 100`,
-`L = 2K`, `c₀ = 1`, `c₁ = 2`, `c₂ = 3`, `δ = 1/2`, and `g(T_S) = 2` — the smallest Gödel number at
-which the capacity bridge is non-degenerate, with `K` leaving a headroom of `100` work bits over the
-`4` the reflective object needs.
+The system is the substrate above: `Wit.chainUpdate` on `Wit k`, with `codeRegion k` as its
+read-only code region and `sCodeSize := k`, the region's actual cardinality (`codeRegion_ncard` —
+nothing in `Substrate` ties the two, so the tie is stated). The regime constants are `r = 3`, `K = k
++ 100`, `L = 2K`, `c₀ = 1`, `c₁ = 2`, `c₂ = 3`, `δ = 1/2`, and `g(T_S) = 2` — the smallest Gödel
+number at which the capacity bridge is non-degenerate, with `K` leaving a headroom of `100` work
+bits over the `4` the reflective object needs.
 
 The three prerequisites, and the five learning fields, are `witness_substrateL_of_e1`'s: this
 instantiates its `e1` hypothesis at the schedule's own `a = 0` instance on the substrate's own
-process (`mixingHoeffding_schedule`).
+process (`mixingHoeffding_substrateTraj_schedule`).
 
 `0 < η` is required here even though the bare `e1` field would survive at `η = 0`: the E1 the
 witness actually discharges is the SCHEDULED one, and `not_mixingHoeffding_frozen_schedule` refutes
@@ -569,15 +565,15 @@ everywhere on this route — and `substrateL_junk_satisfiable` is why that, plus
 theorem witness_substrateL [NeZero k] {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     [IsProbabilityMeasure P] {ξ : ℕ → Ω → Bool} (hmeas : ∀ i, Measurable (ξ i))
     (hindep : iIndepFun ξ P) {η τ : ℝ} (hη0 : 0 < η) (hη1 : η ≤ 1 / 2)
-    (hmean : ∀ u, ∫ ω, ParityWalk.zeta (ξ (u + k) ω) ∂P = 2 * η - 1) (hbudget : 2 * η ≤ τ) :
-    SubstrateClass.SubstrateL (chainUpdate (k := k)) (codeRegion k)
+    (hmean : ∀ u, ∫ ω, ALT.zeta (ξ (u + k) ω) ∂P = 2 * η - 1) (hbudget : 2 * η ≤ τ) :
+    ALT.SubstrateL (Wit.chainUpdate (k := k)) (codeRegion k)
       3 ((k : ℝ) + 100) (2 * ((k : ℝ) + 100)) 1 2 3 (1 / 2) k 2
       True True True True (ChainRealizable k) (ChainWindowBudget k η τ) :=
   witness_substrateL_of_e1 (le_of_lt hη0) hbudget
     ⟨Bool, inferInstance, Measure.map (substrateTraj (k := k) ξ) P,
       pairEnsemble pairChar 0 k, samePairMean pairChar (2 * η - 1), samePairConst k, by
-        have h := mixingHoeffding_schedule (k := k) (ξ := ξ) (P := P) hmeas hindep hη0 hη1 hmean
-          0 pairChar abs_pairChar_le_one
+        have h := mixingHoeffding_substrateTraj_schedule (k := k) (ξ := ξ) (P := P) hmeas hindep
+          hη0 hη1 hmean 0 pairChar abs_pairChar_le_one
         have hz : ((0 : Fin k) : ℕ) = 0 := by simp
         rw [hz] at h
         simpa [scheduledMean, scheduledConst, hz] using h⟩
@@ -592,7 +588,7 @@ This is what makes the non-vacuity witness load-bearing rather than decorative �
 membership theorem would be a conditional on a hypothesis block nobody had exhibited. -/
 theorem witness_substrateL_bernoulli [NeZero k] {η τ : ℝ} (hη0 : 0 < η) (hη1 : η ≤ 1 / 2)
     (hbudget : 2 * η ≤ τ) :
-    SubstrateClass.SubstrateL (chainUpdate (k := k)) (codeRegion k)
+    ALT.SubstrateL (Wit.chainUpdate (k := k)) (codeRegion k)
       3 ((k : ℝ) + 100) (2 * ((k : ℝ) + 100)) 1 2 3 (1 / 2) k 2
       True True True True (ChainRealizable k) (ChainWindowBudget k η τ) := by
   have hp : η ∈ unitInterval := ⟨le_of_lt hη0, by linarith⟩
@@ -608,23 +604,23 @@ private theorem witness_headroom (k : ℕ) : Nat.floor (((k : ℝ) + 100) - (k :
 
 /-- **Payoff 1: the learning branch, end to end, on a concrete system.**  The witness reaches
 [Inevitability] Definition 2.1's threshold in its content-carrying form
-(`SubstrateClass.ReachesThresholdWithin`) at its own headroom of `100` work bits — the form that
+(`ALT.ReachesThresholdWithin`) at its own headroom of `100` work bits — the form that
 FAILS below the Gödel sentence's own size, so this is a real condition met, not a bookkeeping
 bundle discharged.
 
-Until now `substrateL_reachesThresholdWithin` had no member of `𝒮_L` to consume; this is its first
+Until now `SubstrateL.reachesThresholdWithin` had no member of `𝒮_L` to consume; this is its first
 application to an exhibited system. -/
 theorem witness_reachesThresholdWithin [NeZero k] {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     [IsProbabilityMeasure P] {ξ : ℕ → Ω → Bool} (hmeas : ∀ i, Measurable (ξ i))
     (hindep : iIndepFun ξ P) {η τ : ℝ} (hη0 : 0 < η) (hη1 : η ≤ 1 / 2)
-    (hmean : ∀ u, ∫ ω, ParityWalk.zeta (ξ (u + k) ω) ∂P = 2 * η - 1) (hbudget : 2 * η ≤ τ) :
-    SubstrateClass.ReachesThresholdWithin True True True True 100 2 := by
-  have h := SubstrateClass.substrateL_reachesThresholdWithin
+    (hmean : ∀ u, ∫ ω, ALT.zeta (ξ (u + k) ω) ∂P = 2 * η - 1) (hbudget : 2 * η ≤ τ) :
+    ALT.ReachesThresholdWithin True True True True 100 2 := by
+  have h := ALT.SubstrateL.reachesThresholdWithin
     (witness_substrateL hmeas hindep hη0 hη1 hmean hbudget) (le_refl 2)
   rwa [witness_headroom k] at h
 
 /-- **Payoff 1, at every step of the orbit.**  The same crossing in the time-indexed form
-(`SubstrateClass.ReachesThresholdWithinAt`), held at EVERY `t` — not merely at one configuration —
+(`ALT.ReachesThresholdWithinAt`), held at EVERY `t` — not merely at one configuration —
 under `witness_reachesThresholdWithin`'s own hypothesis list, unchanged.
 
 The reference codeword is pinned to `loadChain ω`'s own code cells, and that pin is what makes the
@@ -632,7 +628,7 @@ commitment conjunct carry something: `CommittedOn`'s docstring records that a co
 committed to its own content trivially, so what has to be true of the pin is that the update's
 behaviour *depends* on the region it names — which on this witness is a theorem
 (`chainUpdate_reads_code`: two memories agreeing off the code region can have different updates),
-not an unfolding.  The commitment then persists because `chainUpdate` never writes that region
+not an unfolding.  The commitment then persists because `Wit.chainUpdate` never writes that region
 (`code_persists`, i.e. (S1)), and the static conjunct is `witness_reachesThresholdWithin` verbatim,
 carrying no time index.
 
@@ -642,20 +638,21 @@ the substrate class's (S1) field pays for. -/
 theorem witness_reachesThresholdWithinAt [NeZero k] {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     [IsProbabilityMeasure P] {ξ : ℕ → Ω → Bool} (hmeas : ∀ i, Measurable (ξ i))
     (hindep : iIndepFun ξ P) {η τ : ℝ} (hη0 : 0 < η) (hη1 : η ≤ 1 / 2)
-    (hmean : ∀ u, ∫ ω, ParityWalk.zeta (ξ (u + k) ω) ∂P = 2 * η - 1) (hbudget : 2 * η ≤ τ)
+    (hmean : ∀ u, ∫ ω, ALT.zeta (ξ (u + k) ω) ∂P = 2 * η - 1) (hbudget : 2 * η ≤ τ)
     (ω : ℕ → Bool) (t : ℕ) :
-    SubstrateClass.ReachesThresholdWithinAt (chainUpdate (k := k)) (codeRegion k)
+    ALT.ReachesThresholdWithinAt (Wit.chainUpdate (k := k)) (codeRegion k)
       (loadChain (k := k) ω) (loadChain (k := k) ω) t True True True True 100 2 := by
   refine ⟨?_, witness_reachesThresholdWithin hmeas hindep hη0 hη1 hmean hbudget⟩
   rintro _ ⟨i, rfl⟩
   exact code_persists t (loadChain (k := k) ω) i
 
 /-- **Payoff 2, at the horizon-bounded hypothesis.**  `witness_truth_survives` with the schedule's
-E1 instance taken directly as `BirkhoffTool.MixingHoeffdingTo N` rather than derived from
-`mixingHoeffding_schedule`: a horizon `N` and `n ≤ N` thread through, and `hη0` weakens to `0 ≤ η`
-since nothing here calls the schedule theorem, so `hindep`, `hmean` and `η ≤ 1/2` are not needed
-either.  What survives unchanged is the noise budget itself — `0 ≤ η` and `2η ≤ τ` still price the
-displacement `mixing_oracle_truth_survives_noisy_to`'s own `hnoise` argument consumes.
+E1 instance taken directly as `MixingHoeffding.MixingHoeffdingTo N` rather than derived from
+`mixingHoeffding_substrateTraj_schedule`: a horizon `N` and `n ≤ N` thread through, and `hη0`
+weakens to `0 ≤ η` since nothing here calls the schedule theorem, so `hindep`, `hmean` and `η ≤ 1/2`
+are not needed either. What survives unchanged is the noise budget itself — `0 ≤ η` and `2η ≤ τ`
+still price the displacement `mixing_oracle_truth_survives_noisy_to`'s own `hnoise` argument
+consumes.
 
 Why it is worth having: a deterministic finite host has a finite period, so a horizon-bounded E1 is
 the only kind it can supply, and this is the theorem such a host would consume.
@@ -668,7 +665,7 @@ theorem witness_truth_survives_to [NeZero k] {Ω : Type*} [MeasurableSpace Ω] {
     (ψ : Bool → Bool → ℝ) (hψ : ∀ u v, |ψ u v| ≤ 1) (N n : ℕ) (hn1 : 1 ≤ n) (hnN : n ≤ N)
     (hτ : 0 < τ) (hδ0 : 0 < δ)
     (hn : (2 * samePairConst k / τ ^ 2) * Real.log (2 / δ) ≤ (n : ℝ))
-    (hmix : BirkhoffTool.MixingHoeffdingTo N (Measure.map (substrateTraj (k := k) ξ) P)
+    (hmix : MixingHoeffding.MixingHoeffdingTo N (Measure.map (substrateTraj (k := k) ξ) P)
       (pairEnsemble ψ 0 k) (samePairMean ψ (2 * η - 1)) (samePairConst k)) :
     1 - δ ≤ (Measure.map (substrateTraj (k := k) ξ) P).real
       {o | |samePairMean ψ (-1)
@@ -678,10 +675,10 @@ theorem witness_truth_survives_to [NeZero k] {Ω : Type*} [MeasurableSpace Ω] {
   have hc : (0 : ℝ) < samePairConst k := by
     rw [show samePairConst k = 48 * (k : ℝ) from rfl]; linarith
   have : IsProbabilityMeasure (Measure.map (substrateTraj (k := k) ξ) P) := by
-    rw [substrateTraj_eq_traj]
-    exact (Measure.isProbabilityMeasure_map_iff (measurable_traj hkpos hmeas).aemeasurable).mpr
-      inferInstance
-  refine BirkhoffTool.mixing_oracle_truth_survives_noisy_to _ _ (samePairMean ψ (-1))
+    rw [substrateTraj_eq_chainTraj]
+    exact (Measure.isProbabilityMeasure_map_iff
+      (measurable_chainTraj hkpos hmeas).aemeasurable).mpr inferInstance
+  refine ALT.mixing_oracle_truth_survives_noisy_to _ _ (samePairMean ψ (-1))
     (samePairMean ψ (2 * η - 1)) (samePairConst k) N n τ δ η hmix hc
     (fun i => measurable_pairEnsemble ψ 0 k i) hn1 hnN hτ hδ0 hn hη0 hbudget ?_
   refine le_trans (abs_samePairMean_sub hψ (2 * η - 1) (-1)) ?_
@@ -700,20 +697,20 @@ sufficiency and E1 met together — completed at [SQ] §3.1's own `η`-relaxatio
 theorem witness_truth_survives [NeZero k] {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     [IsProbabilityMeasure P] {ξ : ℕ → Ω → Bool} (hmeas : ∀ i, Measurable (ξ i))
     (hindep : iIndepFun ξ P) {η τ δ : ℝ} (hη0 : 0 < η) (hη1 : η ≤ 1 / 2)
-    (hmean : ∀ u, ∫ ω, ParityWalk.zeta (ξ (u + k) ω) ∂P = 2 * η - 1) (hbudget : 2 * η ≤ τ)
+    (hmean : ∀ u, ∫ ω, ALT.zeta (ξ (u + k) ω) ∂P = 2 * η - 1) (hbudget : 2 * η ≤ τ)
     (ψ : Bool → Bool → ℝ) (hψ : ∀ u v, |ψ u v| ≤ 1) (n : ℕ) (hn1 : 1 ≤ n) (hτ : 0 < τ)
     (hδ0 : 0 < δ)
     (hn : (2 * samePairConst k / τ ^ 2) * Real.log (2 / δ) ≤ (n : ℝ)) :
     1 - δ ≤ (Measure.map (substrateTraj (k := k) ξ) P).real
       {o | |samePairMean ψ (-1)
         - SQOracle.empiricalMean (pairEnsemble ψ 0 k) n o| ≤ 2 * τ} := by
-  have hmix := mixingHoeffding_schedule (k := k) (ξ := ξ) (P := P) hmeas hindep hη0 hη1 hmean
-    0 ψ hψ
+  have hmix := mixingHoeffding_substrateTraj_schedule (k := k) (ξ := ξ) (P := P) hmeas hindep hη0
+    hη1 hmean 0 ψ hψ
   have hz : ((0 : Fin k) : ℕ) = 0 := by simp
   rw [hz] at hmix
   simp only [scheduledMean, scheduledConst, hz] at hmix
   exact witness_truth_survives_to hmeas (le_of_lt hη0) hbudget ψ hψ n n hn1 le_rfl hτ hδ0 hn
-    (BirkhoffTool.mixingHoeffdingTo_of_mixingHoeffding n _ _ _ _ hmix)
+    (MixingHoeffding.mixingHoeffdingTo_of_mixingHoeffding n _ _ _ _ hmix)
 
 /-! ## The guards -/
 
@@ -722,8 +719,8 @@ literal against the label at `k = 3` — the noiseless observation alternates, s
 are complementary at every time and their pair character never leaves `−1`. -/
 private lemma frozen_pin_two_three (t : ℕ) :
     pairChar (obs 3 frozenWord (t + 2)) (obs 3 frozenWord (t + 3)) = -1 := by
-  rw [frozen_obs_shift t, frozen_obs_add t, pairChar, ParityWalk.chi_not]
-  cases obs 3 frozenWord t <;> norm_num [ParityWalk.chi]
+  rw [frozen_obs_shift t, frozen_obs_add t, pairChar, ALT.chi_not]
+  cases obs 3 frozenWord t <;> norm_num [ALT.chi]
 
 /-- **The frozen-schedule refutation.**  At `η = 0` the scheduled E1 fails, at a query of the
 schedule's OWN shape: window length `3`, offsets `(2, 3)` — literal `2` against the label — and the
@@ -733,24 +730,25 @@ every positive constant.
 So `0 < η` in `witness_substrateL` is load-bearing for the clause the witness actually discharges,
 even though the bare `e1` field of `SubstrateL` would survive at `η = 0` — which is exactly the
 weakness `substrateL_junk_satisfiable` records.  The perturbation test is the noise itself: restore
-any `η > 0` and `NoisyWindowChain.mixingHoeffding_noisyWindowChain_pair` covers this very query at
+any `η > 0` and `ALT.mixingHoeffding_noisyWindowChain_pair` covers this very query at
 `pairConst k η`. -/
 theorem not_mixingHoeffding_frozen_schedule {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
     [IsProbabilityMeasure P] {c : ℝ} (hc : 0 < c) :
-    ¬ BirkhoffTool.MixingHoeffding (Measure.map (traj 3 (fun i (_ : Ω) => frozenWord i)) P)
+    ¬ MixingHoeffding (Measure.map (chainTraj 3 (fun i (_ : Ω) => frozenWord i)) P)
         (pairEnsemble pairChar 2 3) (pairMean pairChar) c := by
   refine not_mixingHoeffding_pinned_pair P (by norm_num) frozenWord pairChar hc
     frozen_pin_two_three ?_
   rw [pairMean_pairChar]; norm_num
 
 /-- **The finite-horizon form.**  At `η = 0` the scheduled E1 fails at every horizon `N` clearing
-`BirkhoffTool.not_mixingHoeffdingTo_pinned`'s own threshold, at the same query, window and offsets
+`ALT.not_mixingHoeffdingTo_pinned`'s own threshold, at the same query, window and offsets
 as `not_mixingHoeffding_frozen_schedule` — the two-line consequence of the ported pinned device
 `not_mixingHoeffdingTo_pinned_pair`. -/
 theorem not_mixingHoeffdingTo_frozen_schedule {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
     [IsProbabilityMeasure P] {c : ℝ} (hc : 0 < c) {N : ℕ}
     (hN : ⌈2 * c * Real.log 2⌉₊ + 1 ≤ N) :
-    ¬ BirkhoffTool.MixingHoeffdingTo N (Measure.map (traj 3 (fun i (_ : Ω) => frozenWord i)) P)
+    ¬ MixingHoeffding.MixingHoeffdingTo N
+        (Measure.map (chainTraj 3 (fun i (_ : Ω) => frozenWord i)) P)
         (pairEnsemble pairChar 2 3) (pairMean pairChar) c := by
   refine not_mixingHoeffdingTo_pinned_pair P (by norm_num) frozenWord pairChar hc hN
     frozen_pin_two_three ?_
@@ -759,20 +757,20 @@ theorem not_mixingHoeffdingTo_frozen_schedule {Ω : Type*} [MeasurableSpace Ω] 
 /-- **The junk-membership guard.**  `SubstrateL` is satisfiable by nothing in particular: its two
 `Prop` parameters accept `True`, its `assumptionA` accepts the EMPTY rule family, its
 `benignSeparation` accepts any `ε₀` at all, and its `e1` accepts `c := 0`, at which
-`BirkhoffTool.mixingHoeffding_of_nonpos` holds for every law and every ensemble.  The witness is the
+`ALT.mixingHoeffding_of_nonpos` holds for every law and every ensemble.  The witness is the
 identity update on a one-cell memory — a system with no dynamics, no rule, and no observations.
 
 This is why `witness_substrateL`'s content lives in the NAMES its clauses are instantiated at —
 `ChainRealizable`, `ChainWindowBudget`, and the schedule theorem's own constants — and not in the
 membership statement as such. -/
 theorem substrateL_junk_satisfiable :
-    ∃ (ι V : Type) (U : Decoupling.Mem ι V → Decoupling.Mem ι V) (R : Set ι)
+    ∃ (ι V : Type) (U : ALT.Mem ι V → ALT.Mem ι V) (R : Set ι)
       (r K L c₀ c₁ c₂ δ : ℝ) (sCodeSize gTS : ℕ),
-      SubstrateClass.SubstrateL U R r K L c₀ c₁ c₂ δ sCodeSize gTS
+      ALT.SubstrateL U R r K L c₀ c₁ c₂ δ sCodeSize gTS
         True True True True True True := by
   refine ⟨Unit, Bool, id, Set.univ, 3, 100, 200, 1, 2, 3, 1 / 2, 0, 2, ?_⟩
   have hlog : Real.log (3 / (1 / 2)) ≤ 3 / (1 / 2) - 1 := Real.log_le_sub_one_of_pos (by norm_num)
-  have hcap : GodelInternalization.capacity (Nat.clog 2 (2 + 1)) = 4 := by decide
+  have hcap : ALT.capacity (Nat.clog 2 (2 + 1)) = 4 := by decide
   refine
     { s1 := fun _ _ _ => rfl
       s2 := ⟨by nlinarith, by norm_num, by norm_num, by norm_num, by norm_num, by norm_num,
@@ -783,7 +781,7 @@ theorem substrateL_junk_satisfiable :
       assumptionA := ⟨Empty, Empty, fun _ => ∅, fun _ _ _ => 0, 0, 0, 0, ?_⟩
       benignSeparation := ⟨1, 1, by norm_num, by norm_num⟩
       e1 := ⟨Bool, inferInstance, Measure.dirac (fun _ => false), fun _ _ => 0, 0, 0,
-        BirkhoffTool.mixingHoeffding_of_nonpos _ _ _ _ le_rfl⟩ }
+        ALT.mixingHoeffding_of_nonpos _ _ _ _ le_rfl⟩ }
   filter_upwards with r'
   have h := SQObjects.sqDim_le_card (∅ : Finset Empty) (0 : ℝ)
     (fun (_ : Empty) (_ : Empty) => (0 : ℝ))
@@ -791,7 +789,7 @@ theorem substrateL_junk_satisfiable :
   rw [h]
   norm_num
 
-end LearningWitness
+end ALT
 
 /-! ## Axiom audit
 
@@ -799,68 +797,79 @@ The realization theorem, the schedule's E1, the membership capstone, its two pay
 guards are all `#print axioms`-clean on the standard triple, and the guards below make that
 build-enforced. -/
 
-set_option linter.style.longLine false
 
-/-- info: 'LearningWitness.readObs_iterate_loadChain' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.readObs_iterate_loadChain' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms LearningWitness.readObs_iterate_loadChain
+#print axioms ALT.readObs_iterate_loadChain
 
-/-- info: 'LearningWitness.chainUpdate_reads_code' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.chainUpdate_reads_code' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms LearningWitness.chainUpdate_reads_code
+#print axioms ALT.chainUpdate_reads_code
 
-/-- info: 'LearningWitness.singleLiteral_separation' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.singleLiteral_separation' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms LearningWitness.singleLiteral_separation
+#print axioms ALT.singleLiteral_separation
 
-/-- info: 'LearningWitness.iIndepFun_noiseCoord' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.iIndepFun_noiseCoord' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms LearningWitness.iIndepFun_noiseCoord
+#print axioms ALT.iIndepFun_noiseCoord
 
-/-- info: 'LearningWitness.integral_zeta_noiseCoord' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.integral_zeta_noiseCoord' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms LearningWitness.integral_zeta_noiseCoord
+#print axioms ALT.integral_zeta_noiseCoord
 
-/-- info: 'LearningWitness.mixingHoeffding_schedule' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.mixingHoeffding_substrateTraj_schedule' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms LearningWitness.mixingHoeffding_schedule
+#print axioms ALT.mixingHoeffding_substrateTraj_schedule
 
-/-- info: 'LearningWitness.witness_substrateL_of_e1' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.witness_substrateL_of_e1' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms LearningWitness.witness_substrateL_of_e1
+#print axioms ALT.witness_substrateL_of_e1
 
-/-- info: 'LearningWitness.witness_substrateL' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.witness_substrateL' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms LearningWitness.witness_substrateL
+#print axioms ALT.witness_substrateL
 
-/-- info: 'LearningWitness.witness_substrateL_bernoulli' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.witness_substrateL_bernoulli' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms LearningWitness.witness_substrateL_bernoulli
+#print axioms ALT.witness_substrateL_bernoulli
 
-/-- info: 'LearningWitness.witness_reachesThresholdWithin' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.witness_reachesThresholdWithin' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms LearningWitness.witness_reachesThresholdWithin
+#print axioms ALT.witness_reachesThresholdWithin
 
-/-- info: 'LearningWitness.witness_reachesThresholdWithinAt' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.witness_reachesThresholdWithinAt' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms LearningWitness.witness_reachesThresholdWithinAt
+#print axioms ALT.witness_reachesThresholdWithinAt
 
-/-- info: 'LearningWitness.witness_truth_survives_to' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.witness_truth_survives_to' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms LearningWitness.witness_truth_survives_to
+#print axioms ALT.witness_truth_survives_to
 
-/-- info: 'LearningWitness.witness_truth_survives' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.witness_truth_survives' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms LearningWitness.witness_truth_survives
+#print axioms ALT.witness_truth_survives
 
-/-- info: 'LearningWitness.not_mixingHoeffding_frozen_schedule' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.not_mixingHoeffding_frozen_schedule' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms LearningWitness.not_mixingHoeffding_frozen_schedule
+#print axioms ALT.not_mixingHoeffding_frozen_schedule
 
-/-- info: 'LearningWitness.not_mixingHoeffdingTo_frozen_schedule' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.not_mixingHoeffdingTo_frozen_schedule' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms LearningWitness.not_mixingHoeffdingTo_frozen_schedule
+#print axioms ALT.not_mixingHoeffdingTo_frozen_schedule
 
-/-- info: 'LearningWitness.substrateL_junk_satisfiable' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.substrateL_junk_satisfiable' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms LearningWitness.substrateL_junk_satisfiable
+#print axioms ALT.substrateL_junk_satisfiable

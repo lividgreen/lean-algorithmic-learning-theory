@@ -1,8 +1,3 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Foundation.FirstOrder.Incompleteness.Examples
@@ -10,9 +5,6 @@ public import Foundation.FirstOrder.Arithmetic.Bootstrapping.DerivabilityConditi
 public import Foundation.FirstOrder.Incompleteness.Speedup
 public import ALT.GodelCore
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
-set_option linter.style.header false
-set_option linter.style.longLine false
 
 /-!
 # A SOUND-AND-COMPLETE bounded proof relation over Foundation ([Decoupling] §6.3)
@@ -45,17 +37,17 @@ a correct verdict whose completeness is real, and a bounded proof would force `D
 merely soundly approximates — bounded non-provability.
 
 ## Decidability / what `noncomputable` means here
-Foundation ships **no** `Decidable (Bootstrapping.Proof T d φ)` instance, so `Decide` is packaged classically
-(`open Classical`) — it carries only `Classical.choice`, already in the accepted axiom set. This is
-not a gap: `Theory.proof` is a `𝚫ᴬ₁.Semisentence 2` (`Proof/Basic.lean`), i.e. the relation is `Δ₁`
-(primitive recursive), so a genuine decision *algorithm* exists; the Lean term simply does not
-`#eval`. The morphism's EXISTENCE as a total Boolean function — all Rep(S) needs (§4.1) — is what is
-certified.
+Foundation ships **no** `Decidable (Bootstrapping.Proof T d φ)` instance, so `Decide` is packaged
+classically (`open Classical`) — it carries only `Classical.choice`, already in the accepted axiom
+set. This is not a gap: `Theory.proof` is a `𝚫ᴬ₁.Semisentence 2` (`Proof/Basic.lean`), i.e. the
+relation is `Δ₁` (primitive recursive), so a genuine decision *algorithm* exists; the Lean term
+simply does not `#eval`. The morphism's EXISTENCE as a total Boolean function — all Rep(S) needs
+(§4.1) — is what is certified.
 
 ## The computable-AND-complete decider: a documented WALL
-Merging FV-8's *computable* checker (`GodelChecker.Prf`, which `#eval`s but is incomplete) with this
-file's *complete* decision (`Decide`, over `Bootstrapping.Proof`, but `noncomputable`) into ONE
-computable-and-complete bounded decider is **walled**; first probed against Foundation rev
+Merging FV-8's *computable* checker (`ALT.HilbertChecker.Prf`, which `#eval`s but is incomplete)
+with this file's *complete* decision (`Decide`, over `Bootstrapping.Proof`, but `noncomputable`)
+into ONE computable-and-complete bounded decider is **walled**; first probed against Foundation rev
 `b47cf447` on Lean 4.31, and the wall stands at every pin since. The two probe routes and their
 precise gaps:
 
@@ -66,21 +58,21 @@ precise gaps:
   (`fstIdx`, `^⋏`/`^⋎`/`^∀`/`^∃`, `free`, `setShift`, `substs1`, `IsTerm`, coded-set membership).
   Foundation exposes it ONLY as a `𝚫ᴬ₁-Relation[V]` (a defining `𝚫ᴬ₁.Semisentence`); it ships **no**
   `Decidable`/`Primrec`/`Computable`/`Bool` instance. Making `Decide` `#eval` would require a new
-  executable `Bool` evaluator for that fixpoint + a proof it agrees with `DerivationOf` — i.e. porting
-  Foundation's whole coded-derivation checker to executable Lean.
-* **(b) complete computable Hilbert checker.** Extending FV-8's Hilbert (ax+MP) checker to a COMPLETE
-  one has **no** Foundation completeness bridge: classical first-order `⊢` is the sequent calculus
-  `𝐋𝐊¹` (`FirstOrder/LK/Basic.lean`), and Foundation exposes **no** first-order Hilbert calculus
-  at all, hence no classical Hilbert-vs-`𝐋𝐊¹` equivalence (its only Hilbert system, in
+  executable `Bool` evaluator for that fixpoint + a proof it agrees with `DerivationOf` — i.e.
+  porting Foundation's whole coded-derivation checker to executable Lean.
+* **(b) complete computable Hilbert checker.** Extending FV-8's Hilbert (ax+MP) checker to a
+  COMPLETE one has **no** Foundation completeness bridge: classical first-order `⊢` is the sequent
+  calculus `𝐋𝐊¹` (`FirstOrder/LK/Basic.lean`), and Foundation exposes **no** first-order Hilbert
+  calculus at all, hence no classical Hilbert-vs-`𝐋𝐊¹` equivalence (its only Hilbert system, in
   `Propositional/Hilbert/Basic.lean`, is propositional). `𝗣𝗔⁻`'s finiteness makes non-logical axiom
   recognition trivially decidable, but leaves the *logical*-completeness bottleneck (a complete FO
   Hilbert calculus + the bridge to `𝐋𝐊¹`) untouched.
 
 Precise missing decidability: `Decidable (Bootstrapping.Proof 𝗣𝗔⁻ p (⌜φ⌝))` over `V = ℕ` (an
-executable evaluator for the `DerivationOf` fixpoint). This wall is **non-load-bearing** — the §6.3 verdict
-`Decide(G) = true` needs only FV-8's soundness + the imported Gödel unprovability
-(`GodelChecker.paMinus_decides_bounded_nonprovability`) — so it closes as a **documented wall +
-registered upstream follow-on** (a `Decidable`/`Primrec (Bootstrapping.Proof …)` instance, or an
+executable evaluator for the `DerivationOf` fixpoint). This wall is **non-load-bearing** — the §6.3
+verdict `Decide(G) = true` needs only FV-8's soundness + the imported Gödel unprovability
+(`ALT.HilbertChecker.paMinus_decides_bounded_nonprovability`) — so it closes as a **documented wall
++ registered upstream follow-on** (a `Decidable`/`Primrec (Bootstrapping.Proof …)` instance, or an
 executable complete derivation checker, in Foundation; upstream-PR targets).
 
 ## Witness theory and axioms
@@ -88,7 +80,7 @@ executable complete derivation checker, in Foundation; upstream-PR targets).
 `propext, Classical.choice, Quot.sound`); `Δ₁` via `Theory.Δ₁.ofFinite`. The parallel `𝗜𝚺₁` witness
 `isigma1_complete_decides` (the same statement at `𝗜𝚺₁`) is **also fully axiom-clean**: Foundation's
 `𝗜𝚺₁.Δ₁` definability is a *theorem* (synthesized from `PeanoMinus.delta1`,
-`InductionScheme.delta1_strictHierarchy` and the union instance, discharged upstream), so it
+`InductionScheme.delta1_prenexHierarchy` and the union instance, discharged upstream), so it
 carries no named axiom either. `𝗣𝗔⁻ ⊊ 𝗜𝚺₁`, so the `𝗣𝗔⁻` capstone is the weaker, more faithful
 (§5.3-class) statement, and the `𝗜𝚺₁` form is the parallel witness at Foundation's canonical
 Σ₁-induction theory.
@@ -97,7 +89,7 @@ carries no named axiom either. `𝗣𝗔⁻ ⊊ 𝗜𝚺₁`, so the `𝗣𝗔�
 
 @[expose] public section
 
-namespace GodelCheckerComplete
+namespace ALT.ArithmetizedChecker
 
 open FFL FFL.FirstOrder FFL.FirstOrder.Arithmetic FFL.FirstOrder.Arithmetic.Bootstrapping
 
@@ -120,11 +112,11 @@ checker — so it is sound and complete for `T ⊢` by construction. -/
 def Prf (T : ArithmeticTheory) [T.Δ₁] (φ : S) (p : ℕ) : Prop := Bootstrapping.Proof T p (⌜φ⌝ : ℕ)
 
 /-- SOUNDNESS (accept ⇒ provable): `Theory.Provable.sound`. -/
-theorem Prf_sound (T : ArithmeticTheory) [T.Δ₁] {φ : S} {p : ℕ} (h : Prf T φ p) : T ⊢ φ :=
+theorem Prf.sound (T : ArithmeticTheory) [T.Δ₁] {φ : S} {p : ℕ} (h : Prf T φ p) : T ⊢ φ :=
   Bootstrapping.Provable.sound ⟨p, (h : Bootstrapping.Proof T p (⌜φ⌝ : ℕ))⟩
 
-/-- COMPLETENESS (provable ⇒ accepted at some code): `internalize_provability`. This is the direction
-the Hilbert (ax+MP) checker of `GodelChecker.lean` cannot supply. -/
+/-- COMPLETENESS (provable ⇒ accepted at some code): `internalize_provability`. This is the
+direction the Hilbert (ax+MP) checker of `GodelChecker.lean` cannot supply. -/
 theorem Prf_complete (T : ArithmeticTheory) [T.Δ₁] {φ : S} (h : T ⊢ φ) : ∃ p, Prf T φ p := by
   obtain ⟨d, hd⟩ := internalize_provability (V := ℕ) h
   exact ⟨d, hd⟩
@@ -161,12 +153,12 @@ theorem decide_false_of_bounded_proof (T : ArithmeticTheory) [T.Δ₁] (M : ℕ)
 `decide_correct` alone is near-definitional (`decide P = true ↔ P`). The two corollaries below make
 the *content* explicit — that `Prf = T.Proof` is the genuine, sound *and* complete proof relation:
 a **negative** verdict witnesses real `T ⊢ φ` provability (soundness, `provable_of_decide_false`,
-uses `Prf_sound`), and `Decide` is **not** trivially always-`true` — every provable sentence is
+uses `Prf.sound`), and `Decide` is **not** trivially always-`true` — every provable sentence is
 rejected at a large enough budget (completeness/non-vacuity, `decide_false_of_provable`, uses
 `Prf_complete`). So both directions of the proof relation carry weight in the decision. -/
 
 /-- **Soundness is load-bearing.** A *negative* verdict is not merely "the checker failed to find a
-proof": by `Prf_sound` it witnesses genuine `T`-provability — if `Decide` rejects `φ` within budget
+proof": by `Prf.sound` it witnesses genuine `T`-provability — if `Decide` rejects `φ` within budget
 `M`, some in-budget code is a real `T`-proof, so `T ⊢ φ`. -/
 theorem provable_of_decide_false (T : ArithmeticTheory) [T.Δ₁] (M : ℕ) (φ : S)
     (h : Decide T M φ = false) : T ⊢ φ := by
@@ -174,7 +166,7 @@ theorem provable_of_decide_false (T : ArithmeticTheory) [T.Δ₁] (M : ℕ) (φ 
   refine absurd ?_ (by simp [h] : ¬ (Decide T M φ = true))
   rw [decide_eq_true_iff]
   intro p _ hpf
-  exact hcon (Prf_sound T hpf)
+  exact hcon (Prf.sound T hpf)
 
 /-- **Completeness is load-bearing (non-vacuity).** `Decide` is not the trivial always-`true`
 function: every `T`-provable `φ` is *rejected* at a large enough budget. `Prf_complete` supplies a
@@ -209,13 +201,13 @@ theorem paMinus_complete_decides (M : ℕ) :
   refine ⟨G, htrue, hunprov, ?_⟩
   rw [decide_eq_true_iff]
   intro p _ hpf
-  exact hunprov (Prf_sound 𝗣𝗔⁻ hpf)
+  exact hunprov (Prf.sound 𝗣𝗔⁻ hpf)
 
-/-- **§6.3 Theorem 6.3, L2b — complete, for the real `𝗜𝚺₁` Gödel sentence.** The `𝗜𝚺₁` counterpart of
-`paMinus_complete_decides`: the real Gödel sentence `G` of `𝗜𝚺₁` (true in `ℕ`, unprovable in `𝗜𝚺₁`)
-is decided as bounded-non-provable by the **sound-and-complete** decision morphism, for every budget
-`M`. Foundation's `𝗜𝚺₁.Δ₁` instance is a *theorem* (synthesized from `PeanoMinus.delta1`,
-`InductionScheme.delta1_strictHierarchy` and the union instance, discharged upstream),
+/-- **§6.3 Theorem 6.3, L2b — complete, for the real `𝗜𝚺₁` Gödel sentence.** The `𝗜𝚺₁` counterpart
+of `paMinus_complete_decides`: the real Gödel sentence `G` of `𝗜𝚺₁` (true in `ℕ`, unprovable in
+`𝗜𝚺₁`) is decided as bounded-non-provable by the **sound-and-complete** decision morphism, for every
+budget `M`. Foundation's `𝗜𝚺₁.Δ₁` instance is a *theorem* (synthesized from `PeanoMinus.delta1`,
+`InductionScheme.delta1_prenexHierarchy` and the union instance, discharged upstream),
 so this witness is **fully axiom-clean**: `#print axioms` = `propext, Classical.choice, Quot.sound`.
 `𝗣𝗔⁻ ⊊ 𝗜𝚺₁`, so `paMinus_complete_decides` above is the weaker, more faithful (§5.3-class)
 statement. -/
@@ -225,7 +217,7 @@ theorem isigma1_complete_decides (M : ℕ) :
   refine ⟨G, htrue, hunprov, ?_⟩
   rw [decide_eq_true_iff]
   intro p _ hpf
-  exact hunprov (Prf_sound 𝗜𝚺₁ hpf)
+  exact hunprov (Prf.sound 𝗜𝚺₁ hpf)
 
 /-! ### The decision is `ComputablePred` (Mathlib's sense of computable)
 
@@ -256,4 +248,4 @@ theorem computable_decide (T : ArithmeticTheory) [T.Δ₁] :
   refine hc.of_eq (fun q => ?_)
   cases h : Decide T q.1 q.2 <;> simp [h]
 
-end GodelCheckerComplete
+end ALT.ArithmetizedChecker

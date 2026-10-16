@@ -1,8 +1,3 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Mathlib.Data.ZMod.Basic
@@ -11,8 +6,6 @@ public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Algebra.Order.Group.Finset
 public import Mathlib.Tactic.Ring
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # Cyclic words along an orbit: the decimation identity and the separating-set floor
@@ -41,10 +34,10 @@ Two counting cores, over a reading's word `w : ZMod n → α`:
   `mMin_eq_two_mul_rMinGen`) likewise need no unit hypothesis.
 * **The separating-set floor** ([Persistence] §8, Proposition 8.20's proof, the ceiling half only):
   a set `A` separating every pair `(j, j + d)` embeds `ZMod n` into `A × M_d` by the double count
-  `j ↦ (t, j − t)`, giving `n ≤ |A| · |M_d|` for every `d ≠ 0` (`separating_card_le`), hence at the
-  minimizing `d` over a prime cycle, `n ≤ |A| · m_min` (`separating_card_le_mMin`). The pattern map
+  `j ↦ (t, j − t)`, giving `n ≤ |A| · |M_d|` for every `d ≠ 0` (`Separating.card_le`), hence at the
+  minimizing `d` over a prime cycle, `n ≤ |A| · m_min` (`Separating.card_le_mMin`). The pattern map
   itself gives a second, cruder floor by a straight pigeonhole into `↥A → α`, `n ≤ |α| ^ |A|`
-  ([Persistence] §8, Proposition 8.40(ii)'s second bound — `separating_card_pow_le`). Proposition
+  ([Persistence] §8, Proposition 8.40(ii)'s second bound — `Separating.card_pow_le`). Proposition
   8.20's own decoder — the fixed program recovering `U` from `A`'s frame codes plus an index, and
   the ceiling half of `κ*(w)`'s two-sided bound — is NOT built here: both need `A`'s members read
   as `Fin n`-valued codes and priced against `KE`, machinery this standalone module has no access
@@ -62,7 +55,7 @@ priced against, since a further decimation can collapse it back down
 
 @[expose] public section
 
-namespace ReadingWord
+namespace ALT
 
 open Finset
 
@@ -458,7 +451,7 @@ def Separating (w : ZMod n → α) (A : Finset (ZMod n)) : Prop :=
 for any `d ≠ 0`, a separating set embeds `ZMod n` into `A × M_d`. `A` separates `j` from `j + d`
 exactly when some `t ∈ A` has `j − t ∈ M_d`, so `j ↦ (t, j − t)` is well defined onto `A × M_d` and
 surjective, giving `n ≤ |A| · |M_d|`. -/
-theorem separating_card_le {w : ZMod n → α} {A : Finset (ZMod n)} (hA : Separating w A)
+theorem Separating.card_le {w : ZMod n → α} {A : Finset (ZMod n)} (hA : Separating w A)
     {d : ZMod n} (hd : d ≠ 0) : n ≤ A.card * (mismatch w d).card := by
   have hsurj : Function.Surjective
       (fun p : ↥A × ↥(mismatch w d) => (p.1 : ZMod n) + (p.2 : ZMod n)) := by
@@ -487,80 +480,83 @@ omit [DecidableEq α] in
 /-- **The counting floor: a separating set is a pigeonhole on the pattern map** ([Persistence] §8,
 Proposition 8.40(ii)'s second bound): `Separating` is injectivity of the pattern map
 `j ↦ (w (j − t))_{t ∈ A}` into `↥A → α`, so `n ≤ |α| ^ |A|` by a straight cardinality comparison —
-no double count needed, unlike `separating_card_le`. -/
-theorem separating_card_pow_le [Fintype α] {w : ZMod n → α} {A : Finset (ZMod n)}
+no double count needed, unlike `Separating.card_le`. -/
+theorem Separating.card_pow_le [Fintype α] {w : ZMod n → α} {A : Finset (ZMod n)}
     (hA : Separating w A) : n ≤ Fintype.card α ^ A.card := by
   have hcard := Fintype.card_le_of_injective _ hA
   rwa [Fintype.card_fun, Fintype.card_coe, ZMod.card] at hcard
 
 /-- **The floor at the minimizing `d`** ([Persistence] §8, Proposition 8.20, the `m_min` form):
-over a prime cycle, `separating_card_le` holds at every `d ≠ 0`, so it holds in particular at the
+over a prime cycle, `Separating.card_le` holds at every `d ≠ 0`, so it holds in particular at the
 `d` achieving `mMin w`. -/
-theorem separating_card_le_mMin [Fact (Nat.Prime n)] {w : ZMod n → α} {A : Finset (ZMod n)}
+theorem Separating.card_le_mMin [Fact (Nat.Prime n)] {w : ZMod n → α} {A : Finset (ZMod n)}
     (hA : Separating w A) : n ≤ A.card * mMin w := by
   obtain ⟨d, hdmem, hdeq⟩ :=
     Finset.exists_mem_eq_inf' univNeZero_nonempty (fun d => (mismatch w d).card)
   have hdne : d ≠ 0 := by simpa [univNeZero] using hdmem
   rw [mMin, hdeq]
-  exact separating_card_le hA hdne
+  exact Separating.card_le hA hdne
 
-end ReadingWord
+end ALT
 
 /-! ## Axiom audit
 
 The guarded capstones above are `#print axioms`-clean on the standard triple, and the guards
 below make that build-enforced. -/
 
-set_option linter.style.longLine false
 
-/-- info: 'ReadingWord.decimate_decimate' depends on axioms: [propext, Quot.sound] -/
+/-- info: 'ALT.decimate_decimate' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms ReadingWord.decimate_decimate
+#print axioms ALT.decimate_decimate
 
-/-- info: 'ReadingWord.decimate_one' depends on axioms: [propext, Quot.sound] -/
+/-- info: 'ALT.decimate_one' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms ReadingWord.decimate_one
+#print axioms ALT.decimate_one
 
-/-- info: 'ReadingWord.sum_runs_decimateFrom' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.sum_runs_decimateFrom' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms ReadingWord.sum_runs_decimateFrom
+#print axioms ALT.sum_runs_decimateFrom
 
-/-- info: 'ReadingWord.decimation_runs_eq_mismatch' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.decimation_runs_eq_mismatch' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms ReadingWord.decimation_runs_eq_mismatch
+#print axioms ALT.decimation_runs_eq_mismatch
 
-/-- info: 'ReadingWord.decimation_runs_eq_mismatch_of_prime' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.decimation_runs_eq_mismatch_of_prime' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms ReadingWord.decimation_runs_eq_mismatch_of_prime
+#print axioms ALT.decimation_runs_eq_mismatch_of_prime
 
-/-- info: 'ReadingWord.runs_eq_two_mul_arcs' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.runs_eq_two_mul_arcs' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms ReadingWord.runs_eq_two_mul_arcs
+#print axioms ALT.runs_eq_two_mul_arcs
 
-/-- info: 'ReadingWord.sum_arcs_decimateFrom' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.sum_arcs_decimateFrom' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms ReadingWord.sum_arcs_decimateFrom
+#print axioms ALT.sum_arcs_decimateFrom
 
-/-- info: 'ReadingWord.mMin_eq_two_mul_rMinGen' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.mMin_eq_two_mul_rMinGen' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms ReadingWord.mMin_eq_two_mul_rMinGen
+#print axioms ALT.mMin_eq_two_mul_rMinGen
 
-/-- info: 'ReadingWord.mMin_eq_two_mul_rMin' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.mMin_eq_two_mul_rMin' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms ReadingWord.mMin_eq_two_mul_rMin
+#print axioms ALT.mMin_eq_two_mul_rMin
 
-/-- info: 'ReadingWord.rMin_decimate_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.rMin_decimate_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms ReadingWord.rMin_decimate_le
+#print axioms ALT.rMin_decimate_le
 
-/-- info: 'ReadingWord.separating_card_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.Separating.card_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms ReadingWord.separating_card_le
+#print axioms ALT.Separating.card_le
 
-/-- info: 'ReadingWord.separating_card_pow_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.Separating.card_pow_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms ReadingWord.separating_card_pow_le
+#print axioms ALT.Separating.card_pow_le
 
-/-- info: 'ReadingWord.separating_card_le_mMin' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.Separating.card_le_mMin' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms ReadingWord.separating_card_le_mMin
+#print axioms ALT.Separating.card_le_mMin

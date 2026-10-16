@@ -1,28 +1,21 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import AIT.EliasBound
 public import ALT.ChaitinPrefixLadder
 public import AIT.PrefixInvarianceKB
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # The prefix-Chaitin ladder's non-uniformity ([Discovery] §1.1, [Inevitability] §6)
 
 Provenance: [Inevitability] §6 Remark 6.19 consumes `KB`'s Elias bound
 (`AIT/EliasBound.lean`) as
-one of two leaf hypotheses of `DeepLadder.prefixChaitinLadder_not_uniform_of`
+one of two premises of `prefixChaitinLadder_not_uniform_of`
 (`ALT/ChaitinPrefixLadder.lean`); this module puts the two together.
 
 ## What this establishes
 
-* `DeepLadder.prefixChaitinLadder_not_uniform`, `..._nonvacuous`: the ladder's non-uniformity
+* `prefixChaitinLadder_not_uniform`, `..._nonvacuous`: the ladder's non-uniformity
   theorem, put together from `PrefixMachine.KB_map_le` and `PrefixMachine.KB_le_two_mul_size`, and
   its non-vacuity witness at `𝗣𝗔⁻`.
 -/
@@ -30,7 +23,7 @@ one of two leaf hypotheses of `DeepLadder.prefixChaitinLadder_not_uniform_of`
 
 @[expose] public section
 
-namespace DeepLadder
+namespace ALT
 
 open Nat.Partrec Nat.Partrec.Code KolmogorovComplexity AdditiveComplexity PrefixMachine
 open FFL.FirstOrder FFL.FirstOrder.Arithmetic
@@ -38,8 +31,8 @@ open FFL.FirstOrder FFL.FirstOrder.Arithmetic
 /-! ## Assembling the ladder's non-uniformity theorem -/
 
 /-- **No computable family of codes enumerates the ladder's theories of this form uniformly in
-the rung index** — the assembly of `prefixChaitinLadder_not_uniform_of` at its two leaf
-hypotheses, `PrefixMachine.KB_map_le` (`AIT/PrefixInvarianceKB.lean`) and
+the rung index** — the assembly of `prefixChaitinLadder_not_uniform_of` at its two
+premises, `PrefixMachine.KB_map_le` (`AIT/PrefixInvarianceKB.lean`) and
 `PrefixMachine.KB_le_two_mul_size` (`AIT/EliasBound.lean`). -/
 theorem prefixChaitinLadder_not_uniform (T₀ : ArithmeticTheory) (d₀ : T₀.Δ₁)
     [(𝗥₀ : ArithmeticTheory) ⪯ T₀] [ℕ↓[ℒₒᵣ] ⊧* T₀] :
@@ -55,4 +48,4 @@ theorem prefixChaitinLadder_not_uniform_nonvacuous :
         chaitinSentenceB (Nat.unpair a).1 (Nat.unpair a).2 :=
   prefixChaitinLadder_not_uniform (𝗣𝗔⁻ : ArithmeticTheory) inferInstance
 
-end DeepLadder
+end ALT

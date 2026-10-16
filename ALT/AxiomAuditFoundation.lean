@@ -1,8 +1,3 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.GodelChecker
@@ -33,9 +28,6 @@ public import AIT.PrefixPairKB
 public import AIT.PrefixCounting
 public import ALT.IndexCost
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
-set_option linter.style.header false
-set_option linter.style.longLine false
 
 /-!
 # Axiom audit (Foundation side) — machine-ENFORCED axiom-cleanliness ([Decoupling] appendix)
@@ -51,137 +43,160 @@ Foundation's `𝗜𝚺₁`/`𝗣𝗔` `Δ₁`-definability is a *theorem* (an an
 `Incompleteness/Definability.lean`, discharged upstream), so the `𝗜𝚺₁` capstones are axiom-clean
 alongside the `𝗣𝗔⁻` ones (finite theory, `Δ₁` via
 `Theory.Δ₁.ofFinite`) and the generic adapter. So a guard here breaks the build if *any* axiom —
-standard or named — is ever added. `(whitespace := lax)` normalizes the pretty-printer's line wrapping
-of the axiom list.
+standard or named — is ever added. `(whitespace := lax)` normalizes the pretty-printer's line
+wrapping of the axiom list.
 -/
 
 -- FV-8 (sound concrete checker) — fully axiom-clean for the finite witness 𝗣𝗔⁻
 
 @[expose] public section
 
-/-- info: 'GodelChecker.paMinus_decides_bounded_nonprovability' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.HilbertChecker.paMinus_decides_bounded_nonprovability' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GodelChecker.paMinus_decides_bounded_nonprovability
+#print axioms ALT.HilbertChecker.paMinus_decides_bounded_nonprovability
 
-/-- info: 'GodelChecker.Prf_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.HilbertChecker.Prf_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GodelChecker.Prf_sound
+#print axioms ALT.HilbertChecker.Prf_sound
 
-/-- info: 'GodelChecker.prf_nondegenerate' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.HilbertChecker.prf_nondegenerate' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GodelChecker.prf_nondegenerate
+#print axioms ALT.HilbertChecker.prf_nondegenerate
 
-/-- info: 'GodelChecker.prf_accepts_mp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.HilbertChecker.prf_accepts_mp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GodelChecker.prf_accepts_mp
+#print axioms ALT.HilbertChecker.prf_accepts_mp
 
 -- FV-8 / Proposition 4.5 (minimality) — the fragment-witness re-exports: the same internalization
--- capstones, re-stated over an import closure the `assert_not_exists` guards prove exponential-free.
-/-- info: 'MinimalityWitness.fragment_internalization' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+-- capstones, re-stated over an import closure the `assert_not_exists` guards prove
+-- exponential-free.
+set_option linter.style.longLine false in
+/-- info: 'ALT.fragment_internalization' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms MinimalityWitness.fragment_internalization
+#print axioms ALT.fragment_internalization
 
-/-- info: 'MinimalityWitness.fragment_decides_godel' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.fragment_decides_godel' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms MinimalityWitness.fragment_decides_godel
+#print axioms ALT.fragment_decides_godel
 
 -- FV-19 (§6.5 Proposition 6.5, concrete): the reflective decision automaton run over the executable
--- checker, halting `true` on the actual 𝗣𝗔⁻ Gödel sentence — fully axiom-clean for the finite witness.
-/-- info: 'GodelCheckerAutomaton.paMinus_automaton_decides' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+-- checker, halting `true` on the actual 𝗣𝗔⁻ Gödel sentence — fully axiom-clean for the finite
+-- witness.
+set_option linter.style.longLine false in
+/-- info: 'ALT.HilbertCheckerAutomaton.paMinus_automaton_decides' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GodelCheckerAutomaton.paMinus_automaton_decides
+#print axioms ALT.HilbertCheckerAutomaton.paMinus_automaton_decides
 
-/-- info: 'GodelCheckerAutomaton.step_readonly_code' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.HilbertCheckerAutomaton.step_readonly_code' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GodelCheckerAutomaton.step_readonly_code
+#print axioms ALT.HilbertCheckerAutomaton.step_readonly_code
 
 -- FV-9 (sound-and-complete bounded decision) — fully axiom-clean for 𝗣𝗔⁻
-/-- info: 'GodelCheckerComplete.paMinus_complete_decides' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.ArithmetizedChecker.paMinus_complete_decides' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GodelCheckerComplete.paMinus_complete_decides
+#print axioms ALT.ArithmetizedChecker.paMinus_complete_decides
 
-/-- info: 'GodelCheckerComplete.decide_correct' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.ArithmetizedChecker.decide_correct' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GodelCheckerComplete.decide_correct
+#print axioms ALT.ArithmetizedChecker.decide_correct
 
-/-- info: 'GodelCheckerComplete.Prf_complete' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.ArithmetizedChecker.Prf_complete' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GodelCheckerComplete.Prf_complete
+#print axioms ALT.ArithmetizedChecker.Prf_complete
 
-/-- info: 'GodelCheckerComplete.provable_of_decide_false' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.ArithmetizedChecker.provable_of_decide_false' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GodelCheckerComplete.provable_of_decide_false
+#print axioms ALT.ArithmetizedChecker.provable_of_decide_false
 
-/-- info: 'GodelCheckerComplete.decide_nonvacuous' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.ArithmetizedChecker.decide_nonvacuous' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GodelCheckerComplete.decide_nonvacuous
+#print axioms ALT.ArithmetizedChecker.decide_nonvacuous
 
 -- The parallel `𝗜𝚺₁` witnesses — now axiom-clean, since Foundation's `𝗜𝚺₁`/`𝗣𝗔` `Δ₁`-definability
 -- is a theorem (an anonymous instance in its `Incompleteness/Definability.lean`, discharged
 -- upstream). Guarded alongside the `𝗣𝗔⁻`
 -- capstones, which stay the more faithful (§5.3-class) witnesses (`𝗣𝗔⁻ ⊊ 𝗜𝚺₁`).
-/-- info: 'GodelChecker.isigma1_decides_bounded_nonprovability'' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.HilbertChecker.isigma1_decides_bounded_nonprovability'' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GodelChecker.isigma1_decides_bounded_nonprovability'
+#print axioms ALT.HilbertChecker.isigma1_decides_bounded_nonprovability'
 
-/-- info: 'GodelCheckerComplete.isigma1_complete_decides' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.ArithmetizedChecker.isigma1_complete_decides' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GodelCheckerComplete.isigma1_complete_decides
+#print axioms ALT.ArithmetizedChecker.isigma1_complete_decides
 
 -- The decision is `ComputablePred` (Mathlib's sense), and the convenience `Computable` form.
-/-- info: 'GodelCheckerComplete.computablePred_decide' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.ArithmetizedChecker.computablePred_decide' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GodelCheckerComplete.computablePred_decide
+#print axioms ALT.ArithmetizedChecker.computablePred_decide
 
-/-- info: 'GodelCheckerComplete.computable_decide' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.ArithmetizedChecker.computable_decide' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GodelCheckerComplete.computable_decide
+#print axioms ALT.ArithmetizedChecker.computable_decide
 
 /-! ## Guard-gap closure — the §5.3/§6 incompleteness discharge (`ALT/GodelComplete.lean`)
 
-The axiom-clean generic adapter that discharges the imported `GodelThreshold.Incompleteness`
+The axiom-clean generic adapter that discharges the imported `ALT.Incompleteness`
 hypothesis via upstream `FormalizedFormalLogic/Foundation` (first discharged at rev `b47cf447`,
 re-verified at each pin bump since), plus its two concrete `𝗜𝚺₁` witnesses. Per that file's BAR
 the adapter is axiom-clean, and the `𝗜𝚺₁` witnesses are too — Foundation's `𝗜𝚺₁`/`𝗣𝗔`
 `Δ₁`-definability is a theorem (an anonymous instance in its `Incompleteness/Definability.lean`,
 discharged upstream) — so nothing here carries a named axiom. -/
 
--- Generic §5.3-class adapter — axiom-clean: for any `[T.Δ₁] [𝗥₀ ⪯ T] [ℕ↓[ℒₒᵣ] ⊧* T]`, Foundation's first
--- incompleteness theorem discharges the literal `GodelThreshold.Incompleteness`.
-/-- info: 'GodelComplete.incompleteness_of_arith' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+-- Generic §5.3-class adapter — axiom-clean: for any `[T.Δ₁] [𝗥₀ ⪯ T] [ℕ↓[ℒₒᵣ] ⊧* T]`, Foundation's
+-- first
+-- incompleteness theorem discharges the literal `ALT.Incompleteness`.
+set_option linter.style.longLine false in
+/-- info: 'ALT.incompleteness_of_arith' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GodelComplete.incompleteness_of_arith
+#print axioms ALT.incompleteness_of_arith
 
 -- The two concrete `𝗜𝚺₁` witnesses — axiom-clean via the upstream `Δ₁`-definability theorem.
-/-- info: 'GodelComplete.isigma1_represents_underivable_truth' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.isigma1_represents_underivable_truth' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GodelComplete.isigma1_represents_underivable_truth
+#print axioms ALT.isigma1_represents_underivable_truth
 
-/-- info: 'GodelComplete.isigma1_decides_bounded_nonprovability' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.isigma1_decides_bounded_nonprovability' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GodelComplete.isigma1_decides_bounded_nonprovability
+#print axioms ALT.isigma1_decides_bounded_nonprovability
 
 /-! ## The unconditional excess order (`ALT/ExcessOrderComplete.lean`)
 
 Composing the discharge above with the [Decoupling] §6.4 threshold removes the incompleteness
-antecedent from `ExcessOrder.Outgrows`: at a concrete arithmetic there is a Gödel size where the
+antecedent from `ALT.Outgrows`: at a concrete arithmetic there is a Gödel size where the
 delivered reflective object represents an underivable truth outright. The `𝗣𝗔⁻` route is
 axiom-clean via finiteness (`Theory.Δ₁.ofFinite`), so no named axiom appears. -/
 
 -- The generic adapter — `Outgrows` at any `[T.Δ₁] [𝗥₀ ⪯ T] [ℕ↓[ℒₒᵣ] ⊧* T]`, antecedent discharged.
-/-- info: 'ExcessOrder.outgrows_arith' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.outgrows_arith' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms ExcessOrder.outgrows_arith
+#print axioms ALT.outgrows_arith
 
 -- The concrete `𝗣𝗔⁻` instance — the most faithful witness (finite theory, `Δ₁` via `ofFinite`).
-/-- info: 'ExcessOrder.outgrows_paMinus' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.outgrows_paMinus' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms ExcessOrder.outgrows_paMinus
+#print axioms ALT.outgrows_paMinus
 
 -- The capstone — the cheaply-owned Witness World guest unconditionally outgrows its host at `𝗣𝗔⁻`.
-/-- info: 'ExcessOrder.witness_outgrows_paMinus' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.witness_outgrows_paMinus' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms ExcessOrder.witness_outgrows_paMinus
+#print axioms ALT.witness_outgrows_paMinus
 
 /-! ## The accreting crossing package (`ALT/AccretingExcess.lean`)
 
@@ -190,19 +205,21 @@ Gödel size fixed with the theory that every stage past some `t₀` hosts, with 
 delivered at that stage's own budget. Axiom-clean via the same `𝗣𝗔⁻` finiteness route. -/
 
 -- The uniform excess — one Gödel size served across every hosting budget, not one per budget.
-/-- info: 'AccretingWitness.outgrows_paMinus_uniform' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.outgrows_paMinus_uniform' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms AccretingWitness.outgrows_paMinus_uniform
+#print axioms ALT.outgrows_paMinus_uniform
 
 -- Eventual hosting — the crossing stage `t₀` made explicit. Constructive: no `Classical.choice`.
-/-- info: 'AccretingWitness.eventually_hostsAt' depends on axioms: [propext, Quot.sound] -/
+/-- info: 'ALT.eventually_hostsAt' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms AccretingWitness.eventually_hostsAt
+#print axioms ALT.eventually_hostsAt
 
 -- The package — the accreting skeleton's landed clauses beside the eventual-hosting crossing.
-/-- info: 'AccretingWitness.accreting_outgrows_paMinus' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.accreting_outgrows_paMinus' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms AccretingWitness.accreting_outgrows_paMinus
+#print axioms ALT.accreting_outgrows_paMinus
 
 /-! ## The deep ladder (`ALT/DeepLadder.lean`)
 
@@ -210,24 +227,26 @@ The crossing recurrence over each rung of the deep ladder — both at the hidden
 `Classical.epsilon`) and at the explicit selector (Foundation's own Gödel sentence, exhibited). -/
 
 -- The recurrence at an arbitrary rung selector.
-/-- info: 'DeepLadder.accreting_ladder' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.accreting_ladder' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms DeepLadder.accreting_ladder
+#print axioms ALT.accreting_ladder
 
 -- The recurrence at the explicit selector, base `𝗜𝚺₁`.
-/-- info: 'DeepLadder.explicit_accreting_ladder' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.explicit_accreting_ladder' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms DeepLadder.explicit_accreting_ladder
+#print axioms ALT.explicit_accreting_ladder
 
 -- The explicit ladder's step IS the consistency step, at each theory's own predicate.
-/-- info: 'DeepLadder.explicitLadder_succ_equiv_con' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.explicitLadder_succ_equiv_con' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms DeepLadder.explicitLadder_succ_equiv_con
+#print axioms ALT.explicitLadder_succ_equiv_con
 
 -- The Ehrenfeucht–Mycielski speedup at the explicit ladder.
-/-- info: 'DeepLadder.explicitLadder_speedup' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.explicitLadder_speedup' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms DeepLadder.explicitLadder_speedup
+#print axioms ALT.explicitLadder_speedup
 
 /-! ## The generalized crossing (`ALT/GrowingCoreCrossing.lean`)
 
@@ -235,22 +254,24 @@ The crossing recurrence over each rung of the deep ladder — both at the hidden
 profile — `hostsAt_mono` is the whole glue, so this needs nothing beyond the package above. -/
 
 -- Eventual hosting at an arbitrary monotone unbounded budget. Constructive, like its `t + 1` case.
-/-- info: 'AccretingWitness.eventually_hostsAt_ofBudget' does not depend on any axioms -/
+/-- info: 'ALT.eventually_hostsAt_ofBudget' does not depend on any axioms -/
 #guard_msgs (whitespace := lax) in
-#print axioms AccretingWitness.eventually_hostsAt_ofBudget
+#print axioms ALT.eventually_hostsAt_ofBudget
 
 -- The generalized package — one Gödel size, threaded through `κ` in place of the witness's `t + 1`.
-/-- info: 'AccretingWitness.eventually_hosts_uniform' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.eventually_hosts_uniform' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms AccretingWitness.eventually_hosts_uniform
+#print axioms ALT.eventually_hosts_uniform
 
 -- [Inevitability] §2 Definition 2.3, the class-level `𝒮_E` constructor's crossing clause: a
 -- Gödel size fixed once, that every sufficiently hosting capacity represents — routes through
--- `𝗣𝗔⁻` via `AccretingWitness.outgrows_paMinus_uniform`, same finiteness route as the packages
+-- `𝗣𝗔⁻` via `ALT.outgrows_paMinus_uniform`, same finiteness route as the packages
 -- above.
-/-- info: 'SubstrateEmergence.grownGuestReachesThresholdAt_uniform' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.grownGuestReachesThresholdAt_uniform' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms SubstrateEmergence.grownGuestReachesThresholdAt_uniform
+#print axioms ALT.grownGuestReachesThresholdAt_uniform
 
 /-! ## The block-pair host's `𝒮_E` overlap (`ALT/BlockPairOverlap.lean`)
 
@@ -259,100 +280,111 @@ register, is simultaneously a member of `𝒮_E` and of `𝒮_L` — one update,
 numeral set. Axiom-clean via the same `𝗣𝗔⁻` finiteness route as the packages above. -/
 
 -- The overlap capstone — the SAME host is a member of both route-classes at once.
-/-- info: 'BlockPairOverlap.hostWitness_overlap' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.BlockPairHost.witness_overlap' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms BlockPairOverlap.hostWitness_overlap
+#print axioms ALT.BlockPairHost.witness_overlap
 
 /-! ## The class-level overlap (`ALT/TapeHostOverlap.lean`, `ALT/BlockPairCriterion.lean`)
 
 The class-level overlap over an arbitrary host and profile, at IN-24's coupling standard (one
 Gödel size shared by the class's own capacity clause and the crossing clause), and the certified
-block-pair sequence's own instance of it. Both route through `SubstrateEmergence.
-grownGuestReachesThresholdAt_uniform`, hence `𝗣𝗔⁻`, the same finiteness route as the packages
-above — not `BlockPairOverlap.hostWitness_overlap`'s own decoupled numerals, which stay
-untouched. -/
+block-pair sequence's own instance of it. Both route through
+`ALT.grownGuestReachesThresholdAt_uniform`, hence `𝗣𝗔⁻`, the same finiteness route as the packages
+above — not `ALT.BlockPairHost.witness_overlap`'s own decoupled numerals, which stay untouched.
+-/
 
-/-- info: 'TapeHostOverlap.tapeHost_overlap' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.TapeHost.overlap' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms TapeHostOverlap.tapeHost_overlap
+#print axioms ALT.TapeHost.overlap
 
-/-- info: 'BlockPairCriterion.blockPair_overlap_coupled' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.blockPair_overlap_coupled' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms BlockPairCriterion.blockPair_overlap_coupled
+#print axioms ALT.blockPair_overlap_coupled
 
 -- The profile-class family's own class-level overlap (`ALT/BlockPairFamilyCriterion.lean`): every
 -- member with `r ≥ 2` is simultaneously in `𝒮_E` and `𝒮_L`, at the same coupled numeral standard —
 -- the certified pair's own `blockPair_overlap_coupled` above is the `r = 3` instance.
-/-- info: 'BlockPairFamilyCriterion.blockPairFamily_overlap' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.blockPairFamily_overlap' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms BlockPairFamilyCriterion.blockPairFamily_overlap
+#print axioms ALT.blockPairFamily_overlap
 
 /-! ## A member of both route-classes carries survival, by redundancy (`ALT/TapeHostSurvival.lean`)
 
 The base-plus-fiber composite (the tape host's own substrate with a `P`-copy redundant floored
-fiber added as extra memory) is a member of `𝒮_E`, via `SubstrateEmergence.
-grownGuestReachesThresholdAt_uniform`, the same `𝗣𝗔⁻` finiteness route as the packages above. The
-capstone bundles that membership with the composite's `𝒮_L` membership and its own survival by
-redundancy, so it routes through `𝗣𝗔⁻` too. -/
+fiber added as extra memory) is a member of `𝒮_E`, via `ALT.grownGuestReachesThresholdAt_uniform`,
+the same `𝗣𝗔⁻` finiteness route as the packages above. The capstone bundles that membership with the
+composite's `𝒮_L` membership and its own survival by redundancy, so it routes through `𝗣𝗔⁻` too. -/
 
-/-- info: 'TapeHostSurvival.comp_substrateE' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.TapeHost.comp_substrateE' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms TapeHostSurvival.comp_substrateE
+#print axioms ALT.TapeHost.comp_substrateE
 
 -- The survival capstone — a member of both route-classes carries survival by redundancy.
-/-- info: 'TapeHostSurvival.tapeHost_carries_survival' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.TapeHost.carries_survival' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms TapeHostSurvival.tapeHost_carries_survival
+#print axioms ALT.TapeHost.carries_survival
 
 /-! ## Chaitin's incompleteness theorem as a deep-ladder rung selector (`ALT/ChaitinLadder.lean`)
 
-`chaitinSelector` instantiates `DeepLadder.RungSelector` at base `𝗥₀` from `chaitin_theorem`; the
-capstone recurrence restated at it (`DeepLadder.chaitin_accreting_ladder`, in
+`chaitinSelector` instantiates `TheoryProgression.SentenceSelector` at base `𝗥₀` from
+`chaitin_theorem`; the
+capstone recurrence restated at it (`ALT.chaitin_accreting_ladder`, in
 `ALT/DeepLadder.lean`) is axiom-clean too. -/
 
-/-- info: 'DeepLadder.chaitin_accreting_ladder' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.chaitin_accreting_ladder' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms DeepLadder.chaitin_accreting_ladder
+#print axioms ALT.chaitin_accreting_ladder
 
 /-! ## The prefix-Chaitin ladder's rate (`ALT/ChaitinPrefixLadder.lean`)
 
 `prefixChaitinSelector` places the Chaitin sentence on `KB` at each theory's own additive
 threshold; the strict-increase theorems and the no-uniform-naming corollary are axiom-clean. -/
 
-/-- info: 'DeepLadder.KB_enumerator_succ_gt' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.KB_enumerator_succ_gt' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms DeepLadder.KB_enumerator_succ_gt
+#print axioms ALT.KB_enumerator_succ_gt
 
-/-- info: 'DeepLadder.KB_enumeratorB_lt_succ' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.KB_enumeratorB_lt_succ' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms DeepLadder.KB_enumeratorB_lt_succ
+#print axioms ALT.KB_enumeratorB_lt_succ
 
-/-- info: 'DeepLadder.KB_enumeratorB_ge' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.KB_enumeratorB_ge' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms DeepLadder.KB_enumeratorB_ge
+#print axioms ALT.KB_enumeratorB_ge
 
-/-- info: 'DeepLadder.KB_enumeratorB_lt_succ_nonvacuous' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.KB_enumeratorB_lt_succ_nonvacuous' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms DeepLadder.KB_enumeratorB_lt_succ_nonvacuous
+#print axioms ALT.KB_enumeratorB_lt_succ_nonvacuous
 
-/-- info: 'DeepLadder.prefixChaitinLadder_not_uniform_of' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.prefixChaitinLadder_not_uniform_of' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms DeepLadder.prefixChaitinLadder_not_uniform_of
+#print axioms ALT.prefixChaitinLadder_not_uniform_of
 
-/-! ## `KB`'s Elias bound and the ladder's assembly (`AIT/EliasBound.lean`, `ALT/PrefixEliasKB.lean`)
+/-! ## `KB`'s Elias bound and the ladder's assembly (`AIT/EliasBound.lean`,
+`ALT/PrefixEliasKB.lean`)
 
 The Elias decoder `eliasDecoder`, its own halting domain prefix-free, the unabsorbed Elias bound
 `KB_le_size_add_two_mul_size_size`, its corollary `KB_le_two_mul_size` — the other of
 `prefixChaitinLadder_not_uniform_of`'s two hypotheses — and the ladder's non-uniformity theorem
 put together from both, with its non-vacuity witness. -/
 
-/-- info: 'DeepLadder.prefixChaitinLadder_not_uniform' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.prefixChaitinLadder_not_uniform' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms DeepLadder.prefixChaitinLadder_not_uniform
+#print axioms ALT.prefixChaitinLadder_not_uniform
 
-/-- info: 'DeepLadder.prefixChaitinLadder_not_uniform_nonvacuous' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.prefixChaitinLadder_not_uniform_nonvacuous' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms DeepLadder.prefixChaitinLadder_not_uniform_nonvacuous
+#print axioms ALT.prefixChaitinLadder_not_uniform_nonvacuous
 
 /-! ## The model cost on the prefix machine (`AIT/PrefixModelCost.lean`)
 
@@ -360,13 +392,15 @@ put together from both, with its non-vacuity witness. -/
 an unabsorbed Elias bound for `KB` taken as hypotheses, and each with an unconditional corollary
 discharging every one of those hypotheses at a landed statement. -/
 
-/-- info: 'PrefixMachine.KB_le_ruleComplexity_add_two_mul_size_of' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.KB_le_ruleComplexity_add_two_mul_size_of' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms PrefixMachine.KB_le_ruleComplexity_add_two_mul_size_of
+#print axioms ALT.KB_le_ruleComplexity_add_two_mul_size_of
 
-/-- info: 'PrefixMachine.KB_le_ruleComplexity_add_two_mul_size' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.KB_le_ruleComplexity_add_two_mul_size' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms PrefixMachine.KB_le_ruleComplexity_add_two_mul_size
+#print axioms ALT.KB_le_ruleComplexity_add_two_mul_size
 
 /-! ## The index cost of a description (`ALT/IndexCost.lean`)
 
@@ -377,26 +411,28 @@ discharging every one of those hypotheses at a landed statement. -/
 `ALT/AxiomAuditMathlib.lean` because `ALT.IndexCost`'s import closure reaches Foundation through
 `AIT.PrefixInvarianceKB`. -/
 
-/-- info: 'IndexCost.sizeLaw' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.sizeLaw' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms IndexCost.sizeLaw
+#print axioms ALT.sizeLaw
 
-/-- info: 'IndexCost.codelen'_const_add_three_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.codelen'_const_add_three_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms IndexCost.codelen'_const_add_three_le
+#print axioms ALT.codelen'_const_add_three_le
 
-/-- info: 'IndexCost.nestSpec' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.nestSpec' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms IndexCost.nestSpec
+#print axioms ALT.nestSpec
 
-/-- info: 'IndexCost.K_bitlen_le_32_mul_KB_of' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.K_bitlen_le_32_mul_KB_of' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms IndexCost.K_bitlen_le_32_mul_KB_of
+#print axioms ALT.K_bitlen_le_32_mul_KB_of
 
-/-- info: 'IndexCost.decoderSpec' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.decoderSpec' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms IndexCost.decoderSpec
+#print axioms ALT.decoderSpec
 
-/-- info: 'IndexCost.K_bitlen_le_32_mul_KB' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.K_bitlen_le_32_mul_KB' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms IndexCost.K_bitlen_le_32_mul_KB
+#print axioms ALT.K_bitlen_le_32_mul_KB

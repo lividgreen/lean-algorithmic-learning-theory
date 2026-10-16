@@ -71,6 +71,7 @@ jobs:
       - uses: leanprover/lean-action@v1
         with:
           use-github-cache: false
+          build-args: "--wfail"
       # Whole-library axiom audit, run BEFORE the expensive docs step so a
       # violation fails fast. It checks EVERY declaration under `ALT` — not only
       # the guarded capstones — against the same allowlist, so a `sorry`, a

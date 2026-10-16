@@ -1,21 +1,14 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.CapacityThreshold
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # Static MDL dominance ([Discovery], Theorem 2.1 / Sub-problem A)
 
 Provenance: [Discovery], §1.2 (regime constants C1–C3), §2.1 (the
 theorem), §2.2 (its proof: eq. (1) rule cost, eq. (2) table cost, Step 3 subtraction),
-§2.3 (structure-function connection). Reuses `CapacityThreshold.Kmin` (the §2.2 model cost
+§2.3 (structure-function connection). Reuses `ALT.Kmin` (the §2.2 model cost
 `r + 2 log r + c₃`) from the Cor 2.2 warm-up.
 
 Status: PROVED as pure real-arithmetic statements. This is the *arithmetic core* of
@@ -74,9 +67,7 @@ overheads, as in the paper's "O(·) with constants traceable in principle" conve
 
 @[expose] public section
 
-namespace MDLDominance
-
-open CapacityThreshold
+namespace ALT
 
 /-- Rule-based two-part code length ([Discovery] §2.2 eq. (1), upper bound): the model cost
 `Kmin r c₃ = r + 2 log r + c₃` plus the data-given-model cost `log|O| + log n + cd`. -/
@@ -116,4 +107,4 @@ theorem mdl_dominance (r c₃ O n cd : ℝ)
   simp only [Lrule, Ltable, Kmin]
   nlinarith [hReg, hlogn]
 
-end MDLDominance
+end ALT

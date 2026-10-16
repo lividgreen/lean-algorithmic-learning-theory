@@ -1,8 +1,3 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.GrowingComposite
@@ -54,9 +49,9 @@ profile needs. Nothing here uses `GrowingComposite`'s composite carrier; it is i
 
 @[expose] public section
 
-namespace SubstitutionSource
+namespace ALT
 
-open ParityWalk Finset
+open Finset
 
 /-! ## The fixed point -/
 
@@ -674,8 +669,8 @@ theorem subObs_pair (c : ℕ) (a : Fin 8) (n : ℕ) :
         (fun p => by rw [subObs_block_lag7 p]; ring) c n)
       (by norm_num))
   · exact h77 _ (le_trans
-      (subObs_pair_generic 6 2 0 0 0 (subRho 2) 3 (by norm_num) (by simp [subRho]; try norm_num)
-        (by simp [subRho]; try norm_num) (fun p => by rw [subObs_block_lag6 p]; ring) c n)
+      (subObs_pair_generic 6 2 0 0 0 (subRho 2) 3 (by norm_num) (by simp [subRho])
+        (by simp [subRho]) (fun p => by rw [subObs_block_lag6 p]; ring) c n)
       (by norm_num))
   · exact h77 _ (le_trans
       (subObs_pair_generic 5 3 0 1 (-1) (subRho 3) (237 / 16) (by norm_num)
@@ -683,21 +678,21 @@ theorem subObs_pair (c : ℕ) (a : Fin 8) (n : ℕ) :
         (fun p => by rw [subObs_block_lag5 p]; ring) c n)
       (by norm_num))
   · exact h77 _ (le_trans
-      (subObs_pair_generic 4 4 0 4 0 (subRho 4) 15 (by norm_num) (by simp [subRho]; try norm_num)
+      (subObs_pair_generic 4 4 0 4 0 (subRho 4) 15 (by norm_num) (by simp [subRho])
         (by simp [subRho]; try norm_num) (fun p => by rw [subObs_block_lag4 p]; ring) c n)
       (by norm_num))
   · exact h77 _ (le_trans
       (subObs_pair_generic 3 5 (-1) 1 0 (subRho 5) (27 / 4) (by norm_num)
-        (by simp [subRho]; try norm_num) (by simp [subRho]; try norm_num)
+        (by simp [subRho]) (by simp [subRho]; try norm_num)
         (fun p => by rw [subObs_block_lag3 p]; ring) c n)
       (by norm_num))
   · exact h77 _ (le_trans
-      (subObs_pair_generic 2 6 0 0 0 (subRho 6) 3 (by norm_num) (by simp [subRho]; try norm_num)
-        (by simp [subRho]; try norm_num) (fun p => by rw [subObs_block_lag2 p]; ring) c n)
+      (subObs_pair_generic 2 6 0 0 0 (subRho 6) 3 (by norm_num) (by simp [subRho])
+        (by simp [subRho]) (fun p => by rw [subObs_block_lag2 p]; ring) c n)
       (by norm_num))
   · exact h77 _ (le_trans
       (subObs_pair_generic 1 7 1 (-1) 0 (subRho 7) (27 / 4) (by norm_num)
-        (by simp [subRho]; try norm_num) (by simp [subRho]; try norm_num)
+        (by simp [subRho]) (by simp [subRho]; try norm_num)
         (fun p => by rw [subObs_block_lag1 p]; ring) c n)
       (by norm_num))
 
@@ -760,7 +755,7 @@ private theorem no_period_subFix :
 (any other residue collapses `subFix` to an eventually-constant sequence, ruled out directly); a
 period `P = 4P'` then transports through `subFix (4n+1) = subFix n` to the smaller period `P'`,
 giving an infinite descent — closed by strong induction on `P`. -/
-theorem not_eventuallyPeriodic_subFix : ¬ GrowingComposite.EventuallyPeriodic subFix := by
+theorem not_eventuallyPeriodic_subFix : ¬ DrivenColumns.EventuallyPeriodic subFix := by
   rintro ⟨P, N, hP, hper⟩
   exact no_period_subFix P hP N hper
 
@@ -769,7 +764,7 @@ theorem not_eventuallyPeriodic_subFix : ¬ GrowingComposite.EventuallyPeriodic s
 (`not_eventuallyPeriodic_subFix`); the other residues either force `subFix (n+k) = !subFix (n+k)`
 directly (two adjacent instantiations) or, at the remaining residue, give `subFix` an
 anti-periodicity that composes with itself into a genuine period. -/
-theorem not_eventuallyPeriodic_subObs : ¬ GrowingComposite.EventuallyPeriodic subObs := by
+theorem not_eventuallyPeriodic_subObs : ¬ DrivenColumns.EventuallyPeriodic subObs := by
   rintro ⟨P, N, hP, hper⟩
   have hPeq : P = 4 * (P / 4) + P % 4 := (Nat.div_add_mod P 4).symm
   have hr4 : P % 4 < 4 := Nat.mod_lt P (by norm_num)
@@ -829,83 +824,85 @@ theorem not_eventuallyPeriodic_subObs : ¬ GrowingComposite.EventuallyPeriodic s
       simp only [Bool.not_not] at e1
       exact e1
 
-end SubstitutionSource
+end ALT
 
 /-! ## Axiom audit
 
 Every capstone above is `#print axioms`-clean on the standard triple or a subset of it, and the
 guards below make that build-enforced. -/
 
-set_option linter.style.longLine false
 
-/-- info: 'SubstitutionSource.subFix_four_mul' depends on axioms: [propext, Quot.sound] -/
+/-- info: 'ALT.subFix_four_mul' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms SubstitutionSource.subFix_four_mul
+#print axioms ALT.subFix_four_mul
 
-/-- info: 'SubstitutionSource.subFix_four_mul_add_one' depends on axioms: [propext, Quot.sound] -/
+/-- info: 'ALT.subFix_four_mul_add_one' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms SubstitutionSource.subFix_four_mul_add_one
+#print axioms ALT.subFix_four_mul_add_one
 
-/-- info: 'SubstitutionSource.subFix_four_mul_add_two' depends on axioms: [propext, Quot.sound] -/
+/-- info: 'ALT.subFix_four_mul_add_two' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms SubstitutionSource.subFix_four_mul_add_two
+#print axioms ALT.subFix_four_mul_add_two
 
-/-- info: 'SubstitutionSource.subFix_four_mul_add_three' depends on axioms: [propext, Quot.sound] -/
+/-- info: 'ALT.subFix_four_mul_add_three' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms SubstitutionSource.subFix_four_mul_add_three
+#print axioms ALT.subFix_four_mul_add_three
 
-/-- info: 'SubstitutionSource.subFix_block_sum' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.subFix_block_sum' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms SubstitutionSource.subFix_block_sum
+#print axioms ALT.subFix_block_sum
 
-/-- info: 'SubstitutionSource.subFix_block_lag1' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.subFix_block_lag1' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms SubstitutionSource.subFix_block_lag1
+#print axioms ALT.subFix_block_lag1
 
-/-- info: 'SubstitutionSource.subFix_block_lag2' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.subFix_block_lag2' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms SubstitutionSource.subFix_block_lag2
+#print axioms ALT.subFix_block_lag2
 
-/-- info: 'SubstitutionSource.subFix_sum_abs_le_two' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.subFix_sum_abs_le_two' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms SubstitutionSource.subFix_sum_abs_le_two
+#print axioms ALT.subFix_sum_abs_le_two
 
-/-- info: 'SubstitutionSource.subFix_lag1_sum_abs_le_three' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.subFix_lag1_sum_abs_le_three' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms SubstitutionSource.subFix_lag1_sum_abs_le_three
+#print axioms ALT.subFix_lag1_sum_abs_le_three
 
-/-- info: 'SubstitutionSource.subFix_lag2_sum_abs_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.subFix_lag2_sum_abs_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms SubstitutionSource.subFix_lag2_sum_abs_le
+#print axioms ALT.subFix_lag2_sum_abs_le
 
-/-- info: 'SubstitutionSource.subObs_four_mul' depends on axioms: [propext, Quot.sound] -/
+/-- info: 'ALT.subObs_four_mul' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms SubstitutionSource.subObs_four_mul
+#print axioms ALT.subObs_four_mul
 
-/-- info: 'SubstitutionSource.subObs_four_mul_add_one' depends on axioms: [propext, Quot.sound] -/
+/-- info: 'ALT.subObs_four_mul_add_one' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms SubstitutionSource.subObs_four_mul_add_one
+#print axioms ALT.subObs_four_mul_add_one
 
-/-- info: 'SubstitutionSource.subObs_four_mul_add_two' depends on axioms: [propext, Quot.sound] -/
+/-- info: 'ALT.subObs_four_mul_add_two' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms SubstitutionSource.subObs_four_mul_add_two
+#print axioms ALT.subObs_four_mul_add_two
 
-/-- info: 'SubstitutionSource.subObs_four_mul_add_three' depends on axioms: [propext, Quot.sound] -/
+/-- info: 'ALT.subObs_four_mul_add_three' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms SubstitutionSource.subObs_four_mul_add_three
+#print axioms ALT.subObs_four_mul_add_three
 
-/-- info: 'SubstitutionSource.subObs_single' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.subObs_single' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms SubstitutionSource.subObs_single
+#print axioms ALT.subObs_single
 
-/-- info: 'SubstitutionSource.subObs_pair' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.subObs_pair' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms SubstitutionSource.subObs_pair
+#print axioms ALT.subObs_pair
 
-/-- info: 'SubstitutionSource.not_eventuallyPeriodic_subFix' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.not_eventuallyPeriodic_subFix' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms SubstitutionSource.not_eventuallyPeriodic_subFix
+#print axioms ALT.not_eventuallyPeriodic_subFix
 
-/-- info: 'SubstitutionSource.not_eventuallyPeriodic_subObs' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.not_eventuallyPeriodic_subObs' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms SubstitutionSource.not_eventuallyPeriodic_subObs
+#print axioms ALT.not_eventuallyPeriodic_subObs

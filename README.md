@@ -135,9 +135,10 @@ narrow freely, while widening it requires an explicit, recorded decision.
 is pre-stabilization, and curating the public surface is part of the point —
 so a minor release may remove or privatize public names, and some already
 have. Two things make that livable: every release that loses a public name
-lists each one in its release notes rather than counting them, and the install
-snippet below pins a tag rather than a branch — nothing changes under you
-until you move the pin. Strict semantic versioning is intended from a future
+says so in its release notes — a name made private or removed is listed by
+name, and a rename is summarized by the rule it follows, with examples — and
+the install snippet below pins a tag rather than a branch — nothing changes
+under you until you move the pin. Strict semantic versioning is intended from a future
 2.0; there is no timeline for it. If a name you actually depend on goes, that
 is a good issue to open: a real consumer is a reason to keep something public
 that the closure cannot compute.
@@ -145,7 +146,15 @@ that the closure cannot compute.
 **If you are looking for reusable pieces** rather than a paper's machine-checked
 core, they are in lean-classical-upstream: the `Nat.Partrec.Code` evaluation
 laws Mathlib omits, `Nat.size` and pairing arithmetic, Boolean gates as codes,
-and the native cost model over `Nat.Partrec.Code`, built there as leaves.
+and the native cost model over `Nat.Partrec.Code`, built there over Mathlib alone.
+
+Every public name stands under the root namespace `ALT`, in the namespace of
+the object it is about, so dot notation reads it on a term or a proof of that
+object (`Fixes.iterate`, `Simulates.comp`, `RealizesBy.unique`,
+`BlockPairHost.traj_eq_obs`), or at `ALT` itself with its words when it is
+about no single object; theorems are in snake case and definitions in
+lower camel case, as in Mathlib. Below, names are given without the `ALT`
+prefix.
 
 Names follow the papers rather than local readability: where a paper writes
 `C_b^{H,u}` or `tc(·)`, the Lean spells it `CbHu` and `tc`, because the
@@ -296,12 +305,12 @@ replace them.
   in both directions, on witnesses. The repairs are pairwise independent but
   not jointly so: erasing every perturbation while never separating two
   memories forces a **single recurrent state**
-  (`omegaLimit_subsingleton_of_corrects`), and the boundary is guarded — at a
+  (`Corrects.omegaLimit_subsingleton`), and the boundary is guarded — at a
   radius reaching the whole memory, the only invariant reading distinguishes
   nothing. Separately, the decoupling equivalence holds verbatim on a
   monotonically *growing* code region, with an append-only witness showing
   the statement does not reduce to one fixed partition — and it has its first
-  theorem consumer, the committing substrate: `seqWrite` commits an arbitrary
+  theorem consumer, the committing substrate: `seqWriteNat` commits an arbitrary
   stream append-only, every committed cell held under every later iterate
   (`seqDecode_hereditary`), the permanent region in exact bijection with the
   prefix length (`tapeRegion_bijective`).
@@ -339,12 +348,12 @@ replace them.
   `GodelCheckerAutomaton.lean`).
 - **The deep ladder: the crossing recurs over each enlarged theory**
   (`DeepLadder.lean`, `ChaitinLadder.lean`, on the chain builder
-  `SelectorLadder.lean` of lean-classical-upstream): a chain builder parametric in a **rung selector** — a rule picking, at each theory
+  `TheoryProgression.lean` of lean-classical-upstream): a chain builder parametric in a **rung selector** — a rule picking, at each theory
   in the chain, a sentence
   true in `ℕ` and unprovable in it — with the theory appending that sentence
-  and the rung itself at every stage (`RungSelector`, `ladderTheory`, `rung`).
-  Every rung is true and unprovable in the theory it extends (`rung_true`,
-  `rung_unprovable`), the chain ascends strictly (`ladderTheory_lt_succ`),
+  and the rung itself at every stage (`SentenceSelector`, `progressionTheory`, `selectedSentence`).
+  Every rung is true and unprovable in the theory it extends (`selectedSentence_true`,
+  `selectedSentence_unprovable`), the chain ascends strictly (`progressionTheory_lt_succ`),
   and the internalization crossing recurs at every rung, hosted eventually and
   forever after (`ladder_outgrows`, `accreting_ladder`), under the ladder's
   own capacity bound (`ladder_card_le_at_budget`). Three selectors: a hidden
@@ -481,8 +490,8 @@ replace them.
   never misses and every threshold meeting the floor condition
   `C − 1 ≤ θ·(2^b + C − 1)` , the surprise count at every horizon plus `C`
   times the truth's start is at most `C·b` plus the competitors' start
-  (`registerClass_card_add_le_capacity`, its hypotheses met at
-  `registerClass_card_add_le_capacity_nonvacuous` ). The floored mixture is a
+  (`RegisterClass.card_add_le_capacity`, its hypotheses met at
+  `RegisterClass.card_add_le_capacity_nonvacuous` ). The floored mixture is a
   member (`expStep_registerClass`), its run and surprise set the landed ones
   (`stepRun_expStep`, `stepSurpriseSet_expStep` ), and so is a reset learner
   whose missing candidates return to the floor at a rescale (`resetStep`,
@@ -509,18 +518,18 @@ replace them.
   by the Thue–Morse sign); a finite autonomous host — a counter paired with
   the noisy window chain — whose orbit provably emits that sequence and
   returns after one full period from **every** state
-  (`hostUpdate_iterate_period_all`); concentration of the emitted process at
+  (`BlockPairHost.update_iterate_period_all`); concentration of the emitted process at
   every bounded query on its uniform phase law
   (`mixingHoeffding_of_deviation_bound`); and membership in the learning
   route-class `𝒮_L` proved on the machine's own dynamics
-  (`hostWitness_substrateL`). The same host, re-packed onto the pricing
+  (`BlockPairHost.witness_substrateL`). The same host, re-packed onto the pricing
   machinery's numeral carrier, is a member of the emergence route-class as
-  well: `hostWitness_overlap` states both memberships from a common threshold
+  well: `BlockPairHost.witness_overlap` states both memberships from a common threshold
   — the first `𝒮_E` inhabitant in this development, and the first system in
   both route-classes at once. Its rule is an exhibited program: the packed
   step proved primitive recursive and extracted from universality, so the
   grown guest is owned within an absolute constant plus `O(log Π)` with no
-  imported code parameter (`hostOwned_cheap`). Registered as *Inevitability*
+  imported code parameter (`BlockPairHost.card_orbit_le_cbHue_cheap`). Registered as *Inevitability*
   Theorem 5.8, rows IN-37…IN-39. Boundary: reaching the threshold, not
   survival by margin (the host's core dynamics is a permutation); constants
   are the ones the proofs derive.
@@ -530,7 +539,7 @@ replace them.
   `TapeHostSurvival.lean`, `BlockPairCriterion.lean`): the same architecture
   with its observation sequence a parameter and a window-deviation **profile**
   as hypotheses. From the profile alone, the whole scheduled query class
-  mixes at `(2S + W a)² / (2 ln 2)`, and `tapeHost_overlap` puts every
+  mixes at `(2S + W a)² / (2 ln 2)`, and `TapeHost.overlap` puts every
   admissible sequence's host in both route-classes at one numeral set, one
   Gödel size outside every period (*Inevitability* Proposition 5.9). On every
   such host the scheduled SQ oracle is exact from an explicit horizon — no
@@ -542,7 +551,7 @@ replace them.
   (`TapeHostFiber.lean`), and a `P`-copy redundant fiber added as extra
   memory carries **survival**: both memberships transport to the composite,
   and under any confined damage schedule with `c · (n · η + W₀/2) < P` some
-  copy is never touched (`comp_carries_survival`, `tapeHost_carries_survival`;
+  copy is never touched (`comp_carries_survival`, `TapeHost.carries_survival`;
   *Inevitability* Propositions 6.10–6.11). Boundary: one architecture,
   parametric in the sequence — not a statement about hosts in general;
   survival in the redundancy form, at a horizon, conditional on the named
@@ -559,7 +568,7 @@ replace them.
   (`tower_rung_identifies`). Registered as *Inevitability* Proposition 6.13,
   row IN-52. Boundary: finite; the rung's rule identified, not its update; no
   ownership clause (the rung law is not a permutation); level 2 cited from
-  `hostWitness_overlap`, not composed onto the tower.
+  `BlockPairHost.witness_overlap`, not composed onto the tower.
 - **A second certified rung, and the differing-rules rung pair**
   (`ShiftedSpikeCriterion.lean`, `ShiftedSpikeHost.lean`,
   `ShiftedSpikeTower.lean`): the second certified word pair of
@@ -571,13 +580,13 @@ replace them.
   parametrized at an arbitrary literal, `schedSurvivors_eq_singleton_at`). A
   lag-`6` host carries it — the fresh window bit complementing cell `2` where
   the certified host's complements cell `0` — and its witness substrate
-  reproduces the design along its own orbit (`readObs_iterate_loadHost2`);
+  reproduces the design along its own orbit (`ShiftedSpikeHost.readObs_iterate_load2`);
   re-read as a tower's rung law, the schedule isolates literal `2` on the
   tower exactly as on the host (`towerWorld2`, `tower_rung_identifies2`). The
   capstone puts both rungs together (`descending_pair_commits`): two towers,
   two identified rules, `0` and `2`, differing, and equal to the entries of a
   two-entry stream (`literalStream`) that the committing substrate's
-  `seqWrite` holds under every later step — the composition the single rung
+  `seqWriteNat` holds under every later step — the composition the single rung
   declined at a constant stream is a theorem at the first non-constant one.
   Registered as *Inevitability* Proposition 6.15, row IN-53. Boundary: two
   rungs in two towers, sequenced by the stream, not one tower descended
@@ -592,7 +601,7 @@ replace them.
   still** (`GrowingWorld.lean`, over `MergeQuotient.lean` of
   lean-elementary-cellular-automata, `AccretingWitness.lean`,
   `AccretingExcess.lean`): stage-indexed worlds whose updates advance finite
-  stages, closed under lawful factors (`advances_guestStage`), with the
+  stages, closed under lawful factors (`positivelyInvariant_imageFiber`), with the
   fixed-carrier theory recovered at constant stages. That a reading of a
   growing world must see the stage is a theorem, not a convention: over an
   append-only tape the stage-blind reading admits no guest law at all
@@ -650,10 +659,10 @@ replace them.
   `√n`-scaled envelope profile (`EnvelopeProfileNat`) — the hypothesis shape
   the discrepancy dichotomy hands a primitive constant-length substitution
   with a strict spectral gap — with both consumers generalized: mixing at the
-  envelope constant (`envelope_mixingHoeffding`) and the sharp identification
-  window at a squared horizon (`schedSurvivors_eq_singleton_envelope`). The
+  envelope constant (`EnvelopeProfileNat.mixingHoeffding`) and the sharp identification
+  window at a squared horizon (`EnvelopeProfileNat.schedSurvivors_eq_singleton`). The
   declared trend data is canonical given any envelope
-  (`envelope_trend_unique`), and the landed instance inhabits the class
+  (`EnvelopeProfileNat.trend_unique`), and the landed instance inhabits the class
   hypothesis unconditionally. Boundary: the class enters through the envelope
   hypothesis alone — the dichotomy that delivers it for a strict-spectral
   member is a citation (Adamczewski 2004), not machine-checked content; no
@@ -663,7 +672,7 @@ replace them.
   tape that writes one fresh cell per step, rather than consuming a
   pre-written record — with the realization theorem unconditional (nothing
   reads the code, so no invariant is carried along the orbit), and the
-  membership capstone `growingHostWitness_substrateL`: the append-only host
+  membership capstone `GrowingHost.witness_substrateL`: the append-only host
   is a member of `𝒮_L`, its observability drawn from its own emitted process.
   The world grows, and what it grows is its own oracle. Boundary: the code
   region is read-only by construction but carries no computational role — it
@@ -675,26 +684,26 @@ replace them.
   growing world eventually merge when some iterate identifies them, and the
   quotient carries an induced law that is injective with no hypothesis at all
   (`mergeLaw_injective`) and closes the staged square at every stage family
-  (`stagedSquare_merge`). Every injective-law staged reading factors through
-  it (`merges_invariant_of_stagedSquare`, `exists_mergeMk_injective`), so its
+  (`semiconj_merge`). Every injective-law staged reading factors through
+  it (`Semiconj.merges_invariant`, `exists_mergeMk_injective`), so its
   retained profile is the exact ceiling on every conservation guest's extent;
   at a finite constant-stage host it is in bijection with the recurrent core
   (`mergeQuotCoreEquiv`), and robustness is merging by construction — the
   accreting witness's one-step erasure is a one-step merge
-  (`accMerges_of_accErasure`). The witness's crossing generalizes from its own
+  (`accMerges_of_accUpdate_eq_of_sum_lt`). The witness's crossing generalizes from its own
   budget `t + 1` to any monotone unbounded budget profile
   (`eventually_hosts_uniform`). Boundary: no pricing and no ownership claim —
   an affordable canonical-representative selector stays a named hypothesis at
   paper level, and identifying a guest's stage budget with its bit count is
   the interpretive step owed there.
 - **The accreting witness's memory width** (`MemoryWidthWitness.lean`, over
-  `MemoryWidth.lean` of lean-elementary-cellular-automata): the accreting
+  `ReachabilityWidth.lean` of lean-elementary-cellular-automata): the accreting
   witness's width is at least `2^(t+1)` in any environment
   (`memWidth_accreting_ge`), exact at a trivial one
   (`memWidth_accreting_eq_of_trivialEnv`), and the crossing composes from the
   width (`eventually_hosts_uniform_of_accreting_memWidth`).
 - **The floored mixture against a law's misses** (`HindsightMixture.lean`, over
-  `HindsightCount.lean` of lean-elementary-cellular-automata): over a finite
+  `MarkovErrorCount.lean` of lean-elementary-cellular-automata): over a finite
   family of laws on the last `k` readings, a bound on one member's misses
   bounds the floored mixture's surprise count free of the horizon
   (`floorSurprise_card_mul_le_of_lawMisses_le`, the bound
@@ -742,12 +751,12 @@ replace them.
   read off the habitat's own length, so the decoded word at stage `t` is
   exactly the observation prefix (`seamOrbit_fst`). The emergence package
   transports with no hypothesis on `o` (`seam_outgrows_paMinus`); a packed
-  realization folds the habitat into one `Decoupling.Mem` whose own
+  realization folds the habitat into one `Mem` whose own
   observation cell reproduces `o` along its orbit
-  (`seamHostSubstrateTraj_eq_obs`); the packed carrier is a member of `𝒮_L`
+  (`SeamHost.substrateTraj_eq_obs`); the packed carrier is a member of `𝒮_L`
   at any envelope-profile source, its E1 drawn from the envelope theorem on
-  its own process (`seamHostWitness_substrateL`), and a member of `𝒮_E` at any
-  `o` whatever, at the same numerals (`seamHostWitness_substrateE`). The
+  its own process (`SeamHost.witness_substrateL`), and a member of `𝒮_E` at any
+  `o` whatever, at the same numerals (`SeamHost.witness_substrateE`). The
   overlap bundle ties the two at the same dynamics (`growingSeam_overlap`),
   and the substitution instance is recovered exactly
   (`growingSeam_overlap_subObs`). Boundary: the packed realization drops the

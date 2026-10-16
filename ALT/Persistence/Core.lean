@@ -1,8 +1,3 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Mathlib.Data.Fintype.Pigeonhole
@@ -12,15 +7,13 @@ public import Mathlib.Tactic.FinCases
 public import Mathlib.Tactic.Ring
 public import ALT.Decoupling
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # Persistence capacity I: the recurrent core and the absolute ceiling ([Decoupling] §3.5)
 
 Part one of the `PersistenceCapacity` development. The umbrella module `ALT.PersistenceCapacity`
 imports all four parts; its docstring carries the capacity-name key and the map of the whole
-development, and every part shares the `PersistenceCapacity` namespace.
+development, and every part declares its names at `ALT`, a theorem under the predicate it takes.
 
 A finite world is a state space `X` with an update `U : X → X`. This module owns the dynamics
 underneath every capacity statement — the **recurrent core** — and the ceiling it imposes on any
@@ -56,9 +49,7 @@ time-dependent decoder, however powerful.
 
 @[expose] public section
 
-namespace PersistenceCapacity
-
-open Decoupling
+namespace ALT
 
 variable {X ι V M : Type*}
 
@@ -368,7 +359,7 @@ theorem capacity_core_iff [Finite X] [Fintype M] [Nonempty M] {U : X → X} :
 (Corollary 3.3). -/
 def Fix (U : Mem ι V → Mem ι V) : Set ι := {a | ∀ s, U s a = s a}
 
-/-- `U` is read-only on `Fix U` (`Decoupling.Fixes`), by definition. -/
+/-- `U` is read-only on `Fix U` (`ALT.Fixes`), by definition. -/
 private theorem fixes_fix (U : Mem ι V → Mem ι V) : Fixes U (Fix U) := fun _ _ ha => ha _
 
 /-- **The static capacity never exceeds the moving one** ([Decoupling] §3.5(i)). The number of
@@ -403,7 +394,7 @@ theorem static_le_moving [Finite ι] [Fintype V] (U : Mem ι V → Mem ι V) :
       set t : Mem ι V := fun a => if h : a ∈ Fix U then v ⟨a, h⟩ else s₀ a with ht
       refine ⟨⟨U^[N] t, by rw [hcore]; exact ⟨t, Set.mem_univ _, rfl⟩⟩, ?_⟩
       funext a
-      have h1 : (U^[N] t) (a : ι) = t (a : ι) := fixes_iterate (fixes_fix U) N t (a : ι) a.2
+      have h1 : (U^[N] t) (a : ι) = t (a : ι) := Fixes.iterate (fixes_fix U) N t (a : ι) a.2
       have h2 : t (a : ι) = v a := by simp only [ht, dite_eq_left a.2, Subtype.coe_eta]
       change (U^[N] t) (a : ι) = v a
       rw [h1, h2]
@@ -477,7 +468,7 @@ private theorem iterate_mem_omegaLimit [Finite X] (U : X → X) {B : Set X} (hB 
 basin `B`: the decoded model settles along every orbit from `B` **iff** `U` is read-only on `R` over
 the ω-limit set. Relaxing persistence to eventual persistence does not escape the Total-Overwrite
 Exclusion — it relocates it from the whole memory to `ω B`. [Decoupling] §3, Proposition 3.4
-(`Decoupling.decoupling_iff_persists_on`) is the case `ω B = B`.
+(`ALT.decoupling_iff_persists_on`) is the case `ω B = B`.
 
 The `⇒` direction argues through the limit cycle: a state of `ω B` is periodic (`exists_period`),
 and a settling sequence along a cycle is constant on it — so the model is preserved in ONE step
@@ -519,7 +510,7 @@ theorem eventual_decoupling_iff [Finite ι] [Finite V] {U : Mem ι V → Mem ι 
       rw [Nat.add_comm, Function.iterate_add_apply]
     rw [hrw, hval j]
 
-/-- Coherence: [Decoupling] §3, Proposition 3.4 (`Decoupling.decoupling_iff_persists_on`) is the
+/-- Coherence: [Decoupling] §3, Proposition 3.4 (`ALT.decoupling_iff_persists_on`) is the
 case `ω B = B` — a basin already equal to its own ω-limit set, where "settles eventually" and
 "persists at every step" coincide. -/
 example [Finite ι] [Finite V] {U : Mem ι V → Mem ι V} {R : Set ι} {decode : Mem ι V → M}
@@ -798,4 +789,4 @@ theorem hierarchy [Finite ι] [Finite V] (U : Mem ι V → Mem ι V) :
       Nat.card (Quotient (orbitSetoid U)) ≤ Nat.card ↥(core U) :=
   ⟨fix_le_components U, components_le_core U⟩
 
-end PersistenceCapacity
+end ALT

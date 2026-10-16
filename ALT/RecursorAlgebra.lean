@@ -1,8 +1,3 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Mathlib.AlgebraicTopology.SimplexCategory.Basic
@@ -10,16 +5,13 @@ public import Mathlib.CategoryTheory.Endofunctor.Algebra
 public import Mathlib.Combinatorics.Quiver.ReflQuiver
 public import Mathlib.Data.Fintype.Sum
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
-set_option linter.style.header false
-set_option linter.style.longLine false
 
 /-!
 # A genuine, discriminating initial algebra for the bounded recursor ([Decoupling] §5)
 
 Provenance: [Decoupling] §5 (bounded recursor).
 Companion / upgrade to the FV-17 material in `ALT/RepFintype.lean`
-(`ParameterizedNNO.ParamNNO.recursorCone_isInitial`).
+(`ALT.ParamNNO.recursorConeIsInitial`).
 
 ## Why this is sharper than FV-17
 FV-17 states initiality of the recursor in a category of *recursion cones* whose hom-order is
@@ -33,7 +25,7 @@ morphisms are honest algebra homomorphisms (functions commuting with the structu
 `Prop`s. Distinct algebras give distinct recursors, so uniqueness is a real **induction over the
 orbit**, not `Subsingleton`. This is the discriminating universal property FV-17 could not express.
 
-## Honest boundary (`ParameterizedNNO.no_true_nno`)
+## Honest boundary (`ALT.no_true_nno`)
 The unrestricted initial algebra of `F X = 𝟙 ⊕ X` is `ℕ` (an infinite object), and `no_true_nno`
 proves *no finite* state space carries such a true NNO. So a finite carrier is **never** initial in
 all of `Endofunctor.Algebra succEndo`. We therefore restrict to the **full subcategory of
@@ -48,7 +40,7 @@ induction.
 
 @[expose] public section
 
-namespace RecursorAlgebra
+namespace ALT.TypeRecursorAlgebra
 
 open CategoryTheory CategoryTheory.Limits
 
@@ -114,7 +106,8 @@ form avoids `Fin` wrap-around bookkeeping.) -/
 def boundedSucc (M : ℕ) (k : Fin (M + 1)) : Fin (M + 1) :=
   ⟨min (k.val + 1) M, by omega⟩
 
-/-- The candidate algebra: carrier `Fin (M+1)`, basepoint `0`, successor the saturating successor. -/
+/-- The candidate algebra: carrier `Fin (M+1)`, basepoint `0`, successor the saturating successor.
+-/
 def boundedAlg (M : ℕ) : Endofunctor.Algebra succEndo where
   a := Fin (M + 1)
   str := ↾(Sum.elim (fun _ : PUnit => (0 : Fin (M + 1))) (boundedSucc M))
@@ -168,7 +161,7 @@ def boundedInitialAlgebra (M : ℕ) : SatAlg M where
 
 /-- The underlying map of the unique morphism `boundedAlg M ⟶ alg`: the bounded recursor
 `k ↦ sᵏ z`. This is the saturating (`Fin`) counterpart of the wrapping (`ZMod`)
-`ParameterizedNNO.cyclicParamNNO`. -/
+`cyclicParamNNO`. -/
 def rec (M : ℕ) (alg : Endofunctor.Algebra succEndo) : Fin (M + 1) → alg.a :=
   fun k => (s alg)^[k.val] (z alg)
 
@@ -177,7 +170,7 @@ def rec (M : ℕ) (alg : Endofunctor.Algebra succEndo) : Fin (M + 1) → alg.a :
 
 /-- The successor-square identity, using `Sat`: `s (sᵏ z) = s^{min (k+1) M} z`. For `k < M` the RHS
 is `sᵏ⁺¹ z`; at `k = M` the RHS is `sᴹ z` and the identity is exactly `Sat M alg`. -/
-lemma iterate_succ_sat (M : ℕ) (alg : Endofunctor.Algebra succEndo) (hsat : Sat M alg)
+lemma Sat.iterate_succ (M : ℕ) (alg : Endofunctor.Algebra succEndo) (hsat : Sat M alg)
     (k : Fin (M + 1)) :
     s alg ((s alg)^[k.val] (z alg)) = (s alg)^[min (k.val + 1) M] (z alg) := by
   rcases lt_or_eq_of_le (Nat.lt_succ_iff.mp k.isLt) with hlt | heq
@@ -194,7 +187,7 @@ lemma square_pointwise (M : ℕ) (alg : Endofunctor.Algebra succEndo) (hsat : Sa
   · cases u
     exact (rec_zero M alg).symm
   · change s alg ((s alg)^[k.val] (z alg)) = (s alg)^[min (k.val + 1) M] (z alg)
-    exact iterate_succ_sat M alg hsat k
+    exact Sat.iterate_succ M alg hsat k
 
 /-- The bounded recursor **is** an algebra homomorphism `boundedAlg M ⟶ alg`, for every saturating
 `alg` (existence half of initiality). -/
@@ -263,16 +256,17 @@ Honesty (three points):
 * **(a) Genuine & discriminating.** Morphisms here are honest algebra homomorphisms, not `Prop`s
   (contrast FV-17's thin cone category, where initiality is `Subsingleton.elim`). Distinct algebras
   give distinct recursors, so uniqueness is a real induction over the orbit.
-* **(b) Only in the subcategory.** Initiality holds **only** in the saturating subcategory `SatAlg M`,
-  **not** in all of `Endofunctor.Algebra succEndo`: the unrestricted initial `𝟙 ⊕ (·)`-algebra is
-  `ℕ`, and `ParameterizedNNO.no_true_nno` proves no finite carrier is a true NNO. Correspondingly the
-  structure map is **not** an isomorphism here (`boundedAlg_str_not_injective`), so Lambek's
-  `Endofunctor.Algebra.Initial.str_isIso` — which needs initiality in the *whole* algebra category —
-  does not apply; a true (Lambek-iso-structure) initial `𝟙 ⊕ (·)`-algebra would be the infinite `ℕ`.
+* **(b) Only in the subcategory.** Initiality holds **only** in the saturating subcategory
+  `SatAlg M`, **not** in all of `Endofunctor.Algebra succEndo`: the unrestricted initial
+  `𝟙 ⊕ (·)`-algebra is `ℕ`, and `no_true_nno` proves no finite carrier is a true
+  NNO. Correspondingly the structure map is **not** an isomorphism here
+  (`boundedAlg_str_not_injective`), so Lambek's `Endofunctor.Algebra.Initial.str_isIso` — which
+  needs initiality in the *whole* algebra category — does not apply; a true (Lambek-iso-structure)
+  initial `𝟙 ⊕ (·)`-algebra would be the infinite `ℕ`.
 * **(c) Sharper-but-narrower.** A saturating successor and a restricted target class — a sharper
   (discriminating, non-thin) but narrower universal property than FV-17's arbitrary-target
   relativized recursor. -/
-def boundedInitialAlgebra_isInitial (M : ℕ) : IsInitial (boundedInitialAlgebra M) :=
+def boundedInitialAlgebraIsInitial (M : ℕ) : IsInitial (boundedInitialAlgebra M) :=
   IsInitial.ofUniqueHom
     (fun Y => ObjectProperty.homMk (toSatHom M Y.obj Y.property))
     (fun Y m => by
@@ -282,7 +276,7 @@ def boundedInitialAlgebra_isInitial (M : ℕ) : IsInitial (boundedInitialAlgebra
 
 /-- The unique morphism out of the initial object has underlying map the bounded recursor
 `k ↦ sᵏ z` — the saturating (`Fin`) counterpart of the wrapping (`ZMod`)
-`ParameterizedNNO.cyclicParamNNO`. -/
+`cyclicParamNNO`. -/
 lemma toSatHom_f_apply (M : ℕ) (alg : Endofunctor.Algebra succEndo) (hsat : Sat M alg)
     (k : Fin (M + 1)) : (toSatHom M alg hsat).f k = (s alg)^[k.val] (z alg) := rfl
 
@@ -299,4 +293,4 @@ theorem boundedAlg_str_not_injective (M : ℕ) :
   simp only [Fintype.card_sum, Fintype.card_fin, Fintype.card_punit] at hle
   omega
 
-end RecursorAlgebra
+end ALT.TypeRecursorAlgebra

@@ -1,17 +1,8 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.GradedConjugation
 public import ALT.DecoupledSimulation
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter, and of the
--- long-line linter, whose limit the hypothesis-carrying dependent types below cannot meet.
-set_option linter.style.header false
-set_option linter.style.longLine false
 
 /-!
 # Grading a decoupled simulation: the hosting-induced assembly map ([Decoupling] §4.5)
@@ -34,10 +25,10 @@ mechanism.)
 `GradedSimulates` is the structural `Simulates` together with one `CodedReading` per frame, all
 sharing a single budget `b` (uniform across frames). It carries data — the codes — so it is a
 structure, not a proposition. For a frame `t` and a pair of `GuestCoded` assemblies (assemblies
-whose realizers are `encG`-images, so the reading's retraction discharges the pullback's hypothesis),
-`inducedMap` transports a graded morphism `[A ⇒ B]_g` to `[A' ⇒ B']_{4·max g b + 9}`, where `A'`,
-`B'` are the guest assemblies pulled back along the frame's reading (`gradedPullback`). The map does
-not touch the underlying function (`inducedMap_fn`).
+whose realizers are `encG`-images, so the reading's retraction discharges the pullback's
+hypothesis), `inducedMap` transports a graded morphism `[A ⇒ B]_g` to `[A' ⇒ B']_{4·max g b + 9}`,
+where `A'`, `B'` are the guest assemblies pulled back along the frame's reading (`gradedPullback`).
+The map does not touch the underlying function (`inducedMap_fn`).
 
 ## The price is (g, b), not (g, b, τ)
 The dilation `τ` prices *time* — it multiplies along a tower of hosting squares ([Persistence]
@@ -62,11 +53,11 @@ constant `4 · max g b + 9`.
 
 @[expose] public section
 
-namespace GradedSimulation
+namespace ALT
 
 open Nat.Partrec (Code)
 open Nat.Partrec.Code
-open RealizabilityCCC GradedApplication GradedConjugation TimeCost
+open RealizabilityCCC TimeCost
 
 /-! ## The identity code's value map -/
 
@@ -74,17 +65,18 @@ open RealizabilityCCC GradedApplication GradedConjugation TimeCost
 theorem rfindFree_id : RfindFree Code.id := ⟨trivial, trivial⟩
 
 /-- The value map of `Code.id` is the identity: reading an index by `Code.id` returns it unchanged.
-Obtained from `Code.eval_id` through value-agreement (`eval_eq_val`) on the `rfind'`-free fragment. -/
+Obtained from `Code.eval_id` through value-agreement (`eval_eq_val`) on the `rfind'`-free fragment.
+-/
 theorem val_id (n : ℕ) : val Code.id n = n :=
   Part.some_inj.mp ((eval_eq_val rfindFree_id n).symm.trans (Code.eval_id n))
 
 /-! ## The coded reading -/
 
 /-- **A coded reading of `ℓ` at budget `b`.** A retraction pair of codes `(c_read, c_sect)`, both in
-the `rfind'`-free fragment and both of index length at most `b`: `c_read` reads a host index `encH x`
-to the guest index `encG (ℓ x)` it names (`bridge`), and `c_sect` sections a guest index back so that
-`c_read` recovers it (`retr`). This is the per-frame datum a capacity-respecting simulation supplies
-beyond its structural square. -/
+the `rfind'`-free fragment and both of index length at most `b`: `c_read` reads a host index
+`encH x` to the guest index `encG (ℓ x)` it names (`bridge`), and `c_sect` sections a guest index
+back so that `c_read` recovers it (`retr`). This is the per-frame datum a capacity-respecting
+simulation supplies beyond its structural square. -/
 structure CodedReading {H G : Type*} (encH : H → ℕ) (encG : G → ℕ) (ℓ : H → G) (b : ℕ) where
   /-- the reading code: a host index to the guest index it names. -/
   c_read : Code
@@ -95,9 +87,9 @@ structure CodedReading {H G : Type*} (encH : H → ℕ) (encG : G → ℕ) (ℓ 
   /-- the section code is `rfind'`-free. -/
   sect_rf : RfindFree c_sect
   /-- the reading code fits the budget. -/
-  read_bitlen : Realizability.bitlen c_read ≤ b
+  read_bitlen : ALT.bitlen c_read ≤ b
   /-- the section code fits the budget. -/
-  sect_bitlen : Realizability.bitlen c_sect ≤ b
+  sect_bitlen : ALT.bitlen c_sect ≤ b
   /-- `c_read` reads a host index to the guest index the reading names. -/
   bridge : ∀ x, val c_read (encH x) = encG (ℓ x)
   /-- `c_read` recovers any sectioned guest index — the retraction identity on guest indices. -/
@@ -109,8 +101,9 @@ retraction (`CodedReading.retr`, stated over `encG`-images) discharges the pullb
 def GuestCoded {G : Type*} (encG : G → ℕ) (A : Asm) : Prop :=
   ∀ (a : A.carrier) (m : ℕ), A.realizes m a → ∃ x : G, m = encG x
 
-/-- On a `GuestCoded` assembly, the reading's guest-side retraction holds at *every* realizer in use:
-each is an `encG`-image, where `retr` applies. This is what feeds `pullbackAsm`'s hypothesis. -/
+/-- On a `GuestCoded` assembly, the reading's guest-side retraction holds at *every* realizer in
+use: each is an `encG`-image, where `retr` applies. This is what feeds `pullbackAsm`'s hypothesis.
+-/
 theorem guest_retr {G : Type*} {encG : G → ℕ} {A : Asm} (hA : GuestCoded encG A)
     {c_read c_sect : Code} (retr : ∀ xG : G, val c_read (val c_sect (encG xG)) = encG xG) :
     ∀ (a : A.carrier) (m : ℕ), A.realizes m a → val c_read (val c_sect m) = m :=
@@ -119,12 +112,12 @@ theorem guest_retr {G : Type*} {encG : G → ℕ} {A : Asm} (hA : GuestCoded enc
 /-! ## The graded simulation and its induced assembly map -/
 
 /-- **A graded decoupled simulation.** The structural `Simulates` (`ALT/DecoupledSimulation.lean`)
-together with one coded reading per frame, all at a single uniform budget `b`. It carries the reading
-codes as data, so it is a structure rather than a proposition. -/
+together with one coded reading per frame, all at a single uniform budget `b`. It carries the
+reading codes as data, so it is a structure rather than a proposition. -/
 structure GradedSimulates {C W C' W' : Type*} (U' : C' × W' → C' × W') (U : C × W → C × W)
     (ℓ : ℕ → C' × W' → C × W) (τ : ℕ) (encH : C' × W' → ℕ) (encG : C × W → ℕ) (b : ℕ) where
   /-- the underlying structural simulation. -/
-  sim : DecoupledSimulation.Simulates U' U ℓ τ
+  sim : ALT.Simulates U' U ℓ τ
   /-- a coded reading of every frame's reading map, at the uniform budget `b`. -/
   readings : ∀ t, CodedReading encH encG (ℓ t) b
 
@@ -139,11 +132,13 @@ noncomputable def GradedSimulates.inducedMap {C W C' W' : Type*} {U' : C' × W' 
     {U : C × W → C × W} {ℓ : ℕ → C' × W' → C × W} {τ : ℕ} {encH : C' × W' → ℕ} {encG : C × W → ℕ}
     {b : ℕ} (S : GradedSimulates U' U ℓ τ encH encG b) (t : ℕ)
     {A B : Asm} {g : ℕ} (hA : GuestCoded encG A) (hB : GuestCoded encG B)
-    (f : (gradedExp g A B).carrier) :
-    (gradedExp (4 * max g b + 9)
-        (pullbackAsm A (S.readings t).c_read (S.readings t).c_sect (guest_retr hA (S.readings t).retr))
-        (pullbackAsm B (S.readings t).c_read (S.readings t).c_sect (guest_retr hB (S.readings t).retr))).carrier :=
-  gradedPullback (S.readings t).read_rf (S.readings t).sect_rf
+    (f : (ALT.gradedExp g A B).carrier) :
+    (ALT.gradedExp (4 * max g b + 9)
+        (ALT.pullbackAsm A (S.readings t).c_read (S.readings t).c_sect
+            (guest_retr hA (S.readings t).retr))
+        (ALT.pullbackAsm B (S.readings t).c_read (S.readings t).c_sect
+            (guest_retr hB (S.readings t).retr))).carrier :=
+  ALT.gradedPullback (S.readings t).read_rf (S.readings t).sect_rf
     (S.readings t).read_bitlen (S.readings t).sect_bitlen
     (guest_retr hA (S.readings t).retr) (guest_retr hB (S.readings t).retr) f
 
@@ -153,15 +148,15 @@ theorem GradedSimulates.inducedMap_fn {C W C' W' : Type*} {U' : C' × W' → C' 
     {U : C × W → C × W} {ℓ : ℕ → C' × W' → C × W} {τ : ℕ} {encH : C' × W' → ℕ} {encG : C × W → ℕ}
     {b : ℕ} (S : GradedSimulates U' U ℓ τ encH encG b) (t : ℕ)
     {A B : Asm} {g : ℕ} (hA : GuestCoded encG A) (hB : GuestCoded encG B)
-    (f : (gradedExp g A B).carrier) :
-    fn (S.inducedMap t hA hB f) = fn f := rfl
+    (f : (ALT.gradedExp g A B).carrier) :
+    ALT.fn (S.inducedMap t hA hB f) = ALT.fn f := rfl
 
 /-! ## Non-vacuity: the identity hosting, graded -/
 
 /-- The identity reading, coded by `Code.id` (`val Code.id = id`), at any encoding. This is the
 reading that enriches `Simulates.id`. -/
 def CodedReading.id {G : Type*} (encG : G → ℕ) :
-    CodedReading encG encG _root_.id (Realizability.bitlen Code.id) where
+    CodedReading encG encG _root_.id (ALT.bitlen Code.id) where
   c_read := Code.id
   c_sect := Code.id
   read_rf := rfindFree_id
@@ -175,8 +170,8 @@ def CodedReading.id {G : Type*} (encG : G → ℕ) :
 (`Simulates.id`); coding that reading by `Code.id` at budget `bitlen Code.id` enriches it to a
 `GradedSimulates`. -/
 def GradedSimulates.id {C W : Type*} (U : C × W → C × W) (encG : C × W → ℕ) :
-    GradedSimulates U U (fun _ => _root_.id) 1 encG encG (Realizability.bitlen Code.id) where
-  sim := DecoupledSimulation.Simulates.id U
+    GradedSimulates U U (fun _ => _root_.id) 1 encG encG (ALT.bitlen Code.id) where
+  sim := ALT.Simulates.id U
   readings := fun _ => CodedReading.id encG
 
 /-- **Non-vacuity probe.** At the identity hosting the induced map is inhabited and preserves the
@@ -185,12 +180,12 @@ graded exponential computing the same map. Stating this forces `inducedMap` to e
 identity, so the construction is not vacuous. -/
 theorem inducedMap_id_fn {C W : Type*} (U : C × W → C × W) (encG : C × W → ℕ)
     {A B : Asm} {g : ℕ} (hA : GuestCoded encG A) (hB : GuestCoded encG B)
-    (f : (gradedExp g A B).carrier) :
-    fn ((GradedSimulates.id U encG).inducedMap 0 hA hB f) = fn f :=
+    (f : (ALT.gradedExp g A B).carrier) :
+    ALT.fn ((GradedSimulates.id U encG).inducedMap 0 hA hB f) = ALT.fn f :=
   (GradedSimulates.id U encG).inducedMap_fn 0 hA hB f
 
-/-- A cheap non-degeneracy check: the identity reading's value map is genuinely the identity, not the
-constant-zero map. -/
+/-- A cheap non-degeneracy check: the identity reading's value map is genuinely the identity, not
+the constant-zero map. -/
 example : val Code.id 1 ≠ 0 := by rw [val_id]; decide
 
-end GradedSimulation
+end ALT

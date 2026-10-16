@@ -1,15 +1,8 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Mathlib.Data.Fintype.CardEmbedding
 public import ALT.Persistence.Counting
-public import CellularAutomata.MemoryWidth
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
+public import Nonautonomous.ReachabilityWidth
 
 /-!
 # The pricing economy's growing form: the counting core ([Persistence] §6, §7; [Guests] §7)
@@ -17,7 +10,7 @@ set_option linter.style.header false
 `ALT.Persistence.Counting` prices a description-bounded observer of a FIXED carrier — the graded
 ledger (Theorem 6.4) and the Collapse Theorem (Theorem 7.3) are both stated over permutations of a
 fixed `n`-state core. `[Guests]` §7 gives the corpus its growing carrier (the merge quotient's
-retained profile, `GrowingCore.mergeStage`) but no priced economy over it: Proposition 7.4 there
+retained profile, `Nonautonomous.mergeFiber`) but no priced economy over it: Proposition 7.4 there
 disclaims carrying over its finite branch's pricing and ownership clauses for a guest, and
 `[Persistence]`'s fixed-carrier economy has no growing counterpart at all.
 The two fixed-carrier theorems transport by two different routes, because they rest on two different
@@ -33,14 +26,14 @@ invertible.
 This module states the counting core at bare enumerated finite types (`Fin n ↪ Fin m`), exactly as
 `ALT.Persistence.Counting` states the fixed-carrier collapse at `Perm (Fin n)` rather than at an
 abstract world. Connecting a particular growing world's stages to these numerals needs the
-finiteness hypothesis a general stage family does not carry (`ALT.GrowingWorld.Advances` has none)
-threaded explicitly at each stage — `stageLawEmb` and `collapse_union_growing` below take exactly
-that step, at a chosen enumeration of the two retained profiles named finite.
+finiteness hypothesis a general stage family does not carry (`Nonautonomous.PositivelyInvariant`
+has none) threaded explicitly at each stage — `stageLawEmb` and `collapse_union_growing` below take
+exactly that step, at a chosen enumeration of the two retained profiles named finite.
 
 An earlier round of this module landed a hypothesis-form collapse quantified over ALL affordable
 frame pairs; that quantifier is VACUOUS — a coarse (constant) frame is always affordable and always
 admits the whole law population, so no deductible bound `D` short of the population itself can ever
-satisfy it. `PersistenceCapacity.collapse_union` (`[Persistence] §7`, Corollary 7.4) faces exactly
+satisfy it. `ALT.collapse_union` (`[Persistence] §7`, Corollary 7.4) faces exactly
 this at a fixed carrier and answers it by tuning the budget PER FRAME to that frame's own carried
 entropy and summing with the Kraft inequality rather than fixing one uniform deductible: transported
 here, that excludes the constant frame outright, because its deductible IS the whole population.
@@ -61,12 +54,12 @@ empty — the property the deleted hypothesis-form bound never had.
   factorials where Theorem 6.4's coset term has ordinary factorials.
 * `card_stageLaws_self` / `card_lawsConsistentWith_self` — **the constant-stage recovery**: at equal
   carrier sizes and equal frames, both counts collapse to their fixed-carrier originals
-  (`Fintype.card_perm`'s count and `PersistenceCapacity.card_stabilizer_lens`'s coset term), by
+  (`Fintype.card_perm`'s count and `ALT.card_stabilizer_lens`'s coset term), by
   `Nat.descFactorial_self` alone — the degenerate case that makes the growing counts genuine
   generalizations rather than a coincidence of shape.
 * `kraft_lensCode` — **the Kraft sum over frames**: `lensCode` is injective at any FIXED domain and
   codomain, so the object-indexed Kraft inequality reindexes along it directly — no restriction to
-  surjective lenses is needed, unlike `PersistenceCapacity.collapse_union`'s own Kraft step, which
+  surjective lenses is needed, unlike `ALT.collapse_union`'s own Kraft step, which
   must recover injectivity across VARYING codomains.
 * `collapse_union_staged` — **the Kraft union collapse, pair form**: since no later frame is
   determined, the growing bound sums the exact per-pair count over ALL frame pairs at once —
@@ -84,8 +77,8 @@ empty — the property the deleted hypothesis-form bound never had.
   frame pair consistent with a candidate, capped outside a `2^{-d}` fraction at `2b + d + 2` —
   proved, like `collapse_union_staged`, at a fixed label count rather than by a union over every
   count.
-* `stageLawEmb` — **the stage law, transported**: `GrowingCore.advances_mergeStage` and
-  `GrowingCore.mergeStage_injOn` assembled, at a chosen enumeration of the two retained
+* `stageLawEmb` — **the stage law, transported**: `Nonautonomous.positivelyInvariant_mergeFiber` and
+  `Nonautonomous.mergeFiber_injOn` assembled, at a chosen enumeration of the two retained
   profiles, into the embedding the numerals below need.
 * `collapse_union_growing` — **the collapse, at a growing world**: `collapse_union_staged` read at
   `stageLawEmb`'s own domain and codomain, together with the fact that the growing world's own
@@ -102,7 +95,7 @@ empty — the property the deleted hypothesis-form bound never had.
   holds every affordable pair to that bound, one line from `CbHs_collapse` at `d = 1`.
 * `collapse_union_growing_natSucc_slowClock` — **the guard**: `collapse_union_growing` instantiated
   at the successor world's initial-segment stages, an already-landed world, with `t + 1` and `t + 2`
-  falling straight out of `MemoryWidth.mergeStage_nat_succ_slowClock_encard`.
+  falling straight out of `Nonautonomous.mergeFiber_nat_succ_slow_clock_encard`.
 * `telescopeU`, `telescopeΩ`, `advances_telescopeU`, `mergeStage_telescope_finite`,
   `mergeStage_telescope_ncard`, `telescope_realizes_lawSequence` — **the telescope**: the
   construction [Guests] §7 Theorem 7.11's boundary paragraph names but the artifact did not build —
@@ -117,26 +110,27 @@ enumeration, a validity predicate, a `Primrec` encoding builder) rebuilt at an e
 place of `PersistenceCapacity`'s permutation numeral, machinery on the scale of
 `ALT.Persistence.Counting`'s own graded-ledger section rather than an addition to it.
 
-The bridge from a particular growing world's stages (`ALT.GrowingWorld.Advances`,
-`GrowingCore.mergeStage`) to the bare numerals this module counts IS taken, by `stageLawEmb` and
+The bridge from a particular growing world's stages (`Nonautonomous.PositivelyInvariant`,
+`Nonautonomous.mergeFiber`) to the bare numerals this module counts IS taken, by `stageLawEmb` and
 `collapse_union_growing` below. The stage-to-stage injection a growing world's own law supplies is
-already exactly `GrowingCore.mergeStage_injOn` composed with
-`GrowingCore.advances_mergeStage`, and building the embedding from it needs nothing further — an
-earlier note here predicted `MemoryWidth.reaches_mergeLaw` would be the one further fact a
-growing carrier needs, but the landed bridge does not consume it: reachability under the INDUCED
-law is a different question from the one stage-to-stage step this bridge transports. The transported
-statement is relative to a CHOSEN enumeration of the two retained profiles (`Set.Finite.toFinset`) —
-the same enumeration-relativity `[Persistence]` §2.1's encoding convention already carries and
-`[Persistence]` §5's `C_b` is stated against — and it prices only the stage-to-stage law itself: it
-is silent about the world's law on states outside the two named profiles.
+already exactly `Nonautonomous.mergeFiber_injOn` composed with
+`Nonautonomous.positivelyInvariant_mergeFiber`, and building the embedding from it needs nothing
+further — an earlier note here predicted `Nonautonomous.Reaches.mergeLaw` would be the one
+further fact a growing carrier needs, but the landed bridge does not consume it: reachability under
+the INDUCED law is a different question from the one stage-to-stage step this bridge transports. The
+transported statement is relative to a CHOSEN enumeration of the two retained profiles
+(`Set.Finite.toFinset`) — the same enumeration-relativity `[Persistence]` §2.1's encoding convention
+already carries and `[Persistence]` §5's `C_b` is stated against — and it prices only the
+stage-to-stage law itself: it is silent about the world's law on states outside the two named
+profiles.
 -/
 
 
 @[expose] public section
 
-namespace GrowingPrice
+namespace ALT
 
-open PersistenceCapacity AdditiveComplexity GrowingWorld GrowingCore MemoryWidth MulAction
+open AdditiveComplexity Nonautonomous MulAction
 open scoped Nat
 
 -- `orbit`/`•` on lenses is `PersistenceCapacity`'s relabelling action (`(U • ℓ) x = ℓ (U⁻¹ x)`,
@@ -144,7 +138,7 @@ open scoped Nat
 -- `section Collapse`, so it is re-opened here for the same reason `FrameItinerary.lean` does.
 attribute [local instance] arrowAction
 
-/-- `(U • ℓ) x = ℓ (U⁻¹ x)`, restated because `PersistenceCapacity.smul_lens_apply` is
+/-- `(U • ℓ) x = ℓ (U⁻¹ x)`, restated because `ALT.smul_lens_apply` is
 file-private. -/
 private theorem smul_lens_apply' {α β : Type*} (U : Equiv.Perm α) (ℓ : α → β) (x : α) :
     (U • ℓ) x = ℓ (U⁻¹ x) := rfl
@@ -190,7 +184,7 @@ theorem card_stageLaws (n m : ℕ) : Nat.card (Fin n ↪ Fin m) = m.descFactoria
 of frames `(ℓ, ℓ')` restricts, fibre by fibre, to an embedding of `ℓ`'s fibre into `ℓ'`'s matching
 fibre, and conversely a fibrewise family of embeddings assembles into one global embedding by
 `Function.Embedding.sigmaMap` composed with the domain's and codomain's own fibre decompositions
-(`Equiv.sigmaFiberEquiv`) — the same fibre bookkeeping `PersistenceCapacity.stabEquivPi` runs at a
+(`Equiv.sigmaFiberEquiv`) — the same fibre bookkeeping `ALT.stabEquivPi` runs at a
 single permutation stabilizer, generalized here to two different fibre families. -/
 private noncomputable def consistentEquivPi {n m k : ℕ} (ℓ : Fin n → Fin k) (ℓ' : Fin m → Fin k) :
     {μ : Fin n ↪ Fin m // ∀ q, ℓ' (μ q) = ℓ q}
@@ -216,7 +210,7 @@ private noncomputable def consistentEquivPi {n m k : ℕ} (ℓ : Fin n → Fin k
 
 /-- **The deductible, exact** ([Persistence] §6, Theorem 6.4's proof, transported): at a permutation
 world the worlds carrying a fixed frame `ℓ_0` to a given later frame `ℓ_1` form one coset of `ℓ_0`'s
-fibre stabilizer, of size `∏ᵢ (fiberᵢ)!` (`PersistenceCapacity.card_stabilizer_lens`). At a growing
+fibre stabilizer, of size `∏ᵢ (fiberᵢ)!` (`ALT.card_stabilizer_lens`). At a growing
 world the later frame `ℓ'` need not determine — and, by `exists_ne_frames_agreeing_on_range`, in
 general does not determine — a unique embedding; what survives is that the embeddings consistent
 with a GIVEN pair `(ℓ, ℓ')` are exactly the maps carrying each `ℓ`-fibre injectively into the
@@ -245,7 +239,7 @@ theorem card_stageLaws_self (n : ℕ) : Nat.card (Fin n ↪ Fin n) = n ! :=
 
 /-- **The constant-stage recovery, deductible side**: at `m = n` and `ℓ' = ℓ`,
 `card_lawsConsistentWith`'s falling factorials collapse, again by `Nat.descFactorial_self`, to the
-ordinary factorials of `PersistenceCapacity.card_stabilizer_lens` — Theorem 6.4's coset term
+ordinary factorials of `ALT.card_stabilizer_lens` — Theorem 6.4's coset term
 exactly, recovered as the degenerate case rather than assumed. This is the sentence that makes the
 growing counts genuine generalizations of the finite collapse rather than a coincidence of shape. -/
 theorem card_lawsConsistentWith_self {n k : ℕ} (ℓ : Fin n → Fin k) :
@@ -256,7 +250,7 @@ theorem card_lawsConsistentWith_self {n k : ℕ} (ℓ : Fin n → Fin k) :
 
 /-! ## The Kraft-weighted union, staged -/
 
-/-- `PersistenceCapacity.lensCode_injective`, re-derived: it is private to
+/-- `ALT.lensCode_injective`, re-derived: it is private to
 `ALT.Persistence.Counting` and this module needs it at its own two domain sizes. -/
 private theorem lensCode_injective' {p q : ℕ} :
     Function.Injective (lensCode (n := p) (m := q)) := by
@@ -269,7 +263,7 @@ private theorem lensCode_injective' {p q : ℕ} :
 
 /-- **The Kraft sum over frames, at a fixed domain and codomain** ([Persistence] §7, Corollary
 7.4's Kraft step, transported): `lensCode` is injective at any FIXED `(p, q)`
-(`lensCode_injective'`), so — unlike `PersistenceCapacity.collapse_union`'s own Kraft step, which
+(`lensCode_injective'`), so — unlike `ALT.collapse_union`'s own Kraft step, which
 must first restrict to SURJECTIVE lenses to recover injectivity across VARYING codomains — no such
 restriction is needed here: reindexing the object-indexed Kraft inequality
 `AdditiveComplexity.kraft_KE` along `lensCode` bounds the frame-indexed sum directly.
@@ -290,8 +284,8 @@ theorem kraft_lensCode (p q : ℕ) :
     _ ≤ 1 := kraft_sum_le_one _
 
 /-- **The Kraft union collapse, pair form** ([Persistence] §7, Corollary 7.4, transported): summing
-the per-pair bound over ALL pairs of frames at once — as `PersistenceCapacity.collapse_union` sums
-`PersistenceCapacity.collapse_union_frame` over reference frames — except TWO Kraft factors enter
+the per-pair bound over ALL pairs of frames at once — as `ALT.collapse_union` sums
+`ALT.collapse_union_frame` over reference frames — except TWO Kraft factors enter
 rather than one, because a growing stage law pays for BOTH ends of the pair
 (`exists_ne_frames_agreeing_on_range`: no single frame determines the other, so nothing here can be
 priced off one reference frame the way a permutation world's second frame is). For every `d`, the
@@ -456,7 +450,7 @@ private theorem exists_pow_lt_factorial (A B : ℕ) : ∃ N, 2 ^ (A * N + B) < N
 property the deleted hypothesis-form bound never had. At `n = m = k = N` and `ℓ = ℓ' = id`,
 consistency forces `μ = id` (`μ q = q` for every `q` pins the embedding down completely), so the
 count is exactly `1` against the full population `N !` (`Nat.descFactorial_self`); `id`'s own cost
-is `O (Nat.size N)` (`PersistenceCapacity.rangeCode`, `lensCode_id`,
+is `O (Nat.size N)` (`ALT.rangeCode`, `lensCode_id`,
 `AdditiveComplexity.invariance_general`), and `N !` beats any FIXED rate of exponential growth in
 `N` (`exists_pow_lt_factorial`), so a large enough `N` clears the qualifying threshold with
 `d := 0` to spare. -/
@@ -586,7 +580,7 @@ The staged capacity is stated at its full, unbounded-label-count generality, mat
 7.12's own "a frame pair `(ℓ, ℓ')`" verbatim. Its cap, `CbHs_collapse` below, is proved — like
 `collapse_union_staged` itself — at a FIXED label count `k` rather than by a union over every `k`:
 `kraft_lensCode`'s Kraft step is injective only at a fixed codomain, and recovering it across
-varying codomains needs surjectivity (`PersistenceCapacity.collapse_union`'s own route), which
+varying codomains needs surjectivity (`ALT.collapse_union`'s own route), which
 neither `StagedBudgetedEntropies` nor its cap assumes. This is the same modelling choice
 `collapse_union_staged`'s own docstring already makes for Theorem 7.11(v); `CbHs_collapse_growing`
 below inherits it in the same shape `collapse_union_growing` inherits `collapse_union_staged`'s. -/
@@ -625,7 +619,7 @@ private theorem bddAbove_stagedBudgetedEntropies {n m : ℕ} (μ : Fin n ↪ Fin
 
 /-- **The staged capacity's cap, at a fixed label count** ([Guests] §7, Theorem 7.13(ii);
 `collapse_union_staged` folded with the two frames' budgets, exactly as `CbH_collapse` folds
-`PermBudget`'s two frame costs into `PersistenceCapacity.collapse_union`): outside a `2 ^ (-d)`
+`PermBudget`'s two frame costs into `ALT.collapse_union`): outside a `2 ^ (-d)`
 fraction of the candidates, every consistent pair `(ℓ, ℓ')` at label count `k` costing at most `b`
 bits each has `Nat.card (orbit ℓ) ≤ 2 ^ (2 * b + d + 2)` — the deduction is one line from
 `orbit_mul_deductible_le`: the deductible is non-zero because `μ` is itself consistent with the
@@ -653,31 +647,32 @@ theorem CbHs_collapse {n m : ℕ} (k b d : ℕ) :
 
 /-! ## The bridge: a particular growing world's stage law, transported -/
 
-/-- **The stage law, transported** ([Guests] §7, Definition 7.1 for `Advances`, Definition 7.6 for
-`mergeStage`): a growing world's own stage-to-stage law — `GrowingCore.mergeLaw` restricted from the
-stage-`t` retained profile to the stage-`(t + 1)` one, `MapsTo` from `advances_mergeStage` and
-`InjOn` from `mergeStage_injOn` — transported along a CHOSEN enumeration of the two profiles
-(`Set.Finite.toFinset`, via `hf`/`hf'`) into the embedding numeral `collapse_union_growing` below
-prices. The object depends on that enumeration: a different choice gives a different embedding,
-though the same numerals `hf.toFinset.card`/`hf'.toFinset.card` — the same enumeration-relativity
-`[Persistence]` §2.1's encoding convention already carries and `[Persistence]` §5's `C_b` is stated
-against. -/
-noncomputable def stageLawEmb {X : Type*} {U : X → X} {Ω : ℕ → Set X} (hadv : Advances U Ω) (t : ℕ)
-    (hf : (mergeStage U Ω t).Finite) (hf' : (mergeStage U Ω (t + 1)).Finite) :
+/-- **The stage law, transported** ([Guests] §7, Definition 7.1 for `PositivelyInvariant`,
+Definition 7.6 for `mergeFiber`): a growing world's own stage-to-stage law —
+`Nonautonomous.mergeLaw` restricted from the stage-`t` retained profile to the stage-`(t + 1)` one,
+`MapsTo` from `positivelyInvariant_mergeFiber` and `InjOn` from `mergeFiber_injOn` — transported
+along a CHOSEN enumeration of the two profiles (`Set.Finite.toFinset`, via `hf`/`hf'`) into the
+embedding numeral `collapse_union_growing` below prices. The object depends on that enumeration: a
+different choice gives a different embedding, though the same numerals
+`hf.toFinset.card`/`hf'.toFinset.card` — the same enumeration-relativity `[Persistence]` §2.1's
+encoding convention already carries and `[Persistence]` §5's `C_b` is stated against. -/
+noncomputable def stageLawEmb {X : Type*} {U : X → X} {Ω : ℕ → Set X}
+    (hadv : PositivelyInvariant U Ω) (t : ℕ)
+    (hf : (mergeFiber U Ω t).Finite) (hf' : (mergeFiber U Ω (t + 1)).Finite) :
     Fin hf.toFinset.card ↪ Fin hf'.toFinset.card := by
   haveI := hf.fintype
   haveI := hf'.fintype
-  set e1 : ↥(mergeStage U Ω t) ≃ Fin hf.toFinset.card :=
+  set e1 : ↥(mergeFiber U Ω t) ≃ Fin hf.toFinset.card :=
     (Fintype.equivFin _).trans
-      (finCongr ((Nat.card_eq_fintype_card (α := ↥(mergeStage U Ω t))).symm.trans
+      (finCongr ((Nat.card_eq_fintype_card (α := ↥(mergeFiber U Ω t))).symm.trans
         (Nat.card_eq_card_finite_toFinset hf))) with he1
-  set e2 : ↥(mergeStage U Ω (t + 1)) ≃ Fin hf'.toFinset.card :=
+  set e2 : ↥(mergeFiber U Ω (t + 1)) ≃ Fin hf'.toFinset.card :=
     (Fintype.equivFin _).trans
-      (finCongr ((Nat.card_eq_fintype_card (α := ↥(mergeStage U Ω (t + 1)))).symm.trans
+      (finCongr ((Nat.card_eq_fintype_card (α := ↥(mergeFiber U Ω (t + 1)))).symm.trans
         (Nat.card_eq_card_finite_toFinset hf'))) with he2
-  set emb : ↥(mergeStage U Ω t) ↪ ↥(mergeStage U Ω (t + 1)) :=
-    ⟨fun x => ⟨mergeLaw U x.1, advances_mergeStage hadv t x.1 x.2⟩,
-     fun x y hxy => Subtype.ext (mergeStage_injOn U Ω t x.2 y.2 (congrArg Subtype.val hxy))⟩
+  set emb : ↥(mergeFiber U Ω t) ↪ ↥(mergeFiber U Ω (t + 1)) :=
+    ⟨fun x => ⟨mergeLaw U x.1, positivelyInvariant_mergeFiber hadv t x.1 x.2⟩,
+     fun x y hxy => Subtype.ext (mergeFiber_injOn U Ω t x.2 y.2 (congrArg Subtype.val hxy))⟩
     with hemb
   exact e1.symm.toEmbedding.trans (emb.trans e2.toEmbedding)
 
@@ -690,9 +685,10 @@ prices; without `hadv` that population could be empty (`hf.toFinset.card > hf'.t
 the bound would hold of nothing. This is what makes the conclusion a statement about `(U, Ω)` at
 stage `t`, relative to the same chosen enumeration `stageLawEmb`'s docstring names: it prices the
 stage-to-stage law of the presented growing world `(X, U, Ω)`, and it is silent about `U`'s law on
-states outside the two retained profiles `mergeStage U Ω t`/`mergeStage U Ω (t + 1)` name. -/
-theorem collapse_union_growing {X : Type*} {U : X → X} {Ω : ℕ → Set X} (hadv : Advances U Ω)
-    (t d : ℕ) (hf : (mergeStage U Ω t).Finite) (hf' : (mergeStage U Ω (t + 1)).Finite) {k : ℕ} :
+states outside the two retained profiles `mergeFiber U Ω t`/`mergeFiber U Ω (t + 1)` name. -/
+theorem collapse_union_growing {X : Type*} {U : X → X} {Ω : ℕ → Set X}
+    (hadv : PositivelyInvariant U Ω)
+    (t d : ℕ) (hf : (mergeFiber U Ω t).Finite) (hf' : (mergeFiber U Ω (t + 1)).Finite) {k : ℕ} :
     Nonempty (Fin hf.toFinset.card ↪ Fin hf'.toFinset.card) ∧
     {μ : Fin hf.toFinset.card ↪ Fin hf'.toFinset.card | ∃ (ℓ : Fin hf.toFinset.card → Fin k)
        (ℓ' : Fin hf'.toFinset.card → Fin k),
@@ -709,7 +705,7 @@ theorem collapse_union_growing {X : Type*} {U : X → X} {Ω : ℕ → Set X} (h
 the floor holds uniformly in the stage law rather than needing the law to be a member of any
 group. -/
 
-/-- A marked point is read as its own label, restated because `PersistenceCapacity.markingLens_mark`
+/-- A marked point is read as its own label, restated because `ALT.markingLens_mark`
 is file-private. -/
 private theorem markingLens_mark' {r n : ℕ} {x : Fin r → Fin n} (hx : Function.Injective x)
     (j : Fin r) : markingLens x (x j) = j.succ := by
@@ -717,7 +713,7 @@ private theorem markingLens_mark' {r n : ℕ} {x : Fin r → Fin n} (hx : Functi
   rw [markingLens, dite_eq_left h]
   exact congrArg Fin.succ (hx h.choose_spec)
 
-/-- An unmarked point is read as `0`, restated because `PersistenceCapacity.markingLens_unmark` is
+/-- An unmarked point is read as `0`, restated because `ALT.markingLens_unmark` is
 file-private. -/
 private theorem markingLens_unmark' {r n : ℕ} {x : Fin r → Fin n} {i : Fin n}
     (h : ¬∃ j, x j = i) : markingLens x i = 0 := by
@@ -792,8 +788,9 @@ world's own stage law, in `collapse_union_growing`'s own shape): `CbHs_collapse`
 own domain and codomain sizes, together with the fact that the world's stage law is one genuine
 inhabitant of the population it prices — the same pairing `collapse_union_growing` performs for
 `collapse_union_staged`. -/
-theorem CbHs_collapse_growing {X : Type*} {U : X → X} {Ω : ℕ → Set X} (hadv : Advances U Ω)
-    (t k b d : ℕ) (hf : (mergeStage U Ω t).Finite) (hf' : (mergeStage U Ω (t + 1)).Finite) :
+theorem CbHs_collapse_growing {X : Type*} {U : X → X} {Ω : ℕ → Set X}
+    (hadv : PositivelyInvariant U Ω)
+    (t k b d : ℕ) (hf : (mergeFiber U Ω t).Finite) (hf' : (mergeFiber U Ω (t + 1)).Finite) :
     Nonempty (Fin hf.toFinset.card ↪ Fin hf'.toFinset.card) ∧
     {μ : Fin hf.toFinset.card ↪ Fin hf'.toFinset.card |
        ∃ ℓ : Fin hf.toFinset.card → Fin k, ∃ ℓ' : Fin hf'.toFinset.card → Fin k,
@@ -1226,8 +1223,9 @@ theorem CbHs_collapse_uniform {n m : ℕ} (b d : ℕ) :
 /-- **The alphabet-uniform cap, at a growing world** ([Guests] §7 Theorem 7.13's extension, read at
 a growing world's own stage law): `CbHs_collapse_uniform` at `stageLawEmb`'s own domain and
 codomain sizes, in `CbHs_collapse_growing`'s own shape. -/
-theorem CbHs_collapse_uniform_growing {X : Type*} {U : X → X} {Ω : ℕ → Set X} (hadv : Advances U Ω)
-    (t b d : ℕ) (hf : (mergeStage U Ω t).Finite) (hf' : (mergeStage U Ω (t + 1)).Finite) :
+theorem CbHs_collapse_uniform_growing {X : Type*} {U : X → X} {Ω : ℕ → Set X}
+    (hadv : PositivelyInvariant U Ω)
+    (t b d : ℕ) (hf : (mergeFiber U Ω t).Finite) (hf' : (mergeFiber U Ω (t + 1)).Finite) :
     Nonempty (Fin hf.toFinset.card ↪ Fin hf'.toFinset.card) ∧
     {μ : Fin hf.toFinset.card ↪ Fin hf'.toFinset.card |
        2 ^ (2 * b + elen rankBuilder + d + 8) < CbHs μ b}.ncard * 2 ^ d
@@ -1237,29 +1235,29 @@ theorem CbHs_collapse_uniform_growing {X : Type*} {U : X → X} {Ω : ℕ → Se
 /-! ## The guard: a real growing world reaches the bridge -/
 
 /-- The successor world's initial-segment stages advance: `s ≤ t` gives `s + 1 ≤ t + 1`. The
-cheapest already-landed instance for `collapse_union_growing`'s guard — `MemoryWidth.lean` computes
-this world's retained profile already. -/
-private theorem advances_natSucc_slowClock : Advances Nat.succ (fun t => Set.Iic t) :=
+cheapest already-landed instance for `collapse_union_growing`'s guard — `ReachabilityWidth.lean`
+computes this world's retained profile already. -/
+private theorem advances_natSucc_slowClock : PositivelyInvariant Nat.succ (fun t => Set.Iic t) :=
   fun _t _s hs => Nat.succ_le_succ (Set.mem_Iic.mp hs)
 
 /-- The successor world's stage-`t` retained profile is finite: its `encard` is the finite value
-`t + 1` (`mergeStage_nat_succ_slowClock_encard`), never `⊤`. -/
+`t + 1` (`mergeFiber_nat_succ_slow_clock_encard`), never `⊤`. -/
 private theorem finite_mergeStage_natSucc_slowClock (t : ℕ) :
-    (mergeStage Nat.succ (fun t => Set.Iic t) t).Finite := by
-  rw [← Set.encard_ne_top_iff, mergeStage_nat_succ_slowClock_encard]
+    (mergeFiber Nat.succ (fun t => Set.Iic t) t).Finite := by
+  rw [← Set.encard_ne_top_iff, mergeFiber_nat_succ_slow_clock_encard]
   exact_mod_cast (ENat.natCast_lt_top t.succ).ne
 
 /-- The chosen enumeration's count matches the paper's own `t + 1`, read off the same `encard`
 equation that supplies finiteness. -/
 private theorem card_finite_mergeStage_natSucc_slowClock (t : ℕ) :
     (finite_mergeStage_natSucc_slowClock t).toFinset.card = t + 1 := by
-  have h := mergeStage_nat_succ_slowClock_encard t
+  have h := mergeFiber_nat_succ_slow_clock_encard t
   rw [Set.Finite.encard_eq_coe_toFinset_card (finite_mergeStage_natSucc_slowClock t)] at h
   exact_mod_cast h
 
 /-- **The guard** ([Guests] §7 Theorem 7.11(vi)): `collapse_union_growing` instantiated at the
-successor world's initial-segment stages, an already-landed world (`MemoryWidth.lean`'s
-`mergeStage_nat_succ_slowClock_encard`), with `n = t + 1` and `m = t + 2` falling straight out of
+successor world's initial-segment stages, an already-landed world (`ReachabilityWidth.lean`'s
+`mergeFiber_nat_succ_slow_clock_encard`), with `n = t + 1` and `m = t + 2` falling straight out of
 that world's own retained-profile count — some real growing world reaches the transported collapse,
 not merely types against it. -/
 theorem collapse_union_growing_natSucc_slowClock (t d : ℕ) {k : ℕ} :
@@ -1295,7 +1293,7 @@ def telescopeΩ (ns : ℕ → ℕ) (t : ℕ) : Set (Σ t, Fin (ns t)) := {s | s.
 /-- **The telescope advances**: `U` raises the summand index by exactly one, whatever `lam` does
 inside it. -/
 theorem advances_telescopeU {ns : ℕ → ℕ} (lam : ∀ t, Fin (ns t) ↪ Fin (ns (t + 1))) :
-    Advances (telescopeU lam) (telescopeΩ ns) := by
+    PositivelyInvariant (telescopeU lam) (telescopeΩ ns) := by
   intro t s hs
   have hs' : s.1 = t := hs
   change (telescopeU lam s).1 = t + 1
@@ -1354,14 +1352,14 @@ private theorem telescopeΩ_ncard (ns : ℕ → ℕ) (t : ℕ) : (telescopeΩ ns
 /-- **The `t`-th retained profile is finite.** -/
 theorem mergeStage_telescope_finite {ns : ℕ → ℕ}
     (lam : ∀ t, Fin (ns t) ↪ Fin (ns (t + 1))) (t : ℕ) :
-    (mergeStage (telescopeU lam) (telescopeΩ ns) t).Finite :=
+    (mergeFiber (telescopeU lam) (telescopeΩ ns) t).Finite :=
   (telescopeΩ_finite ns t).image _
 
 /-- **The `t`-th retained profile numbers `ns t`**: no merging happens at all
 (`telescope_mergeMk_injective`), so the profile's count is the stage's own count
 (`telescopeΩ_ncard`). -/
 theorem mergeStage_telescope_ncard {ns : ℕ → ℕ} (lam : ∀ t, Fin (ns t) ↪ Fin (ns (t + 1))) (t : ℕ) :
-    (mergeStage (telescopeU lam) (telescopeΩ ns) t).ncard = ns t := by
+    (mergeFiber (telescopeU lam) (telescopeΩ ns) t).ncard = ns t := by
   change (mergeMk (telescopeU lam) '' telescopeΩ ns t).ncard = ns t
   rw [Set.ncard_image_of_injective _ (telescope_mergeMk_injective lam), telescopeΩ_ncard]
 
@@ -1379,7 +1377,7 @@ private noncomputable def telescopeEquivC {ns : ℕ → ℕ} (lam : ∀ t, Fin (
   Equiv.Set.image _ _ (telescope_mergeMk_injective lam)
 
 /-- The composed enumeration, typed against the raw image (the shape the pieces above compose to
-— `telescopeFullEquiv` below retypes it against `mergeStage`, which needs its own `.trans` step,
+— `telescopeFullEquiv` below retypes it against `mergeFiber`, which needs its own `.trans` step,
 because the two types are only DEFINITIONALLY equal and an ascription mismatch here breaks the
 `simp` computation of `telescopeFullEquiv0_coe`). -/
 private noncomputable def telescopeFullEquiv0 {ns : ℕ → ℕ}
@@ -1394,12 +1392,12 @@ private theorem telescopeFullEquiv0_coe {ns : ℕ → ℕ} (lam : ∀ t, Fin (ns
   simp [telescopeFullEquiv0, telescopeEquivA, telescopeEquivB, telescopeEquivC, Equiv.trans_apply,
     Equiv.Set.image_apply, Set.equivOfEq_apply, Equiv.ofInjective_apply]
 
-/-- **The chosen enumeration** `stageLawEmb`'s own docstring names: `mergeStage`'s stage-`t`
+/-- **The chosen enumeration** `stageLawEmb`'s own docstring names: `mergeFiber`'s stage-`t`
 retained profile enumerated by the telescope's own construction, `⟨t, ·⟩` composed with the
 merge quotient's reading. -/
 private noncomputable def telescopeFullEquiv {ns : ℕ → ℕ} (lam : ∀ t, Fin (ns t) ↪ Fin (ns (t + 1)))
     (t : ℕ) :
-    Fin (ns t) ≃ ↥(mergeStage (telescopeU lam) (telescopeΩ ns) t) :=
+    Fin (ns t) ≃ ↥(mergeFiber (telescopeU lam) (telescopeΩ ns) t) :=
   (telescopeFullEquiv0 lam t).trans (Set.equivOfEq rfl)
 
 private theorem telescopeFullEquiv_coe {ns : ℕ → ℕ} (lam : ∀ t, Fin (ns t) ↪ Fin (ns (t + 1)))
@@ -1418,9 +1416,9 @@ enumeration's stage-`t` reading is the enumeration's stage-`(t + 1)` reading of 
 private theorem telescopeFullEquiv_succ {ns : ℕ → ℕ} (lam : ∀ t, Fin (ns t) ↪ Fin (ns (t + 1)))
     (t : ℕ) (q : Fin (ns t)) :
     (⟨mergeLaw (telescopeU lam) (telescopeFullEquiv lam t q).1,
-      advances_mergeStage (advances_telescopeU lam) t (telescopeFullEquiv lam t q).1
+      positivelyInvariant_mergeFiber (advances_telescopeU lam) t (telescopeFullEquiv lam t q).1
         (telescopeFullEquiv lam t q).2⟩ :
-      ↥(mergeStage (telescopeU lam) (telescopeΩ ns) (t + 1)))
+      ↥(mergeFiber (telescopeU lam) (telescopeΩ ns) (t + 1)))
       = telescopeFullEquiv lam (t + 1) (lam t q) := by
   apply Subtype.ext
   change mergeLaw (telescopeU lam) (telescopeFullEquiv lam t q).1 =
@@ -1434,14 +1432,14 @@ embedding it composes, verbatim — the general fact any two calls to `stageLawE
 `hf`/`hf'` share, needed because those two equivalences are otherwise opaque outside the
 definition (a `Classical.choice`-derived enumeration, not a formula). -/
 private theorem stageLawEmb_factorization {X : Type*} {U : X → X} {Ω : ℕ → Set X}
-    (hadv : Advances U Ω) (t : ℕ) (hf : (mergeStage U Ω t).Finite)
-    (hf' : (mergeStage U Ω (t + 1)).Finite) :
-    ∃ (p1 : ↥(mergeStage U Ω t) ≃ Fin hf.toFinset.card)
-      (p2 : ↥(mergeStage U Ω (t + 1)) ≃ Fin hf'.toFinset.card),
+    (hadv : PositivelyInvariant U Ω) (t : ℕ) (hf : (mergeFiber U Ω t).Finite)
+    (hf' : (mergeFiber U Ω (t + 1)).Finite) :
+    ∃ (p1 : ↥(mergeFiber U Ω t) ≃ Fin hf.toFinset.card)
+      (p2 : ↥(mergeFiber U Ω (t + 1)) ≃ Fin hf'.toFinset.card),
       stageLawEmb hadv t hf hf' = p1.symm.toEmbedding.trans
-        ((⟨fun x => ⟨mergeLaw U x.1, advances_mergeStage hadv t x.1 x.2⟩,
-           fun x y hxy => Subtype.ext (mergeStage_injOn U Ω t x.2 y.2 (congrArg Subtype.val hxy))⟩ :
-          ↥(mergeStage U Ω t) ↪ ↥(mergeStage U Ω (t + 1))).trans p2.toEmbedding) := by
+        ((⟨fun x => ⟨mergeLaw U x.1, positivelyInvariant_mergeFiber hadv t x.1 x.2⟩,
+           fun x y hxy => Subtype.ext (mergeFiber_injOn U Ω t x.2 y.2 (congrArg Subtype.val hxy))⟩ :
+          ↥(mergeFiber U Ω t) ↪ ↥(mergeFiber U Ω (t + 1))).trans p2.toEmbedding) := by
   unfold stageLawEmb
   extract_lets ie1 ihe1 ie2 ihe2 iemb ihemb
   exact ⟨ie1, ie2, rfl⟩
@@ -1450,12 +1448,12 @@ private theorem stageLawEmb_factorization {X : Type*} {U : X → X} {Ω : ℕ �
 that choice on both ends, `stageLawEmb` agrees with `mergeLaw` — `stageLawEmb_factorization`
 applied to a point and its `Equiv.symm_apply_apply` cancelled against itself. -/
 private theorem stageLawEmb_apply_eq {X : Type*} {U : X → X} {Ω : ℕ → Set X}
-    (hadv : Advances U Ω) (t : ℕ) (hf : (mergeStage U Ω t).Finite)
-    (hf' : (mergeStage U Ω (t + 1)).Finite) :
-    ∃ (p1 : ↥(mergeStage U Ω t) ≃ Fin hf.toFinset.card)
-      (p2 : ↥(mergeStage U Ω (t + 1)) ≃ Fin hf'.toFinset.card),
-      ∀ x : ↥(mergeStage U Ω t), stageLawEmb hadv t hf hf' (p1 x) =
-        p2 ⟨mergeLaw U x.1, advances_mergeStage hadv t x.1 x.2⟩ := by
+    (hadv : PositivelyInvariant U Ω) (t : ℕ) (hf : (mergeFiber U Ω t).Finite)
+    (hf' : (mergeFiber U Ω (t + 1)).Finite) :
+    ∃ (p1 : ↥(mergeFiber U Ω t) ≃ Fin hf.toFinset.card)
+      (p2 : ↥(mergeFiber U Ω (t + 1)) ≃ Fin hf'.toFinset.card),
+      ∀ x : ↥(mergeFiber U Ω t), stageLawEmb hadv t hf hf' (p1 x) =
+        p2 ⟨mergeLaw U x.1, positivelyInvariant_mergeFiber hadv t x.1 x.2⟩ := by
   obtain ⟨p1, p2, hfact⟩ := stageLawEmb_factorization hadv t hf hf'
   refine ⟨p1, p2, fun x => ?_⟩
   rw [hfact]
@@ -1465,18 +1463,19 @@ private theorem stageLawEmb_apply_eq {X : Type*} {U : X → X} {Ω : ℕ → Set
 
 /-- **The telescope realizes every injection sequence** ([Guests] §7 Theorem 7.11's boundary,
 *"Growth does not sharpen the bound"*): for ANY `ns` and ANY sequence of injections `lam` between
-the stage sizes, the telescope is a growing world reaching `Advances`, whose `mergeStage` at every
-`t` has cardinality `ns t`, and whose `stageLawEmb` — at the SAME chosen enumeration on both ends
-— is `lam t` exactly. So the candidate population `collapse_union_staged` prices at `(n, m) :=
-(ns t, ns (t + 1))` is precisely the population a growing world's own stage law can present:
-nothing here restricts which pair of enumerated finite types arises as `(mergeStage t, mergeStage
-(t + 1))` of an actual `(U, Ω)`. The enumeration is EXISTENTIALLY quantified, not asserted equal to
-some canonical one — a different choice of `Set.Finite.toFinset` gives a different embedding at the
-same two numerals, exactly as `stageLawEmb`'s own docstring states. -/
+the stage sizes, the telescope is a growing world reaching `PositivelyInvariant`, whose `mergeFiber`
+at every `t` has cardinality `ns t`, and whose `stageLawEmb` — at the SAME chosen enumeration on
+both ends — is `lam t` exactly. So the candidate population `collapse_union_staged` prices at
+`(n, m) := (ns t, ns (t + 1))` is precisely the population a growing world's own stage law can
+present: nothing here restricts which pair of enumerated finite types arises as
+`(mergeFiber t, mergeFiber (t + 1))` of an actual `(U, Ω)`. The enumeration is EXISTENTIALLY
+quantified, not asserted equal to some canonical one — a different choice of `Set.Finite.toFinset`
+gives a different embedding at the same two numerals, exactly as `stageLawEmb`'s own docstring
+states. -/
 theorem telescope_realizes_lawSequence (ns : ℕ → ℕ) (lam : ∀ t, Fin (ns t) ↪ Fin (ns (t + 1))) :
-    ∃ (X : Type) (U : X → X) (Ω : ℕ → Set X) (hadv : Advances U Ω),
-      (∀ t, ∃ hf : (mergeStage U Ω t).Finite, hf.toFinset.card = ns t) ∧
-      ∀ t (hf : (mergeStage U Ω t).Finite) (hf' : (mergeStage U Ω (t + 1)).Finite),
+    ∃ (X : Type) (U : X → X) (Ω : ℕ → Set X) (hadv : PositivelyInvariant U Ω),
+      (∀ t, ∃ hf : (mergeFiber U Ω t).Finite, hf.toFinset.card = ns t) ∧
+      ∀ t (hf : (mergeFiber U Ω t).Finite) (hf' : (mergeFiber U Ω (t + 1)).Finite),
         ∃ (e : Fin (ns t) ≃ Fin hf.toFinset.card) (e' : Fin (ns (t + 1)) ≃ Fin hf'.toFinset.card),
           ∀ q : Fin (ns t), stageLawEmb hadv t hf hf' (e q) = e' (lam t q) := by
   refine ⟨Σ t, Fin (ns t), telescopeU lam, telescopeΩ ns, advances_telescopeU lam, ?_, ?_⟩
@@ -1492,107 +1491,118 @@ theorem telescope_realizes_lawSequence (ns : ℕ → ℕ) (lam : ∀ t, Fin (ns 
       = p2 (telescopeFullEquiv lam (t + 1) (lam t q))
     rw [hkey, telescopeFullEquiv_succ]
 
-end GrowingPrice
+end ALT
 
 /-! ## Axiom audit
 
 Every capstone above is `#print axioms`-clean on the standard triple, and the guards below make
 that build-enforced. -/
 
-set_option linter.style.longLine false
 
-/-- info: 'GrowingPrice.exists_ne_frames_agreeing_on_range' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.exists_ne_frames_agreeing_on_range' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GrowingPrice.exists_ne_frames_agreeing_on_range
+#print axioms ALT.exists_ne_frames_agreeing_on_range
 
-/-- info: 'GrowingPrice.card_stageLaws' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.card_stageLaws' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GrowingPrice.card_stageLaws
+#print axioms ALT.card_stageLaws
 
-/-- info: 'GrowingPrice.card_lawsConsistentWith' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.card_lawsConsistentWith' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GrowingPrice.card_lawsConsistentWith
+#print axioms ALT.card_lawsConsistentWith
 
-/-- info: 'GrowingPrice.card_stageLaws_self' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.card_stageLaws_self' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GrowingPrice.card_stageLaws_self
+#print axioms ALT.card_stageLaws_self
 
-/-- info: 'GrowingPrice.card_lawsConsistentWith_self' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.card_lawsConsistentWith_self' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GrowingPrice.card_lawsConsistentWith_self
+#print axioms ALT.card_lawsConsistentWith_self
 
-/-- info: 'GrowingPrice.kraft_lensCode' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.kraft_lensCode' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GrowingPrice.kraft_lensCode
+#print axioms ALT.kraft_lensCode
 
-/-- info: 'GrowingPrice.collapse_union_staged' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.collapse_union_staged' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GrowingPrice.collapse_union_staged
+#print axioms ALT.collapse_union_staged
 
-/-- info: 'GrowingPrice.exists_qualifying_pair_of_pos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.exists_qualifying_pair_of_pos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GrowingPrice.exists_qualifying_pair_of_pos
+#print axioms ALT.exists_qualifying_pair_of_pos
 
-/-- info: 'GrowingPrice.stageLawEmb' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.stageLawEmb' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GrowingPrice.stageLawEmb
+#print axioms ALT.stageLawEmb
 
-/-- info: 'GrowingPrice.collapse_union_growing' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.collapse_union_growing' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GrowingPrice.collapse_union_growing
+#print axioms ALT.collapse_union_growing
 
-/-- info: 'GrowingPrice.collapse_union_growing_natSucc_slowClock' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.collapse_union_growing_natSucc_slowClock' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GrowingPrice.collapse_union_growing_natSucc_slowClock
+#print axioms ALT.collapse_union_growing_natSucc_slowClock
 
-/-- info: 'GrowingPrice.telescope_realizes_lawSequence' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.telescope_realizes_lawSequence' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GrowingPrice.telescope_realizes_lawSequence
+#print axioms ALT.telescope_realizes_lawSequence
 
-/-- info: 'GrowingPrice.deductible_smul_invariant' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.deductible_smul_invariant' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GrowingPrice.deductible_smul_invariant
+#print axioms ALT.deductible_smul_invariant
 
-/-- info: 'GrowingPrice.sum_deductible_eq_card_stageLaws' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.sum_deductible_eq_card_stageLaws' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GrowingPrice.sum_deductible_eq_card_stageLaws
+#print axioms ALT.sum_deductible_eq_card_stageLaws
 
-/-- info: 'GrowingPrice.orbit_mul_deductible_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.orbit_mul_deductible_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GrowingPrice.orbit_mul_deductible_le
+#print axioms ALT.orbit_mul_deductible_le
 
-/-- info: 'GrowingPrice.CbHs' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.CbHs' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GrowingPrice.CbHs
+#print axioms ALT.CbHs
 
-/-- info: 'GrowingPrice.CbHs_collapse' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.CbHs_collapse' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GrowingPrice.CbHs_collapse
+#print axioms ALT.CbHs_collapse
 
-/-- info: 'GrowingPrice.markingLens_comp_embedding' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.markingLens_comp_embedding' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GrowingPrice.markingLens_comp_embedding
+#print axioms ALT.markingLens_comp_embedding
 
-/-- info: 'GrowingPrice.CbHs_ge_marking' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.CbHs_ge_marking' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GrowingPrice.CbHs_ge_marking
+#print axioms ALT.CbHs_ge_marking
 
-/-- info: 'GrowingPrice.CbH_le_CbHs' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.CbH_le_CbHs' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GrowingPrice.CbH_le_CbHs
+#print axioms ALT.CbH_le_CbHs
 
-/-- info: 'GrowingPrice.CbHs_collapse_growing' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.CbHs_collapse_growing' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GrowingPrice.CbHs_collapse_growing
+#print axioms ALT.CbHs_collapse_growing
 
-/-- info: 'GrowingPrice.exists_candidate_capacity_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.exists_candidate_capacity_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GrowingPrice.exists_candidate_capacity_le
+#print axioms ALT.exists_candidate_capacity_le
 
-/-- info: 'GrowingPrice.CbHs_collapse_uniform' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.CbHs_collapse_uniform' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GrowingPrice.CbHs_collapse_uniform
+#print axioms ALT.CbHs_collapse_uniform
 
-/-- info: 'GrowingPrice.CbHs_collapse_uniform_growing' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.CbHs_collapse_uniform_growing' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms GrowingPrice.CbHs_collapse_uniform_growing
+#print axioms ALT.CbHs_collapse_uniform_growing

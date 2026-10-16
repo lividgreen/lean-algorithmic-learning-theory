@@ -1,8 +1,3 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Mathlib.Data.ZMod.QuotientGroup
@@ -40,7 +35,7 @@ scale `τ`, the permutation that matters is `U^τ`; `zmod_translate_minimalPerio
 
 @[expose] public section
 
-namespace PersistenceCapacity
+namespace ALT
 
 open Function
 
@@ -68,8 +63,7 @@ theorem Intertwines.orbit_image_eq {U : X → X} {F : M → M} {ℓ : X → M}
   · rintro ⟨j, rfl⟩
     exact ⟨U^[j] x, ⟨j, rfl⟩, hiter j⟩
 
-set_option linter.style.longLine false in
-/-- info: 'PersistenceCapacity.Intertwines.orbit_image_eq' depends on axioms: [propext, Quot.sound] -/
+/-- info: 'ALT.Intertwines.orbit_image_eq' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms Intertwines.orbit_image_eq
 
@@ -83,7 +77,7 @@ theorem Intertwines.minimalPeriod_dvd {U : X → X} {F : M → M} {ℓ : X → M
     |>.minimalPeriod_dvd
 
 set_option linter.style.longLine false in
-/-- info: 'PersistenceCapacity.Intertwines.minimalPeriod_dvd' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.Intertwines.minimalPeriod_dvd' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms Intertwines.minimalPeriod_dvd
 
@@ -96,8 +90,7 @@ theorem Intertwines.iUnion_orbit_image_eq_univ {F : M → M} {ℓ : X → M}
   obtain ⟨x, rfl⟩ := hℓ m
   exact Set.mem_iUnion.mpr ⟨x, 0, rfl⟩
 
-set_option linter.style.longLine false in
-/-- info: 'PersistenceCapacity.Intertwines.iUnion_orbit_image_eq_univ' depends on axioms: [propext, Quot.sound] -/
+/-- info: 'ALT.Intertwines.iUnion_orbit_image_eq_univ' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms Intertwines.iUnion_orbit_image_eq_univ
 
@@ -267,7 +260,7 @@ theorem Intertwines.exists_fixedLens_of_orbitAssignment [Finite X] (U : Equiv.Pe
     fun _ s => transportLens_semiconj U hdvd s⟩
 
 set_option linter.style.longLine false in
-/-- info: 'PersistenceCapacity.Intertwines.exists_fixedLens_of_orbitAssignment' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.Intertwines.exists_fixedLens_of_orbitAssignment' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms Intertwines.exists_fixedLens_of_orbitAssignment
 
@@ -294,8 +287,7 @@ theorem Intertwines.transitive_of_singleCycle {U : X → X} {F : M → M} {ℓ :
   rw [hj] at hiter
   exact ⟨j, hiter.symm⟩
 
-set_option linter.style.longLine false in
-/-- info: 'PersistenceCapacity.Intertwines.transitive_of_singleCycle' depends on axioms: [propext] -/
+/-- info: 'ALT.Intertwines.transitive_of_singleCycle' depends on axioms: [propext] -/
 #guard_msgs (whitespace := lax) in
 #print axioms Intertwines.transitive_of_singleCycle
 
@@ -319,7 +311,7 @@ theorem Intertwines.not_fixedLens_of_invariantPartition {U : X → X} {F : M →
   exact hne hstep
 
 set_option linter.style.longLine false in
-/-- info: 'PersistenceCapacity.Intertwines.not_fixedLens_of_invariantPartition' depends on axioms: [propext, Quot.sound] -/
+/-- info: 'ALT.Intertwines.not_fixedLens_of_invariantPartition' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms Intertwines.not_fixedLens_of_invariantPartition
 
@@ -378,7 +370,7 @@ theorem zmod_translate_minimalPeriod_general {N : ℕ} [NeZero N] (τ : ℕ) (x 
   exact ZMod.addOrderOf_coe τ (NeZero.ne N)
 
 set_option linter.style.longLine false in
-/-- info: 'PersistenceCapacity.zmod_translate_minimalPeriod_general' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.zmod_translate_minimalPeriod_general' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms zmod_translate_minimalPeriod_general
 
@@ -390,7 +382,7 @@ theorem zmod_translate_minimalPeriod (k j : ℕ) (hj : j ≤ k) (x : ZMod (2 ^ k
   rw [zmod_translate_minimalPeriod_general, gcd_two_pow k j hj, Nat.pow_div hj (by norm_num)]
 
 set_option linter.style.longLine false in
-/-- info: 'PersistenceCapacity.zmod_translate_minimalPeriod' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.zmod_translate_minimalPeriod' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms zmod_translate_minimalPeriod
 
@@ -411,7 +403,7 @@ theorem zmod_translate_orbitCount_general {N : ℕ} [NeZero N] (τ : ℕ) :
   exact Nat.eq_of_mul_eq_mul_right hDpos (hcard.symm.trans hsplit)
 
 set_option linter.style.longLine false in
-/-- info: 'PersistenceCapacity.zmod_translate_orbitCount_general' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.zmod_translate_orbitCount_general' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms zmod_translate_orbitCount_general
 
@@ -423,7 +415,7 @@ theorem zmod_translate_orbitCount (k j : ℕ) (hj : j ≤ k) :
   rw [zmod_translate_orbitCount_general, gcd_two_pow k j hj]
 
 set_option linter.style.longLine false in
-/-- info: 'PersistenceCapacity.zmod_translate_orbitCount' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.zmod_translate_orbitCount' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms zmod_translate_orbitCount
 
@@ -448,7 +440,7 @@ theorem guard_orbitAssignment_dvd_load_bearing :
   omega
 
 set_option linter.style.longLine false in
-/-- info: 'PersistenceCapacity.guard_orbitAssignment_dvd_load_bearing' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.guard_orbitAssignment_dvd_load_bearing' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms guard_orbitAssignment_dvd_load_bearing
 
@@ -541,7 +533,7 @@ theorem exists_blockCyclic_fixedLens {N c w : ℕ} [NeZero N] (hw : w ∣ N) (hc
     ((Equiv.addRight (1 : ZMod N)) ^ (N / w)) hg_const hdvd honto
 
 set_option linter.style.longLine false in
-/-- info: 'PersistenceCapacity.exists_blockCyclic_fixedLens' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.exists_blockCyclic_fixedLens' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms exists_blockCyclic_fixedLens
 
@@ -616,7 +608,7 @@ theorem Intertwines.not_fixedLens_prime_period_any_scale [Finite X] {U : X → X
       (transitive_pow_of_coprime hU hp.pos.ne' rfl hcop) S hFS hne
 
 set_option linter.style.longLine false in
-/-- info: 'PersistenceCapacity.Intertwines.not_fixedLens_prime_period_any_scale' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.Intertwines.not_fixedLens_prime_period_any_scale' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms Intertwines.not_fixedLens_prime_period_any_scale
 
@@ -641,7 +633,7 @@ theorem guard_blockCyclic_capacity_load_bearing {N c w : ℕ} [NeZero N] [NeZero
   omega
 
 set_option linter.style.longLine false in
-/-- info: 'PersistenceCapacity.guard_blockCyclic_capacity_load_bearing' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.guard_blockCyclic_capacity_load_bearing' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms guard_blockCyclic_capacity_load_bearing
 
@@ -669,8 +661,8 @@ theorem guard_primePeriod_composite_load_bearing :
     (by norm_num) (by norm_num) (by norm_num)
 
 set_option linter.style.longLine false in
-/-- info: 'PersistenceCapacity.guard_primePeriod_composite_load_bearing' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.guard_primePeriod_composite_load_bearing' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms guard_primePeriod_composite_load_bearing
 
-end PersistenceCapacity
+end ALT

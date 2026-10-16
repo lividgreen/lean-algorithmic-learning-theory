@@ -1,14 +1,7 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.LogMassEvent
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # The register class: the capacity bound over any step of a level vector
@@ -45,7 +38,7 @@ the register its surprise count is the whole horizon (`liftStep_registerCore_unb
 
 ## Main results
 
-* `registerClass_card_add_le_capacity` — **the capacity bound over the class**: under the floor
+* `RegisterClass.card_add_le_capacity` — **the capacity bound over the class**: under the floor
   condition `C − 1 ≤ θ·(2^b + C − 1)`, from every start inside the register, along every stream on
   which the truth never misses, the surprise count over any horizon plus `C` times the truth's
   start is at most `C·b` plus the competitors' start. The potential is the one
@@ -70,7 +63,9 @@ mass, two to the level, exceeds `θ` of the total.
 
 @[expose] public section
 
-namespace WeightedFiber
+namespace ALT
+
+open WVec
 
 /-! ## The class -/
 
@@ -347,7 +342,7 @@ condition, from every start inside the register, along every stream on which the
 misses, the surprise count over the whole run plus `C` times the truth's
 start is at most `C · b` plus the competitors' start — the potential argument at the class's
 properties and nothing else. -/
-theorem registerClass_card_add_le_capacity {b : ℕ}
+theorem RegisterClass.card_add_le_capacity {b : ℕ}
     {step : (Fin C → Bool) → (Fin C → ℕ) → (Fin C → ℕ)} {iR : Fin C}
     (hcls : RegisterClass b step iR) {e₀ : Fin C → ℕ} (he₀ : ∀ i, e₀ i ≤ b)
     (M : ℕ → Fin C → Bool) (hR : ∀ t, M t iR = false) (θ : ℚ)
@@ -474,7 +469,7 @@ private theorem wrongMassFrom_eq_ratio {e₀ : Fin C → ℕ} {b : ℕ} (he₀ :
   · rw [ite_eq_right hm, ite_eq_right hm, zero_mul]
 
 /-- **At `expStep` the class's surprise set is the landed `floorSurpriseSetFrom`**, from every
-start inside the register, so `registerClass_card_add_le_capacity` at the mixture is
+start inside the register, so `RegisterClass.card_add_le_capacity` at the mixture is
 `floorSurpriseFrom_card_add_le_capacity`. The start's bound is what the mass identity
 `raw_wRunFrom_eq_pow_expRunFrom` needs. -/
 theorem stepSurpriseSet_expStep {e₀ : Fin C → ℕ} {b : ℕ} (he₀ : ∀ i, e₀ i ≤ b)
@@ -484,11 +479,11 @@ theorem stepSurpriseSet_expStep {e₀ : Fin C → ℕ} {b : ℕ} (he₀ : ∀ i,
   refine Finset.filter_congr fun t _ => ?_
   rw [wrongMassFrom_eq_ratio he₀, stepRun_expStep]
 
-/-- **Non-vacuity** — for `registerClass_card_add_le_capacity`: the mixture at two candidates,
+/-- **Non-vacuity** — for `RegisterClass.card_add_le_capacity`: the mixture at two candidates,
 budget `2`, threshold `1/4`, the deficit start `(0, 2)` with the truth first and the stream on
 which candidate `1` always misses. The class, the start, the truth and the floor condition all
 hold, and the bound at horizon `2` reads `card + 0 ≤ 4 + 2`. -/
-theorem registerClass_card_add_le_capacity_nonvacuous :
+theorem RegisterClass.card_add_le_capacity_nonvacuous :
     RegisterClass 2 (expStep 2) (0 : Fin 2) ∧ (∀ i, deficitSeed 2 2 i ≤ 2) ∧
       (∀ t, deficitMiss t (0 : Fin 2) = false) ∧
       ((2 : ℚ) - 1 ≤ (1 / 4 : ℚ) * ((2 : ℚ) ^ 2 + ((2 : ℚ) - 1))) ∧
@@ -499,7 +494,7 @@ theorem registerClass_card_add_le_capacity_nonvacuous :
     intro i
     fin_cases i <;> simp [deficitSeed]
   refine ⟨expStep_registerClass 2 0, hseed, deficitMiss_realizable, by norm_num, ?_⟩
-  exact registerClass_card_add_le_capacity (expStep_registerClass 2 0) hseed deficitMiss
+  exact RegisterClass.card_add_le_capacity (expStep_registerClass 2 0) hseed deficitMiss
     deficitMiss_realizable (1 / 4) (by norm_num) 2
 
 end Members
@@ -661,32 +656,38 @@ theorem liftStep_registerCore_unbounded :
 
 end Guards
 
-end WeightedFiber
+end ALT
 
-/-- info: 'WeightedFiber.registerClass_card_add_le_capacity' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.RegisterClass.card_add_le_capacity' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.registerClass_card_add_le_capacity
+#print axioms ALT.RegisterClass.card_add_le_capacity
 
-/-- info: 'WeightedFiber.registerClass_card_add_le_capacity_nonvacuous' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.RegisterClass.card_add_le_capacity_nonvacuous' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.registerClass_card_add_le_capacity_nonvacuous
+#print axioms ALT.RegisterClass.card_add_le_capacity_nonvacuous
 
-/-- info: 'WeightedFiber.expStep_registerClass' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'ALT.expStep_registerClass' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.expStep_registerClass
+#print axioms ALT.expStep_registerClass
 
-/-- info: 'WeightedFiber.resetStep_registerClass' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.resetStep_registerClass' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.resetStep_registerClass
+#print axioms ALT.resetStep_registerClass
 
-/-- info: 'WeightedFiber.stepSurpriseSet_expStep' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.stepSurpriseSet_expStep' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.stepSurpriseSet_expStep
+#print axioms ALT.stepSurpriseSet_expStep
 
-/-- info: 'WeightedFiber.saturateStep_not_registerClass' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.saturateStep_not_registerClass' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.saturateStep_not_registerClass
+#print axioms ALT.saturateStep_not_registerClass
 
-/-- info: 'WeightedFiber.liftStep_registerCore_unbounded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.liftStep_registerCore_unbounded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms WeightedFiber.liftStep_registerCore_unbounded
+#print axioms ALT.liftStep_registerCore_unbounded

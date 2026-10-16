@@ -1,14 +1,7 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Mathlib.Tactic.Linter.Header
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # Reflection-chain dependency audit (structural DAG check)
@@ -61,12 +54,12 @@ Status: PROVED as pure propositional logic. This is a STRUCTURAL check of the de
 
 @[expose] public section
 
-assert_not_exists Decoupling.decoupling_iff_persists_all
-assert_not_exists SampleComplexity.sample_complexity_r2
+assert_not_exists ALT.decoupling_iff_persists_all
+assert_not_exists ALT.sample_complexity_r2
 assert_not_exists SQEnvelope.version_space_card_le
-assert_not_exists CategoricalThreshold.categorical_threshold
+assert_not_exists ALT.categorical_threshold
 
-namespace ChainDependencyAudit
+namespace ALT
 
 variable
   (Decoupled Regime Realizable SQLearnable : Prop)
@@ -121,4 +114,4 @@ theorem steady_state_on_retention_off_sq
   let encoded : EncodedRule := hDiscovery real dec
   hSteadyState dec (hRetention dec encoded)
 
-end ChainDependencyAudit
+end ALT

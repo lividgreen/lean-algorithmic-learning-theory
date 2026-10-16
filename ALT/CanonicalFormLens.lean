@@ -1,8 +1,3 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
@@ -10,8 +5,6 @@ public import Mathlib.GroupTheory.Perm.Fin
 public import CodeLayer.AdditiveComplexity
 public import ALT.PersistenceCapacity
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # The canonical-form-lens counting core: the cap's constant is exactly two
@@ -28,7 +21,7 @@ with its two fixed points merged.
 `canonWt n` is the corresponding one-fixed-point law, and `mergeMap` descends `canonW` to it
 (`descent`). For an arbitrary relabelling `V`, `convW V := V⁻¹ * canonW n * V` and
 `convLens hn V := mergeMap n _ ∘ V` transport this: `convLens hn V` descends `convW V` to the same
-`canonWt` (`convDescent`), and the reading `convReading hn V` — the indicator of `{V⁻¹ 0, V⁻¹
+`canonWt` (`convLens_descent`), and the reading `convReading hn V` — the indicator of `{V⁻¹ 0, V⁻¹
 1}` — persists under `convW V` (`convReading_invariant`), factors through `convLens hn V`
 (`convReading_factors`), and its true set is exactly `convW V`'s fixed-point set
 (`convW_fixedPoints`). So `([n], convLens hn V)` and `([n], id)` are both Proposition 8.29 pricing
@@ -38,7 +31,7 @@ points for the constant family this reading generates.
 cycle's own transitivity (`canonW_exists_pow_eq`), is determined on the cycled part by the image
 of one point — at most `2n` such permutations (`canonW_centralizer_card_le`; the exact value
 `2(n−2)` is not needed). The map `V ↦ convW V` has fibres bounded by centralizer cosets, giving
-the same counting shape as `PersistenceCapacity.collapse_count` (`convW_collapse_count`); past the
+the same counting shape as `ALT.collapse_count` (`convW_collapse_count`); past the
 arithmetic threshold this undercuts `n!`, some realized `convW V`'s table costs more than `L` bits
 (`convW_world_floor`) — Finding 2's `K(U) ≥ log₂ n! − O(log₂ n)`. Separately, the merged lens
 determines the world exactly: `convLens hn U = convLens hn W` forces `convW U = convW W`
@@ -56,9 +49,9 @@ of Proposition 8.35 stay on §8's standing transport boundary and are not restat
 
 @[expose] public section
 
-namespace CanonicalFormLens
+namespace ALT
 
-open Equiv Equiv.Perm AdditiveComplexity PersistenceCapacity Nat
+open Equiv Equiv.Perm AdditiveComplexity Nat
 
 /-! ### A general shifted-cycle helper -/
 
@@ -237,7 +230,7 @@ private theorem convW_apply {n : ℕ} (V : Equiv.Perm (Fin n)) (x : Fin n) :
 
 /-- **Conjugation transports the descent** ([Persistence] §8, Finding 1's conjugation algebra):
 `convLens hn V` descends `convW V` to the same law `canonWt`, for every `V`. -/
-theorem convDescent {n : ℕ} (hn : 4 ≤ n) (V : Equiv.Perm (Fin n)) (x : Fin n) :
+theorem convLens_descent {n : ℕ} (hn : 4 ≤ n) (V : Equiv.Perm (Fin n)) (x : Fin n) :
     convLens hn V (convW V x) = canonWt n (convLens hn V x) := by
   unfold convLens
   simp only [Function.comp_apply]
@@ -463,7 +456,7 @@ private theorem lensCode_inj' {n m : ℕ} : Function.Injective (lensCode (n := n
 
 /-- **The fibres of `V ↦ U_V` are centralizer cosets** ([Persistence] §8, Finding 2: "the realized
 worlds number `n!/(2(n−2))`" — this bounds the fibres by the `≤ 2n` centralizer, giving the same
-counting shape as `PersistenceCapacity.collapse_count`). -/
+counting shape as `ALT.collapse_count`). -/
 theorem convW_collapse_count {n : ℕ} (hn : 4 ≤ n) (L : ℕ) :
     {V : Equiv.Perm (Fin n) | KE (lensCode (⇑(convW V))) ≤ L}.ncard ≤ 2 ^ (L + 1) * (2 * n) := by
   classical
@@ -616,7 +609,7 @@ address by this very pair, so together with Proposition 8.36(iii)'s attainment a
 constant is exactly two).
 
 This bundles the counting core the pricing argument consumes: `κ_V` descends `U_V` to `canonWt`
-(`convDescent`); the reading `ℓ_V` persists under `U_V` and factors through `κ_V`
+(`convLens_descent`); the reading `ℓ_V` persists under `U_V` and factors through `κ_V`
 (`convReading_invariant`, `convReading_factors`) — so `([n], κ_V)` and `([n], id)` are both
 Proposition 8.29 pricing points for the constant family `ℓ_V` generates; and, past the arithmetic
 threshold `hL`, some realized `U_V`'s table costs more than `L` bits (`convW_world_floor`) — the
@@ -630,7 +623,7 @@ theorem canonicalFormLens_family {n : ℕ} (hn : 4 ≤ n) (L : ℕ) (hL : 2 ^ (L
       ∧ (∀ x y, convLens hn V x = convLens hn V y → convReading hn V x = convReading hn V y)
       ∧ L < KE (lensCode (⇑(convW V))) := by
   obtain ⟨V, hV⟩ := convW_world_floor hn L hL
-  exact ⟨V, convDescent hn V, convReading_invariant hn V, convReading_factors hn V, hV⟩
+  exact ⟨V, convLens_descent hn V, convReading_invariant hn V, convReading_factors hn V, hV⟩
 
 /-- **A concrete instance** ([Persistence] §8, Remark 8.37's growing margin): `n = 6` clears the
 threshold `L = 4` with `2 ^ 5 · 12 = 384 < 720 = 6!`, checked by `decide` on the explicit
@@ -646,12 +639,14 @@ theorem canonicalFormLens_instance :
       ∧ 4 < KE (lensCode (⇑(convW V))) :=
   canonicalFormLens_family (show 4 ≤ 6 by norm_num) 4 (by decide)
 
-end CanonicalFormLens
+end ALT
 
-/-- info: 'CanonicalFormLens.canonicalFormLens_family' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.canonicalFormLens_family' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms CanonicalFormLens.canonicalFormLens_family
+#print axioms ALT.canonicalFormLens_family
 
-/-- info: 'CanonicalFormLens.canonicalFormLens_instance' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+set_option linter.style.longLine false in
+/-- info: 'ALT.canonicalFormLens_instance' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
-#print axioms CanonicalFormLens.canonicalFormLens_instance
+#print axioms ALT.canonicalFormLens_instance

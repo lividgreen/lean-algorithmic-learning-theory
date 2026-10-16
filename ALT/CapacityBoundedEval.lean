@@ -1,16 +1,9 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import CodeLayer.TimeCost
 public import ALT.SearchSpace
 public import ALT.CheckerWorkspace
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # Capacity-bounded evaluation: the workspace bound laws for composition and pairing
@@ -30,7 +23,7 @@ therefore *half* discharged, not closed.
 
 ## The family
 The workspace measure is `TimeCost.spaceCost` (total on the rfind'-free fragment) together with its
-extension `TimeCost.spaceCostP` (total over all of `Nat.Partrec.Code`). Its bound laws form one
+extension `spaceCostP` (total over all of `Nat.Partrec.Code`). Its bound laws form one
 family, one member per constructor:
 * `spaceCost_prec_le` — bounded recursion: a `max`, with the iteration count absent;
 * `spaceCostP_rfind'_le` — unbounded search: a `max`, with the probe count absent;
@@ -73,10 +66,11 @@ construction, not a corollary of this family.
 
 @[expose] public section
 
-namespace TimeCost
+namespace ALT
 
 open Nat.Partrec (Code)
 open Nat.Partrec.Code
+open TimeCost
 
 /-! ## The keystone: an output is no wider than the workspace that produced it -/
 
@@ -236,4 +230,4 @@ theorem spaceCost_comp_within {f g : Code} {n S : ℕ} (hg : RfindFree g)
   have h := spaceCost_comp_le hg hgn hf
   rwa [max_self] at h
 
-end TimeCost
+end ALT

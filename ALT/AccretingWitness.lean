@@ -1,15 +1,8 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.GrowingWorld
 public import ALT.PersistenceCapacity
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # The accreting healer world: the escape witness's skeleton
@@ -18,7 +11,7 @@ set_option linter.style.header false
 `GrowingWorld.lean` states the staged square a guest of a growing host must close
 ([Inevitability] §6); this file builds the instance that closes it while keeping [Guests] §5's
 robustness margin across every growth event. The carrier is a growing list of
-`PersistenceCapacity.healWorld`'s recursive-majority habitats beside a turning environment; the
+`ALT.healWorld`'s recursive-majority habitats beside a turning environment; the
 update heals every habitat block, appends one fresh block already at its zero codeword, and turns
 the environment — so accretion writes a constant block, and the stage is the state's own block
 count rather than a separate counter a perturbation could corrupt. The reading is one uniform
@@ -28,12 +21,13 @@ family, majority-decoding every block; the guest's own law appends `false` to th
 
 * `accUpdate` / `accStage` / `advances_accUpdate` — the carrier and its stage-advancing update.
 * `accRead` / `accLaw` / `stagedSquare_accRead` — **the staged square, from every state, with no
-  codeword hypothesis**: both closing identities reduce to `PersistenceCapacity.decRec_encRec`'s
+  codeword hypothesis**: both closing identities reduce to `ALT.decRec_encRec`'s
   roundtrip — decoding a healed block is decoding the block, and the appended block decodes to
   `false`.
-* `accCode` / `accErasure` — **the staged margin, as one-step erasure** ([Guests] §3): a codeword
-  state absorbs any perturbation totalling fewer than `2 ^ k` flipped habitat cells in one step,
-  landing on the exact same update as the unperturbed state — `PersistenceCapacity.healWorld_heals`
+* `accCode` / `accUpdate_eq_of_sum_lt` — **the staged margin, as one-step erasure**
+  ([Guests] §3): a codeword state absorbs any perturbation totalling fewer than `2 ^ k` flipped
+  habitat cells in one step,
+  landing on the exact same update as the unperturbed state — `ALT.healWorld_heals`
   applied block by block, the margin profile constantly `≥ 2 ^ k − 1` across every accretion event.
 * `guestStage_accRead_eq` / `ncard_guestStage_accRead` — **the extent**: the guest's stage-`t`
   reading is exactly the length-`(t + 1)` Boolean words, carrying exactly `2 ^ (t + 1)` values —
@@ -50,9 +44,8 @@ from list words to fixed-length words and is a separate target.
 
 @[expose] public section
 
-namespace AccretingWitness
+namespace ALT
 
-open Decoupling PersistenceCapacity
 
 variable {ι_J : Type*}
 
@@ -73,7 +66,7 @@ def accStage (k : ℕ) (t : ℕ) : Set (List (Mem (Fin (3 ^ k)) Bool) × Mem ι_
 
 /-- The update advances the stage: appending lengthens the habitat by exactly one block. -/
 theorem advances_accUpdate (k : ℕ) (π : Mem ι_J Bool → Mem ι_J Bool) :
-    GrowingWorld.Advances (accUpdate k π) (accStage k) := by
+    Nonautonomous.PositivelyInvariant (accUpdate k π) (accStage k) := by
   intro t s hs
   have hs' : s.1.length = t + 1 := hs
   change (accUpdate k π s).1.length = t + 1 + 1
@@ -91,7 +84,7 @@ def accRead (k : ℕ) (_t : ℕ) (s : List (Mem (Fin (3 ^ k)) Bool) × Mem ι_J 
 def accLaw : List Bool → List Bool := fun m => m ++ [false]
 
 /-- Decoding a healed block is decoding the block — the healer's roundtrip
-(`PersistenceCapacity.decRec_encRec`), unfolded through `healWorld`'s own definition. -/
+(`ALT.decRec_encRec`), unfolded through `healWorld`'s own definition. -/
 private theorem decRec_healWorld_eq (k : ℕ) (x : Mem (Fin (3 ^ k)) Bool) :
     decRec k (healWorld k x) = decRec k x := by
   change decRec k (encRec k (decRec k x)) = decRec k x
@@ -108,7 +101,7 @@ stage later, is the guest law applied to the current reading. Both closing ident
 `decRec_encRec`'s roundtrip: healing a block does not move its decode, and the appended block
 decodes to `false`. -/
 theorem stagedSquare_accRead (k : ℕ) (π : Mem ι_J Bool → Mem ι_J Bool) :
-    GrowingWorld.StagedSquare (accUpdate k π) accLaw (accRead k) (accStage k) := by
+    Nonautonomous.Semiconj (accUpdate k π) accLaw (accRead k) (accStage k) := by
   intro t s _
   show accRead k (t + 1) (accUpdate k π s) = accLaw (accRead k t s)
   simp only [accRead, accUpdate, accLaw, List.map_append, List.map_map, List.map_singleton,
@@ -165,11 +158,11 @@ codeword state at stage `t`,
 any habitat perturbation totalling fewer than `2 ^ k` flipped cells — same length, same environment
 — is erased in one step: the update lands on the exact same next state. Every habitat block absorbs
 at most the total budget, so each individually stays within the healing radius
-(`PersistenceCapacity.healWorld_heals`), and the perturbed and unperturbed blocks heal to the same
+(`ALT.healWorld_heals`), and the perturbed and unperturbed blocks heal to the same
 codeword. The margin profile this witnesses is constantly `≥ 2 ^ k − 1`, accretion events included,
 by the fixed healer's own argument applied per block — no protected schedule coordinate is needed,
 since the stage is the habitat's own length. -/
-theorem accErasure (k : ℕ) (π : Mem ι_J Bool → Mem ι_J Bool) (t : ℕ)
+theorem accUpdate_eq_of_sum_lt (k : ℕ) (π : Mem ι_J Bool → Mem ι_J Bool) (t : ℕ)
     {s : List (Mem (Fin (3 ^ k)) Bool) × Mem ι_J Bool} (hs : s ∈ accCode k t)
     {s' : List (Mem (Fin (3 ^ k)) Bool) × Mem ι_J Bool} (hlen : s'.1.length = s.1.length)
     (henv : s'.2 = s.2) (hsum : (List.zipWith hammingDist s'.1 s.1).sum < 2 ^ k) :
@@ -185,7 +178,7 @@ theorem accErasure (k : ℕ) (π : Mem ι_J Bool → Mem ι_J Bool) (t : ℕ)
 /-- The guest's stage-`t` extent is exactly the length-`(t + 1)` Boolean words: every such word is
 read off the state encoding it block by block, and every reading has that length by construction. -/
 theorem guestStage_accRead_eq (ι_J : Type*) (k t : ℕ) :
-    GrowingWorld.guestStage (accRead (ι_J := ι_J) k) (accStage k) t =
+    Nonautonomous.imageFiber (accRead (ι_J := ι_J) k) (accStage k) t =
       {L : List Bool | L.length = t + 1} := by
   apply Set.eq_of_subset_of_subset
   · rintro _ ⟨s, hs, rfl⟩
@@ -205,7 +198,7 @@ theorem guestStage_accRead_eq (ι_J : Type*) (k t : ℕ) :
 strictly growing without bound, via the bijection with `Fin (t + 1) → Bool` (the `GrowingWorld.lean`
 counting pattern, here over `List.ofFn`). -/
 theorem ncard_guestStage_accRead (ι_J : Type*) (k t : ℕ) :
-    (GrowingWorld.guestStage (accRead (ι_J := ι_J) k) (accStage k) t).ncard = 2 ^ (t + 1) := by
+    (Nonautonomous.imageFiber (accRead (ι_J := ι_J) k) (accStage k) t).ncard = 2 ^ (t + 1) := by
   rw [guestStage_accRead_eq]
   have himg :
       (List.ofFn '' (Set.univ : Set (Fin (t + 1) → Bool))) = {L : List Bool | L.length = t + 1} :=
@@ -217,4 +210,4 @@ theorem ncard_guestStage_accRead (ι_J : Type*) (k t : ℕ) :
   rw [← himg, Set.ncard_image_of_injective _ List.ofFn_injective, Set.ncard_univ]
   simp [Nat.card_eq_fintype_card]
 
-end AccretingWitness
+end ALT

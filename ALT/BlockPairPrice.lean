@@ -1,56 +1,51 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.BlockPairOverlap
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
-set_option linter.style.header false
-set_option linter.style.longLine false
 
 /-!
 # The block-pair host's rule as an exhibited program
 
-`BlockPairOverlap.lean` prices the packed host's guest parametrically: `hostOwned` takes codes
-`cU`, `cθ` for the host's own table and the frame's own table as hypotheses, and owns the guest at
-`elen cU + elen cθ + O(1)` — a design count, not a machine-priced program, until this module
-([Inevitability] §5 Theorem 5.8's boundary, closed there by citing it). This module closes that
-gap: it exhibits `cU`, `cθ` as fixed, machine-checked programs — `hostBuilder`/`frameBuilder`,
-each taking only `M` and
-`Nat.size Π` (`frameBuilder` also `hostFrameBits M`) as `bconst`-loaded numerals, no macro-law code
-imported — and prices them in the corpus's own `KE` currency, the `KE_flatWorld_le` pattern of
-`PersistenceCapacity.lean` instanced at this host.
+`BlockPairOverlap.lean` prices the packed host's guest parametrically:
+`BlockPairHost.card_orbit_le_cbHue` takes codes `cU`, `cθ` for the host's own table and the frame's
+own table as hypotheses, and owns the guest at `elen cU + elen cθ + O(1)` — a design count, not a
+machine-priced program, until this module ([Inevitability] §5 Theorem 5.8's boundary, closed there
+by citing it). This module closes that gap: it exhibits `cU`, `cθ` as fixed, machine-checked
+programs — `hostBuilder`/`frameBuilder`, each taking only `M` and
+`Nat.size Π` (`frameBuilder` also `BlockPairHost.frameBits M`) as `bconst`-loaded numerals, no
+macro-law code imported — and prices them in the corpus's own `KE` currency, the `KE_flatWorld_le`
+pattern of `PersistenceCapacity.lean` instanced at this host.
 
 The step is packed on numerals through the same route `KE_flatWorld_le` uses: `hostStepNum`/
-`frameStepNum` are pure `/`, `%`, `*`, `+`, `if`-arithmetic on the packed state (no `Mem`, no
+`frameStepNum` are pure `/`, `%`, `*`, `+`, `if`-arithmetic on the packed state (no `ALT.Mem`, no
 `Fin`), proved primitive recursive by direct composition, tabulated over every state
-(`hostTableFn`/`frameTableFn`), and identified with `hostPacked`/`hostFrame`'s own tables
-(`hostTableFn_eq`/`frameTableFn_eq`) through `hostStepNum_stateEquiv`/`frameStepNum_stateEquiv` —
-the bridge theorems that carry the real content, proved digit-by-digit against `hostSubUpdate`'s
-own case split via `hostStateEquiv_digit`.
+(`hostTableFn`/`frameTableFn`), and identified with `BlockPairHost.packed`/`BlockPairHost.frame`'s
+own tables (`hostTableFn_eq`/`frameTableFn_eq`) through
+`hostStepNum_stateEquiv`/`frameStepNum_stateEquiv` — the bridge theorems that carry the real
+content, proved digit-by-digit against `BlockPairHost.subUpdate`'s own case split via
+`BlockPairHost.stateEquiv_digit`.
 
 ## Main results
 
 * `hostStepNum`, `frameStepNum`, `hostStepNum_stateEquiv`, `frameStepNum_stateEquiv` — the packed
-  step and read, and their correctness against `hostPacked`/`hostFrame`.
+  step and read, and their correctness against `BlockPairHost.packed`/`BlockPairHost.frame`.
 * `hostBuilder`, `frameBuilder`, `eval_hostBuilder`, `eval_frameBuilder` — the fixed programs,
   extracted from universality over the primitive-recursive tables.
 * `KE_hostPacked_le`, `KE_hostFrame_le` — the host's table and the frame's table are each owned
   within `elen <builder> + O(size M + size (size Π))` bits (`KE_hostFrame_le` additionally pays
-  `O(size (hostFrameBits M))`) — nothing that scales with the state count `2 ^ (16 + size Π)`.
-* `hostOwned_cheap` — **the payoff**: `BlockPairOverlap.hostOwned` at the exhibited codes, so the
-  guest's carried entropy is bounded by `CbHue` at a budget that is an absolute constant plus
-  `O(log Π)`, with no imported code parameter at all.
+  `O(size (BlockPairHost.frameBits M))`) — nothing that scales with the state count
+  `2 ^ (16 + size Π)`.
+* `BlockPairHost.card_orbit_le_cbHue_cheap` — **the payoff**: `BlockPairHost.card_orbit_le_cbHue` at
+  the exhibited codes, so the guest's carried entropy is bounded by `CbHue` at a budget that is an
+  absolute constant plus `O(log Π)`, with no imported code parameter at all.
 
 ## Scope
 
-`HostGrowsLawfulGuest`, `hostOwned` and `hostWitness_overlap` in `BlockPairOverlap.lean` are
-untouched; `hostOwned_cheap` is a corollary beside them, not a restatement. This module does not
-revisit survival, the crossing clause, or the `𝒮_L`/`𝒮_E` membership statements — only the growth
-clause's own affordability, sharpened from a design count to a machine-checked program.
+`BlockPairHost.GrowsLawfulGuest`, `BlockPairHost.card_orbit_le_cbHue` and
+`BlockPairHost.witness_overlap` in `BlockPairOverlap.lean` are untouched;
+`BlockPairHost.card_orbit_le_cbHue_cheap` is a corollary beside them, not a restatement. This module
+does not revisit survival, the crossing clause, or the `𝒮_L`/`𝒮_E` membership statements — only the
+growth clause's own affordability, sharpened from a design count to a machine-checked program.
 
 Anchors: [Inevitability] §5 Theorem 5.8, [Guests] §6 Theorem 6.1, rows IN-38, GV-5.
 -/
@@ -58,10 +53,9 @@ Anchors: [Inevitability] §5 Theorem 5.8, [Guests] §6 Theorem 6.1, rows IN-38, 
 
 @[expose] public section
 
-namespace BlockPairPrice
+namespace ALT
 
-open BlockPairOverlap BlockPairWitness BlockPairHost BlockPairProfile
-open PersistenceCapacity AdditiveComplexity KolmogorovComplexity CodeEvalLaws
+open AdditiveComplexity KolmogorovComplexity CodeEvalLaws
 open Equiv MulAction
 
 attribute [local instance] arrowAction
@@ -121,12 +115,14 @@ theorem wordV_eq_wordVBit (p : Fin 24) : wordV p = (-1 : ℤ) ^ wordVBit (p : �
 `wordV` on an odd one. -/
 def blockWordBit (j p : ℕ) : ℕ := if j % 2 = 0 then wordUBit p else wordVBit p
 
-/-- **The design's own value, as a bounded exponent.** `designObs` reads `-1` exactly when the
-sign supply and the word supply disagree in parity: `blockSignBit (u/24)` from `blockSign`, and
+/-- **The design's own value, as a bounded exponent.** `BlockPairHost.designObs` reads `-1` exactly
+when the sign supply and the word supply disagree in parity: `blockSignBit (u/24)` from `blockSign`,
+and
 `blockWordBit (u/24) (u%24)` from the word at the block's own offset. -/
 def designExp (u : ℕ) : ℕ := blockSignBit (u / 24) + blockWordBit (u / 24) (u % 24)
 
-theorem designObs_eq (M : ℕ) [NeZero (2 * (2 * M))] (u : ℕ) (hu : u < 2 * (2 * M) * 24) :
+theorem BlockPairHost.designObs_eq (M : ℕ) [NeZero (2 * (2 * M))] (u : ℕ)
+    (hu : u < 2 * (2 * M) * 24) :
     BlockPairHost.designObs M (u : ZMod (2 * (2 * M) * 24)) = decide (Odd (designExp u)) := by
   have hval : (u : ZMod (2 * (2 * M) * 24)).val = u := by
     rw [ZMod.val_natCast]; exact Nat.mod_eq_of_lt hu
@@ -147,22 +143,23 @@ theorem designObs_eq (M : ℕ) [NeZero (2 * (2 * M))] (u : ℕ) (hu : u < 2 * (2
     have hno : ¬ Odd (designExp u) := by rw [Nat.not_odd_iff_even]; exact hodd
     simp [hno]
 
-private theorem hPge8 (M : ℕ) [NeZero (2 * (2 * M))] : 8 ≤ 2 * (2 * M) * 24 := by
+private theorem eight_le_period (M : ℕ) [NeZero (2 * (2 * M))] : 8 ≤ 2 * (2 * M) * 24 := by
   have := Nat.pos_of_ne_zero (NeZero.ne (2 * (2 * M))); omega
 
 private theorem zmod_sub8_eq (M : ℕ) [NeZero (2 * (2 * M))] (u : ℕ) :
     (u : ZMod (2 * (2 * M) * 24)) - 8
       = (((u + 2 * (2 * M) * 24 - 8) % (2 * (2 * M) * 24) : ℕ) : ZMod (2 * (2 * M) * 24)) := by
-  have hle : 8 ≤ u + 2 * (2 * M) * 24 := by have := hPge8 M; omega
+  have hle : 8 ≤ u + 2 * (2 * M) * 24 := by have := eight_le_period M; omega
   rw [ZMod.natCast_mod, Nat.cast_sub hle, Nat.cast_add, ZMod.natCast_self]
   ring
 
-/-- **The tape's own value, as a bit.** `hostTape` compares the design's value at `u` against its
+/-- **The tape's own value, as a bit.** `BlockPairHost.tape` compares the design's value at `u`
+against its
 value `8` steps back; the comparison is `1` exactly when the two `designExp` values share parity. -/
 def hostTapeBit (N u : ℕ) : ℕ := (designExp u + designExp ((u + N - 8) % N) + 1) % 2
 
 /-- **Boolean agreement is a parity fact**: `decide (Odd a) == decide (Odd b)` — the Bool
-`decide (Odd ·) == decide (Odd ·)` reads `hostTape`'s `==` verbatim — holds exactly when
+`decide (Odd ·) == decide (Odd ·)` reads `BlockPairHost.tape`'s `==` verbatim — holds exactly when
 `a + b + 1` is even. -/
 private theorem decide_odd_beq (a b : ℕ) :
     (decide (Odd a) == decide (Odd b)) = decide ((a + b + 1) % 2 = 1) := by
@@ -182,47 +179,52 @@ private theorem decide_odd_beq (a b : ℕ) :
     rw [Nat.not_odd_iff_even, Nat.even_iff] at h1 h2
     rw [decide_eq_true_iff.mpr (show (a + b + 1) % 2 = 1 by omega)]; rfl
 
-theorem hostTape_eq (M : ℕ) [NeZero (2 * (2 * M))] (u : ℕ) (hu : u < 2 * (2 * M) * 24) :
-    BlockPairHost.hostTape M (u : ZMod (2 * (2 * M) * 24))
+theorem BlockPairHost.tape_eq_decide_hostTapeBit (M : ℕ) [NeZero (2 * (2 * M))] (u : ℕ)
+    (hu : u < 2 * (2 * M) * 24) :
+    BlockPairHost.tape M (u : ZMod (2 * (2 * M) * 24))
       = decide (hostTapeBit (2 * (2 * M) * 24) u = 1) := by
-  have hP8 : 8 ≤ 2 * (2 * M) * 24 := hPge8 M
+  have hP8 : 8 ≤ 2 * (2 * M) * 24 := eight_le_period M
   have hu' : (u + 2 * (2 * M) * 24 - 8) % (2 * (2 * M) * 24) < 2 * (2 * M) * 24 :=
     Nat.mod_lt _ (by omega)
-  unfold BlockPairHost.hostTape
-  rw [zmod_sub8_eq, designObs_eq M u hu, designObs_eq M _ hu']
+  unfold BlockPairHost.tape
+  rw [zmod_sub8_eq, BlockPairHost.designObs_eq M u hu, BlockPairHost.designObs_eq M _ hu']
   rw [hostTapeBit, decide_odd_beq]
 
 /-! ## The packed host's cell positions, and the digit bridge -/
 
-private theorem hostIdxEquiv_inl (M : ℕ) [NeZero (2 * (2 * M))] (i : Fin 8) :
-    (hostIdxEquiv M (Sum.inl i) : ℕ) = i := by
-  rw [BlockPairOverlap.hostIdxEquiv]
+private theorem BlockPairHost.idxEquiv_inl (M : ℕ) [NeZero (2 * (2 * M))] (i : Fin 8) :
+    (BlockPairHost.idxEquiv M (Sum.inl i) : ℕ) = i := by
+  rw [BlockPairHost.idxEquiv]
   simp
 
-private theorem hostIdxEquiv_inr_inl (M : ℕ) [NeZero (2 * (2 * M))] (i : Fin 8) :
-    (hostIdxEquiv M (Sum.inr (Sum.inl i)) : ℕ) = 8 + (i : ℕ) := by
-  rw [BlockPairOverlap.hostIdxEquiv]
+private theorem BlockPairHost.idxEquiv_inr_inl (M : ℕ) [NeZero (2 * (2 * M))] (i : Fin 8) :
+    (BlockPairHost.idxEquiv M (Sum.inr (Sum.inl i)) : ℕ) = 8 + (i : ℕ) := by
+  rw [BlockPairHost.idxEquiv]
   simp
 
-private theorem hostIdxEquiv_inr_inr (M : ℕ) [NeZero (2 * (2 * M))]
+private theorem BlockPairHost.idxEquiv_inr_inr (M : ℕ) [NeZero (2 * (2 * M))]
     (j : Fin (Nat.size (2 * (2 * M) * 24))) :
-    (hostIdxEquiv M (Sum.inr (Sum.inr j)) : ℕ) = 16 + (j : ℕ) := by
-  rw [BlockPairOverlap.hostIdxEquiv]
+    (BlockPairHost.idxEquiv M (Sum.inr (Sum.inr j)) : ℕ) = 16 + (j : ℕ) := by
+  rw [BlockPairHost.idxEquiv]
   simp; omega
 
-/-- **The digit bridge**: a packed host state's bit at `hostIdxEquiv M i`'s own position is
-exactly cell `i`'s Boolean value — `stateEquiv_digit`, transported along `hostIdxEquiv`. -/
-theorem hostStateEquiv_digit (M : ℕ) [NeZero (2 * (2 * M))] (x : BlockPairWitness.HostMem M)
-    (i : BlockPairWitness.HostIdx M) :
-    numBitN ((hostStateEquiv M x : Fin _) : ℕ) (hostIdxEquiv M i : ℕ) = if x i then 1 else 0 := by
-  have heq : hostStateEquiv M x
-      = stateEquiv (8 + (8 + Nat.size (2 * (2 * M) * 24)))
-          (fun j => x ((hostIdxEquiv M).symm j)) := rfl
-  rw [numBitN, heq, stateEquiv_digit, Equiv.symm_apply_apply]
+/-- **The digit bridge**: a packed host state's bit at `BlockPairHost.idxEquiv M i`'s own position
+is
+exactly cell `i`'s Boolean value — `ALT.stateEquiv_digit`, transported along
+`BlockPairHost.idxEquiv`. -/
+theorem BlockPairHost.stateEquiv_digit (M : ℕ) [NeZero (2 * (2 * M))] (x : BlockPairHost.Mem M)
+    (i : BlockPairHost.Idx M) :
+    numBitN ((BlockPairHost.stateEquiv M x : Fin _) : ℕ) (BlockPairHost.idxEquiv M i : ℕ) = if x i
+      then 1 else 0 := by
+  have heq : BlockPairHost.stateEquiv M x
+      = ALT.stateEquiv (8 + (8 + Nat.size (2 * (2 * M) * 24)))
+          (fun j => x ((BlockPairHost.idxEquiv M).symm j)) := rfl
+  rw [numBitN, heq, ALT.stateEquiv_digit, Equiv.symm_apply_apply]
 
 /-! ## The decode search, as numeral arithmetic -/
 
-/-- The search `hostDecodeRule` performs, restated on any Boolean predicate `P` on `Fin 8`: the
+/-- The search `BlockPairHost.decodeRule` performs, restated on any Boolean predicate `P` on
+`Fin 8`: the
 least index with `P` true, else `0`. -/
 private theorem decNum_spec (P : Fin 8 → Bool) (hex : ∃ i, P i = true) :
     (if P 0 = true then (0 : ℕ) else if P 1 = true then 1 else if P 2 = true then 2
@@ -276,30 +278,38 @@ private theorem decNum_spec (P : Fin 8 → Bool) (hex : ∃ i, P i = true) :
                   fin_cases i <;> exact absurd hi (by assumption)
 
 /-- **The code decode, as numeral arithmetic**: the least code cell set, else `0` — the same
-search `hostDecodeRule` performs, restated on the packed state's own bits. -/
+search `BlockPairHost.decodeRule` performs, restated on the packed state's own bits. -/
 def decNum (s : ℕ) : ℕ :=
   if numBitN s 0 = 1 then 0 else if numBitN s 1 = 1 then 1 else if numBitN s 2 = 1 then 2
   else if numBitN s 3 = 1 then 3 else if numBitN s 4 = 1 then 4 else if numBitN s 5 = 1 then 5
   else if numBitN s 6 = 1 then 6 else if numBitN s 7 = 1 then 7 else 0
 
-theorem decNum_eq_hostDecodeRule (M : ℕ) [NeZero (2 * (2 * M))] (x : BlockPairWitness.HostMem M) :
-    decNum ((hostStateEquiv M x : Fin _) : ℕ) = (BlockPairWitness.hostDecodeRule M x : ℕ) := by
-  have hb : ∀ i : Fin 8, numBitN ((hostStateEquiv M x : Fin _) : ℕ) (i : ℕ) = 1
+theorem decNum_eq_hostDecodeRule (M : ℕ) [NeZero (2 * (2 * M))] (x : BlockPairHost.Mem M) :
+    decNum ((BlockPairHost.stateEquiv M x : Fin _) : ℕ) = (BlockPairHost.decodeRule M x : ℕ) := by
+  have hb : ∀ i : Fin 8, numBitN ((BlockPairHost.stateEquiv M x : Fin _) : ℕ) (i : ℕ) = 1
       ↔ x (Sum.inl i) = true := by
     intro i
-    have hd := hostStateEquiv_digit M x (Sum.inl i)
-    rw [hostIdxEquiv_inl] at hd
+    have hd := BlockPairHost.stateEquiv_digit M x (Sum.inl i)
+    rw [BlockPairHost.idxEquiv_inl] at hd
     rw [hd]; cases x (Sum.inl i) <;> simp
-  have hb0 : numBitN ((hostStateEquiv M x : Fin _) : ℕ) 0 = 1 ↔ x (Sum.inl 0) = true := hb 0
-  have hb1 : numBitN ((hostStateEquiv M x : Fin _) : ℕ) 1 = 1 ↔ x (Sum.inl 1) = true := hb 1
-  have hb2 : numBitN ((hostStateEquiv M x : Fin _) : ℕ) 2 = 1 ↔ x (Sum.inl 2) = true := hb 2
-  have hb3 : numBitN ((hostStateEquiv M x : Fin _) : ℕ) 3 = 1 ↔ x (Sum.inl 3) = true := hb 3
-  have hb4 : numBitN ((hostStateEquiv M x : Fin _) : ℕ) 4 = 1 ↔ x (Sum.inl 4) = true := hb 4
-  have hb5 : numBitN ((hostStateEquiv M x : Fin _) : ℕ) 5 = 1 ↔ x (Sum.inl 5) = true := hb 5
-  have hb6 : numBitN ((hostStateEquiv M x : Fin _) : ℕ) 6 = 1 ↔ x (Sum.inl 6) = true := hb 6
-  have hb7 : numBitN ((hostStateEquiv M x : Fin _) : ℕ) 7 = 1 ↔ x (Sum.inl 7) = true := hb 7
+  have hb0 : numBitN ((BlockPairHost.stateEquiv M x : Fin _) : ℕ) 0 = 1 ↔ x (Sum.inl 0) = true := hb
+    0
+  have hb1 : numBitN ((BlockPairHost.stateEquiv M x : Fin _) : ℕ) 1 = 1 ↔ x (Sum.inl 1) = true := hb
+    1
+  have hb2 : numBitN ((BlockPairHost.stateEquiv M x : Fin _) : ℕ) 2 = 1 ↔ x (Sum.inl 2) = true := hb
+    2
+  have hb3 : numBitN ((BlockPairHost.stateEquiv M x : Fin _) : ℕ) 3 = 1 ↔ x (Sum.inl 3) = true := hb
+    3
+  have hb4 : numBitN ((BlockPairHost.stateEquiv M x : Fin _) : ℕ) 4 = 1 ↔ x (Sum.inl 4) = true := hb
+    4
+  have hb5 : numBitN ((BlockPairHost.stateEquiv M x : Fin _) : ℕ) 5 = 1 ↔ x (Sum.inl 5) = true := hb
+    5
+  have hb6 : numBitN ((BlockPairHost.stateEquiv M x : Fin _) : ℕ) 6 = 1 ↔ x (Sum.inl 6) = true := hb
+    6
+  have hb7 : numBitN ((BlockPairHost.stateEquiv M x : Fin _) : ℕ) 7 = 1 ↔ x (Sum.inl 7) = true := hb
+    7
   simp only [decNum, hb0, hb1, hb2, hb3, hb4, hb5, hb6, hb7]
-  unfold BlockPairWitness.hostDecodeRule
+  unfold BlockPairHost.decodeRule
   by_cases hex : ∃ i : Fin 8, x (Sum.inl i) = true
   · rw [dite_eq_left hex]
     exact decNum_spec (fun i => x (Sum.inl i)) hex
@@ -338,138 +348,156 @@ private theorem block3_decomp (m : ℕ) :
   have e3 : m / 2 ^ 8 / 2 ^ 8 = m / 2 ^ 16 := by rw [Nat.div_div_eq_div_mul]; norm_num
   omega
 
-private theorem hostStateEquiv_lt (M : ℕ) [NeZero (2 * (2 * M))] (x : BlockPairWitness.HostMem M) :
-    ((hostStateEquiv M x : Fin _) : ℕ) < 2 ^ (16 + Nat.size (2 * (2 * M) * 24)) := by
-  have h := (hostStateEquiv M x).isLt
+private theorem BlockPairHost.stateEquiv_lt (M : ℕ) [NeZero (2 * (2 * M))] (x : BlockPairHost.Mem M)
+    :
+    ((BlockPairHost.stateEquiv M x : Fin _) : ℕ) < 2 ^ (16 + Nat.size (2 * (2 * M) * 24)) := by
+  have h := (BlockPairHost.stateEquiv M x).isLt
   have hp : (2 : ℕ) ^ (8 + (8 + Nat.size (2 * (2 * M) * 24)))
       = 2 ^ (16 + Nat.size (2 * (2 * M) * 24)) := by congr 1; omega
   omega
 
-/-- **`readCounter`'s raw value, read off the packed state's own bits.** `finFunctionFinEquiv`'s
-own value law (`finFunctionFinEquiv_apply`) is the same little-endian sum `stateEquiv_val` gives,
-so `readCounter`'s underlying `ℕ` value is exactly bits `16 .. 16 + B` of the packed state. -/
-private theorem readCounter_raw_eq (M : ℕ) [NeZero (2 * (2 * M))] (x : BlockPairWitness.HostMem M) :
+/-- **`BlockPairHost.readCounter`'s raw value, read off the packed state's own bits.**
+`finFunctionFinEquiv`'s own value law (`finFunctionFinEquiv_apply`) is the same little-endian sum
+`stateEquiv_val` gives,
+so `BlockPairHost.readCounter`'s underlying `ℕ` value is exactly bits `16 .. 16 + B` of the packed
+state. -/
+private theorem BlockPairHost.readCounter_raw_eq (M : ℕ) [NeZero (2 * (2 * M))]
+    (x : BlockPairHost.Mem M) :
     ((finFunctionFinEquiv (fun i : Fin (Nat.size (2 * (2 * M) * 24)) =>
         if x (Sum.inr (Sum.inr i)) then (1 : Fin 2) else 0)).val : ℕ)
-      = ((hostStateEquiv M x : Fin _) : ℕ) / 2 ^ 16 := by
-  have hlt : ((hostStateEquiv M x : Fin _) : ℕ) / 2 ^ 16 < 2 ^ (Nat.size (2 * (2 * M) * 24)) := by
+      = ((BlockPairHost.stateEquiv M x : Fin _) : ℕ) / 2 ^ 16 := by
+  have hlt : ((BlockPairHost.stateEquiv M x : Fin _) : ℕ) / 2 ^ 16 < 2 ^
+    (Nat.size (2 * (2 * M) * 24)) := by
     have hpos : (0 : ℕ) < 2 ^ 16 := by positivity
     rw [Nat.div_lt_iff_lt_mul hpos]
-    have h := hostStateEquiv_lt M x
-    calc ((hostStateEquiv M x : Fin _) : ℕ)
+    have h := BlockPairHost.stateEquiv_lt M x
+    calc ((BlockPairHost.stateEquiv M x : Fin _) : ℕ)
         < 2 ^ (16 + Nat.size (2 * (2 * M) * 24)) := h
       _ = 2 ^ (Nat.size (2 * (2 * M) * 24)) * 2 ^ 16 := by rw [pow_add]; ring
   rw [finFunctionFinEquiv_apply, div_eq_sum_of_lt _ 16 _ hlt, ← Fin.sum_univ_eq_sum_range
-    (fun j => numBitN ((hostStateEquiv M x : Fin _) : ℕ) (16 + j) * 2 ^ j)]
+    (fun j => numBitN ((BlockPairHost.stateEquiv M x : Fin _) : ℕ) (16 + j) * 2 ^ j)]
   refine Finset.sum_congr rfl (fun j _ => ?_)
-  have hd := hostStateEquiv_digit M x (Sum.inr (Sum.inr j))
-  rw [hostIdxEquiv_inr_inr] at hd
+  have hd := BlockPairHost.stateEquiv_digit M x (Sum.inr (Sum.inr j))
+  rw [BlockPairHost.idxEquiv_inr_inr] at hd
   rw [hd]
   cases x (Sum.inr (Sum.inr j)) <;> rfl
 
-/-- **`readCounter`'s value, as a numeral.** The counter register cast to `ZMod Π` reduces mod
-`Π` (`ZMod.val_natCast`), applied to `readCounter_raw_eq`'s raw value. -/
-private theorem readCounter_val_eq (M : ℕ) [NeZero (2 * (2 * M))] (x : BlockPairWitness.HostMem M) :
-    (BlockPairWitness.readCounter M x).val
-      = ((hostStateEquiv M x : Fin _) : ℕ) / 2 ^ 16 % (2 * (2 * M) * 24) := by
-  rw [BlockPairWitness.readCounter, ZMod.val_natCast, readCounter_raw_eq]
+/-- **`BlockPairHost.readCounter`'s value, as a numeral.** The counter register cast to `ZMod Π`
+reduces mod
+`Π` (`ZMod.val_natCast`), applied to `BlockPairHost.readCounter_raw_eq`'s raw value. -/
+private theorem BlockPairHost.readCounter_val_eq (M : ℕ) [NeZero (2 * (2 * M))]
+    (x : BlockPairHost.Mem M) :
+    (BlockPairHost.readCounter M x).val
+      = ((BlockPairHost.stateEquiv M x : Fin _) : ℕ) / 2 ^ 16 % (2 * (2 * M) * 24) := by
+  rw [BlockPairHost.readCounter, ZMod.val_natCast, BlockPairHost.readCounter_raw_eq]
 
-/-- **`writeCounter`'s round trip, as a numeral.** `writeCounter M c` packs to `c.val` exactly:
-by proof irrelevance, `writeCounter`'s internal bound proof is interchangeable with any other
-proof of the same fact, so the round trip is `Equiv.apply_symm_apply` read through the
-`stateEquiv`/`finFunctionFinEquiv` identification `readCounter_raw_eq` already established. -/
-private theorem writeCounter_digit (M : ℕ) [NeZero (2 * (2 * M))] (c : ZMod (2 * (2 * M) * 24))
+/-- **`BlockPairHost.writeCounter`'s round trip, as a numeral.** `BlockPairHost.writeCounter M c`
+packs to `c.val` exactly: by proof irrelevance, `BlockPairHost.writeCounter`'s internal bound proof
+is interchangeable with any other proof of the same fact, so the round trip is
+`Equiv.apply_symm_apply` read through the
+`ALT.stateEquiv`/`finFunctionFinEquiv` identification `BlockPairHost.readCounter_raw_eq` already
+established. -/
+private theorem BlockPairHost.writeCounter_digit (M : ℕ) [NeZero (2 * (2 * M))]
+    (c : ZMod (2 * (2 * M) * 24))
     (j : Fin (Nat.size (2 * (2 * M) * 24))) :
-    (if BlockPairWitness.writeCounter M c j then 1 else 0) = numBitN c.val (j : ℕ) := by
+    (if BlockPairHost.writeCounter M c j then 1 else 0) = numBitN c.val (j : ℕ) := by
   have hlt : c.val < 2 ^ Nat.size (2 * (2 * M) * 24) :=
     lt_trans (ZMod.val_lt c) (Nat.lt_size_self _)
   set w : Fin (Nat.size (2 * (2 * M) * 24)) → Fin 2 :=
     finFunctionFinEquiv.symm (⟨c.val, hlt⟩ : Fin (2 ^ Nat.size (2 * (2 * M) * 24))) with hw
-  have hwc : ∀ i, BlockPairWitness.writeCounter M c i = (w i == 1) := fun i => rfl
+  have hwc : ∀ i, BlockPairHost.writeCounter M c i = (w i == 1) := fun i => rfl
   have hy : (fun i => if (w i == 1) then (1 : Fin 2) else 0) = w := by
     funext i
     generalize hgen : w i = z
     fin_cases z <;> decide
   have hround : (finFunctionFinEquiv w : Fin (2 ^ Nat.size (2 * (2 * M) * 24)))
       = ⟨c.val, hlt⟩ := by rw [hw, Equiv.apply_symm_apply]
-  have hkey : (stateEquiv (Nat.size (2 * (2 * M) * 24)) (fun i => w i == 1) : ℕ) = c.val := by
+  have hkey : (ALT.stateEquiv (Nat.size (2 * (2 * M) * 24)) (fun i => w i == 1) : ℕ) = c.val := by
     change (finFunctionFinEquiv (fun i => finTwoEquiv.symm (w i == 1)) : ℕ) = c.val
     have hcond : (fun i => finTwoEquiv.symm (w i == 1))
         = fun i => if (w i == 1) then (1 : Fin 2) else 0 := by
       funext i; cases w i == 1 <;> rfl
     rw [hcond, hy, hround]
-  have hd := stateEquiv_digit (N := Nat.size (2 * (2 * M) * 24)) (fun i => w i == 1) j
+  have hd := ALT.stateEquiv_digit (N := Nat.size (2 * (2 * M) * 24)) (fun i => w i == 1) j
   rw [hkey] at hd
   rw [hwc j, numBitN, ← hd]
 
-private theorem hostSubUpdate_counter (M : ℕ) [NeZero (2 * (2 * M))] (x : BlockPairWitness.HostMem M)
+private theorem BlockPairHost.subUpdate_counter (M : ℕ) [NeZero (2 * (2 * M))]
+    (x : BlockPairHost.Mem M)
     (j : Fin (Nat.size (2 * (2 * M) * 24))) :
-    BlockPairWitness.hostSubUpdate M x (Sum.inr (Sum.inr j))
-      = BlockPairWitness.writeCounter M (BlockPairWitness.readCounter M x + 1) j := rfl
+    BlockPairHost.subUpdate M x (Sum.inr (Sum.inr j))
+      = BlockPairHost.writeCounter M (BlockPairHost.readCounter M x + 1) j := rfl
 
 private theorem val_add_one (M : ℕ) [NeZero (2 * (2 * M))] (c : ZMod (2 * (2 * M) * 24)) :
     (c + 1).val = (c.val + 1) % (2 * (2 * M) * 24) := by
-  have hP8 : 8 ≤ 2 * (2 * M) * 24 := hPge8 M
+  have hP8 : 8 ≤ 2 * (2 * M) * 24 := eight_le_period M
   have h1 : (1 : ZMod (2 * (2 * M) * 24)).val = 1 := by
     rw [← Nat.cast_one, ZMod.val_natCast, Nat.mod_eq_of_lt (by omega)]
   rw [ZMod.val_add, h1]
 
 /-- **The counter block updates correctly.** `target/2^16`'s own bits are exactly
-`hostSubUpdate`'s counter cells (`hostStateEquiv_digit`), which are `writeCounter M
-(readCounter M x + 1)` (`hostSubUpdate_counter`), which pack back to `(readCounter M x + 1).val`
-(`writeCounter_digit`, `mod_pow_eq_sum`) — `vNext` in `readCounter_val_eq`'s own currency. -/
-private theorem hostStepNum_counter (M : ℕ) [NeZero (2 * (2 * M))] (x : BlockPairWitness.HostMem M) :
-    ((hostStateEquiv M (BlockPairWitness.hostSubUpdate M x) : Fin _) : ℕ) / 2 ^ 16
-      = ((((hostStateEquiv M x : Fin _) : ℕ) / 2 ^ 16 % (2 * (2 * M) * 24)) + 1)
+`BlockPairHost.subUpdate`'s counter cells (`BlockPairHost.stateEquiv_digit`), which are
+`BlockPairHost.writeCounter M (BlockPairHost.readCounter M x + 1)`
+(`BlockPairHost.subUpdate_counter`), which pack back to `(BlockPairHost.readCounter M x + 1).val`
+(`BlockPairHost.writeCounter_digit`, `mod_pow_eq_sum`) — `vNext` in
+`BlockPairHost.readCounter_val_eq`'s own currency. -/
+private theorem hostStepNum_counter (M : ℕ) [NeZero (2 * (2 * M))]
+    (x : BlockPairHost.Mem M) :
+    ((BlockPairHost.stateEquiv M (BlockPairHost.subUpdate M x) : Fin _) : ℕ) / 2 ^ 16
+      = ((((BlockPairHost.stateEquiv M x : Fin _) : ℕ) / 2 ^ 16 % (2 * (2 * M) * 24)) + 1)
           % (2 * (2 * M) * 24) := by
-  have hlt : ((hostStateEquiv M (BlockPairWitness.hostSubUpdate M x) : Fin _) : ℕ) / 2 ^ 16
+  have hlt : ((BlockPairHost.stateEquiv M (BlockPairHost.subUpdate M x) : Fin _) : ℕ) / 2 ^ 16
       < 2 ^ (Nat.size (2 * (2 * M) * 24)) := by
     have hpos : (0 : ℕ) < 2 ^ 16 := by positivity
     rw [Nat.div_lt_iff_lt_mul hpos]
-    have h := hostStateEquiv_lt M (BlockPairWitness.hostSubUpdate M x)
-    calc ((hostStateEquiv M (BlockPairWitness.hostSubUpdate M x) : Fin _) : ℕ)
+    have h := BlockPairHost.stateEquiv_lt M (BlockPairHost.subUpdate M x)
+    calc ((BlockPairHost.stateEquiv M (BlockPairHost.subUpdate M x) : Fin _) : ℕ)
         < 2 ^ (16 + Nat.size (2 * (2 * M) * 24)) := h
       _ = 2 ^ (Nat.size (2 * (2 * M) * 24)) * 2 ^ 16 := by rw [pow_add]; ring
   rw [div_eq_sum_of_lt _ 16 _ hlt]
   have heach : ∀ j : Fin (Nat.size (2 * (2 * M) * 24)),
-      numBitN ((hostStateEquiv M (BlockPairWitness.hostSubUpdate M x) : Fin _) : ℕ) (16 + (j : ℕ))
-        = numBitN (BlockPairWitness.readCounter M x + 1).val (j : ℕ) := by
+      numBitN ((BlockPairHost.stateEquiv M (BlockPairHost.subUpdate M x) : Fin _) : ℕ)
+        (16 + (j : ℕ))
+        = numBitN (BlockPairHost.readCounter M x + 1).val (j : ℕ) := by
     intro j
-    have hd := hostStateEquiv_digit M (BlockPairWitness.hostSubUpdate M x) (Sum.inr (Sum.inr j))
-    rw [hostIdxEquiv_inr_inr] at hd
-    rw [hd, hostSubUpdate_counter, ← writeCounter_digit]
+    have hd := BlockPairHost.stateEquiv_digit M (BlockPairHost.subUpdate M x) (Sum.inr (Sum.inr j))
+    rw [BlockPairHost.idxEquiv_inr_inr] at hd
+    rw [hd, BlockPairHost.subUpdate_counter, ← BlockPairHost.writeCounter_digit]
   rw [show (∑ j ∈ Finset.range (Nat.size (2 * (2 * M) * 24)),
-        numBitN ((hostStateEquiv M (BlockPairWitness.hostSubUpdate M x) : Fin _) : ℕ) (16 + j)
+        numBitN ((BlockPairHost.stateEquiv M (BlockPairHost.subUpdate M x) : Fin _) : ℕ) (16 + j)
           * 2 ^ j)
       = ∑ j ∈ Finset.range (Nat.size (2 * (2 * M) * 24)),
-        numBitN (BlockPairWitness.readCounter M x + 1).val j * 2 ^ j from
+        numBitN (BlockPairHost.readCounter M x + 1).val j * 2 ^ j from
     Finset.sum_congr rfl (fun j hj => by rw [heach ⟨j, Finset.mem_range.mp hj⟩])]
   rw [← mod_pow_eq_sum]
-  have hfit : (BlockPairWitness.readCounter M x + 1).val < 2 ^ Nat.size (2 * (2 * M) * 24) :=
+  have hfit : (BlockPairHost.readCounter M x + 1).val < 2 ^ Nat.size (2 * (2 * M) * 24) :=
     lt_trans (ZMod.val_lt _) (Nat.lt_size_self _)
-  rw [Nat.mod_eq_of_lt hfit, val_add_one, readCounter_val_eq]
+  rw [Nat.mod_eq_of_lt hfit, val_add_one, BlockPairHost.readCounter_val_eq]
 
-/-- **The code block is unchanged.** `hostSubUpdate`'s code case is `s (Sum.inl i)` verbatim. -/
-private theorem hostStepNum_code (M : ℕ) [NeZero (2 * (2 * M))] (x : BlockPairWitness.HostMem M) :
-    ((hostStateEquiv M (BlockPairWitness.hostSubUpdate M x) : Fin _) : ℕ) % 2 ^ 8
-      = ((hostStateEquiv M x : Fin _) : ℕ) % 2 ^ 8 := by
+/-- **The code block is unchanged.** `BlockPairHost.subUpdate`'s code case is `s (Sum.inl i)`
+verbatim. -/
+private theorem hostStepNum_code (M : ℕ) [NeZero (2 * (2 * M))] (x : BlockPairHost.Mem M) :
+    ((BlockPairHost.stateEquiv M (BlockPairHost.subUpdate M x) : Fin _) : ℕ) % 2 ^ 8
+      = ((BlockPairHost.stateEquiv M x : Fin _) : ℕ) % 2 ^ 8 := by
   rw [mod_pow_eq_sum, mod_pow_eq_sum]
   refine Finset.sum_congr rfl (fun i hi => ?_)
   have hi8 : i < 8 := Finset.mem_range.mp hi
-  have hd1 := hostStateEquiv_digit M (BlockPairWitness.hostSubUpdate M x)
+  have hd1 := BlockPairHost.stateEquiv_digit M (BlockPairHost.subUpdate M x)
     (Sum.inl (⟨i, hi8⟩ : Fin 8))
-  have hd2 := hostStateEquiv_digit M x (Sum.inl (⟨i, hi8⟩ : Fin 8))
-  rw [hostIdxEquiv_inl] at hd1 hd2
+  have hd2 := BlockPairHost.stateEquiv_digit M x (Sum.inl (⟨i, hi8⟩ : Fin 8))
+  rw [BlockPairHost.idxEquiv_inl] at hd1 hd2
   rw [hd1, hd2]
   rfl
 
-private theorem readCounter_succ_val (M : ℕ) [NeZero (2 * (2 * M))] (x : BlockPairWitness.HostMem M) :
-    (BlockPairWitness.readCounter M x + 1).val
-      = (((hostStateEquiv M x : Fin _) : ℕ) / 2 ^ 16 % (2 * (2 * M) * 24) + 1)
+private theorem BlockPairHost.readCounter_succ_val (M : ℕ) [NeZero (2 * (2 * M))]
+    (x : BlockPairHost.Mem M) :
+    (BlockPairHost.readCounter M x + 1).val
+      = (((BlockPairHost.stateEquiv M x : Fin _) : ℕ) / 2 ^ 16 % (2 * (2 * M) * 24) + 1)
           % (2 * (2 * M) * 24) := by
-  rw [val_add_one, readCounter_val_eq]
+  rw [val_add_one, BlockPairHost.readCounter_val_eq]
 
-private theorem bit_decide_eq (k : ℕ) (hk : k < 2) : (if decide (k = 1) then (1 : ℕ) else 0) = k := by
+private theorem bit_decide_eq (k : ℕ) (hk : k < 2) : (if decide (k = 1) then (1 : ℕ) else 0) =
+    k := by
   interval_cases k <;> decide
 
 private theorem xor_not_bit (p q : Bool) :
@@ -478,71 +506,73 @@ private theorem xor_not_bit (p q : Bool) :
   cases p <;> cases q <;> decide
 
 /-- **The window block updates correctly.** Bits `9..15` shift down from `s` unchanged
-(`hostSubUpdate`'s shift case); bit `15` is the new bit `hostSubUpdate` writes — `xor_not_bit`
-matches it to `w7` exactly, given the code bit (`decNum_eq_hostDecodeRule`) and the tape bit
-(`hostTape_eq`, `readCounter_succ_val`). -/
-private theorem hostStepNum_window (M : ℕ) [NeZero (2 * (2 * M))] (x : BlockPairWitness.HostMem M) :
-    (((hostStateEquiv M (BlockPairWitness.hostSubUpdate M x) : Fin _) : ℕ) / 2 ^ 8) % 2 ^ 8
-      = (((hostStateEquiv M x : Fin _) : ℕ) / 2 ^ 9) % 2 ^ 7
-        + 2 ^ 7 * ((1 + numBitN ((hostStateEquiv M x : Fin _) : ℕ)
-              (8 + decNum ((hostStateEquiv M x : Fin _) : ℕ))
-            + BlockPairPrice.hostTapeBit (2 * (2 * M) * 24)
-                ((((hostStateEquiv M x : Fin _) : ℕ) / 2 ^ 16 % (2 * (2 * M) * 24) + 1)
+(`BlockPairHost.subUpdate`'s shift case); bit `15` is the new bit `BlockPairHost.subUpdate` writes —
+`xor_not_bit` matches it to `w7` exactly, given the code bit (`decNum_eq_hostDecodeRule`) and the
+tape bit
+(`BlockPairHost.tape_eq_decide_hostTapeBit`, `BlockPairHost.readCounter_succ_val`). -/
+private theorem hostStepNum_window (M : ℕ) [NeZero (2 * (2 * M))] (x : BlockPairHost.Mem M) :
+    (((BlockPairHost.stateEquiv M (BlockPairHost.subUpdate M x) : Fin _) : ℕ) / 2 ^ 8) % 2 ^ 8
+      = (((BlockPairHost.stateEquiv M x : Fin _) : ℕ) / 2 ^ 9) % 2 ^ 7
+        + 2 ^ 7 * ((1 + numBitN ((BlockPairHost.stateEquiv M x : Fin _) : ℕ)
+              (8 + decNum ((BlockPairHost.stateEquiv M x : Fin _) : ℕ))
+            + hostTapeBit (2 * (2 * M) * 24)
+                ((((BlockPairHost.stateEquiv M x : Fin _) : ℕ) / 2 ^ 16 % (2 * (2 * M) * 24) + 1)
                   % (2 * (2 * M) * 24))) % 2) := by
   rw [shift_mod_pow_eq_sum, Finset.sum_range_succ]
   have hlow : ∀ i : Fin 7,
-      numBitN ((hostStateEquiv M (BlockPairWitness.hostSubUpdate M x) : Fin _) : ℕ) (8 + (i : ℕ))
-        = numBitN ((hostStateEquiv M x : Fin _) : ℕ) (9 + (i : ℕ)) := by
+      numBitN ((BlockPairHost.stateEquiv M (BlockPairHost.subUpdate M x) : Fin _) : ℕ) (8 + (i : ℕ))
+        = numBitN ((BlockPairHost.stateEquiv M x : Fin _) : ℕ) (9 + (i : ℕ)) := by
     intro i
     have hi7 : (i : ℕ) < 7 := i.isLt
     have hb8 : (i : ℕ) < 8 := by omega
     have hb8' : (i : ℕ) + 1 < 8 := by omega
-    have hd1 := hostStateEquiv_digit M (BlockPairWitness.hostSubUpdate M x)
+    have hd1 := BlockPairHost.stateEquiv_digit M (BlockPairHost.subUpdate M x)
       (Sum.inr (Sum.inl (⟨(i : ℕ), hb8⟩ : Fin 8)))
-    rw [hostIdxEquiv_inr_inl] at hd1
-    have hstep : BlockPairWitness.hostSubUpdate M x (Sum.inr (Sum.inl (⟨(i : ℕ), hb8⟩ : Fin 8)))
+    rw [BlockPairHost.idxEquiv_inr_inl] at hd1
+    have hstep : BlockPairHost.subUpdate M x (Sum.inr (Sum.inl (⟨(i : ℕ), hb8⟩ : Fin 8)))
         = x (Sum.inr (Sum.inl (⟨(i : ℕ) + 1, hb8'⟩ : Fin 8))) := by
-      simp only [BlockPairWitness.hostSubUpdate]
+      simp only [BlockPairHost.subUpdate]
       rw [dite_eq_left hb8']
-    have hd2 := hostStateEquiv_digit M x (Sum.inr (Sum.inl (⟨(i : ℕ) + 1, hb8'⟩ : Fin 8)))
-    rw [hostIdxEquiv_inr_inl] at hd2
+    have hd2 := BlockPairHost.stateEquiv_digit M x (Sum.inr (Sum.inl (⟨(i : ℕ) + 1, hb8'⟩ : Fin 8)))
+    rw [BlockPairHost.idxEquiv_inr_inl] at hd2
     rw [hd1, hstep]
     rw [show (8 : ℕ) + ((i : ℕ) + 1) = 9 + (i : ℕ) from by ring] at hd2
     exact hd2.symm
   have hsumlow : (∑ i ∈ Finset.range 7,
-        numBitN ((hostStateEquiv M (BlockPairWitness.hostSubUpdate M x) : Fin _) : ℕ) (8 + i)
+        numBitN ((BlockPairHost.stateEquiv M (BlockPairHost.subUpdate M x) : Fin _) : ℕ) (8 + i)
           * 2 ^ i)
-      = ((hostStateEquiv M x : Fin _) : ℕ) / 2 ^ 9 % 2 ^ 7 := by
+      = ((BlockPairHost.stateEquiv M x : Fin _) : ℕ) / 2 ^ 9 % 2 ^ 7 := by
     rw [shift_mod_pow_eq_sum]
     exact Finset.sum_congr rfl (fun i hi => by rw [hlow ⟨i, Finset.mem_range.mp hi⟩])
   rw [hsumlow]
   congr 1
   have hb8_7 : (7 : ℕ) < 8 := by norm_num
-  have hd7 := hostStateEquiv_digit M (BlockPairWitness.hostSubUpdate M x)
+  have hd7 := BlockPairHost.stateEquiv_digit M (BlockPairHost.subUpdate M x)
     (Sum.inr (Sum.inl (⟨7, hb8_7⟩ : Fin 8)))
-  rw [hostIdxEquiv_inr_inl] at hd7
-  have hstep7 : BlockPairWitness.hostSubUpdate M x (Sum.inr (Sum.inl (⟨7, hb8_7⟩ : Fin 8)))
-      = xor (!(x (Sum.inr (Sum.inl (BlockPairWitness.hostDecodeRule M x)))))
-          (hostTape M (BlockPairWitness.readCounter M x + 1)) := by
-    simp only [BlockPairWitness.hostSubUpdate]
+  rw [BlockPairHost.idxEquiv_inr_inl] at hd7
+  have hstep7 : BlockPairHost.subUpdate M x (Sum.inr (Sum.inl (⟨7, hb8_7⟩ : Fin 8)))
+      = xor (!(x (Sum.inr (Sum.inl (BlockPairHost.decodeRule M x)))))
+          (BlockPairHost.tape M (BlockPairHost.readCounter M x + 1)) := by
+    simp only [BlockPairHost.subUpdate]
     rw [dite_eq_right (by norm_num : ¬ (7 : ℕ) + 1 < 8)]
   rw [show (8 : ℕ) + 7 = 15 from rfl] at hd7
   rw [hd7, hstep7, xor_not_bit]
-  have ha : (if x (Sum.inr (Sum.inl (BlockPairWitness.hostDecodeRule M x))) then (1 : ℕ) else 0)
-      = numBitN ((hostStateEquiv M x : Fin _) : ℕ)
-          (8 + decNum ((hostStateEquiv M x : Fin _) : ℕ)) := by
+  have ha : (if x (Sum.inr (Sum.inl (BlockPairHost.decodeRule M x))) then (1 : ℕ) else 0)
+      = numBitN ((BlockPairHost.stateEquiv M x : Fin _) : ℕ)
+          (8 + decNum ((BlockPairHost.stateEquiv M x : Fin _) : ℕ)) := by
     rw [decNum_eq_hostDecodeRule]
-    have hd := hostStateEquiv_digit M x (Sum.inr (Sum.inl (BlockPairWitness.hostDecodeRule M x)))
-    rw [hostIdxEquiv_inr_inl] at hd
+    have hd := BlockPairHost.stateEquiv_digit M x (Sum.inr (Sum.inl (BlockPairHost.decodeRule M x)))
+    rw [BlockPairHost.idxEquiv_inr_inl] at hd
     exact hd.symm
-  have hb : (if hostTape M (BlockPairWitness.readCounter M x + 1) then (1 : ℕ) else 0)
-      = BlockPairPrice.hostTapeBit (2 * (2 * M) * 24)
-          ((((hostStateEquiv M x : Fin _) : ℕ) / 2 ^ 16 % (2 * (2 * M) * 24) + 1)
+  have hb : (if BlockPairHost.tape M (BlockPairHost.readCounter M x + 1) then (1 : ℕ) else 0)
+      = hostTapeBit (2 * (2 * M) * 24)
+          ((((BlockPairHost.stateEquiv M x : Fin _) : ℕ) / 2 ^ 16 % (2 * (2 * M) * 24) + 1)
             % (2 * (2 * M) * 24)) := by
-    have hval : (BlockPairWitness.readCounter M x + 1 : ZMod (2 * (2 * M) * 24))
-        = (((BlockPairWitness.readCounter M x + 1).val : ℕ) : ZMod (2 * (2 * M) * 24)) :=
+    have hval : (BlockPairHost.readCounter M x + 1 : ZMod (2 * (2 * M) * 24))
+        = (((BlockPairHost.readCounter M x + 1).val : ℕ) : ZMod (2 * (2 * M) * 24)) :=
       (ZMod.natCast_zmod_val _).symm
-    rw [hval, hostTape_eq M _ (ZMod.val_lt _), readCounter_succ_val]
+    rw [hval, BlockPairHost.tape_eq_decide_hostTapeBit M _ (ZMod.val_lt _),
+      BlockPairHost.readCounter_succ_val]
     exact bit_decide_eq _ (Nat.mod_lt _ (by norm_num))
   rw [ha, hb]
   ring
@@ -561,28 +591,32 @@ def hostStepNum (N s : ℕ) : ℕ :=
     + 2 ^ 16 * ((s / 2 ^ 16 % N + 1) % N)
 
 /-- **The step is correct**: `hostStepNum`, run on a packed host state, computes the packed
-image of `hostSubUpdate`'s own step. `block3_decomp` splits the target into its three blocks;
+image of `BlockPairHost.subUpdate`'s own step. `block3_decomp` splits the target into its three
+blocks;
 `hostStepNum_code`/`hostStepNum_window`/`hostStepNum_counter` match each one. -/
-theorem hostStepNum_stateEquiv (M : ℕ) [NeZero (2 * (2 * M))] (x : BlockPairWitness.HostMem M) :
-    hostStepNum (2 * (2 * M) * 24) ((hostStateEquiv M x : Fin _) : ℕ)
-      = ((hostStateEquiv M (BlockPairWitness.hostSubUpdate M x) : Fin _) : ℕ) := by
-  rw [hostStepNum, block3_decomp ((hostStateEquiv M (BlockPairWitness.hostSubUpdate M x) : Fin _) : ℕ),
+theorem hostStepNum_stateEquiv (M : ℕ) [NeZero (2 * (2 * M))] (x : BlockPairHost.Mem M) :
+    hostStepNum (2 * (2 * M) * 24) ((BlockPairHost.stateEquiv M x : Fin _) : ℕ)
+      = ((BlockPairHost.stateEquiv M (BlockPairHost.subUpdate M x) : Fin _) : ℕ) := by
+  rw [hostStepNum, block3_decomp
+      ((BlockPairHost.stateEquiv M (BlockPairHost.subUpdate M x) : Fin _) : ℕ),
     hostStepNum_code, hostStepNum_window, hostStepNum_counter]
 
 /-! ## The frame, packed: definition and the bridge -/
 
-/-- **The frame's own read, packed on the numeral carrier.** `hostFrame` reads the counter register
-back and reduces to its low `κ` bits; `readCounter_val_eq` gives the raw counter value directly off
+/-- **The frame's own read, packed on the numeral carrier.** `BlockPairHost.frame` reads the counter
+register back and reduces to its low `κ` bits; `BlockPairHost.readCounter_val_eq` gives the raw
+counter value directly off
 the packed state's bits `16 .. 16 + Nat.size N`. -/
 def frameStepNum (N κ s : ℕ) : ℕ := s / 2 ^ 16 % N % 2 ^ κ
 
 /-- **The frame read is correct.** -/
-theorem frameStepNum_stateEquiv (M : ℕ) [NeZero (2 * (2 * M))] (x : BlockPairWitness.HostMem M) :
-    frameStepNum (2 * (2 * M) * 24) (hostFrameBits M) ((hostStateEquiv M x : Fin _) : ℕ)
-      = ((hostFrame M (hostStateEquiv M x) : Fin _) : ℕ) := by
-  rw [frameStepNum, hostFrame]
+theorem frameStepNum_stateEquiv (M : ℕ) [NeZero (2 * (2 * M))] (x : BlockPairHost.Mem M) :
+    frameStepNum (2 * (2 * M) * 24) (BlockPairHost.frameBits M)
+      ((BlockPairHost.stateEquiv M x : Fin _) : ℕ)
+      = ((BlockPairHost.frame M (BlockPairHost.stateEquiv M x) : Fin _) : ℕ) := by
+  rw [frameStepNum, BlockPairHost.frame]
   simp only [Equiv.symm_apply_apply]
-  rw [readCounter_val_eq]
+  rw [BlockPairHost.readCounter_val_eq]
 
 /-! ## Primitive recursion -/
 
@@ -737,15 +771,15 @@ theorem primrec_hostTableFn : Primrec hostTableFn := by
   exact Primrec.encode.comp (Primrec.list_map (Primrec.list_range.comp hlen) hinner)
 
 theorem hostTableFn_eq (M : ℕ) [NeZero (2 * (2 * M))] :
-    hostTableFn (Nat.pair M (Nat.size (2 * (2 * M) * 24))) = lensCode (hostPacked M) := by
+    hostTableFn (Nat.pair M (Nat.size (2 * (2 * M) * 24))) = lensCode (BlockPairHost.packed M) := by
   rw [hostTableFn]
   simp only [Nat.unpair_pair]
   conv_rhs => rw [lensCode, lensTable_range]
   congr 1
   refine List.map_congr_left fun s hs => ?_
   have hsN : s < 2 ^ (8 + (8 + Nat.size (2 * (2 * M) * 24))) := List.mem_range.mp hs
-  rw [dite_eq_left hsN, hostPacked]
-  have hx := hostStepNum_stateEquiv M ((hostStateEquiv M).symm (⟨s, hsN⟩ : Fin _))
+  rw [dite_eq_left hsN, BlockPairHost.packed]
+  have hx := hostStepNum_stateEquiv M ((BlockPairHost.stateEquiv M).symm (⟨s, hsN⟩ : Fin _))
   rw [Equiv.apply_symm_apply] at hx
   exact hx
 
@@ -789,8 +823,8 @@ theorem primrec_frameTableFn : Primrec frameTableFn := by
   exact Primrec.encode.comp (Primrec.list_map (Primrec.list_range.comp hlen) hinner)
 
 theorem frameTableFn_eq (M : ℕ) [NeZero (2 * (2 * M))] :
-    frameTableFn (Nat.pair M (Nat.pair (Nat.size (2 * (2 * M) * 24)) (hostFrameBits M)))
-      = lensCode (hostFrame M) := by
+    frameTableFn (Nat.pair M (Nat.pair (Nat.size (2 * (2 * M) * 24)) (BlockPairHost.frameBits M)))
+      = lensCode (BlockPairHost.frame M) := by
   rw [frameTableFn]
   simp only [Nat.unpair_pair]
   conv_rhs => rw [lensCode, lensTable_range]
@@ -798,7 +832,7 @@ theorem frameTableFn_eq (M : ℕ) [NeZero (2 * (2 * M))] :
   refine List.map_congr_left fun s hs => ?_
   have hsN : s < 2 ^ (8 + (8 + Nat.size (2 * (2 * M) * 24))) := List.mem_range.mp hs
   rw [dite_eq_left hsN]
-  have hx := frameStepNum_stateEquiv M ((hostStateEquiv M).symm (⟨s, hsN⟩ : Fin _))
+  have hx := frameStepNum_stateEquiv M ((BlockPairHost.stateEquiv M).symm (⟨s, hsN⟩ : Fin _))
   rw [Equiv.apply_symm_apply] at hx
   exact hx
 
@@ -807,7 +841,7 @@ theorem partrec_frameTableFn : Nat.Partrec (fun a : ℕ => (frameTableFn a : ℕ
   _root_.Partrec.nat_iff.mp (Primrec.to_comp primrec_frameTableFn).partrec
 
 /-- **The fixed frame builder code**, extracted from universality: one program taking
-`⟨M, ⟨Nat.size Π, hostFrameBits M⟩⟩`. -/
+`⟨M, ⟨Nat.size Π, BlockPairHost.frameBits M⟩⟩`. -/
 noncomputable def frameBuilder : Nat.Partrec.Code :=
   Classical.choose (Nat.Partrec.Code.exists_code.mp partrec_frameTableFn)
 
@@ -827,7 +861,7 @@ count. -/
 private theorem hostBuilder_computes (M : ℕ) [NeZero (2 * (2 * M))] : Computes
     (Nat.Partrec.Code.comp hostBuilder
       (Nat.Partrec.Code.pair (bconst M) (bconst (Nat.size (2 * (2 * M) * 24)))))
-    (lensCode (hostPacked M)) := by
+    (lensCode (BlockPairHost.packed M)) := by
   have hp : Nat.Partrec.Code.eval
       (Nat.Partrec.Code.pair (bconst M) (bconst (Nat.size (2 * (2 * M) * 24)))) 0
       = Part.some (Nat.pair M (Nat.size (2 * (2 * M) * 24))) := by
@@ -839,27 +873,30 @@ private theorem hostBuilder_computes (M : ℕ) [NeZero (2 * (2 * M))] : Computes
 private theorem frameBuilder_computes (M : ℕ) [NeZero (2 * (2 * M))] : Computes
     (Nat.Partrec.Code.comp frameBuilder
       (Nat.Partrec.Code.pair (bconst M)
-        (Nat.Partrec.Code.pair (bconst (Nat.size (2 * (2 * M) * 24))) (bconst (hostFrameBits M)))))
-    (lensCode (hostFrame M)) := by
+        (Nat.Partrec.Code.pair (bconst (Nat.size (2 * (2 * M) * 24)))
+          (bconst (BlockPairHost.frameBits M)))))
+    (lensCode (BlockPairHost.frame M)) := by
   have hp2 : Nat.Partrec.Code.eval
-      (Nat.Partrec.Code.pair (bconst (Nat.size (2 * (2 * M) * 24))) (bconst (hostFrameBits M))) 0
-      = Part.some (Nat.pair (Nat.size (2 * (2 * M) * 24)) (hostFrameBits M)) := by
+      (Nat.Partrec.Code.pair (bconst (Nat.size (2 * (2 * M) * 24)))
+        (bconst (BlockPairHost.frameBits M))) 0
+      = Part.some (Nat.pair (Nat.size (2 * (2 * M) * 24)) (BlockPairHost.frameBits M)) := by
     change Nat.pair <$> _ <*> _ = _
-    rw [eval_bconst (Nat.size (2 * (2 * M) * 24)) 0, eval_bconst (hostFrameBits M) 0]
+    rw [eval_bconst (Nat.size (2 * (2 * M) * 24)) 0, eval_bconst (BlockPairHost.frameBits M) 0]
     simp [Seq.seq]
   have hp1 : Nat.Partrec.Code.eval
       (Nat.Partrec.Code.pair (bconst M)
-        (Nat.Partrec.Code.pair (bconst (Nat.size (2 * (2 * M) * 24))) (bconst (hostFrameBits M))))
+        (Nat.Partrec.Code.pair (bconst (Nat.size (2 * (2 * M) * 24)))
+          (bconst (BlockPairHost.frameBits M))))
       0
       = Part.some
-          (Nat.pair M (Nat.pair (Nat.size (2 * (2 * M) * 24)) (hostFrameBits M))) := by
+          (Nat.pair M (Nat.pair (Nat.size (2 * (2 * M) * 24)) (BlockPairHost.frameBits M))) := by
     change Nat.pair <$> _ <*> _ = _
     rw [eval_bconst M 0, hp2]; simp [Seq.seq]
   change Nat.Partrec.Code.eval _ 0 = _
   rw [eval_comp_some hp1, eval_frameBuilder, frameTableFn_eq]
 
 theorem KE_hostPacked_le (M : ℕ) [NeZero (2 * (2 * M))] :
-    KE (lensCode (hostPacked M))
+    KE (lensCode (BlockPairHost.packed M))
       ≤ elen hostBuilder
         + (15 + elen dbl) * (Nat.size M + Nat.size (Nat.size (2 * (2 * M) * 24)))
         + (2 * (15 + elen dbl) + 15) := by
@@ -871,18 +908,20 @@ theorem KE_hostPacked_le (M : ℕ) [NeZero (2 * (2 * M))] :
   omega
 
 /-- **The frame's own read is owned at `O(log Π + log κ)`, an exhibited program, no import.**
-`frameBuilder` takes `M`, `Nat.size Π` and `hostFrameBits M` — three `bconst` numerals — so the
+`frameBuilder` takes `M`, `Nat.size Π` and `BlockPairHost.frameBits M` — three `bconst` numerals —
+so the
 frame's table is described in `elen frameBuilder + O(size M + size (size Π) + size κ)` bits. -/
 theorem KE_hostFrame_le (M : ℕ) [NeZero (2 * (2 * M))] :
-    KE (lensCode (hostFrame M))
+    KE (lensCode (BlockPairHost.frame M))
       ≤ elen frameBuilder
         + (15 + elen dbl) *
-            (Nat.size M + Nat.size (Nat.size (2 * (2 * M) * 24)) + Nat.size (hostFrameBits M))
+            (Nat.size M + Nat.size (Nat.size (2 * (2 * M) * 24)) + Nat.size
+              (BlockPairHost.frameBits M))
         + (3 * (15 + elen dbl) + 30) := by
   have hle := KE_le (frameBuilder_computes M)
   have hbM := elen_bconst_le M
   have hbB := elen_bconst_le (Nat.size (2 * (2 * M) * 24))
-  have hbκ := elen_bconst_le (hostFrameBits M)
+  have hbκ := elen_bconst_le (BlockPairHost.frameBits M)
   simp only [E_len_comp, E_len_pair] at hle
   rw [Nat.mul_add, Nat.mul_add]
   omega
@@ -891,27 +930,30 @@ theorem KE_hostFrame_le (M : ℕ) [NeZero (2 * (2 * M))] :
 
 /-- **The emergence guest is owned within an absolute constant plus `O(log Π)`, at an exhibited
 program — [Guests] §6 Theorem 6.1's affordability input met by a designed host, [Inevitability]
-§5 Theorem 5.8's growth clause with its affordability machine-checked.** `hostOwned`, applied at
-the codes `hostBuilder_computes`/`frameBuilder_computes` exhibit, replaces its two parametric
+§5 Theorem 5.8's growth clause with its affordability machine-checked.**
+`BlockPairHost.card_orbit_le_cbHue`, applied at the codes
+`hostBuilder_computes`/`frameBuilder_computes` exhibit, replaces its two parametric
 `elen cU`/`elen cθ` terms with the absolute `elen hostBuilder + elen frameBuilder` plus a budget
-logarithmic in `M`, `Nat.size Π` and `hostFrameBits M` — nothing that scales with the state
+logarithmic in `M`, `Nat.size Π` and `BlockPairHost.frameBits M` — nothing that scales with the
+state
 count `2 ^ (16 + Nat.size Π)`. -/
-theorem hostOwned_cheap (M : ℕ) [NeZero (2 * (2 * M))] :
-    Nat.card ↥(orbit (Equiv.Perm ↥(PersistenceCapacity.core (hostPacked M)))
-        (PersistenceCapacity.coreLens (hostPacked M)
-          (PersistenceCapacity.emergeLens (hostPacked M) (hostFrame M) 0)))
-      ≤ PersistenceCapacity.CbHue (hostPacked M)
-          (AdditiveComplexity.elen PersistenceCapacity.emergeBuilder
+theorem BlockPairHost.card_orbit_le_cbHue_cheap (M : ℕ) [NeZero (2 * (2 * M))] :
+    Nat.card ↥(orbit (Equiv.Perm ↥(ALT.core (BlockPairHost.packed M)))
+        (ALT.coreLens (BlockPairHost.packed M)
+          (ALT.emergeLens (BlockPairHost.packed M) (BlockPairHost.frame M) 0)))
+      ≤ ALT.CbHue (BlockPairHost.packed M)
+          (AdditiveComplexity.elen ALT.emergeBuilder
             + AdditiveComplexity.elen hostBuilder + AdditiveComplexity.elen frameBuilder
             + 2 * (15 + elen dbl) *
                 (Nat.size M + Nat.size (Nat.size (2 * (2 * M) * 24)))
-            + (15 + elen dbl) * Nat.size (hostFrameBits M)
+            + (15 + elen dbl) * Nat.size (BlockPairHost.frameBits M)
             + (5 * (15 + elen dbl) + 45)) := by
-  have hbase := hostOwned M _ _ (hostBuilder_computes M) (frameBuilder_computes M)
-  refine hbase.trans (CbHue_mono (hostPacked M) ?_)
+  have hbase := BlockPairHost.card_orbit_le_cbHue M _ _ (hostBuilder_computes M)
+    (frameBuilder_computes M)
+  refine hbase.trans (CbHue_mono (BlockPairHost.packed M) ?_)
   set p := (15 + elen dbl) * Nat.size M with hp
   set q := (15 + elen dbl) * Nat.size (Nat.size (2 * (2 * M) * 24)) with hq
-  set r := (15 + elen dbl) * Nat.size (hostFrameBits M) with hr
+  set r := (15 + elen dbl) * Nat.size (BlockPairHost.frameBits M) with hr
   have heU : elen
       (Nat.Partrec.Code.comp hostBuilder
         (Nat.Partrec.Code.pair (bconst M) (bconst (Nat.size (2 * (2 * M) * 24)))))
@@ -923,15 +965,16 @@ theorem hostOwned_cheap (M : ℕ) [NeZero (2 * (2 * M))] :
   have heθ : elen
       (Nat.Partrec.Code.comp frameBuilder
         (Nat.Partrec.Code.pair (bconst M)
-          (Nat.Partrec.Code.pair (bconst (Nat.size (2 * (2 * M) * 24))) (bconst (hostFrameBits M)))))
+          (Nat.Partrec.Code.pair (bconst (Nat.size (2 * (2 * M) * 24)))
+              (bconst (BlockPairHost.frameBits M)))))
       ≤ elen frameBuilder + p + q + r + (3 * (15 + elen dbl) + 9) := by
     have hbM := elen_bconst_le M
     have hbB := elen_bconst_le (Nat.size (2 * (2 * M) * 24))
-    have hbκ := elen_bconst_le (hostFrameBits M)
+    have hbκ := elen_bconst_le (BlockPairHost.frameBits M)
     simp only [E_len_comp, E_len_pair]
     omega
   rw [show 2 * (15 + elen dbl) * (Nat.size M + Nat.size (Nat.size (2 * (2 * M) * 24)))
       = p + p + q + q from by rw [hp, hq]; ring]
   omega
 
-end BlockPairPrice
+end ALT

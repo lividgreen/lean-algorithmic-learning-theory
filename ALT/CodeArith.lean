@@ -1,14 +1,7 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import CodeLayer.Code.BitGates
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # Arithmetic as explicit codes
@@ -41,12 +34,12 @@ consumes them — is unaffected.
 
 @[expose] public section
 
-namespace CodeArith
+namespace ALT
 
 open Nat.Partrec (Code)
 open Nat.Partrec.Code
 open TimeCost
-open OneDL
+open BitGates
 
 /-! ## Projections and identity -/
 
@@ -414,4 +407,4 @@ def cMod : Code := comp cSub (pair left (comp cMul (pair right cDiv)))
 theorem rfindFree_cMod : RfindFree cMod :=
   ⟨rfindFree_cSub, trivial, rfindFree_cMul, trivial, rfindFree_cDiv⟩
 
-end CodeArith
+end ALT

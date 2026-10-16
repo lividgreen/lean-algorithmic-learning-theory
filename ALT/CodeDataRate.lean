@@ -1,15 +1,8 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import Mathlib.Data.Nat.Size
 public import CodeLayer.AdditiveComplexity
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style header linter.
-set_option linter.style.header false
 
 /-!
 # The data rate of the additive complexity `KE` is bounded away from one bit per bit
@@ -53,7 +46,7 @@ draws the consequence for `KE`'s data rate.
 
 @[expose] public section
 
-namespace CodeDataRate
+namespace ALT
 
 open Nat.Partrec Nat.Partrec.Code AdditiveComplexity
 
@@ -330,23 +323,24 @@ private theorem sum_antidiagonal_sq_le (g : ℕ → ℚ) (hg : ∀ i, 0 ≤ g i)
   rw [← Finset.sum_mul, sq]
 
 /-- The weight of the `n`-node codes at `z = 20/159`. -/
-private def g (n : ℕ) : ℚ := (codesOfNodes n).card * (20 / 159 : ℚ) ^ n
+private def codeWeight (n : ℕ) : ℚ := (codesOfNodes n).card * (20 / 159 : ℚ) ^ n
 
-private theorem g_nonneg (n : ℕ) : 0 ≤ g n := by unfold g; positivity
+private theorem codeWeight_nonneg (n : ℕ) : 0 ≤ codeWeight n := by unfold codeWeight; positivity
 
-private theorem g_zero : g 0 = 0 := by simp [g, codesOfNodes_zero]
+private theorem codeWeight_zero : codeWeight 0 = 0 := by simp [codeWeight, codesOfNodes_zero]
 
-private theorem g_one : g 1 = 4 * (20 / 159 : ℚ) := by
-  simp only [g, card_codesOfNodes_one, pow_one]
+private theorem codeWeight_one : codeWeight 1 = 4 * (20 / 159 : ℚ) := by
+  simp only [codeWeight, card_codesOfNodes_one, pow_one]
   norm_num
 
-/-- Termwise recursive bound on `g`, uniform in `i` via an indicator for the leaf base case. -/
-private theorem g_step (i : ℕ) : g (i + 1) ≤
-    (if i = 0 then 4 * (20 / 159 : ℚ) else 0) + (20 / 159 : ℚ) * g i +
-      3 * (20 / 159 : ℚ) * ∑ ij ∈ Finset.antidiagonal i, g ij.1 * g ij.2 := by
+/-- Termwise recursive bound on `codeWeight`, uniform in `i` via an indicator for the leaf base
+case. -/
+private theorem codeWeight_step (i : ℕ) : codeWeight (i + 1) ≤
+    (if i = 0 then 4 * (20 / 159 : ℚ) else 0) + (20 / 159 : ℚ) * codeWeight i +
+      3 * (20 / 159 : ℚ) * ∑ ij ∈ Finset.antidiagonal i, codeWeight ij.1 * codeWeight ij.2 := by
   rcases eq_or_ne i 0 with hi | hi
   · subst hi
-    simp [g_one, g_zero]
+    simp [codeWeight_one, codeWeight_zero]
   · obtain ⟨i', rfl⟩ := Nat.exists_eq_succ_of_ne_zero hi
     simp only [Nat.succ_eq_add_one]
     rw [ite_eq_right (by omega)]
@@ -355,11 +349,11 @@ private theorem g_step (i : ℕ) : g (i + 1) ≤
         3 * ∑ ij ∈ Finset.antidiagonal (i' + 1),
           ((codesOfNodes ij.1).card : ℚ) * (codesOfNodes ij.2).card := by
       exact_mod_cast hcard
-    have step1 : g (i' + 1 + 1) ≤
+    have step1 : codeWeight (i' + 1 + 1) ≤
         (((codesOfNodes (i' + 1)).card : ℚ) + 3 * ∑ ij ∈ Finset.antidiagonal (i' + 1),
           ((codesOfNodes ij.1).card : ℚ) * (codesOfNodes ij.2).card) *
         (20 / 159 : ℚ) ^ (i' + 1 + 1) := by
-      have hg : g (i' + 1 + 1) =
+      have hg : codeWeight (i' + 1 + 1) =
           ((codesOfNodes (i' + 1 + 1)).card : ℚ) * (20 / 159 : ℚ) ^ (i' + 1 + 1) := rfl
       rw [hg]
       exact mul_le_mul_of_nonneg_right hcard' (by positivity)
@@ -367,8 +361,8 @@ private theorem g_step (i : ℕ) : g (i + 1) ≤
     have hexpand : (((codesOfNodes (i' + 1)).card : ℚ) + 3 * ∑ ij ∈ Finset.antidiagonal (i' + 1),
           ((codesOfNodes ij.1).card : ℚ) * (codesOfNodes ij.2).card) *
         (20 / 159 : ℚ) ^ (i' + 1 + 1)
-        = (20 / 159 : ℚ) * g (i' + 1) + 3 * (20 / 159 : ℚ) *
-          ∑ ij ∈ Finset.antidiagonal (i' + 1), g ij.1 * g ij.2 := by
+        = (20 / 159 : ℚ) * codeWeight (i' + 1) + 3 * (20 / 159 : ℚ) *
+          ∑ ij ∈ Finset.antidiagonal (i' + 1), codeWeight ij.1 * codeWeight ij.2 := by
       rw [add_mul]
       congr 1
       · change ((codesOfNodes (i' + 1)).card : ℚ) * (20 / 159 : ℚ) ^ (i' + 1 + 1)
@@ -392,54 +386,60 @@ private theorem g_step (i : ℕ) : g (i + 1) ≤
         ring
     rw [hexpand, zero_add]
 
-/-- Summed over one more level, `g_step` gives the partial-sum recursion the singularity analysis
-runs on. -/
+/-- Summed over one more level, `codeWeight_step` gives the partial-sum recursion the singularity
+analysis runs on. -/
 private theorem wsum_succ_le (N : ℕ) :
-    ∑ n ∈ Finset.range (N + 2), g n ≤
-      4 * (20 / 159 : ℚ) + (20 / 159 : ℚ) * (∑ n ∈ Finset.range (N + 1), g n) +
-        3 * (20 / 159 : ℚ) * (∑ n ∈ Finset.range (N + 1), g n) ^ 2 := by
-  have hsplit : ∑ n ∈ Finset.range (N + 2), g n = ∑ i ∈ Finset.range (N + 1), g (i + 1) := by
+    ∑ n ∈ Finset.range (N + 2), codeWeight n ≤
+      4 * (20 / 159 : ℚ) + (20 / 159 : ℚ) * (∑ n ∈ Finset.range (N + 1), codeWeight n) +
+        3 * (20 / 159 : ℚ) * (∑ n ∈ Finset.range (N + 1), codeWeight n) ^ 2 := by
+  have hsplit : ∑ n ∈ Finset.range (N + 2), codeWeight n =
+      ∑ i ∈ Finset.range (N + 1), codeWeight (i + 1) := by
     rw [show N + 2 = (N + 1) + 1 from rfl, Finset.sum_range_succ']
-    simp [g_zero]
+    simp [codeWeight_zero]
   rw [hsplit]
-  have hstep : ∑ i ∈ Finset.range (N + 1), g (i + 1) ≤
+  have hstep : ∑ i ∈ Finset.range (N + 1), codeWeight (i + 1) ≤
       ∑ i ∈ Finset.range (N + 1),
-        ((if i = 0 then 4 * (20 / 159 : ℚ) else 0) + (20 / 159 : ℚ) * g i +
-          3 * (20 / 159 : ℚ) * ∑ ij ∈ Finset.antidiagonal i, g ij.1 * g ij.2) :=
-    Finset.sum_le_sum (fun i _ => g_step i)
+        ((if i = 0 then 4 * (20 / 159 : ℚ) else 0) + (20 / 159 : ℚ) * codeWeight i +
+          3 * (20 / 159 : ℚ) * ∑ ij ∈ Finset.antidiagonal i, codeWeight ij.1 * codeWeight ij.2) :=
+    Finset.sum_le_sum (fun i _ => codeWeight_step i)
   refine hstep.trans ?_
   rw [Finset.sum_add_distrib, Finset.sum_add_distrib]
   have h1 : ∑ i ∈ Finset.range (N + 1),
       (if i = 0 then (4 : ℚ) * (20 / 159) else 0) = 4 * (20 / 159) := by
     rw [Finset.sum_range_succ']
     simp
-  have h2 : ∑ i ∈ Finset.range (N + 1), (20 / 159 : ℚ) * g i
-      = (20 / 159 : ℚ) * ∑ i ∈ Finset.range (N + 1), g i := by
+  have h2 : ∑ i ∈ Finset.range (N + 1), (20 / 159 : ℚ) * codeWeight i
+      = (20 / 159 : ℚ) * ∑ i ∈ Finset.range (N + 1), codeWeight i := by
     rw [Finset.mul_sum]
   have h3 : ∑ i ∈ Finset.range (N + 1),
-      3 * (20 / 159 : ℚ) * ∑ ij ∈ Finset.antidiagonal i, g ij.1 * g ij.2
+      3 * (20 / 159 : ℚ) * ∑ ij ∈ Finset.antidiagonal i, codeWeight ij.1 * codeWeight ij.2
       = 3 * (20 / 159 : ℚ) *
-        ∑ i ∈ Finset.range (N + 1), ∑ ij ∈ Finset.antidiagonal i, g ij.1 * g ij.2 := by
+        ∑ i ∈ Finset.range (N + 1),
+          ∑ ij ∈ Finset.antidiagonal i, codeWeight ij.1 * codeWeight ij.2 := by
     rw [Finset.mul_sum]
-  have h4 : ∑ i ∈ Finset.range (N + 1), ∑ ij ∈ Finset.antidiagonal i, g ij.1 * g ij.2
-      ≤ (∑ i ∈ Finset.range (N + 1), g i) ^ 2 := sum_antidiagonal_sq_le g g_nonneg N
+  have h4 : ∑ i ∈ Finset.range (N + 1),
+      ∑ ij ∈ Finset.antidiagonal i, codeWeight ij.1 * codeWeight ij.2
+      ≤ (∑ i ∈ Finset.range (N + 1), codeWeight i) ^ 2 :=
+    sum_antidiagonal_sq_le codeWeight codeWeight_nonneg N
   rw [h1, h2, h3]
   have h5 := mul_le_mul_of_nonneg_left h4 (by norm_num : (0 : ℚ) ≤ 3 * (20 / 159))
   linarith
 
 /-- **The weighted partial sums stay bounded by `11/10`**, at `z = 20/159`. -/
-private theorem wsum_le : ∀ N : ℕ, ∑ n ∈ Finset.range (N + 1), g n ≤ (11 / 10 : ℚ) := by
+private theorem wsum_le : ∀ N : ℕ, ∑ n ∈ Finset.range (N + 1), codeWeight n ≤ (11 / 10 : ℚ) := by
   intro N
   induction N with
-  | zero => simp [g_zero]; norm_num
+  | zero => simp [codeWeight_zero]; norm_num
   | succ N ih =>
       have hkey := wsum_succ_le N
-      have hSnonneg : (0 : ℚ) ≤ ∑ n ∈ Finset.range (N + 1), g n :=
-        Finset.sum_nonneg (fun i _ => g_nonneg i)
-      have harith : 4 * (20 / 159 : ℚ) + (20 / 159 : ℚ) * (∑ n ∈ Finset.range (N + 1), g n) +
-          3 * (20 / 159 : ℚ) * (∑ n ∈ Finset.range (N + 1), g n) ^ 2 ≤ 11 / 10 := by
+      have hSnonneg : (0 : ℚ) ≤ ∑ n ∈ Finset.range (N + 1), codeWeight n :=
+        Finset.sum_nonneg (fun i _ => codeWeight_nonneg i)
+      have harith : 4 * (20 / 159 : ℚ) +
+          (20 / 159 : ℚ) * (∑ n ∈ Finset.range (N + 1), codeWeight n) +
+          3 * (20 / 159 : ℚ) * (∑ n ∈ Finset.range (N + 1), codeWeight n) ^ 2 ≤ 11 / 10 := by
         nlinarith [ih, hSnonneg]
-      calc ∑ n ∈ Finset.range (N + 1 + 1), g n = ∑ n ∈ Finset.range (N + 2), g n := by
+      calc ∑ n ∈ Finset.range (N + 1 + 1), codeWeight n
+          = ∑ n ∈ Finset.range (N + 2), codeWeight n := by
             norm_num
         _ ≤ _ := hkey
         _ ≤ 11 / 10 := harith
@@ -448,10 +448,10 @@ private theorem wsum_le : ∀ N : ℕ, ∑ n ∈ Finset.range (N + 1), g n ≤ (
 the counting generating function is at `1 + 4√3 ≈ 7.928`, below the `8` the three-bit-per-node
 budget could carry. -/
 theorem card_codesOfNodes_le (n : ℕ) : 10 * 20 ^ n * (codesOfNodes n).card ≤ 11 * 159 ^ n := by
-  have hterm : g n ≤ ∑ i ∈ Finset.range (n + 1), g i :=
-    Finset.single_le_sum (fun i _ => g_nonneg i) (Finset.self_mem_range_succ n)
-  have hle : g n ≤ (11 / 10 : ℚ) := hterm.trans (wsum_le n)
-  have hgeq : g n = (codesOfNodes n).card * (20 / 159 : ℚ) ^ n := rfl
+  have hterm : codeWeight n ≤ ∑ i ∈ Finset.range (n + 1), codeWeight i :=
+    Finset.single_le_sum (fun i _ => codeWeight_nonneg i) (Finset.self_mem_range_succ n)
+  have hle : codeWeight n ≤ (11 / 10 : ℚ) := hterm.trans (wsum_le n)
+  have hgeq : codeWeight n = (codesOfNodes n).card * (20 / 159 : ℚ) ^ n := rfl
   rw [hgeq] at hle
   have hclear : ((codesOfNodes n).card : ℚ) * 20 ^ n * 10 ≤ 11 * 159 ^ n := by
     have hmul := mul_le_mul_of_nonneg_right hle (by positivity : (0 : ℚ) ≤ 10 * 159 ^ n)
@@ -477,7 +477,7 @@ theorem sum_card_codesOfNodes_le (N : ℕ) :
     apply mul_le_mul_of_nonneg_left _ (by positivity)
     exact pow_le_pow_of_le_one (by positivity) (by norm_num) hn'
   have hsum_le : ∑ n ∈ Finset.range (N + 1), ((codesOfNodes n).card : ℚ) * (20 / 159 : ℚ) ^ N
-      ≤ ∑ n ∈ Finset.range (N + 1), g n :=
+      ≤ ∑ n ∈ Finset.range (N + 1), codeWeight n :=
     Finset.sum_le_sum hlow
   have hfactor : ∑ n ∈ Finset.range (N + 1), ((codesOfNodes n).card : ℚ) * (20 / 159 : ℚ) ^ N
       = (∑ n ∈ Finset.range (N + 1), ((codesOfNodes n).card : ℚ)) * (20 / 159 : ℚ) ^ N := by
@@ -547,6 +547,7 @@ private theorem crossing_ratio_lt_one :
   exact hcast
 
 set_option maxRecDepth 4000 in
+set_option exponentiation.threshold 1600 in
 /-- **The data rate of `KE` is bounded away from one bit per bit.** No constant `c` makes
 `KE x ≤ (1 + 1/500) · Nat.size x + c` for every `x`. Consequently no constant makes `KE` an ideal
 code for the computable measure `μ_ε(x) := 2^{−⌈(1 + 1/500) · Nat.size x⌉ − 1}`, whose total mass
@@ -657,4 +658,4 @@ theorem KE_data_rate (c : ℕ) : ∃ x : ℕ, 501 * Nat.size x + 500 * c < 500 *
     linarith [hstep]
   linarith [hrt, hcontra]
 
-end CodeDataRate
+end ALT

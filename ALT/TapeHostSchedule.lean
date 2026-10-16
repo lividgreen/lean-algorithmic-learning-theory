@@ -1,8 +1,3 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.TapeHostObservability
@@ -15,8 +10,8 @@ public import ALT.LearningWitness
 example: a class on which the discovery leg of the race is won at a bounded, explicit pace. This
 module supplies it on every host of [Inevitability] §5 Proposition 5.9's class.
 
-Two theorems. `scheduleOracle_deterministic` reads `TapeHostObservability.deviation_bound` at the
-pair character (`NoisyWindowChain.pairChar`) and divides by the horizon `n`: on any `Profile`,
+Two theorems. `scheduleOracle_deterministic` reads `TapeHost.deviation_bound` at the
+pair character (`ALT.pairChar`) and divides by the horizon `n`: on any `Profile`,
 the schedule's own statistic at every offset is a `SQObjects.IsSQOracle` for the profile's trend
 `ρ`, at tolerance `τ`, deterministically from an explicit horizon on, uniform in the period — no
 `δ`, no measure. `schedSurvivors_eq_singleton` reads [SQ] §3.3's `2τ`-pruning rule as an object
@@ -29,7 +24,7 @@ under three named conditions relating the window-noise density `η`, the cross-c
 * `scheduleOracle_deterministic` — the deterministic oracle: `SQObjects.IsSQOracle` at every phase
   and every horizon past `(2 * S + Wm) / τ ≤ n`.
 * `schedSurvivors` — [SQ] §3.3's `2τ`-pruning rule at the single-literal class, as an object.
-  `LearningWitness.witness_truth_survives`'s event is `0 ∈ schedSurvivors τ n o'` here.
+  `ALT.witness_truth_survives`'s event is `0 ∈ schedSurvivors τ n o'` here.
 * `schedSurvivors_eq_singleton` — the schedule's survivor set is the singleton `{0}` from the
   horizon on, under `2 * η ≤ τ`, `μ ≤ τ`, `3 * τ + μ ≤ 1`.
 * `identificationHorizon`, `schedSurvivors_eq_singleton_of_horizon` — the horizon as an explicit
@@ -44,9 +39,9 @@ under three named conditions relating the window-noise density `η`, the cross-c
 
 ## Scope
 
-Deterministic throughout: `deviation_bound` already delivers the oracle at every phase and every
-horizon past the threshold, with no `δ` and no tail. What is proved here is identification — that
-the schedule's own `2τ`-pruning rule leaves the true literal alone — and nothing about compute
+Deterministic throughout: `TapeHost.deviation_bound` already delivers the oracle at every phase and
+every horizon past the threshold, with no `δ` and no tail. What is proved here is identification —
+that the schedule's own `2τ`-pruning rule leaves the true literal alone — and nothing about compute
 time, survival, or the bridge between the learning world's count and the guest world's bits. See
 [Inevitability] §6 (the affordable-regime paragraph), §5 Proposition 5.9; [SQ] §3.1, §3.3; rows
 FV-M, IN-41.
@@ -55,9 +50,7 @@ FV-M, IN-41.
 
 @[expose] public section
 
-namespace TapeHostSchedule
-
-open TapeHostObservability NoisyWindowChain
+namespace ALT
 
 variable {N : ℕ} [NeZero N] (o : ZMod N → Bool) {S : ℝ} {ρ W : Fin 8 → ℝ}
 
@@ -66,21 +59,22 @@ variable {N : ℕ} [NeZero N] (o : ZMod N → Bool) {S : ℝ} {ρ W : Fin 8 → 
 omit [NeZero N] in
 /-- **The deterministic oracle.** On any `Profile`, the schedule's own statistic at every offset
 `a` is a `SQObjects.IsSQOracle` for the profile's own trend `ρ`, at tolerance `τ`, from the
-horizon `(2 * S + Wm) / τ ≤ n` on — one line off `deviation_bound` at `pairChar`
+horizon `(2 * S + Wm) / τ ≤ n` on — one line off `TapeHost.deviation_bound` at `pairChar`
 (`pairMean_pairChar`, `pairCoefAB_pairChar`), dividing by `n`. No `δ`: the bound holds at every
 phase and every horizon past the threshold, deterministically. -/
 theorem scheduleOracle_deterministic (h : Profile o S ρ W) (Wm : ℝ) (hW : ∀ a, W a ≤ Wm)
     (c : ZMod N) {τ : ℝ} (hτ : 0 < τ) {n : ℕ} (hn1 : 1 ≤ n) (hn : (2 * S + Wm) / τ ≤ n) :
     SQObjects.IsSQOracle
-      (fun a : Fin 8 => SQOracle.empiricalMean (pairEnsemble pairChar (a : ℕ) 8) n (hostTraj o c))
+      (fun a : Fin 8 => SQOracle.empiricalMean (pairEnsemble pairChar (a : ℕ) 8) n
+        (TapeHost.traj o c))
       (fun a => ρ a) τ := by
   intro a
-  have hdb := deviation_bound o h c pairChar abs_pairChar_le_one a hn1
+  have hdb := TapeHost.deviation_bound o h c pairChar abs_pairChar_le_one a hn1
   rw [pairMean_pairChar, pairCoefAB_pairChar, one_mul, zero_add] at hdb
   have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn1
   have hle : (2 * S + Wm) ≤ (n : ℝ) * τ := (div_le_iff₀ hτ).mp hn
   have hbound : (n : ℝ) * |SQOracle.empiricalMean (pairEnsemble pairChar (a : ℕ) 8) n
-      (hostTraj o c) - ρ a| ≤ (n : ℝ) * τ := by
+      (TapeHost.traj o c) - ρ a| ≤ (n : ℝ) * τ := by
     have hWa : W a ≤ Wm := hW a
     linarith [hdb, hWa, hle]
   exact le_of_mul_le_mul_left hbound hn0
@@ -90,13 +84,13 @@ theorem scheduleOracle_deterministic (h : Profile o S ρ W) (Wm : ℝ) (hW : ∀
 open scoped Classical in
 /-- **The schedule's `2τ`-pruning rule, as an object.** [SQ] §3.3's rule at the single-literal
 class: keep candidate literal `i` exactly when its noise-free answer
-`LearningWitness.singleLiteralAns a i` is within `2τ` of the empirical statistic at every
-scheduled offset `a`. `LearningWitness.witness_truth_survives`'s event is
+`ALT.singleLiteralAns a i` is within `2τ` of the empirical statistic at every
+scheduled offset `a`. `ALT.witness_truth_survives`'s event is
 `0 ∈ schedSurvivors τ n o'` here — the truth-side half of this rule, at the chain witness rather
 than the tape host. -/
 noncomputable def schedSurvivors (τ : ℝ) (n : ℕ) (o' : ℕ → Bool) : Finset (Fin 8) :=
   Finset.univ.filter (fun i => ∀ a : Fin 8,
-    |LearningWitness.singleLiteralAns a i -
+    |ALT.singleLiteralAns a i -
         SQOracle.empiricalMean (pairEnsemble pairChar (a : ℕ) 8) n o'| ≤ 2 * τ)
 
 omit [NeZero N] in
@@ -112,7 +106,7 @@ theorem schedSurvivors_eq_singleton (h : Profile o S ρ W) (Wm : ℝ) (hW : ∀ 
     (hρ : ∀ a : Fin 8, (a : ℕ) ≠ 0 → |ρ a| ≤ μ) (_hμ0 : 0 ≤ μ)
     (hbudget : 2 * η ≤ τ) (hμτ : μ ≤ τ) (hsep : 3 * τ + μ ≤ 1)
     (c : ZMod N) {n : ℕ} (hn1 : 1 ≤ n) (hn : (2 * S + Wm) / τ < n) :
-    schedSurvivors τ n (hostTraj o c) = {0} := by
+    schedSurvivors τ n (TapeHost.traj o c) = {0} := by
   have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn1
   have h1 : (2 * S + Wm) < (n : ℝ) * τ := (div_lt_iff₀ hτ).mp hn
   -- the deterministic error at horizon `n`, strictly below `τ`
@@ -120,9 +114,9 @@ theorem schedSurvivors_eq_singleton (h : Profile o S ρ W) (Wm : ℝ) (hW : ∀ 
     rw [div_lt_iff₀ hn0]
     nlinarith [h1]
   have hε : ∀ a : Fin 8, |SQOracle.empiricalMean (pairEnsemble pairChar (a : ℕ) 8) n
-      (hostTraj o c) - ρ a| ≤ (2 * S + Wm) / (n : ℝ) := by
+      (TapeHost.traj o c) - ρ a| ≤ (2 * S + Wm) / (n : ℝ) := by
     intro a
-    have hdb := deviation_bound o h c pairChar abs_pairChar_le_one a hn1
+    have hdb := TapeHost.deviation_bound o h c pairChar abs_pairChar_le_one a hn1
     rw [pairMean_pairChar, pairCoefAB_pairChar, one_mul, zero_add] at hdb
     have hWa : W a ≤ Wm := hW a
     rw [le_div_iff₀ hn0]
@@ -134,16 +128,16 @@ theorem schedSurvivors_eq_singleton (h : Profile o S ρ W) (Wm : ℝ) (hW : ∀ 
     intro a
     by_cases ha0 : a = (0 : Fin 8)
     · subst ha0
-      have hlit : LearningWitness.singleLiteralAns (0 : Fin 8) (0 : Fin 8) = -1 := by
-        simp [LearningWitness.singleLiteralAns]
+      have hlit : ALT.singleLiteralAns (0 : Fin 8) (0 : Fin 8) = -1 := by
+        simp [ALT.singleLiteralAns]
       rw [hlit, abs_le]
       obtain ⟨hεl, hεu⟩ := abs_le.mp (hε (0 : Fin 8))
       constructor <;> nlinarith [hεl, hεu, hρ0, hη, hbudget, hεlt]
     · have hane : (a : ℕ) ≠ 0 := by
         intro hcontra
         exact ha0 (by ext; simpa using hcontra)
-      have hlit : LearningWitness.singleLiteralAns a (0 : Fin 8) = 0 := by
-        unfold LearningWitness.singleLiteralAns
+      have hlit : ALT.singleLiteralAns a (0 : Fin 8) = 0 := by
+        unfold ALT.singleLiteralAns
         rw [ite_eq_right ha0]
       rw [hlit, abs_le]
       obtain ⟨hεl, hεu⟩ := abs_le.mp (hε a)
@@ -156,18 +150,18 @@ theorem schedSurvivors_eq_singleton (h : Profile o S ρ W) (Wm : ℝ) (hW : ∀ 
     have hane : (i : ℕ) ≠ 0 := by
         intro hcontra
         exact hne (by ext; simpa using hcontra)
-    have hlit : LearningWitness.singleLiteralAns i i = -1 := by
-      simp [LearningWitness.singleLiteralAns]
+    have hlit : ALT.singleLiteralAns i i = -1 := by
+      simp [ALT.singleLiteralAns]
     have hb := hi i
     rw [hlit] at hb
     obtain ⟨hεl, hεu⟩ := abs_le.mp (hε i)
     obtain ⟨hρl, hρu⟩ := abs_le.mp (hρ i hane)
     have hx : (-1 : ℝ) - SQOracle.empiricalMean (pairEnsemble pairChar (i : ℕ) 8) n
-        (hostTraj o c) < -(2 * τ) := by nlinarith [hεl, hεu, hρl, hρu, hsep, hεlt]
+        (TapeHost.traj o c) < -(2 * τ) := by nlinarith [hεl, hεu, hρl, hρu, hsep, hεlt]
     have : |(-1 : ℝ) - SQOracle.empiricalMean (pairEnsemble pairChar (i : ℕ) 8) n
-        (hostTraj o c)| > 2 * τ := by
+        (TapeHost.traj o c)| > 2 * τ := by
       rw [abs_of_neg (by linarith [hx] : (-1 : ℝ) - SQOracle.empiricalMean
-          (pairEnsemble pairChar (i : ℕ) 8) n (hostTraj o c) < 0)]
+          (pairEnsemble pairChar (i : ℕ) 8) n (TapeHost.traj o c) < 0)]
       linarith [hx]
     linarith [hb, this]
 
@@ -184,7 +178,7 @@ theorem schedSurvivors_eq_singleton_of_horizon (h : Profile o S ρ W) (Wm : ℝ)
     (hρ : ∀ a : Fin 8, (a : ℕ) ≠ 0 → |ρ a| ≤ μ) (hμ0 : 0 ≤ μ)
     (hbudget : 2 * η ≤ τ) (hμτ : μ ≤ τ) (hsep : 3 * τ + μ ≤ 1)
     (c : ZMod N) {n : ℕ} (hn1 : 1 ≤ n) (hn : identificationHorizon S Wm τ ≤ n) :
-    schedSurvivors τ n (hostTraj o c) = {0} := by
+    schedSurvivors τ n (TapeHost.traj o c) = {0} := by
   have hlt : (2 * S + Wm) / τ < (n : ℝ) := by
     have h1 : (2 * S + Wm) / τ < (⌊(2 * S + Wm) / τ⌋₊ : ℝ) + 1 := Nat.lt_floor_add_one _
     have h2 : ((⌊(2 * S + Wm) / τ⌋₊ : ℝ) + 1) ≤ (n : ℝ) := by
@@ -200,7 +194,7 @@ omit [NeZero N] in
 localizes its index in exactly two hypotheses and its conclusion (`hρ0`/`ρ 0`, `hρ`'s exclusion of
 `0`, `{0}`) and its three closing inequalities — the truth's own same-class distance, its
 cross-class distances, a wrong literal's own-query distance — are symmetric under relabelling the
-distinguished index, since `LearningWitness.singleLiteralAns a i = if a = i then -1 else 0` is
+distinguished index, since `ALT.singleLiteralAns a i = if a = i then -1 else 0` is
 itself index-symmetric. This is the same theorem with `j` in place of `0`; the landed
 `schedSurvivors_eq_singleton` itself is untouched. -/
 theorem schedSurvivors_eq_singleton_at (j : Fin 8) (h : Profile o S ρ W) (Wm : ℝ)
@@ -208,16 +202,16 @@ theorem schedSurvivors_eq_singleton_at (j : Fin 8) (h : Profile o S ρ W) (Wm : 
     (hρ : ∀ a : Fin 8, a ≠ j → |ρ a| ≤ μ) (_hμ0 : 0 ≤ μ)
     (hbudget : 2 * η ≤ τ) (hμτ : μ ≤ τ) (hsep : 3 * τ + μ ≤ 1)
     (c : ZMod N) {n : ℕ} (hn1 : 1 ≤ n) (hn : (2 * S + Wm) / τ < n) :
-    schedSurvivors τ n (hostTraj o c) = {j} := by
+    schedSurvivors τ n (TapeHost.traj o c) = {j} := by
   have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn1
   have h1 : (2 * S + Wm) < (n : ℝ) * τ := (div_lt_iff₀ hτ).mp hn
   have hεlt : (2 * S + Wm) / (n : ℝ) < τ := by
     rw [div_lt_iff₀ hn0]
     nlinarith [h1]
   have hε : ∀ a : Fin 8, |SQOracle.empiricalMean (pairEnsemble pairChar (a : ℕ) 8) n
-      (hostTraj o c) - ρ a| ≤ (2 * S + Wm) / (n : ℝ) := by
+      (TapeHost.traj o c) - ρ a| ≤ (2 * S + Wm) / (n : ℝ) := by
     intro a
-    have hdb := deviation_bound o h c pairChar abs_pairChar_le_one a hn1
+    have hdb := TapeHost.deviation_bound o h c pairChar abs_pairChar_le_one a hn1
     rw [pairMean_pairChar, pairCoefAB_pairChar, one_mul, zero_add] at hdb
     have hWa : W a ≤ Wm := hW a
     rw [le_div_iff₀ hn0]
@@ -229,13 +223,13 @@ theorem schedSurvivors_eq_singleton_at (j : Fin 8) (h : Profile o S ρ W) (Wm : 
     intro a
     by_cases haj : a = j
     · subst haj
-      have hlit : LearningWitness.singleLiteralAns a a = -1 := by
-        simp [LearningWitness.singleLiteralAns]
+      have hlit : ALT.singleLiteralAns a a = -1 := by
+        simp [ALT.singleLiteralAns]
       rw [hlit, abs_le]
       obtain ⟨hεl, hεu⟩ := abs_le.mp (hε a)
       constructor <;> nlinarith [hεl, hεu, hρj, hη, hbudget, hεlt]
-    · have hlit : LearningWitness.singleLiteralAns a j = 0 := by
-        unfold LearningWitness.singleLiteralAns
+    · have hlit : ALT.singleLiteralAns a j = 0 := by
+        unfold ALT.singleLiteralAns
         rw [ite_eq_right haj]
       rw [hlit, abs_le]
       obtain ⟨hεl, hεu⟩ := abs_le.mp (hε a)
@@ -245,18 +239,18 @@ theorem schedSurvivors_eq_singleton_at (j : Fin 8) (h : Profile o S ρ W) (Wm : 
     intro i hi
     by_contra hne
     simp only [schedSurvivors, Finset.mem_filter, Finset.mem_univ, true_and] at hi
-    have hlit : LearningWitness.singleLiteralAns i i = -1 := by
-      simp [LearningWitness.singleLiteralAns]
+    have hlit : ALT.singleLiteralAns i i = -1 := by
+      simp [ALT.singleLiteralAns]
     have hb := hi i
     rw [hlit] at hb
     obtain ⟨hεl, hεu⟩ := abs_le.mp (hε i)
     obtain ⟨hρl, hρu⟩ := abs_le.mp (hρ i hne)
     have hx : (-1 : ℝ) - SQOracle.empiricalMean (pairEnsemble pairChar (i : ℕ) 8) n
-        (hostTraj o c) < -(2 * τ) := by nlinarith [hεl, hεu, hρl, hρu, hsep, hεlt]
+        (TapeHost.traj o c) < -(2 * τ) := by nlinarith [hεl, hεu, hρl, hρu, hsep, hεlt]
     have : |(-1 : ℝ) - SQOracle.empiricalMean (pairEnsemble pairChar (i : ℕ) 8) n
-        (hostTraj o c)| > 2 * τ := by
+        (TapeHost.traj o c)| > 2 * τ := by
       rw [abs_of_neg (by linarith [hx] : (-1 : ℝ) - SQOracle.empiricalMean
-          (pairEnsemble pairChar (i : ℕ) 8) n (hostTraj o c) < 0)]
+          (pairEnsemble pairChar (i : ℕ) 8) n (TapeHost.traj o c) < 0)]
       linarith [hx]
     linarith [hb, this]
 
@@ -270,7 +264,7 @@ theorem schedSurvivors_eq_singleton_of_horizon_at (j : Fin 8) (h : Profile o S �
     (hρ : ∀ a : Fin 8, a ≠ j → |ρ a| ≤ μ) (hμ0 : 0 ≤ μ)
     (hbudget : 2 * η ≤ τ) (hμτ : μ ≤ τ) (hsep : 3 * τ + μ ≤ 1)
     (c : ZMod N) {n : ℕ} (hn1 : 1 ≤ n) (hn : identificationHorizon S Wm τ ≤ n) :
-    schedSurvivors τ n (hostTraj o c) = {j} := by
+    schedSurvivors τ n (TapeHost.traj o c) = {j} := by
   have hlt : (2 * S + Wm) / τ < (n : ℝ) := by
     have h1 : (2 * S + Wm) / τ < (⌊(2 * S + Wm) / τ⌋₊ : ℝ) + 1 := Nat.lt_floor_add_one _
     have h2 : ((⌊(2 * S + Wm) / τ⌋₊ : ℝ) + 1) ≤ (n : ℝ) := by
@@ -302,7 +296,7 @@ theorem schedSurvivors_eq_singleton_sharp (h : Profile o S ρ W) (Wm : ℝ) (hW 
     (hbudget : 2 * η ≤ τ) (hμτ : μ < 2 * τ) (hsep : 2 * τ + μ < 1)
     (c : ZMod N) {n : ℕ} (hn1 : 1 ≤ n)
     (hn : (2 * S + Wm) / min (2 * τ - 2 * η) (min (2 * τ - μ) (1 - μ - 2 * τ)) < n) :
-    schedSurvivors τ n (hostTraj o c) = {0} := by
+    schedSurvivors τ n (TapeHost.traj o c) = {0} := by
   have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn1
   have hm1 : (0 : ℝ) < 2 * τ - 2 * η := by linarith
   have hm2 : (0 : ℝ) < 2 * τ - μ := by linarith
@@ -322,9 +316,9 @@ theorem schedSurvivors_eq_singleton_sharp (h : Profile o S ρ W) (Wm : ℝ) (hW 
   have hlt3 : (2 * S + Wm) / (n : ℝ) < 1 - μ - 2 * τ :=
     lt_of_lt_of_le heps (le_trans (min_le_right _ _) (min_le_right _ _))
   have hε : ∀ a : Fin 8, |SQOracle.empiricalMean (pairEnsemble pairChar (a : ℕ) 8) n
-      (hostTraj o c) - ρ a| ≤ (2 * S + Wm) / (n : ℝ) := by
+      (TapeHost.traj o c) - ρ a| ≤ (2 * S + Wm) / (n : ℝ) := by
     intro a
-    have hdb := deviation_bound o h c pairChar abs_pairChar_le_one a hn1
+    have hdb := TapeHost.deviation_bound o h c pairChar abs_pairChar_le_one a hn1
     rw [pairMean_pairChar, pairCoefAB_pairChar, one_mul, zero_add] at hdb
     have hWa : W a ≤ Wm := hW a
     rw [le_div_iff₀ hn0]
@@ -336,16 +330,16 @@ theorem schedSurvivors_eq_singleton_sharp (h : Profile o S ρ W) (Wm : ℝ) (hW 
     intro a
     by_cases ha0 : a = (0 : Fin 8)
     · subst ha0
-      have hlit : LearningWitness.singleLiteralAns (0 : Fin 8) (0 : Fin 8) = -1 := by
-        simp [LearningWitness.singleLiteralAns]
+      have hlit : ALT.singleLiteralAns (0 : Fin 8) (0 : Fin 8) = -1 := by
+        simp [ALT.singleLiteralAns]
       rw [hlit, abs_le]
       obtain ⟨hεl, hεu⟩ := abs_le.mp (hε (0 : Fin 8))
       constructor <;> nlinarith [hεl, hεu, hρ0, hη, hlt1]
     · have hane : (a : ℕ) ≠ 0 := by
         intro hcontra
         exact ha0 (by ext; simpa using hcontra)
-      have hlit : LearningWitness.singleLiteralAns a (0 : Fin 8) = 0 := by
-        unfold LearningWitness.singleLiteralAns
+      have hlit : ALT.singleLiteralAns a (0 : Fin 8) = 0 := by
+        unfold ALT.singleLiteralAns
         rw [ite_eq_right ha0]
       rw [hlit, abs_le]
       obtain ⟨hεl, hεu⟩ := abs_le.mp (hε a)
@@ -358,18 +352,18 @@ theorem schedSurvivors_eq_singleton_sharp (h : Profile o S ρ W) (Wm : ℝ) (hW 
     have hane : (i : ℕ) ≠ 0 := by
         intro hcontra
         exact hne (by ext; simpa using hcontra)
-    have hlit : LearningWitness.singleLiteralAns i i = -1 := by
-      simp [LearningWitness.singleLiteralAns]
+    have hlit : ALT.singleLiteralAns i i = -1 := by
+      simp [ALT.singleLiteralAns]
     have hb := hi i
     rw [hlit] at hb
     obtain ⟨hεl, hεu⟩ := abs_le.mp (hε i)
     obtain ⟨hρl, hρu⟩ := abs_le.mp (hρ i hane)
     have hx : (-1 : ℝ) - SQOracle.empiricalMean (pairEnsemble pairChar (i : ℕ) 8) n
-        (hostTraj o c) < -(2 * τ) := by nlinarith [hεl, hεu, hρl, hρu, hlt3]
+        (TapeHost.traj o c) < -(2 * τ) := by nlinarith [hεl, hεu, hρl, hρu, hlt3]
     have : |(-1 : ℝ) - SQOracle.empiricalMean (pairEnsemble pairChar (i : ℕ) 8) n
-        (hostTraj o c)| > 2 * τ := by
+        (TapeHost.traj o c)| > 2 * τ := by
       rw [abs_of_neg (by linarith [hx] : (-1 : ℝ) - SQOracle.empiricalMean
-          (pairEnsemble pairChar (i : ℕ) 8) n (hostTraj o c) < 0)]
+          (pairEnsemble pairChar (i : ℕ) 8) n (TapeHost.traj o c) < 0)]
       linarith [hx]
     linarith [hb, this]
 
@@ -391,7 +385,7 @@ private theorem schedSurvivors_eq_singleton_sharp_of_horizon (h : Profile o S ρ
     (hρ : ∀ a : Fin 8, (a : ℕ) ≠ 0 → |ρ a| ≤ μ) (hμ0 : 0 ≤ μ)
     (hbudget : 2 * η ≤ τ) (hμτ : μ < 2 * τ) (hsep : 2 * τ + μ < 1)
     (c : ZMod N) {n : ℕ} (hn1 : 1 ≤ n) (hn : sharpHorizon S Wm η τ μ ≤ n) :
-    schedSurvivors τ n (hostTraj o c) = {0} := by
+    schedSurvivors τ n (TapeHost.traj o c) = {0} := by
   have hlt : (2 * S + Wm) / min (2 * τ - 2 * η) (min (2 * τ - μ) (1 - μ - 2 * τ)) < (n : ℝ) := by
     have h1 : (2 * S + Wm) / min (2 * τ - 2 * η) (min (2 * τ - μ) (1 - μ - 2 * τ)) <
         (⌊(2 * S + Wm) / min (2 * τ - 2 * η) (min (2 * τ - μ) (1 - μ - 2 * τ))⌋₊ : ℝ) + 1 :=
@@ -409,12 +403,12 @@ omit [NeZero N] in
 some admissible tolerance `τ` (with `2 * η ≤ τ`) identifies the true literal from
 `sharpHorizon`'s horizon on — the schedule's own limit under [SQ] §3.1's budget and §3.3's `2τ`
 rule. The certified block-pair design (`τ = 1/3`, `η = 1/6`, `μ = 0`) sits inside this window; see
-`BlockPairCriterion.blockPair_identifies`. -/
+`blockPair_identifies`. -/
 theorem identifies_of_lt_quarter (h : Profile o S ρ W) (Wm : ℝ) (hW : ∀ a, W a ≤ Wm)
     {η μ : ℝ} (hη : 0 ≤ η) (hρ0 : ρ 0 = 2 * η - 1) (hρ : ∀ a : Fin 8, (a : ℕ) ≠ 0 → |ρ a| ≤ μ)
     (hμ0 : 0 ≤ μ) (hμ : μ < 1 / 2) (hwin : η < (1 - μ) / 4) (c : ZMod N) :
     ∃ τ : ℝ, 0 < τ ∧ 2 * η ≤ τ ∧
-      ∀ n : ℕ, sharpHorizon S Wm η τ μ ≤ n → schedSurvivors τ n (hostTraj o c) = {0} := by
+      ∀ n : ℕ, sharpHorizon S Wm η τ μ ≤ n → schedSurvivors τ n (TapeHost.traj o c) = {0} := by
   have hA1 : 2 * η ≤ max (2 * η) (μ / 2) := le_max_left _ _
   have hA2 : μ / 2 ≤ max (2 * η) (μ / 2) := le_max_right _ _
   have hAB : max (2 * η) (μ / 2) < (1 - μ) / 2 :=
@@ -431,18 +425,19 @@ Under [SQ] §3.1's budget `2 * η ≤ τ`, once the density exceeds the schedule
 (`1 / 4 < η`, at the cross-class trends all `0`) every admissible tolerance forces `2 * τ > 1`,
 and every wrong literal's own-query distance is then at most `1 + ε ≤ 2τ`: the wrong literal
 survives, so the pruning rule fails to identify. Stated over wrong literals (`(j : ℕ) ≠ 0`) alone
-— one surviving wrong literal already witnesses `schedSurvivors τ n (hostTraj o c) ≠ {0}`, which
-is the refutation's content; the truth's own membership is not claimed at every `η` (an adversarial
-deviation within the profile's own bound can push the true literal's own query past `2τ` once `η`
-runs unboundedly above `1`, which the profile's hypotheses alone do not exclude), so `hη1 : η ≤ 1`
-is carried as a named hypothesis — `η` is a density and this is its natural range, and it is what
-keeps the wrong-literal statement below true and general rather than an artifact of one instance.
+— one surviving wrong literal already witnesses `schedSurvivors τ n (TapeHost.traj o c) ≠ {0}`,
+which is the refutation's content; the truth's own membership is not claimed at every `η` (an
+adversarial deviation within the profile's own bound can push the true literal's own query past `2τ`
+once `η` runs unboundedly above `1`, which the profile's hypotheses alone do not exclude), so
+`hη1 : η ≤ 1` is carried as a named hypothesis — `η` is a density and this is its natural range, and
+it is what keeps the wrong-literal statement below true and general rather than an artifact of one
+instance.
 -/
 theorem not_identifies_of_gt_quarter (h : Profile o S ρ W) (Wm : ℝ) (hW : ∀ a, W a ≤ Wm)
     {η τ : ℝ} (hη4 : 1 / 4 < η) (hη1 : η ≤ 1) (hρ0 : ρ 0 = 2 * η - 1)
     (hρ0' : ∀ a : Fin 8, (a : ℕ) ≠ 0 → ρ a = 0) (hbudget : 2 * η ≤ τ) (c : ZMod N) {n : ℕ}
     (hn1 : 1 ≤ n) (hn : (2 * S + Wm) / (2 * τ - 1) < n) :
-    ∀ j : Fin 8, (j : ℕ) ≠ 0 → j ∈ schedSurvivors τ n (hostTraj o c) := by
+    ∀ j : Fin 8, (j : ℕ) ≠ 0 → j ∈ schedSurvivors τ n (TapeHost.traj o c) := by
   have h2τ1 : (0 : ℝ) < 2 * τ - 1 := by linarith
   have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn1
   have h1 : (2 * S + Wm) < (n : ℝ) * (2 * τ - 1) := (div_lt_iff₀ h2τ1).mp hn
@@ -450,9 +445,9 @@ theorem not_identifies_of_gt_quarter (h : Profile o S ρ W) (Wm : ℝ) (hW : ∀
     rw [div_lt_iff₀ hn0]
     nlinarith [h1]
   have hε : ∀ a : Fin 8, |SQOracle.empiricalMean (pairEnsemble pairChar (a : ℕ) 8) n
-      (hostTraj o c) - ρ a| ≤ (2 * S + Wm) / (n : ℝ) := by
+      (TapeHost.traj o c) - ρ a| ≤ (2 * S + Wm) / (n : ℝ) := by
     intro a
-    have hdb := deviation_bound o h c pairChar abs_pairChar_le_one a hn1
+    have hdb := TapeHost.deviation_bound o h c pairChar abs_pairChar_le_one a hn1
     rw [pairMean_pairChar, pairCoefAB_pairChar, one_mul, zero_add] at hdb
     have hWa : W a ≤ Wm := hW a
     rw [le_div_iff₀ hn0]
@@ -462,14 +457,14 @@ theorem not_identifies_of_gt_quarter (h : Profile o S ρ W) (Wm : ℝ) (hW : ∀
   intro a
   by_cases haj : a = j
   · subst haj
-    have hlit : LearningWitness.singleLiteralAns a a = -1 := by
-      simp [LearningWitness.singleLiteralAns]
+    have hlit : ALT.singleLiteralAns a a = -1 := by
+      simp [ALT.singleLiteralAns]
     rw [hlit, abs_le]
     obtain ⟨hεl, hεu⟩ := abs_le.mp (hε a)
     have hρa : ρ a = 0 := hρ0' a hjne
     constructor <;> nlinarith [hεl, hεu, hρa, hεlt]
-  · have hlit : LearningWitness.singleLiteralAns a j = 0 := by
-      unfold LearningWitness.singleLiteralAns
+  · have hlit : ALT.singleLiteralAns a j = 0 := by
+      unfold ALT.singleLiteralAns
       rw [ite_eq_right haj]
     rw [hlit, abs_le]
     by_cases ha0 : a = (0 : Fin 8)
@@ -483,4 +478,4 @@ theorem not_identifies_of_gt_quarter (h : Profile o S ρ W) (Wm : ℝ) (hW : ∀
       obtain ⟨hεl, hεu⟩ := abs_le.mp (hε a)
       constructor <;> nlinarith [hεl, hεu, hρa, hεlt]
 
-end TapeHostSchedule
+end ALT

@@ -1,23 +1,17 @@
-/-
-Copyright (c) 2026 Mykola Palamarchuk. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mykola Palamarchuk
--/
 module
 
 public import ALT.GodelChecker
 
--- Formal-check file, not Mathlib-destined: opt out of the house-style linters.
-set_option linter.style.header false
-set_option linter.style.longLine false
 
 /-!
-# The reflective decision automaton over the concrete checker ([Decoupling] §6.5, the Level-2 witness)
+# The reflective decision automaton over the concrete checker ([Decoupling] §6.5, the Level-2
+witness)
 
 Provenance: [Decoupling] §6.5 (Proposition 6.5). This is the concrete,
 executable counterpart of the abstract decision automaton: it runs the very same two-cell machine
-directly over the **executable** bounded proof-checker `GodelChecker.Prf Ax : Sentence ℒₒᵣ → ℕ → Bool`
-of §6.3, so the §6.5 verdict is obtained for a **real** Gödel sentence of `𝗣𝗔⁻`.
+directly over the **executable** bounded proof-checker
+`ALT.HilbertChecker.Prf Ax : Sentence ℒₒᵣ → ℕ → Bool` of §6.3, so the §6.5 verdict is obtained for a
+**real** Gödel sentence of `𝗣𝗔⁻`.
 
 Like `ALT/GodelChecker.lean`, the machine and its run are restated here directly against the
 concrete checker rather than instantiating the abstract structure. The
@@ -30,7 +24,8 @@ Cells indexed by `Bool` (`false` = code, `true` = work) over `S ⊕ (ℕ × Bool
 code cell (`step_readonly_code`) and advances the work cell by folding the checker over the next
 proof code (`step`/`workNext`). After `M_chk + 1` steps the read-out Boolean is the conjunction of
 `¬Prf(G, p)` over all `p ≤ M_chk` (`automaton_run`); at the `𝗣𝗔⁻` Gödel sentence this is `true`
-(`paMinus_automaton_decides`), mirroring `GodelChecker.paMinus_decides_bounded_nonprovability`.
+(`paMinus_automaton_decides`), mirroring
+`ALT.HilbertChecker.paMinus_decides_bounded_nonprovability`.
 -/
 
 -- "The **categorical** Decoupling statements … stay on the Mathlib side" (above), and
@@ -38,11 +33,11 @@ proof code (`step`/`workNext`). After `M_chk + 1` steps the read-out Boolean is 
 
 @[expose] public section
 
-assert_not_exists Decoupling.decoupling_iff_persists_all
+assert_not_exists ALT.decoupling_iff_persists_all
 
-namespace GodelCheckerAutomaton
+namespace ALT.HilbertCheckerAutomaton
 
-open FFL FFL.Entailment FFL.FirstOrder FFL.FirstOrder.Arithmetic GodelChecker
+open FFL FFL.Entailment FFL.FirstOrder FFL.FirstOrder.Arithmetic HilbertChecker
 
 /-- Cell alphabet: a code cell holds a sentence (`Sum.inl`), a work cell holds a step counter and
 running verdict (`Sum.inr`). -/
@@ -52,11 +47,11 @@ abbrev AVal : Type := S ⊕ (ℕ × Bool)
 abbrev AState : Type := Bool → AVal
 
 /-- The work-cell update: on a well-formed configuration within budget, fold one more proof code of
-the concrete checker `GodelChecker.Prf Ax` into the verdict. -/
+the concrete checker `HilbertChecker.Prf Ax` into the verdict. -/
 def workNext (Ax : List S) (Mchk : ℕ) (code work : AVal) : AVal :=
   match code, work with
   | Sum.inl φ, Sum.inr (k, b) =>
-      if k ≤ Mchk then Sum.inr (k + 1, b && !(GodelChecker.Prf Ax φ k)) else work
+      if k ≤ Mchk then Sum.inr (k + 1, b && !(HilbertChecker.Prf Ax φ k)) else work
   | _, _ => work
 
 /-- One machine step: the code cell (`false`) is always fixed; the work cell (`true`) advances by
@@ -119,7 +114,7 @@ theorem decide_and_not (P : ℕ → Bool) (j : ℕ) :
 theorem step_run_invariant (Ax : List S) (Mchk : ℕ) (φ : S) :
     ∀ j, j ≤ Mchk + 1 →
       ((step Ax Mchk)^[j] (init φ)) true
-        = Sum.inr (j, decide (∀ p, p < j → GodelChecker.Prf Ax φ p = false)) := by
+        = Sum.inr (j, decide (∀ p, p < j → HilbertChecker.Prf Ax φ p = false)) := by
   intro j
   induction j with
   | zero =>
@@ -133,33 +128,34 @@ theorem step_run_invariant (Ax : List S) (Mchk : ℕ) (φ : S) :
     have hcode := code_fixed Ax Mchk φ j
     have hwork := ih (by omega)
     rw [Function.iterate_succ_apply']
-    change workNext Ax Mchk (((step Ax Mchk)^[j] (init φ)) false) (((step Ax Mchk)^[j] (init φ)) true)
-      = Sum.inr (j + 1, decide (∀ p, p < j + 1 → GodelChecker.Prf Ax φ p = false))
+    change workNext Ax Mchk (((step Ax Mchk)^[j] (init φ)) false)
+        (((step Ax Mchk)^[j] (init φ)) true)
+      = Sum.inr (j + 1, decide (∀ p, p < j + 1 → HilbertChecker.Prf Ax φ p = false))
     rw [hcode, hwork]
     dsimp only [workNext]
-    rw [ite_eq_left hjm, decide_and_not (GodelChecker.Prf Ax φ) j]
+    rw [ite_eq_left hjm, decide_and_not (HilbertChecker.Prf Ax φ) j]
 
 /-- After `M_chk + 1` steps the read-out Boolean is the conjunction of `¬Prf(φ, p)` over the whole
 bounded range `p ≤ M_chk` (§6.3's decision, concretely). -/
 theorem automaton_run (Ax : List S) (Mchk : ℕ) (φ : S) :
     readout ((step Ax Mchk)^[Mchk + 1] (init φ))
-      = decide (∀ p, p < Mchk + 1 → GodelChecker.Prf Ax φ p = false) := by
+      = decide (∀ p, p < Mchk + 1 → HilbertChecker.Prf Ax φ p = false) := by
   have hinv := step_run_invariant Ax Mchk φ (Mchk + 1) (le_refl _)
   simp only [readout, hinv, Sum.elim_inr]
 
 /-- **§6.5 Proposition 6.5 — the concrete `𝗣𝗔⁻` verdict.** For the executable sound checker over any
 `𝗣𝗔⁻`-provable axiom list, the reflective automaton halts after `M_chk + 1` steps reading `true` on
 the actual Gödel sentence `G` of `𝗣𝗔⁻` — true in the standard model, unprovable in `𝗣𝗔⁻`. Mirrors
-`GodelChecker.paMinus_decides_bounded_nonprovability`, driven through the machine run. -/
+`HilbertChecker.paMinus_decides_bounded_nonprovability`, driven through the machine run. -/
 theorem paMinus_automaton_decides (Ax : List S)
     (hAx : ∀ c ∈ Ax, (𝗣𝗔⁻ : ArithmeticTheory) ⊢ c) (Mchk : ℕ) :
     ∃ G : S, (ℕ↓[ℒₒᵣ] ⊧ G) ∧ ((𝗣𝗔⁻ : ArithmeticTheory) ⊬ G) ∧
       readout ((step Ax Mchk)^[Mchk + 1] (init G)) = true := by
   obtain ⟨G, htrue, hunprov, hbounded⟩ :=
-    GodelChecker.paMinus_decides_bounded_nonprovability Ax hAx Mchk
+    HilbertChecker.paMinus_decides_bounded_nonprovability Ax hAx Mchk
   refine ⟨G, htrue, hunprov, ?_⟩
   rw [automaton_run Ax Mchk G, decide_eq_true_eq]
   intro p hp
   exact hbounded p (by omega)
 
-end GodelCheckerAutomaton
+end ALT.HilbertCheckerAutomaton
